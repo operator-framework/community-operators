@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -e
+
+if [[ -z "$3" ]]; then
+  echo "Usage: $0 [NAMESPACE] [REPOSITORY] [RELEASE]"
+  exit 1
+fi
+
+if [[ -z "$QUAY_USERNAME" ]]; then
+  echo -n "Quay Username: "
+    read QUAY_USERNAME
+fi
+
+if [[ -z "$QUAY_PASSWORD" ]]; then
+  echo -n "Quay Password: "
+  read -s QUAY_PASSWORD
+  echo
+fi
+
+TOKEN=$(curl -sH "Content-Type: application/json" -XPOST https://quay.io/cnr/api/v1/users/login -d '
+{
+    "user": {
+        "username": "'"${QUAY_USERNAME}"'",
+        "password": "'"${QUAY_PASSWORD}"'"
+    }
+}' | jq -r '.token')
+
+
+NAMESPACE=$1
+REPOSITORY=$2
+RELEASE=$3
+
+function cleanup() {
+    rm -f ${REPOSITORY}.tar.gz
+}
+
+trap cleanup EXIT
+
+tar czf ${REPOSITORY}.tar.gz -C "./${NAMESPACE}/bundles/${REPOSITORY}" bundle.${RELEASE}.yaml
+
+BUNDLE=$(cat ${REPOSITORY}.tar.gz | base64 -w 0)
+
+curl -H "Content-Type: application/json" \
+     -H "Authorization: ${TOKEN}" \
+     -XPOST https://quay.io/cnr/api/v1/packages/${NAMESPACE}/${REPOSITORY} -d '
+{
+    "blob": "'"${BUNDLE}"'",
+    "release": "'"${RELEASE}"'",
+    "media_type": "helm"
+}'
