@@ -3,15 +3,18 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: metering-operator.v0.12.0
+  name: metering-operator.v0.13.0
+  annotations:
+    tectonic-visibility: openshift-feature
   namespace: placeholder
   labels:
+    alm-catalog: openshift-feature
     operator-metering: "true"
 spec:
   displayName: Metering
   description: Metering can generate reports based on historical usage data from a cluster, providing accountability for how resources have been used.
   keywords: [metering metrics reporting]
-  version: 0.12.0
+  version: 0.13.0
   maturity: alpha
   maintainers:
     - email: sd-operator-metering@redhat.com
@@ -20,26 +23,67 @@ spec:
     name: Red Hat
   labels:
     alm-owner-metering: metering-operator
-    alm-status-descriptors: metering-operator.v0.12.0
+    alm-status-descriptors: metering-operator.v0.13.0
   selector:
     matchLabels:
       alm-owner-metering: metering-operator
   installModes:
-  - type: OwnNamespace
-    supported: true
-  - type: SingleNamespace
-    supported: true
-  - type: MultiNamespace
-    supported: false
-  - type: AllNamespaces
-    supported: false
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
   install:
     strategy: deployment
     spec:
+      clusterPermissions:
+        - rules:
+          - apiGroups:
+            - ""
+            resources:
+            - namespaces
+            verbs:
+            - get
+          - apiGroups:
+            - authorization.k8s.io
+            resources:
+            - subjectaccessreviews
+            verbs:
+            - create
+          - apiGroups:
+            - authentication.k8s.io
+            resources:
+            - tokenreviews
+            verbs:
+            - create
+          - apiGroups:
+            - rbac.authorization.k8s.io
+            resources:
+            - clusterrolebindings
+            - clusterroles
+            verbs:
+            - create
+            - delete
+            - deletecollection
+            - get
+            - list
+            - patch
+            - update
+            - watch
+          serviceAccountName: metering-operator
       permissions:
         - rules:
           - apiGroups:
             - metering.openshift.io
+            resources:
+            - '*'
+            verbs:
+            - '*'
+          - apiGroups:
+            - monitoring.coreos.com
             resources:
             - '*'
             verbs:
@@ -229,7 +273,7 @@ spec:
                     value: "30"
                   - name: RELEASE_HISTORY_LIMIT
                     value: "3"
-                  image: quay.io/coreos/metering-helm-operator:0.12.0
+                  image: quay.io/coreos/metering-helm-operator:0.13.0
                   imagePullPolicy: Always
                   name: metering-operator
                   resources:
@@ -248,7 +292,7 @@ spec:
                         fieldPath: metadata.namespace
                   - name: TILLER_HISTORY_MAX
                     value: "3"
-                  image: quay.io/coreos/metering-helm-operator:0.12.0
+                  image: quay.io/coreos/metering-helm-operator:0.13.0
                   imagePullPolicy: Always
                   livenessProbe:
                     failureThreshold: 3
@@ -311,7 +355,7 @@ spec:
       kind: ReportPrometheusQuery
       name: reportprometheusqueries.metering.openshift.io
       version: v1alpha1
-    - description: A metering report for a specific time interval
+    - description: A metering report summarizes metrics based on the query specified
       displayName: Metering Report
       kind: Report
       name: reports.metering.openshift.io
