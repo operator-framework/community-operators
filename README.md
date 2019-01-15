@@ -18,7 +18,7 @@ my-operator.package.yaml
 
 The operator resources are your operator's CSV [follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md), CRDs, and the package.yaml file for your operator.
 
-An operator's CSV must contain the annotations mentioned [here](https://github.com/operator-framework/operator-marketplace/blob/master/docs/marketplace-required-csv-annotations.md) for it to be displayed properly within the Marketplace UI.
+An operator's CSV must contain the annotations mentioned [here](https://github.com/operator-framework/community-operators/blob/master/docs/marketplace-required-csv-annotations.md) for it to be displayed properly within the Marketplace UI.
 
 ## Updating your OKD operator
 
