@@ -1,6 +1,6 @@
 # Community and OKD Operators
 
-Operators stored here will be pushed to quay.io's AppRegistry and will be visibile in the Operator Hub on all OKD clusters.
+Operators stored here will be pushed to [quay.io](https://quay.io)'s AppRegistry and will be visibile in the Operator Hub on all OKD clusters.
 
 ## Adding your OKD operator
 
@@ -23,3 +23,26 @@ An operator's CSV must contain the annotations mentioned [here](https://github.c
 ## Updating your OKD operator
 
 Similarly, to update your operator you need to submit a PR with any changes to your operator resources.
+
+## Pulling OperatorBundles from quay.io
+### Prerequisites
+The following prequistis are required run to the quay.io scripts:
+
+* [jq](https://stedolan.github.io/jq/) must be installed
+* A quay.io account
+
+To pull your operator bundle from quay.io, simply run the following command:
+```bash
+$ scripts/pull-from-quay $NAMESPACE $REPOSITORY
+```
+
+In the command above, `$NAMESPACE` is the [quay.io](https://quay.io) namespace. Possible values include:
+
+* [redhat-operators](https://quay.io/organization/redhat-operators)
+* [certified-operators](https://quay.io/organization/certified-operators)
+* [community-operators](https://quay.io/organization/community-operators)
+* your personal quay.io namespace.
+
+The `$REGISTRY` is the name of the folder you created under the `$NAMESPACE` directory.
+
+For example, for `community-operators/etcd` the `$NAMESPACE` would be `community-operators` and the `$REGISTRY` would be `etcd`.
