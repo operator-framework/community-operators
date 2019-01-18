@@ -43,6 +43,6 @@ In the command above, `$NAMESPACE` is the [quay.io](https://quay.io) namespace. 
 * [community-operators](https://quay.io/organization/community-operators)
 * your personal quay.io namespace.
 
-The `$REGISTRY` is the name of the folder you created under the `$NAMESPACE` directory.
+The `$REPOSITORY` is the name of the folder you created under the `$NAMESPACE` directory.
 
-For example, for `community-operators/etcd` the `$NAMESPACE` would be `community-operators` and the `$REGISTRY` would be `etcd`.
+For example, for `community-operators/etcd` the `$NAMESPACE` would be `community-operators` and the `$REPOSITORY` would be `etcd`.
