@@ -1,0 +1,135 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: keycloak-operator.v0.0.1
+  namespace: openshift-operators
+  annotations:
+    categories: "Keycloak, KeycloakRealm, Kubernetes, Operator"
+    description: |-
+      A Kubernetes Operator based on the Operator SDK for syncing resources in Keycloak.
+    containerImage: quay.io/integreatly/keycloak-operator:master
+    createdAt: 2019-01-25-T20:00:00Z
+    support: integr8ly
+    alm-examples: |-
+      [{
+        "apiVersion": "aerogear.org/v1alpha1",
+        "kind": "Keycloak",
+        "metadata": {
+          "name": "example"
+        },
+        "spec": {
+          "adminCredentials": ""
+        }     
+      }]
+spec:
+  displayName: KeyCloak Operator
+  description: |-
+    A Kubernetes Operator based on the Operator SDK for syncing resources in Keycloak.
+  keywords: ['Keycloak', 'KeycloakRealm', 'operator', 'openshift', 'kubernetes']
+  version: 0.0.1
+  maintainers:
+  - name: integr8ly
+    email: keycloak-security@lists.jboss.org
+  provider:
+    name: integr8ly
+  labels:
+    name: keycloak-operator
+  selector:
+    matchLabels:
+      name: keycloak-operator
+  links:
+  - name: Keycloak Operator Source Code
+    url: https://github.com/integr8ly/keycloak-operator
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: true
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+      - serviceAccountName: keycloak-operator
+        rules:
+        - apiGroups:
+          - aerogear.org
+          resources:
+          - "*"
+          verbs:
+          - "*"
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims
+          - events
+          - secrets
+          - services
+          - pods
+          verbs:
+          - "*"
+        - apiGroups:
+          - template.openshift.io
+          resources:
+          - processedtemplates
+          verbs: [ get, list, create, update, delete, deletecollection, watch]
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs: [ get, list, create, update, delete, deletecollection, watch]
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs: [ get, list, create, update, delete, deletecollection, watch]
+      deployments:
+      - name: keycloak-operator
+        spec: 
+          replicas: 1
+          selector:
+            matchLabels:
+              name: keycloak-operator
+          template:
+            metadata:
+              labels:
+                name: keycloak-operator
+            spec:
+              serviceAccountName: keycloak-operator
+              containers:
+                - name: keycloak-operator
+                  image: quay.io/integreatly/keycloak-operator:master
+                  ports:
+                  - containerPort: 60000
+                    name: metrics
+                  command:
+                  - keycloak-operator
+                  imagePullPolicy: Always
+                  env:
+                    - name: WATCH_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.annotations['olm.targetNamespaces']
+                    - name: OPERATOR_NAME
+                      value: "keycloak-operator"
+                    - name: CONSUMER_NAMESPACES
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.annotations['olm.targetNamespaces']
+  customresourcedefinitions:
+    owned:
+    - description: Represents an instance of a Keycloak application
+      displayName: Keycloak Application
+      kind: Keycloak
+      name: keycloaks.aerogear.org
+      version: v1alpha1
+    - description: Represents a realm of an instance of a Keycloak application
+      displayName: Keycloak Application realm
+      kind: KeycloakRealms
+      name: keycloakrealms.aerogear.org
+      version: v1alpha1  
+
