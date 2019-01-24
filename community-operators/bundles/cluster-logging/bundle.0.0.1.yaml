@@ -289,6 +289,7 @@ data:
                               to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
       
+      
   clusterServiceVersions: |-
     - #! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
       #! parse-kind: ClusterServiceVersion
@@ -305,6 +306,48 @@ data:
           containerImage: quay.io/openshift/cluster-logging-operator:latest
           createdAt: 2018-08-01T08:00:00Z
           support: AOS Logging
+          alm-examples: |-
+              [
+                  {
+                    "apiVersion": "logging.openshift.io/v1alpha1",
+                    "kind": "ClusterLogging",
+                    "metadata": {
+                      "name": "instance"
+                     },
+                    "spec": {
+                      "managementState": "Managed",
+                      "logStore": {
+                        "type": "elasticsearch",
+                        "elasticsearch": {
+                          "nodeCount": 3,
+                          "redundancyPolicy": "SingleRedundancy",
+                          "storage": {
+                            "storageClassName": "gp2"
+                            "size": "200G"
+                           },
+                         },
+                      },
+                      "visualization": {
+                        "type": "kibana",
+                        "kibana": {
+                          "replicas": 1
+                        },
+                      },
+                      "curation": {
+                        "type": "curator",
+                        "curator": {
+                          "schedule": "30 3 * * *"
+                        },
+                      },
+                      "collection": {
+                        "logs": {
+                          "type": "fluentd",
+                          "fluentd": {}
+                        },
+                      }
+                    }
+                  }
+              ]
       spec:
         displayName: Cluster Logging
       
@@ -472,7 +515,9 @@ data:
                       - cluster-logging-operator
                       env:
                         - name: WATCH_NAMESPACE
-                          value: "openshift-logging"
+                          valueFrom:
+                            fieldRef:
+                              fieldPath: metadata.annotations['olm.targetNamespaces']
                         - name: OPERATOR_NAME
                           value: "cluster-logging-operator"
                         - name: ELASTICSEARCH_IMAGE
@@ -512,7 +557,7 @@ data:
                           - name: WATCH_NAMESPACE
                             valueFrom:
                               fieldRef:
-                                fieldPath: metadata.namespace
+                                fieldPath: metadata.annotations['olm.targetNamespaces']
                           - name: OPERATOR_NAME
                             value: "elasticsearch-operator"
         version: 0.0.1
@@ -711,5 +756,5 @@ data:
       channels:
       - name: preview
         currentCSV: clusterlogging.v0.0.1
-        
+      
 
