@@ -1,0 +1,250 @@
+data:
+  customResourceDefinitions: |-
+    - apiVersion: apiextensions.k8s.io/v1beta1
+      kind: CustomResourceDefinition
+      metadata:
+        name: keycloaks.aerogear.org
+      spec:
+        group: aerogear.org
+        names:
+          kind: Keycloak
+          listKind: KeycloakList
+          plural: keycloaks
+          singular: keycloak
+        scope: Namespaced
+        version: v1alpha1
+        validation:
+          openAPIV3Schema:
+            properties:
+              spec:
+                properties:
+                  version:
+                    type: string
+                  adminCredentials:
+                    type: string
+                  plugins:
+                    type: array
+                    items:
+                      description: Plugin names
+                      type: string  
+    - apiVersion: apiextensions.k8s.io/v1beta1
+      kind: CustomResourceDefinition
+      metadata:
+        name: keycloakrealms.aerogear.org
+      spec:
+        group: aerogear.org
+        names:
+          kind: KeycloakRealm
+          listKind: KeycloakRealmList
+          plural: keycloakrealms
+          singular: keycloakrealm
+        scope: Namespaced
+        version: v1alpha1
+        validation:
+          openAPIV3Schema:
+            properties:
+              spec:
+                properties:
+                  id:
+                    type: string
+                  realm:
+                    type: string
+                  enabled:
+                    type: boolean
+                  displayName:
+                    type: string
+                  identityProviders:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        alias:
+                          type: string
+                        displayName:
+                          type: string
+                        internalId:
+                          type: string
+                        providerId:
+                          type: string
+                        enabled:
+                          type: boolean
+                        trustEmail:
+                          type: boolean
+                        storeToken:
+                          type: boolean
+                        addReadTokenRoleOnCreate:
+                          type: boolean
+                        firstBrokerLoginFlowAlias:
+                          type: string
+                        postBrokerLoginFlowAlias:
+                          type: string
+                        config:
+                          type: object
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        username:
+                          type: string
+                        firstName:
+                          type: string
+                        lastName:
+                          type: string
+                        email:
+                          type: string
+                        emailVerified:
+                          type: boolean
+                        enabled:
+                          type: boolean
+                        realmRoles:
+                          type: array
+                          items:
+                            type: string
+                        clientRoles:
+                          type: object
+                        requiredActions:
+                          type: array
+                          items:
+                            type: string
+                        groups:
+                          type: array
+                          items:
+                            type: string
+                        outputSecret:
+                          type: string
+                  clients:
+                    type: array
+                    items:
+                      type: object
+  clusterServiceVersions: |-
+    - apiVersion: operators.coreos.com/v1alpha1
+      kind: ClusterServiceVersion
+      metadata:
+        name: keycloak-operator.v0.0.1
+        namespace: placeholder
+        annotations:
+          categories: "Keycloak, KeycloakRealm, Kubernetes, Operator"
+          description: |-
+            A Kubernetes Operator based on the Operator SDK for syncing resources in Keycloak.
+          containerImage: quay.io/integreatly/keycloak-operator:master
+          createdAt: 2019-01-25-T20:00:00Z
+          support: integr8ly
+      spec:
+        displayName: KeyCloak Operator
+        description: |-
+          A Kubernetes Operator based on the Operator SDK for syncing resources in Keycloak.
+        keywords: ['Keycloak', 'KeycloakRealm', 'operator', 'openshift', 'kubernetes']
+        version: 0.0.1
+        maintainers:
+        - name: integr8ly
+          email: keycloak-security@lists.jboss.org
+        provider:
+          name: integr8ly
+        labels:
+          name: keycloak-operator
+        selector:
+          matchLabels:
+            name: keycloak-operator
+        links:
+        - name: Keycloak Operator Source Code
+          url: https://github.com/integr8ly/keycloak-operator
+        installModes:
+        - type: OwnNamespace
+          supported: true
+        - type: SingleNamespace
+          supported: true
+        - type: MultiNamespace
+          supported: false
+        - type: AllNamespaces
+          supported: true
+        install:
+          strategy: deployment
+          spec:
+            permissions:
+            - serviceAccountName: keycloak-operator
+              rules:
+              - apiGroups:
+                - aerogear.org
+                resources:
+                - "*"
+                verbs:
+                - "*"
+              - apiGroups:
+                - ""
+                resources:
+                - persistentvolumeclaims
+                - events
+                - secrets
+                - services
+                - pods
+                verbs:
+                - "*"
+              - apiGroups:
+                - template.openshift.io
+                resources:
+                - processedtemplates
+                verbs: [ get, list, create, update, delete, deletecollection, watch]
+              - apiGroups:
+                - apps.openshift.io
+                resources:
+                - deploymentconfigs
+                verbs: [ get, list, create, update, delete, deletecollection, watch]
+              - apiGroups:
+                - route.openshift.io
+                resources:
+                - routes
+                - routes/custom-host
+                verbs: [ get, list, create, update, delete, deletecollection, watch]
+            deployments:
+            - name: keycloak-operator
+              spec: 
+                replicas: 1
+                selector:
+                  matchLabels:
+                    name: keycloak-operator
+                template:
+                  metadata:
+                    labels:
+                      name: keycloak-operator
+                  spec:
+                    serviceAccountName: keycloak-operator
+                    containers:
+                      - name: keycloak-operator
+                        image: quay.io/integreatly/keycloak-operator:master
+                        ports:
+                        - containerPort: 60000
+                          name: metrics
+                        command:
+                        - keycloak-operator
+                        imagePullPolicy: Always
+                        env:
+                          - name: WATCH_NAMESPACE
+                            valueFrom:
+                              fieldRef:
+                                fieldPath: metadata.annotations['olm.targetNamespaces']
+                          - name: OPERATOR_NAME
+                            value: "keycloak-operator"
+                          - name: CONSUMER_NAMESPACES
+                            valueFrom:
+                              fieldRef:
+                                fieldPath: metadata.annotations['olm.targetNamespaces']
+        customresourcedefinitions:
+          owned:
+          - description: Represents an instance of a Keycloak application
+            displayName: Keycloak Application
+            kind: Keycloak
+            name: keycloaks.aerogear.org
+            version: v1alpha1
+          - description: Represents a realm of an instance of a Keycloak application
+            displayName: Keycloak Application realm
+            kind: KeycloakRealm
+            name: keycloakrealms.aerogear.org
+            version: v1alpha1  
+  packages: |-
+    - packageName: keycloak
+      channels:
+      - name: alpha
+        currentCSV: keycloak-operator.v0.0.1
+      
+      
