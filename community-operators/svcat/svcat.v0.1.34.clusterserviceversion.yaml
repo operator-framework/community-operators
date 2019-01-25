@@ -5,9 +5,17 @@ kind: ClusterServiceVersion
 metadata:
   name: svcat.v0.1.34
   namespace: placeholder
+  annotations:
+    categories: "openshift optional, service catalog, osb, osbapi, broker, svcat"
+    certified: "false"
+    description: Service Catalog lets you provision cloud services directly from the comfort of native Kubernetes tooling. This project is in incubation to bring integration with service brokers to the Kubernetes ecosystem via the Open Service Broker API.
+    containerImage: quay.io/openshift/origin-service-catalog
+    createdAt: 2018-12-01T00:00:00Z
+    support: AOS Service Catalog
 spec:
   displayName: Service Catalog
   description: Service Catalog lets you provision cloud services directly from the comfort of native Kubernetes tooling. This project is in incubation to bring integration with service brokers to the Kubernetes ecosystem via the Open Service Broker API.
+  version: 0.1.34
   keywords: ['catalog', 'service', 'svcat', 'osb', 'broker']
   maintainers:
   - name: Red Hat
@@ -18,8 +26,8 @@ spec:
   - name: Documentation
     url: https://svc-cat.io/docs
   - name: Service Catalog
-    url: https://github.com/kubernetes-incubator/service-catalog
-  
+    url: https://github.com/openshift/service-catalog
+
   installModes:
   - type: OwnNamespace
     supported: true
@@ -29,7 +37,7 @@ spec:
     supported: false
   - type: AllNamespaces
     supported: true
-    
+
   install:
     strategy: deployment
     spec:
@@ -111,22 +119,22 @@ spec:
           resources: ["subjectaccessreviews"]
           verbs: ["create"]
       deployments:
-      - name: apiserver
+      - name: svcat-apiserver
         spec:
           replicas: 1
           strategy:
             type: RollingUpdate
           selector:
             matchLabels:
-              app: apiserver
+              app: svcat-apiserver
           template:
             metadata:
               labels:
-                app: apiserver
+                app: svcat-apiserver
             spec:
               serviceAccountName: service-catalog-apiserver
               containers:
-              - name: apiserver
+              - name: svcat-apiserver
                 image: quay.io/openshift/origin-service-catalog:v4.0.0
                 imagePullPolicy: IfNotPresent
                 command: ["/usr/bin/service-catalog"]
@@ -221,22 +229,22 @@ spec:
               volumes:
               - name: etcd-data-dir
                 emptyDir: {}
-      - name: controller-manager
+      - name: svcat-controller-manager
         spec:
           replicas: 1
           strategy:
             type: RollingUpdate
           selector:
             matchLabels:
-              app: controller-manager
+              app: svcat-controller-manager
           template:
             metadata:
               labels:
-                app: controller-manager
+                app: svcat-controller-manager
             spec:
               serviceAccountName: service-catalog-controller
               containers:
-              - name: controller-manager
+              - name: svcat-controller-manager
                 image: quay.io/openshift/origin-service-catalog:v4.0.0
                 imagePullPolicy: IfNotPresent
                 command: ["/usr/bin/service-catalog"]
@@ -259,10 +267,10 @@ spec:
                 - -v
                 - "3"
                 - --leader-election-namespace
-                - kube-service-catalog
+                - openshift-operators
                 - --leader-elect-resource-lock
                 - configmaps
-                - --cluster-id-configmap-namespace=kube-service-catalog
+                - --cluster-id-configmap-namespace=openshift-operators
                 - --broker-relist-interval
                 - "5m"
                 - --feature-gates
@@ -309,8 +317,6 @@ spec:
                   - key: tls.key
                     path: apiserver.key
                   secretName: v1beta1.servicecatalog.k8s.io-cert
-  maturity: alpha
-  version: 0.1.34
   apiservicedefinitions:
     owned:
     - group: servicecatalog.k8s.io
@@ -319,7 +325,7 @@ spec:
       name: clusterserviceclasses
       displayName: ClusterServiceClass
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
     - group: servicecatalog.k8s.io
       version: v1beta1
@@ -327,7 +333,7 @@ spec:
       name: clusterserviceplans
       displayName: ClusterServicePlan
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
     - group: servicecatalog.k8s.io
       version: v1beta1
@@ -335,7 +341,7 @@ spec:
       name: clusterservicebrokers
       displayName: ClusterServiceBroker
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
     - group: servicecatalog.k8s.io
       version: v1beta1
@@ -343,7 +349,7 @@ spec:
       name: serviceinstances
       displayName: ServiceInstance
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
     - group: servicecatalog.k8s.io
       version: v1beta1
@@ -351,7 +357,7 @@ spec:
       name: servicebindings
       displayName: ServiceBinding
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
     - group: servicecatalog.k8s.io
       version: v1beta1
@@ -359,7 +365,7 @@ spec:
       name: serviceclasses
       displayName: ServiceClass
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
     - group: servicecatalog.k8s.io
       version: v1beta1
@@ -367,7 +373,7 @@ spec:
       name: serviceplans
       displayName: ServicePlan
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
     - group: servicecatalog.k8s.io
       version: v1beta1
@@ -375,5 +381,5 @@ spec:
       name: servicebrokers
       displayName: ServiceBroker
       description: A service catalog resource
-      deploymentName: apiserver
+      deploymentName: svcat-apiserver
       containerPort: 5443
