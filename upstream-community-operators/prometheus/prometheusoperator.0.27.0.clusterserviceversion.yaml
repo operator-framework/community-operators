@@ -3,65 +3,65 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: prometheusoperator.0.15.0
+  name: prometheusoperator.0.27.0
   namespace: placeholder
   annotations:
-    capabilities: Full Lifecycle
-    tectonic-visibility: ocs
-    alm-examples: '[{"apiVersion":"monitoring.coreos.com/v1","kind":"Prometheus","metadata":{"name":"example","labels":{"prometheus":"k8s"}},"spec":{"replicas":2,"version":"v1.7.0","serviceAccountName":"prometheus-k8s","serviceMonitorSelector":{"matchExpressions":[{"key":"k8s-app","operator":"Exists"}]},"ruleSelector":{"matchLabels":{"role":"prometheus-rulefiles","prometheus":"k8s"}},"resources":{"requests":{"memory":"400Mi"}},"alerting":{"alertmanagers":[{"namespace":"monitoring","name":"alertmanager-main","port":"web"}]}}},{"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"name":"example","labels":{"k8s-app":"prometheus"}},"spec":{"selector":{"matchLabels":{"k8s-app":"prometheus","prometheus":"k8s"}},"namespaceSelector":{"matchNames":["monitoring"]},"endpoints":[{"port":"web","interval":"30s"}]}},{"apiVersion":"monitoring.coreos.com/v1","kind":"Alertmanager","metadata":{"name":"alertmanager-main"},"spec":{"replicas":3}}]'
+    capabilities: Seamless Upgrades
+    categories: Monitoring
+    description: Manage the full lifecycle of configuring and managing Prometheus and Alertmanager servers.
+    containerImage: quay.io/coreos/prometheus-operator:v0.27.0
+    createdAt: 2019-01-08T16:12:00Z
+    repository: https://github.com/coreos/prometheus-operator
+    alm-examples: '[{"apiVersion":"monitoring.coreos.com/v1","kind":"Prometheus","metadata":{"name":"example","labels":{"prometheus":"k8s"}},"spec":{"replicas":2,"version":"v2.7.1","serviceAccountName":"prometheus-k8s","securityContext": {}, "serviceMonitorSelector":{},"ruleSelector":{},"alerting":{"alertmanagers":[{"namespace":"monitoring","name":"alertmanager-main","port":"web"}]}}},{"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"name":"example","labels":{"k8s-app":"prometheus"}},"spec":{"selector":{"matchLabels":{"k8s-app":"prometheus"}},"endpoints":[{"port":"web","interval":"30s"}]}},{"apiVersion":"monitoring.coreos.com/v1","kind":"Alertmanager","metadata":{"name":"alertmanager-main"},"spec":{"replicas":3, "securityContext": {}}},{"apiVersion":"monitoring.coreos.com/v1","kind":"PrometheusRule","metadata":{"creationTimestamp":null,"labels":{"prometheus":"example","role":"alert-rules"},"name":"prometheus-example-rules"},"spec":{"groups":[{"name":"./example.rules","rules":[{"alert":"ExampleAlert","expr":"vector(1)"}]}]}}]'
+    certified: "false"
+    support: Frederic Branczyk
 spec:
-  replaces: prometheusoperator.0.14.0
-  displayName: Prometheus
+  replaces: prometheusoperator.0.22.2
+  displayName: Prometheus Operator
   description: |
-    An open-source monitoring system with a dimensional data model, flexible query language, efficient time series database and modern alerting approach.
+    The Prometheus Operator for Kubernetes provides easy monitoring definitions for Kubernetes services and deployment and management of Prometheus instances.
 
-    _The Prometheus Open Cloud Service is Public Alpha. The goal before Beta is for additional user testing and minor bug fixes._
+    Once installed, the Prometheus Operator provides the following features:
 
-    ### Monitoring applications
+    * **Create/Destroy**: Easily launch a Prometheus instance for your Kubernetes namespace, a specific application or team easily using the Operator.
 
-    Prometheus scrapes your application metrics based on targets maintained in a ServiceMonitor object. When alerts need to be sent, they are processsed by an AlertManager.
+    * **Simple Configuration**: Configure the fundamentals of Prometheus like versions, persistence, retention policies, and replicas from a native Kubernetes resource.
 
-    [Read the complete guide to monitoring applications with the Prometheus Open Cloud Service](https://coreos.com/tectonic/docs/latest/alm/prometheus-ocs.html)
+    * **Target Services via Labels**: Automatically generate monitoring target configurations based on familiar Kubernetes label queries; no need to learn a Prometheus specific configuration language.
 
-    ### Supported Features
-
+    ### Other Supported Features
 
     **High availability**
 
-
     Multiple instances are run across failure zones and data is replicated. This keeps your monitoring available during an outage, when you need it most.
-
 
     **Updates via automated operations**
 
-
     New Prometheus versions are deployed using a rolling update with no downtime, making it easy to stay up to date.
-
 
     **Handles the dynamic nature of containers**
 
-
     Alerting rules are attached to groups of containers instead of individual instances, which is ideal for the highly dynamic nature of container deployment.
 
-  keywords: ['prometheus', 'monitoring', 'tsdb', 'alerting']
+  keywords: ['prometheus', 'monitoring', 'tsdb', 'alerting', 'observability']
 
   maintainers:
-  - name: CoreOS, Inc
-    email: support@coreos.com
+  - name: Red Hat
+    email: openshift-operators@redhat.com
 
   provider:
-    name: CoreOS, Inc
+    name: Red Hat
 
   links:
   - name: Prometheus
     url: https://www.prometheus.io/
   - name: Documentation
-    url: https://coreos.com/operators/prometheus/docs/latest/
-  - name: Prometheus Operator Source Code
+    url: https://github.com/coreos/prometheus-operator/tree/master/Documentation
+  - name: Prometheus Operator
     url: https://github.com/coreos/prometheus-operator
 
   labels:
-    alm-status-descriptors: prometheusoperator.0.15.0
+    alm-status-descriptors: prometheusoperator.0.27.0
     alm-owner-prometheus: prometheusoperator
 
   selector:
@@ -78,10 +78,10 @@ spec:
   - type: SingleNamespace
     supported: true
   - type: MultiNamespace
-    supported: false
-  - type: AllNamespaces
     supported: true
-    
+  - type: AllNamespaces
+    supported: false
+
   install:
     strategy: deployment
     spec:
@@ -99,48 +99,69 @@ spec:
           resources:
           - configmaps
           verbs: ["get"]
-      - serviceAccountName: prometheus-operator-0-14-0
+      - serviceAccountName: prometheus-operator-0-27-0
         rules:
         - apiGroups:
           - apiextensions.k8s.io
           resources:
           - customresourcedefinitions
-          verbs: ["get", "list"]
+          verbs:
+          - '*'
         - apiGroups:
           - monitoring.coreos.com
           resources:
           - alertmanagers
           - prometheuses
+          - prometheuses/finalizers
+          - alertmanagers/finalizers
           - servicemonitors
+          - prometheusrules
           verbs:
-          - "*"
+          - '*'
         - apiGroups:
           - apps
           resources:
           - statefulsets
-          verbs: ["*"]
-        - apiGroups: [""]
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
           resources:
           - configmaps
           - secrets
-          verbs: ["*"]
-        - apiGroups: [""]
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
           resources:
           - pods
-          verbs: ["list", "delete"]
-        - apiGroups: [""]
+          verbs:
+          - list
+          - delete
+        - apiGroups:
+          - ""
           resources:
           - services
           - endpoints
-          verbs: ["get", "create", "update"]
-        - apiGroups: [""]
+          verbs:
+          - get
+          - create
+          - update
+        - apiGroups:
+          - ""
           resources:
           - nodes
-          verbs: ["list", "watch"]
-        - apiGroups: [""]
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - ""
           resources:
           - namespaces
-          verbs: ['list']
+          verbs:
+          - get
+          - list
+          - watch
       deployments:
       - name: prometheus-operator
         spec:
@@ -153,23 +174,21 @@ spec:
               labels:
                 k8s-app: prometheus-operator
             spec:
-              serviceAccount: prometheus-operator-0-14-0
+              serviceAccount: prometheus-operator-0-27-0
               containers:
               - name: prometheus-operator
-                image: quay.io/coreos/prometheus-operator@sha256:0e92dd9b5789c4b13d53e1319d0a6375bcca4caaf0d698af61198061222a576d
-                command:
-                  - sh
-                  - -c
-                  - >
-                    /bin/operator --namespace=$K8S_NAMESPACE --crd-apigroup monitoring.coreos.com
-                    --labels alm-status-descriptors=prometheusoperator.0.15.0,alm-owner-prometheus=prometheusoperator
-                    --kubelet-service=kube-system/kubelet
-                    --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
+                image: quay.io/coreos/prometheus-operator@sha256:933cd5bf380cf7db330808ff54f75f26fda0b1501021d499a1766b7d16224188
+                args:
+                - -namespaces=$(NAMESPACES)
+                - -manage-crds=false
+                - -logtostderr=true
+                - --config-reloader-image=quay.io/coreos/configmap-reload@sha256:e2fd60ff0ae4500a75b80ebaa30e0e7deba9ad107833e8ca53f0047c42c5a057
+                - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader@sha256:61b7969fd1336fd4bbac0622f9e4281f2a2b4ae02ad55748b6fdc65e2be69b73
                 env:
-                  - name: K8S_NAMESPACE
-                    valueFrom:
-                      fieldRef:
-                        fieldPath: metadata.namespace
+                - name: NAMESPACES
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 ports:
                 - containerPort: 8080
                   name: http
@@ -180,8 +199,13 @@ spec:
                   requests:
                     cpu: 100m
                     memory: 50Mi
-  maturity: alpha
-  version: 0.15.0
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+              nodeSelector:
+                beta.kubernetes.io/os: linux
+  maturity: beta
+  version: 0.27.0
   customresourcedefinitions:
     owned:
     - name: prometheuses.monitoring.coreos.com
@@ -190,79 +214,76 @@ spec:
       displayName: Prometheus
       description: A running Prometheus instance
       resources:
-        - kind: StatefulSet
-          version: v1beta2
-        - kind: Pod
-          version: v1
+      - kind: StatefulSet
+        version: v1beta2
+      - kind: Pod
+        version: v1
+      - kind: ConfigMap
+        version: v1
+      - kind: Service
+        version: v1
       specDescriptors:
       - description: Desired number of Pods for the cluster
         displayName: Size
         path: replicas
         x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+        - 'urn:alm:descriptor:com.tectonic.ui:podCount'
       - description: A selector for the ConfigMaps from which to load rule files
         displayName: Rule Config Map Selector
         path: ruleSelector
         x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:selector:core:v1:ConfigMap'
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:core:v1:ConfigMap'
       - description: ServiceMonitors to be selected for target discovery
         displayName: Service Monitor Selector
         path: serviceMonitorSelector
         x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:selector:monitoring.coreos.com:v1:ServiceMonitor'
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:monitoring.coreos.com:v1:ServiceMonitor'
       - description: The ServiceAccount to use to run the Prometheus pods
         displayName: Service Account
         path: serviceAccountName
         x-descriptors:
-          - 'urn:alm:descriptor:io.kubernetes:ServiceAccount'
+        - 'urn:alm:descriptor:io.kubernetes:ServiceAccount'
       - description: Limits describes the minimum/maximum amount of compute resources required/allowed
         displayName: Resource Requirements
         path: resources
         x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-      statusDescriptors:
-        - description: The current number of Pods for the cluster
-          displayName: Cluster Size
-          path: replicas
-        - path: prometheusSelector
-          displayName: Prometheus Service Selector
-          description: Label selector to find the service that routes to this prometheus
-          x-descriptors:
-          - 'urn:alm:descriptor:label:selector'
+        - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+    - name: prometheusrules.monitoring.coreos.com
+      version: v1
+      kind: PrometheusRule
+      displayName: Prometheus Rule
+      description: A Prometheus Rule configures groups of sequentially evaluated recording and alerting rules.
     - name: servicemonitors.monitoring.coreos.com
       version: v1
       kind: ServiceMonitor
       displayName: Service Monitor
       description: Configures prometheus to monitor a particular k8s service
       resources:
-        - kind: Pod
-          version: v1
+      - kind: Pod
+        version: v1
       specDescriptors:
-      - description: Selector to select which namespaces the Endpoints objects are discovered from
-        displayName: Monitoring Namespaces
-        path: namespaceSelector
-        x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:namespaceSelector'
       - description: The label to use to retrieve the job name from
         displayName: Job Label
         path: jobLabel
         x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - 'urn:alm:descriptor:com.tectonic.ui:label'
       - description: A list of endpoints allowed as part of this ServiceMonitor
         displayName: Endpoints
         path: endpoints
         x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:endpointList'
+        - 'urn:alm:descriptor:com.tectonic.ui:endpointList'
     - name: alertmanagers.monitoring.coreos.com
       version: v1
       kind: Alertmanager
-      displayName: Alert Manager
-      description: Configures an Alert Manager for the namespace
+      displayName: Alertmanager
+      description: Configures an Alertmanager for the namespace
       resources:
-        - kind: StatefulSet
-          version: v1beta2
-        - kind: Pod
-          version: v1
+      - kind: StatefulSet
+        version: v1beta2
+      - kind: Pod
+        version: v1
+      - kind: Service
+        version: v1
       specDescriptors:
       - description: Desired number of Pods for the cluster
         displayName: Size
@@ -273,4 +294,4 @@ spec:
         displayName: Resource Requirements
         path: resources
         x-descriptors:
-          - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+        - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
