@@ -1,6 +1,6 @@
 # Community and OKD Operators
 
-Operators stored here will be pushed to [quay.io](https://quay.io)'s AppRegistry and will be visibile in the Operator Hub on all OKD clusters.
+Operators stored here will be pushed to [quay.io](https://quay.io)'s AppRegistry and will be visible in the Operator Hub on all OKD clusters.
 
 ## Adding your OKD operator
 
