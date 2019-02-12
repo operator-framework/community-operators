@@ -1,11 +1,11 @@
-# Marketplace Required CSV Annotations
+# Required fields within your CSV
 
-An operator's CSV must contain the following annotations for it to be displayed properly within the Marketplace UI:
+An Operator's CSV must contain the following annotations for it to be displayed properly within OperatorHub.io. A full example is shown at the bottom of this document.
 
 ```yaml
 metadata:
   annotations:
-    categories: A list of comma separated categories that your operator falls under.
+    categories: A list of comma separated list of categories from the values below.
     certified: The operator's certification. This field should be set to false until a process to get this value is defined at a later date.
     description: |-
       A short description of the operator that will be displayed on the marketplace tile.
@@ -24,6 +24,25 @@ spec:
   maturity: The operator's maturity level. This field can be omitted until a process to get this value is defined at a later date.
 ```
 
+## Categories
+
+For the best user experience, choose from the following categories:
+
+| Category  |
+|-----------|
+| AI/Machine Learning |
+| Big Data |
+| Security |
+| Networking |
+| Storage |
+| Integration & Delivery |
+| Database |
+| Cloud Provider |
+| Logging & Tracing |
+| Streaming & Messaging |
+| Monitoring |
+| OpenShift Optional |
+
 ## Example CSV
 
 Below is an example of what the descheudler CSV may look like if it contained the expected annotiations:
@@ -33,7 +52,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    categories: openshift optional
+    categories: "OpenShift Optional"
     certified: "false"
     containerImage: registry.svc.ci.openshift.org/openshift/origin-v4.0:descheduler-operator
     createdAt: 2019-01-01T11:59:59Z
