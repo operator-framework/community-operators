@@ -1,10 +1,11 @@
+---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: automationbrokeroperator.v0.1.0
+  name: automationbrokeroperator.v0.2.0
   namespace: placeholder
   annotations:
-    alm-examples: '[{"apiVersion":"automationbroker.io/v1alpha1","kind":"AutomationBroker","metadata":{"name":"automation-broker","namespace":"automation-broker"},"spec":{"createBrokerNamespace":"false","waitForBroker":"false"}}]'
+    alm-examples: '[{"apiVersion":"osb.openshift.io/v1alpha1","kind":"AutomationBroker","metadata":{"name":"ansible-service-broker","namespace":"openshift-ansible-service-broker"},"spec":{"createBrokerNamespace":"false","waitForBroker":"false"}}]'
 spec:
   displayName: Automation Broker Operator
   description: |
@@ -16,7 +17,7 @@ spec:
 
     Check out the [Keynote Demo from Red Hat Summit 2017](https://youtu.be/8MCbJmZQM9c?list=PLEGSLwUsxfEh4TE2GDU4oygCB-tmShkSn&t=4732)
   keywords: ['ansible', 'automation', 'broker', 'open service broker']
-  version: 0.1.0
+  version: 0.2.0
   maturity: alpha
   maintainers:
   - name: Red Hat, Inc.
@@ -45,9 +46,9 @@ spec:
   - type: SingleNamespace
     supported: true
   - type: MultiNamespace
-    supported: true
+    supported: false
   - type: AllNamespaces
-    supported: true
+    supported: false
   install:
     strategy: deployment
     spec:
@@ -66,7 +67,6 @@ spec:
           - pods
           - configmaps
           - secrets
-          - serviceaccounts
           - services
           verbs:
           - "*"
@@ -88,114 +88,17 @@ spec:
           - deploymentconfigs
           verbs:
           - "*"
-      - serviceAccountName: automation-broker
-        rules:
-        - apiGroups:
-          - ""
-          resources:
-          - configmaps
-          verbs:
-          - get
-          - delete
-        - apiGroups:
-          - ""
-          resources:
-          - secrets
-          verbs:
-          - create
-          - delete
-          - get
-        - apiGroups:
-          - automationbroker.io
-          resources:
-          - bundles
-          - bundleinstances
-          - bundlebindings
-          verbs:
-          - "*"
       clusterPermissions:
       - serviceAccountName: automation-broker-operator
         rules:
         - apiGroups:
-          - servicecatalog.k8s.io
-          resources:
-          - clusterservicebrokers
-          - servicebrokers
-          verbs:
-          - "*"
-        # Must be cluster scoped, since we're expecting a single operator
-        # to be installed into a designated namespace, watching the full
-        # cluster for CRs.
-        - apiGroups:
-          - automationbroker.io
-          resources:
-          - "*"
-          verbs:
-          - "*"
-        ################################################################################
-        # This may be required to allow the operator to create an aggregated ClusterRole
-        # in order to add the rule that is checked by the broker to edit and/or admin.
-        ################################################################################
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - clusterroles
-          verbs:
-          - create
-          - patch
-        ################################################################################
-        #
-        ################################################################################
-        # Questionable, could maybe pull these?
-        ################################################################################
-        #- nonResourceURLs:
-        #  - /version/openshift
-        #  verbs:
-        #  - get
-        ##Could maybe try this one with just get?
-        #- apiGroups:
-        #  - apiextensions.k8s.io
-        #  resources:
-        #  - customresourcedefinitions
-        #  verbs:
-        #  - get
-        #  - patch
-        #  - update
-        # OLM should be able to handle these instead of the operator's ansible
-        #- apiGroups:
-        #  - rbac.authorization.k8s.io
-        #  resources:
-        #  - clusterrolebindings
-        #  - clusterroles
-        #  verbs:
-        #  - get
-        #  - patch
-        #  - update
-      - serviceAccountName: automation-broker
-        rules:
-        - apiGroups:
-          - ""
-          resources:
-          - namespaces
-          verbs:
-          - get
-          - create
-          - delete
-        - apiGroups:
-          - ""
-          resources:
-          - pods
-          verbs:
-          - create
-          - get
-          - list
-          - watch
-        - apiGroups:
           - ""
           resources:
           - serviceaccounts
+          - namespaces
+          - pods
           verbs:
-          - create
+          - "*"
         - apiGroups:
           - authentication.k8s.io
           resources:
@@ -211,12 +114,22 @@ spec:
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:
+          - clusterroles
+          - clusterrolebindings
           - rolebindings
           verbs:
           - create
           - delete
-        # broker must be able to set up a networkpolicy in the target
-        # namespace to set up a tunnel between the sandbox and the target
+          - patch
+          - get
+          - list
+        - apiGroups:
+          - servicecatalog.k8s.io
+          resources:
+          - clusterservicebrokers
+          - servicebrokers
+          verbs:
+          - "*"
         - apiGroups:
           - networking.k8s.io
           resources:
@@ -224,12 +137,24 @@ spec:
           verbs:
           - create
           - delete
+          - list
+          - get
         - apiGroups:
           - authorization.openshift.io
           resources:
           - subjectrulesreview
           verbs:
           - create
+        - apiGroups:
+          - network.openshift.io
+          - ""
+          resources:
+          - clusternetworks
+          - netnamespaces
+          verbs:
+          - get
+          - update
+          - list
         - apiGroups:
           - image.openshift.io
           - ""
@@ -239,22 +164,17 @@ spec:
           - get
           - list
         - apiGroups:
-          - network.openshift.io
-          - ""
+          - osb.openshift.io
           resources:
-          - clusternetworks
-          - netnamespaces
+          - "*"
           verbs:
-          - get
+          - "*"
         - apiGroups:
-          - network.openshift.io
-          - ""
+          - automationbroker.io
           resources:
-          - netnamespaces
+          - "*"
           verbs:
-          - update
-      - serviceAccountName: automation-broker-client
-        rules:
+          - "*"
         - nonResourceURLs:
           - "/osb"
           - "/osb/*"
@@ -280,18 +200,24 @@ spec:
               serviceAccountName: automation-broker-operator
               containers:
               - name: automation-broker-operator
-                image: docker.io/automationbroker/automation-broker-operator:latest
-                imagePullPolicy: IfNotPresent
+                image: docker.io/automationbroker/automation-broker-operator:v4.0
+                imagePullPolicy: Always
                 env:
                 - name: IMAGE
-                  value: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v3.11
+                  value: docker.io/ansibleplaybookbundle/origin-ansible-service-broker:v4.0
+                - name: OPERATOR_NAME
+                  value: automation-broker-operator
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
   customresourcedefinitions:
     owned:
-    - name: automationbrokers.automationbroker.io
+    - name: automationbrokers.osb.openshift.io
       version: v1alpha1
       kind: AutomationBroker
       displayName: Automation Broker
@@ -311,8 +237,3 @@ spec:
       kind: BundleInstance
       displayName: Automation Broker Bundle Instance
       description: An instance of an application bundle
-status:
-  certsLastUpdated: null
-  certsRotateAt: null
-  lastTransitionTime: null
-  lastUpdateTime: null

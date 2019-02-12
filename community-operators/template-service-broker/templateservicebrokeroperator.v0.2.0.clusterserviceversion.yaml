@@ -1,7 +1,9 @@
+---
+
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: templateservicebrokeroperator.v0.1.0
+  name: templateservicebrokeroperator.v0.2.0
   namespace: placeholder
   annotations:
     alm-examples: '[{"apiVersion":"osb.openshift.io/v1alpha1","kind":"TemplateServiceBroker","metadata":{"name":"template-service-broker","namespace":"openshift-template-service-broker"},"spec":{"size":3,"version":"3.2.13"}}]'
@@ -38,7 +40,7 @@ spec:
       asynchronous operation.  In the template service broker, *Provision*
       is the only asynchronous operation.
   keywords: ['template', 'broker', 'open service broker']
-  version: 0.1.0
+  version: 0.2.0
   maturity: alpha
   maintainers:
   - name: Red Hat, Inc.
@@ -62,9 +64,9 @@ spec:
   - type: SingleNamespace
     supported: true
   - type: MultiNamespace
-    supported: true
+    supported: false
   - type: AllNamespaces
-    supported: true
+    supported: false
   install:
     strategy: deployment
     spec:
@@ -78,6 +80,7 @@ spec:
           - configmaps
           - secrets
           - services
+          - serviceaccounts
           verbs:
           - "*"
         - apiGroups:
@@ -109,17 +112,17 @@ spec:
           - servicebrokers
           verbs:
           - "*"
-      - serviceAccountName: template-service-broker-client
-        rules:
-        - nonResourceURLs:
-          - /brokers/template.openshift.io/*
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
           verbs:
+          - create
           - delete
+          - patch
           - get
-          - put
-          - update
-      - serviceAccountName: apiserver
-        rules:
+          - list
         - apiGroups:
           - authorization.k8s.io
           resources:
@@ -205,6 +208,13 @@ spec:
           - create
           - patch
           - update
+        - nonResourceURLs:
+          - /brokers/template.openshift.io/*
+          verbs:
+          - delete
+          - get
+          - put
+          - update
       deployments:
       - name: template-service-broker-operator
         spec:
@@ -221,11 +231,17 @@ spec:
               serviceAccountName: template-service-broker-operator
               containers:
               - name: template-service-broker-operator
-                image: docker.io/automationbroker/template-service-broker-operator:latest
-                imagePullPolicy: IfNotPresent
+                image: docker.io/automationbroker/template-service-broker-operator:v4.0
+                imagePullPolicy: Always
                 env:
                 - name: IMAGE
-                  value: docker.io/openshift/origin-template-service-broker:latest
+                  value: docker.io/openshift/origin-template-service-broker:v4.0
+                - name: OPERATOR_NAME
+                  value: template-service-broker-operator
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
