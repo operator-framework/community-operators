@@ -13,6 +13,7 @@ my-operator-crd1.crd.yaml
 my-operator-crd2.crd.yaml
 my-operator.package.yaml
 ```
+Please note that the directory name should match the name of your operator in it's package.yaml.
 
 Each OperatorHub entry contains all of the Custom Resource Definitions (CRDs), access control rules and references to the container image needed to install and securely run your Operator, plus other info like a description of its features and supported Kubernetes versions. [Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md), CRDs, and the package.yaml file for your operator.
 
