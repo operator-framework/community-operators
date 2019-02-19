@@ -1,313 +1,11 @@
----
-# Source: operator-artifacts/templates/cluster-logging.yaml
-
-
-
 data:
-  customResourceDefinitions: |-
-    - apiVersion: apiextensions.k8s.io/v1beta1
-      kind: CustomResourceDefinition
-      metadata:
-        name: clusterloggings.logging.openshift.io
-      spec:
-        group: logging.openshift.io
-        names:
-          kind: ClusterLogging
-          listKind: ClusterLoggingList
-          plural: clusterloggings
-          singular: clusterlogging
-        scope: Namespaced
-        version: v1alpha1
-        validation:
-          openAPIV3Schema:
-            properties:
-              spec:
-                description: Specification of the desired behavior of the Logging cluster.
-                properties:
-                  managementState:
-                    description: Indicator if the resource is 'Managed' or 'Unmanaged' by the operator
-                    type: string
-                    enum:
-                    - "Managed"
-                    - "Unmanaged"
-                  visualization:
-                    description: Specification of the Visualization component for the cluster
-                    properties:
-                      type:
-                        description: The type of Visualization to configure
-                        type: string
-                      kibana:
-                        description: Specification of the Kibana Visualization component
-                        properties:
-                          resources:
-                            description: The resource requirements for Kibana
-                            properties:
-                              limits:
-                                description: 'Limits describes the maximum amount of compute
-                                  resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                type: object
-                              requests:
-                                description: 'Requests describes the minimum amount of compute
-                                  resources required. If Requests is omitted for a container,
-                                  it defaults to Limits if that is explicitly specified, otherwise
-                                  to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                type: object
-                          nodeSelector:
-                            description: Define which Nodes the Pods are scheduled on.
-                            type: object
-                          replicas:
-                            description: Number of instances to deploy for a Kibana deployment
-                            format: int32
-                            type: integer
-                          proxySpec:
-                            description: Specification of the Kibana Proxy component
-                            properties:
-                              resources:
-                                description: The resource requirements for Kibana
-                                properties:
-                                  limits:
-                                    description: 'Limits describes the maximum amount of compute
-                                      resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                    type: object
-                                  requests:
-                                    description: 'Requests describes the minimum amount of compute
-                                      resources required. If Requests is omitted for a container,
-                                      it defaults to Limits if that is explicitly specified, otherwise
-                                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                    type: object
-                        required:
-                        - replicas
-                    required:
-                    - type
-                  logStore:
-                    description: Specification of the Log Storage component for the cluster
-                    properties:
-                      type:
-                        description: The type of Log Storage to configure
-                        type: string
-                      elasticsearch:
-                        description: Specification of the Elasticsearch Log Store component
-                        properties:
-                          resources:
-                            description: The resource requirements for Kibana
-                            properties:
-                              limits:
-                                description: 'Limits describes the maximum amount of compute
-                                  resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                type: object
-                              requests:
-                                description: 'Requests describes the minimum amount of compute
-                                  resources required. If Requests is omitted for a container,
-                                  it defaults to Limits if that is explicitly specified, otherwise
-                                  to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                type: object
-                          nodeSelector:
-                            description: Define which Nodes the Pods are scheduled on.
-                            type: object
-                          nodeCount:
-                            description: Number of nodes to deploy for Elasticsearch
-                            format: int32
-                            type: integer
-                          storage:
-                            description: 'The storage specification for Elasticsearch data nodes'
-                            properties:
-                              size:
-                                description: 'The capacity of storage to provision.'
-                                type: string
-                              storageClassName:
-                                description: 'The class of storage to provision. More info: https://kubernetes.io/docs/concepts/storage/storage-classes/'
-                                type: string
-                          redundancyPolicy:
-                            description: The policy towards data redundancy to specify the number of redundant primary shards
-                            type: string
-                            enum:
-                            - "FullRedundancy"
-                            - "MultipleRedundancy"
-                            - "SingleRedundancy"
-                            - "ZeroRedundancy"
-                        required:
-                        - nodeCount
-                    required:
-                    - type
-                  collection:
-                    description: Specification of the Collection component for the cluster
-                    properties:
-                      logs:
-                        description: Specification of Log Collection for the cluster
-                        properties:
-                          type:
-                            description: The type of Log Collection to configure
-                            type: string
-                          fluentd:
-                            description: Specification of the Fluentd Log Collection component
-                            properties:
-                              resources:
-                                description: The resource requirements for Fluentd
-                                properties:
-                                  limits:
-                                    description: 'Limits describes the maximum amount of compute
-                                      resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                    type: object
-                                  requests:
-                                    description: 'Requests describes the minimum amount of compute
-                                      resources required. If Requests is omitted for a container,
-                                      it defaults to Limits if that is explicitly specified, otherwise
-                                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                    type: object
-                              nodeSelector:
-                                description: Define which Nodes the Pods are scheduled on.
-                                type: object
-                        required:
-                        - type
-                  curation:
-                    description: Specification of the Curation component for the cluster
-                    properties:
-                      type:
-                        description: The kind of curation to configure
-                        type: string
-                      curator:
-                        description: The specification of curation to configure
-                        properties:
-                          resources:
-                            description: The resource requirements for Curator
-                            properties:
-                              limits:
-                                description: 'Limits describes the maximum amount of compute
-                                  resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                type: object
-                              requests:
-                                description: 'Requests describes the minimum amount of compute
-                                  resources required. If Requests is omitted for a container,
-                                  it defaults to Limits if that is explicitly specified, otherwise
-                                  to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                type: object
-                          nodeSelector:
-                            description: Define which Nodes the Pods are scheduled on.
-                            type: object
-                          schedule:
-                            description: 'The cron schedule that the Curator job is run. Defaults to "30 3 * * *"'
-                            type: string
-                        required:
-                        - schedule
-                    required:
-                    - type
-      
-    - apiVersion: apiextensions.k8s.io/v1beta1
-      kind: CustomResourceDefinition
-      metadata:
-        name: elasticsearches.logging.openshift.io
-      spec:
-        group: logging.openshift.io
-        names:
-          kind: Elasticsearch
-          listKind: ElasticsearchList
-          plural: elasticsearches
-          singular: elasticsearch
-        scope: Namespaced
-        version: v1alpha1
-        validation:
-          openAPIV3Schema:
-            properties:
-              spec:
-                description: Specification of the desired behavior of the Elasticsearch cluster
-                properties:
-                  managementState:
-                    description: Indicator if the resource is 'Managed' or 'Unmanaged' by the operator
-                    type: string
-                    enum:
-                    - "Managed"
-                    - "Unmanaged"
-                  redundancyPolicy:
-                    description: The policy towards data redundancy to specify the number of redundant primary shards
-                    type: string
-                    enum:
-                    - "FullRedundancy"
-                    - "MultipleRedundancy"
-                    - "SingleRedundancy"
-                    - "ZeroRedundancy"
-                  nodes:
-                    description: Specification of the different Elasticsearch nodes
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        roles:
-                          description: The specific Elasticsearch cluster roles the node should perform
-                          type: array
-                          items:
-                            type: object
-                        nodeCount:
-                          description: Number of nodes to deploy
-                          format: int32
-                          type: integer
-                        nodeSpec:
-                          description: Specification of a specific Elasticsearch node
-                          properties:
-                            image:
-                              description: The image to use for the Elasticsearch node
-                              type: string
-                            resources:
-                              description: The resource requirements for the Elasticsearch node
-                              properties:
-                                limits:
-                                  description: 'Limits describes the maximum amount of compute
-                                    resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                  type: object
-                                requests:
-                                  description: 'Requests describes the minimum amount of compute
-                                    resources required. If Requests is omitted for a container,
-                                    it defaults to Limits if that is explicitly specified, otherwise
-                                    to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                                  type: object
-                        nodeSelector:
-                          description: Define which Nodes the Pods are scheduled on.
-                          type: object
-                        storage:
-                          description: The type of backing storage that should be used for the node
-                          properties:
-                            storageClassName:
-                              description: The name of the storage class to use with creating the node's PVC
-                              type: string
-                            size:
-                              description: The max storage capacity for the node
-                              type: string
-                  nodeSpec:
-                    description: Default specification applied to all Elasticsearch nodes
-                    properties:
-                      image:
-                        description: The image to use for the Elasticsearch nodes
-                        type: string
-                      resources:
-                        description: The resource requirements for the Elasticsearch nodes
-                        properties:
-                          limits:
-                            description: 'Limits describes the maximum amount of compute
-                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                            type: object
-                          requests:
-                            description: 'Requests describes the minimum amount of compute
-                              resources required. If Requests is omitted for a container,
-                              it defaults to Limits if that is explicitly specified, otherwise
-                              to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                            type: object
-      
-  clusterServiceVersions: |-
-    - #! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
-      #! parse-kind: ClusterServiceVersion
-      apiVersion: operators.coreos.com/v1alpha1
-      kind: ClusterServiceVersion
-      metadata:
-        name: clusterlogging.v0.0.1
-        namespace: placeholder
-        annotations:
-          categories: "openshift optional, logging, aggregated, elasticsearch, kibana, fluentd, efk"
-          certified: "false"
-          description: |-
-            The Cluster Logging Operator for OKD provides a means for configuring and managing your aggregated logging stack.
-          containerImage: quay.io/openshift/cluster-logging-operator:latest
-          createdAt: 2018-08-01T08:00:00Z
-          support: AOS Logging
-          alm-examples: |-
+  clusterServiceVersions: |
+    |
+      - apiVersion: operators.coreos.com/v1alpha1
+        kind: ClusterServiceVersion
+        metadata:
+          annotations:
+            alm-examples: |-
               [
                   {
                     "apiVersion": "logging.openshift.io/v1alpha1",
@@ -323,439 +21,779 @@ data:
                           "nodeCount": 3,
                           "redundancyPolicy": "SingleRedundancy",
                           "storage": {
-                            "storageClassName": "gp2"
+                            "storageClassName": "gp2",
                             "size": "200G"
-                           },
-                         },
+                           }
+                         }
                       },
                       "visualization": {
                         "type": "kibana",
                         "kibana": {
                           "replicas": 1
-                        },
+                        }
                       },
                       "curation": {
                         "type": "curator",
                         "curator": {
                           "schedule": "30 3 * * *"
-                        },
+                        }
                       },
                       "collection": {
                         "logs": {
                           "type": "fluentd",
                           "fluentd": {}
-                        },
+                        }
                       }
                     }
                   }
               ]
-      spec:
-        displayName: Cluster Logging
-      
-        description: |
-          The Cluster Logging Operator for OKD provides a means for configuring and managing your aggregated logging stack.
-      
-          Once installed, the Cluster Logging Operator provides the following features:
-          * **Create/Destroy**: Launch and create an aggregated logging stack in the `openshift-logging` namespace.
-          * **Simplified Configuration**: Configure your aggregated logging cluster's structure like components and end points easily.
-      
-        keywords: ['elasticsearch', 'kibana', 'fluentd', 'logging', 'aggregated', 'efk']
-      
-        maintainers:
-        - name: Red Hat
-          email: aos-logging@redhat.com
-      
-        provider:
-          name: Red Hat, Inc
-      
-        links:
-        - name: Elastic
-          url: https://www.elastic.co/
-        - name: Fluentd
-          url: https://www.fluentd.org/
-        - name: Documentation
-          url: https://github.com/openshift/cluster-logging-operator/blob/master/README.md
-        - name: Cluster Logging Operator
-          url: https://github.com/openshift/cluster-logging-operator
-        - name: Elasticsearch Operator
-          url: https://github.com/openshift/elasticsearch-operator
-        installModes:
-        - type: OwnNamespace
-          supported: true
-        - type: SingleNamespace
-          supported: true
-        - type: MultiNamespace
-          supported: false
-        - type: AllNamespaces
-          supported: true
-        install:
-          strategy: deployment
-          spec:
-            permissions:
-            - serviceAccountName: cluster-logging-operator
-              rules:
-              - apiGroups:
-                - logging.openshift.io
-                resources:
-                - "*"
-                verbs:
-                - "*"
-              - apiGroups:
-                - ""
-                resources:
-                - pods
-                - services
-                - endpoints
-                - persistentvolumeclaims
-                - events
-                - configmaps
-                - secrets
-                - serviceaccounts
-                verbs:
-                - "*"
-              - apiGroups:
-                - apps
-                resources:
-                - deployments
-                - daemonsets
-                - replicasets
-                - statefulsets
-                verbs:
-                - "*"
-              - apiGroups:
-                - route.openshift.io
-                resources:
-                - routes
-                - routes/custom-host
-                verbs:
-                - "*"
-              - apiGroups:
-                - batch
-                resources:
-                - cronjobs
-                verbs:
-                - "*"
-              - apiGroups:
-                - rbac.authorization.k8s.io
-                resources:
-                - roles
-                - rolebindings
-                verbs:
-                - "*"
-            - serviceAccountName: elasticsearch-operator
-              rules:
-              - apiGroups:
-                - logging.openshift.io
-                resources:
-                - "*"
-                verbs:
-                - "*"
-              - apiGroups:
-                - ""
-                resources:
-                - pods
-                - pods/exec
-                - services
-                - endpoints
-                - persistentvolumeclaims
-                - events
-                - configmaps
-                - secrets
-                - serviceaccounts
-                verbs:
-                - "*"
-              - apiGroups:
-                - apps
-                resources:
-                - deployments
-                - daemonsets
-                - replicasets
-                - statefulsets
-                verbs:
-                - "*"
-              - apiGroups:
-                - monitoring.coreos.com
-                resources:
-                - prometheusrules
-                - servicemonitors
-                verbs:
-                - "*"
-            clusterPermissions:
-            - serviceAccountName: cluster-logging-operator
-              rules:
-              - apiGroups:
-                - scheduling.k8s.io
-                resources:
-                - priorityclasses
-                verbs:
-                - "*"
-              - apiGroups:
-                - oauth.openshift.io
-                resources:
-                - oauthclients
-                verbs:
-                - "*"
-            deployments:
-            - name: cluster-logging-operator
-              spec:
-                replicas: 1
-                selector:
-                  matchLabels:
-                    name: cluster-logging-operator
-                template:
-                  metadata:
-                    labels:
+            categories: OpenShift Optional, Logging & Tracing
+            certified: 'false'
+            containerImage: quay.io/openshift/cluster-logging-operator:latest
+            createdAt: 2018-08-01 08:00:00
+            description: The Cluster Logging Operator for OKD provides a means for configuring
+              and managing your aggregated logging stack.
+            support: AOS Logging
+          name: clusterlogging.v0.0.1
+          namespace: placeholder
+        spec:
+          customresourcedefinitions:
+            owned:
+            - description: A Cluster Logging instance
+              displayName: Cluster Logging
+              kind: ClusterLogging
+              name: clusterloggings.logging.openshift.io
+              resources:
+              - kind: Deployment
+                version: v1
+              - kind: DaemonSet
+                version: v1
+              - kind: CronJob
+                version: v1beta1
+              - kind: ReplicaSet
+                version: v1
+              - kind: Pod
+                version: v1
+              - kind: ConfigMap
+                version: v1
+              - kind: Secret
+                version: v1
+              - kind: Service
+                version: v1
+              - kind: Route
+                version: v1
+              - kind: Elasticsearch
+                version: v1alpha1
+              specDescriptors:
+              - description: The desired number of Kibana Pods for the Visualization component
+                displayName: Kibana Size
+                path: visualization.kibana.replicas
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podCount
+              - description: Resource requirements for the Kibana pods
+                displayName: Kibana Resource Requirements
+                path: visualization.kibana.resources
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+              - description: The node selector to use for the Kibana Visualization component
+                displayName: Kibana Node Selector
+                path: visualization.kibana.nodeSelector
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:nodeSelector
+              - description: The desired number of Elasticsearch Nodes for the Log Storage
+                  component
+                displayName: Elasticsearch Size
+                path: logStore.elasticsearch.nodeCount
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podCount
+              - description: Resource requirements for each Elasticsearch node
+                displayName: Elasticsearch Resource Requirements
+                path: logStore.elasticsearch.resources
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+              - description: The node selector to use for the Elasticsearch Log Storage
+                  component
+                displayName: Elasticsearch Node Selector
+                path: logStore.elasticsearch.nodeSelector
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:nodeSelector
+              - description: Resource requirements for the Fluentd pods
+                displayName: Fluentd Resource Requirements
+                path: collection.logs.fluentd.resources
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+              - description: The node selector to use for the Fluentd log collection component
+                displayName: Fluentd node selector
+                path: collection.logs.fluentd.nodeSelector
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:nodeSelector
+              - description: Resource requirements for the Rsyslog pods
+                displayName: Rsyslog Resource Requirements
+                path: collection.logs.rsyslog.resources
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+              - description: The node selector to use for the Rsyslog log collection component
+                displayName: Rsyslog node selector
+                path: collection.logs.rsyslog.nodeSelector
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:nodeSelector
+              - description: Resource requirements for the Curator pods
+                displayName: Curator Resource Requirements
+                path: curation.curator.resources
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+              - description: The node selector to use for the Curator component
+                displayName: Curator Node Selector
+                path: curation.curator.nodeSelector
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:nodeSelector
+              - description: The cron schedule for the Curator component
+                displayName: Curation Schedule
+                path: curation.curator.schedule
+              statusDescriptors:
+              - description: The status for each of the Kibana pods for the Visualization
+                  component
+                displayName: Kibana Status
+                path: visualization.kibanaStatus.pods
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              - description: The status for each of the Elasticsearch Client pods for the
+                  Log Storage component
+                displayName: Elasticsearch Client Pod Status
+                path: logStore.elasticsearchStatus.pods.client
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              - description: The status for each of the Elasticsearch Data pods for the
+                  Log Storage component
+                displayName: Elasticsearch Data Pod Status
+                path: logStore.elasticsearchStatus.pods.data
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              - description: The status for each of the Elasticsearch Master pods for the
+                  Log Storage component
+                displayName: Elasticsearch Master Pod Status
+                path: logStore.elasticsearchStatus.pods.master
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              - description: The cluster status for each of the Elasticsearch Clusters for
+                  the Log Storage component
+                displayName: Elasticsearch Cluster Health
+                path: logStore.elasticsearchStatus.clusterHealth
+              - description: The status for each of the Fluentd pods for the Log Collection
+                  component
+                displayName: Fluentd status
+                path: collection.logs.fluentdStatus.pods
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              - description: The status for each of the Rsyslog pods for the Log Collection
+                  component
+                displayName: Rsyslog status
+                path: collection.logs.rsyslogStatus.pods
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              version: v1alpha1
+            - description: An Elasticsearch cluster instance
+              displayName: Elasticsearch
+              kind: Elasticsearch
+              name: elasticsearches.logging.openshift.io
+              resources:
+              - kind: Deployment
+                version: v1
+              - kind: StatefulSet
+                version: v1
+              - kind: ReplicaSet
+                version: v1
+              - kind: Pod
+                version: v1
+              - kind: ConfigMap
+                version: v1
+              - kind: Service
+                version: v1
+              - kind: Route
+                version: v1
+              specDescriptors:
+              - description: The name of the serviceaccount used by the Elasticsearch pods
+                displayName: Service Account
+                path: serviceAccountName
+                x-descriptors:
+                - urn:alm:descriptor:io.kubernetes:ServiceAccount
+              - description: The name of the configmap used by the Elasticsearch pods
+                displayName: Config Map
+                path: configMapName
+                x-descriptors:
+                - urn:alm:descriptor:io.kubernetes:ConfigMap
+              - description: The name of the secret used by the Elasticsearch pods
+                displayName: Secret
+                path: secretName
+                x-descriptors:
+                - urn:alm:descriptor:io.kubernetes:Secret
+              - description: Limits describes the minimum/maximum amount of compute resources
+                  required/allowed
+                displayName: Resource Requirements
+                path: nodeSpec.resources
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+              statusDescriptors:
+              - description: The current health of Elasticsearch Cluster
+                displayName: Elasticsearch Cluster Health
+                path: clusterHealth
+                x-descriptors:
+                - urn:alm:descriptor:io.kubernetes.phase
+              - description: The status for each of the Elasticsearch pods with the Client
+                  role
+                displayName: Elasticsearch Client Status
+                path: pods.client
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              - description: The status for each of the Elasticsearch pods with the Data
+                  role
+                displayName: Elasticsearch Data Status
+                path: pods.data
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              - description: The status for each of the Elasticsearch pods with the Master
+                  role
+                displayName: Elasticsearch Master Status
+                path: pods.master
+                x-descriptors:
+                - urn:alm:descriptor:com.tectonic.ui:podStatuses
+              version: v1alpha1
+          description: |
+            The Cluster Logging Operator for OKD provides a means for configuring and managing your aggregated logging stack.
+
+            Once installed, the Cluster Logging Operator provides the following features:
+            * **Create/Destroy**: Launch and create an aggregated logging stack in the `openshift-logging` namespace.
+            * **Simplified Configuration**: Configure your aggregated logging cluster's structure like components and end points easily.
+          displayName: Cluster Logging
+          install:
+            spec:
+              clusterPermissions:
+              - rules:
+                - apiGroups:
+                  - scheduling.k8s.io
+                  resources:
+                  - priorityclasses
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - oauth.openshift.io
+                  resources:
+                  - oauthclients
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - rbac.authorization.k8s.io
+                  resources:
+                  - clusterrolebindings
+                  verbs:
+                  - '*'
+                serviceAccountName: cluster-logging-operator
+              deployments:
+              - name: cluster-logging-operator
+                spec:
+                  replicas: 1
+                  selector:
+                    matchLabels:
                       name: cluster-logging-operator
-                  spec:
-                    serviceAccountName: cluster-logging-operator
-                    containers:
-                    - name: cluster-logging-operator
-                      image: quay.io/openshift/origin-cluster-logging-operator:latest
-                      imagePullPolicy: IfNotPresent
-                      command:
-                      - cluster-logging-operator
-                      env:
+                  template:
+                    metadata:
+                      labels:
+                        name: cluster-logging-operator
+                    spec:
+                      containers:
+                      - command:
+                        - cluster-logging-operator
+                        env:
                         - name: WATCH_NAMESPACE
                           valueFrom:
                             fieldRef:
                               fieldPath: metadata.annotations['olm.targetNamespaces']
                         - name: OPERATOR_NAME
-                          value: "cluster-logging-operator"
+                          value: cluster-logging-operator
                         - name: ELASTICSEARCH_IMAGE
-                          value: "quay.io/openshift/origin-logging-elasticsearch5:latest"
+                          value: quay.io/openshift/origin-logging-elasticsearch5:latest
                         - name: FLUENTD_IMAGE
-                          value: "quay.io/openshift/origin-logging-fluentd:latest"
+                          value: quay.io/openshift/origin-logging-fluentd:latest
                         - name: KIBANA_IMAGE
-                          value: "quay.io/openshift/origin-logging-kibana5:latest"
+                          value: quay.io/openshift/origin-logging-kibana5:latest
                         - name: CURATOR_IMAGE
-                          value: "quay.io/openshift/origin-logging-curator5:latest"
+                          value: quay.io/openshift/origin-logging-curator5:latest
                         - name: OAUTH_PROXY_IMAGE
-                          value: "quay.io/openshift/origin-oauth-proxy:latest"
+                          value: quay.io/openshift/origin-oauth-proxy:latest
                         - name: RSYSLOG_IMAGE
-                          value: "docker.io/viaq/rsyslog:latest"
-            - name: elasticsearch-operator
-              spec:
-                replicas: 1
-                selector:
-                  matchLabels:
-                    name: elasticsearch-operator
-                template:
-                  metadata:
-                    labels:
+                          value: docker.io/viaq/rsyslog:latest
+                        image: quay.io/openshift/origin-cluster-logging-operator:latest
+                        imagePullPolicy: IfNotPresent
+                        name: cluster-logging-operator
+                      serviceAccountName: cluster-logging-operator
+              - name: elasticsearch-operator
+                spec:
+                  replicas: 1
+                  selector:
+                    matchLabels:
                       name: elasticsearch-operator
-                  spec:
-                    serviceAccountName: elasticsearch-operator
-                    containers:
-                      - name: elasticsearch-operator
+                  template:
+                    metadata:
+                      labels:
+                        name: elasticsearch-operator
+                    spec:
+                      containers:
+                      - command:
+                        - elasticsearch-operator
+                        env:
+                        - name: WATCH_NAMESPACE
+                          valueFrom:
+                            fieldRef:
+                              fieldPath: metadata.annotations['olm.targetNamespaces']
+                        - name: OPERATOR_NAME
+                          value: elasticsearch-operator
                         image: quay.io/openshift/origin-elasticsearch-operator:latest
                         imagePullPolicy: IfNotPresent
-                        command:
-                        - elasticsearch-operator
+                        name: elasticsearch-operator
                         ports:
                         - containerPort: 60000
                           name: metrics
-                        env:
-                          - name: WATCH_NAMESPACE
-                            valueFrom:
-                              fieldRef:
-                                fieldPath: metadata.annotations['olm.targetNamespaces']
-                          - name: OPERATOR_NAME
-                            value: "elasticsearch-operator"
-        version: 0.0.1
-        customresourcedefinitions:
-          owned:
-          - name: clusterloggings.logging.openshift.io
-            version: v1alpha1
+                      serviceAccountName: elasticsearch-operator
+              permissions:
+              - rules:
+                - apiGroups:
+                  - logging.openshift.io
+                  resources:
+                  - '*'
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - ''
+                  resources:
+                  - pods
+                  - services
+                  - endpoints
+                  - persistentvolumeclaims
+                  - events
+                  - configmaps
+                  - secrets
+                  - serviceaccounts
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - apps
+                  resources:
+                  - deployments
+                  - daemonsets
+                  - replicasets
+                  - statefulsets
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - route.openshift.io
+                  resources:
+                  - routes
+                  - routes/custom-host
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - batch
+                  resources:
+                  - cronjobs
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - rbac.authorization.k8s.io
+                  resources:
+                  - roles
+                  - rolebindings
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - security.openshift.io
+                  resourceNames:
+                  - privileged
+                  resources:
+                  - securitycontextconstraints
+                  verbs:
+                  - use
+                serviceAccountName: cluster-logging-operator
+              - rules:
+                - apiGroups:
+                  - logging.openshift.io
+                  resources:
+                  - '*'
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - ''
+                  resources:
+                  - pods
+                  - pods/exec
+                  - services
+                  - endpoints
+                  - persistentvolumeclaims
+                  - events
+                  - configmaps
+                  - secrets
+                  - serviceaccounts
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - apps
+                  resources:
+                  - deployments
+                  - daemonsets
+                  - replicasets
+                  - statefulsets
+                  verbs:
+                  - '*'
+                - apiGroups:
+                  - monitoring.coreos.com
+                  resources:
+                  - prometheusrules
+                  - servicemonitors
+                  verbs:
+                  - '*'
+                serviceAccountName: elasticsearch-operator
+            strategy: deployment
+          installModes:
+          - supported: true
+            type: OwnNamespace
+          - supported: true
+            type: SingleNamespace
+          - supported: false
+            type: MultiNamespace
+          - supported: true
+            type: AllNamespaces
+          keywords:
+          - elasticsearch
+          - kibana
+          - fluentd
+          - logging
+          - aggregated
+          - efk
+          links:
+          - name: Elastic
+            url: https://www.elastic.co/
+          - name: Fluentd
+            url: https://www.fluentd.org/
+          - name: Documentation
+            url: https://github.com/openshift/cluster-logging-operator/blob/master/README.md
+          - name: Cluster Logging Operator
+            url: https://github.com/openshift/cluster-logging-operator
+          - name: Elasticsearch Operator
+            url: https://github.com/openshift/elasticsearch-operator
+          maintainers:
+          - email: aos-logging@redhat.com
+            name: Red Hat
+          provider:
+            name: Red Hat, Inc
+          version: 0.0.1
+  customResourceDefinitions: |
+    |
+      - apiVersion: apiextensions.k8s.io/v1beta1
+        kind: CustomResourceDefinition
+        metadata:
+          name: clusterloggings.logging.openshift.io
+        spec:
+          group: logging.openshift.io
+          names:
             kind: ClusterLogging
-            displayName: Cluster Logging
-            description: A Cluster Logging instance
-            resources:
-            - kind: Deployment
-              version: v1
-            - kind: DaemonSet
-              version: v1
-            - kind: CronJob
-              version: v1beta1
-            - kind: ReplicaSet
-              version: v1
-            - kind: Pod
-              version: v1
-            - kind: ConfigMap
-              version: v1
-            - kind: Secret
-              version: v1
-            - kind: Service
-              version: v1
-            - kind: Route
-              version: v1
-            - kind: Elasticsearch
-              version: v1alpha1
-            specDescriptors:
-            - description: The desired number of Kibana Pods for the Visualization component
-              displayName: Kibana Size
-              path: visualization.kibana.replicas
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
-            - description: Resource requirements for the Kibana pods
-              displayName: Kibana Resource Requirements
-              path: visualization.kibana.resources
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-            - description: The node selector to use for the Kibana Visualization component
-              displayName: Kibana Node Selector
-              path: visualization.kibana.nodeSelector
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:nodeSelector'
-            - description: The desired number of Elasticsearch Nodes for the Log Storage component
-              displayName: Elasticsearch Size
-              path: logStore.elasticsearch.nodeCount
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
-            - description: Resource requirements for each Elasticsearch node
-              displayName: Elasticsearch Resource Requirements
-              path: logStore.elasticsearch.resources
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-            - description: The node selector to use for the Elasticsearch Log Storage component
-              displayName: Elasticsearch Node Selector
-              path: logStore.elasticsearch.nodeSelector
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:nodeSelector'
-            - description: Resource requirements for the Fluentd pods
-              displayName: Fluentd Resource Requirements
-              path: collection.logs.fluentd.resources
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-            - description: The node selector to use for the Fluentd log collection component
-              displayName: Fluentd node selector
-              path: collection.logs.fluentd.nodeSelector
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:nodeSelector'
-            - description: Resource requirements for the Rsyslog pods
-              displayName: Rsyslog Resource Requirements
-              path: collection.logs.rsyslog.resources
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-            - description: The node selector to use for the Rsyslog log collection component
-              displayName: Rsyslog node selector
-              path: collection.logs.rsyslog.nodeSelector
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:nodeSelector'
-            - description: Resource requirements for the Curator pods
-              displayName: Curator Resource Requirements
-              path: curation.curator.resources
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-            - description: The node selector to use for the Curator component
-              displayName: Curator Node Selector
-              path: curation.curator.nodeSelector
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:nodeSelector'
-            - description: The cron schedule for the Curator component
-              displayName: Curation Schedule
-              path: curation.curator.schedule
-            statusDescriptors:
-            - description: The status for each of the Kibana pods for the Visualization component
-              displayName: Kibana Status
-              path: visualization.kibanaStatus.pods
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-            - description: The status for each of the Elasticsearch Client pods for the Log Storage component
-              displayName: Elasticsearch Client Pod Status
-              path: logStore.elasticsearchStatus.pods.client
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-            - description: The status for each of the Elasticsearch Data pods for the Log Storage component
-              displayName: Elasticsearch Data Pod Status
-              path: logStore.elasticsearchStatus.pods.data
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-            - description: The status for each of the Elasticsearch Master pods for the Log Storage component
-              displayName: Elasticsearch Master Pod Status
-              path: logStore.elasticsearchStatus.pods.master
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-            - description: The cluster status for each of the Elasticsearch Clusters for the Log Storage component
-              displayName: Elasticsearch Cluster Health
-              path: logStore.elasticsearchStatus.clusterHealth
-            - description: The status for each of the Fluentd pods for the Log Collection component
-              displayName: Fluentd status
-              path: collection.logs.fluentdStatus.pods
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-            - description: The status for each of the Rsyslog pods for the Log Collection component
-              displayName: Rsyslog status
-              path: collection.logs.rsyslogStatus.pods
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-          - name: elasticsearches.logging.openshift.io
-            version: v1alpha1
+            listKind: ClusterLoggingList
+            plural: clusterloggings
+            singular: clusterlogging
+          scope: Namespaced
+          validation:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: Specification of the desired behavior of the Logging cluster.
+                  properties:
+                    collection:
+                      description: Specification of the Collection component for the cluster
+                      properties:
+                        logs:
+                          description: Specification of Log Collection for the cluster
+                          properties:
+                            fluentd:
+                              description: Specification of the Fluentd Log Collection component
+                              properties:
+                                nodeSelector:
+                                  description: Define which Nodes the Pods are scheduled
+                                    on.
+                                  type: object
+                                resources:
+                                  description: The resource requirements for Fluentd
+                                  properties:
+                                    limits:
+                                      description: 'Limits describes the maximum amount
+                                        of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                      type: object
+                                    requests:
+                                      description: 'Requests describes the minimum amount
+                                        of compute resources required. If Requests is omitted
+                                        for a container, it defaults to Limits if that is
+                                        explicitly specified, otherwise to an implementation-defined
+                                        value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                      type: object
+                            type:
+                              description: The type of Log Collection to configure
+                              type: string
+                          required:
+                          - type
+                    curation:
+                      description: Specification of the Curation component for the cluster
+                      properties:
+                        curator:
+                          description: The specification of curation to configure
+                          properties:
+                            nodeSelector:
+                              description: Define which Nodes the Pods are scheduled on.
+                              type: object
+                            resources:
+                              description: The resource requirements for Curator
+                              properties:
+                                limits:
+                                  description: 'Limits describes the maximum amount of compute
+                                    resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  type: object
+                                requests:
+                                  description: 'Requests describes the minimum amount of
+                                    compute resources required. If Requests is omitted for
+                                    a container, it defaults to Limits if that is explicitly
+                                    specified, otherwise to an implementation-defined value.
+                                    More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  type: object
+                            schedule:
+                              description: The cron schedule that the Curator job is run.
+                                Defaults to "30 3 * * *"
+                              type: string
+                          required:
+                          - schedule
+                        type:
+                          description: The kind of curation to configure
+                          type: string
+                      required:
+                      - type
+                    logStore:
+                      description: Specification of the Log Storage component for the cluster
+                      properties:
+                        elasticsearch:
+                          description: Specification of the Elasticsearch Log Store component
+                          properties:
+                            nodeCount:
+                              description: Number of nodes to deploy for Elasticsearch
+                              format: int32
+                              type: integer
+                            nodeSelector:
+                              description: Define which Nodes the Pods are scheduled on.
+                              type: object
+                            redundancyPolicy:
+                              description: The policy towards data redundancy to specify
+                                the number of redundant primary shards
+                              enum:
+                              - FullRedundancy
+                              - MultipleRedundancy
+                              - SingleRedundancy
+                              - ZeroRedundancy
+                              type: string
+                            resources:
+                              description: The resource requirements for Kibana
+                              properties:
+                                limits:
+                                  description: 'Limits describes the maximum amount of compute
+                                    resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  type: object
+                                requests:
+                                  description: 'Requests describes the minimum amount of
+                                    compute resources required. If Requests is omitted for
+                                    a container, it defaults to Limits if that is explicitly
+                                    specified, otherwise to an implementation-defined value.
+                                    More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  type: object
+                            storage:
+                              description: The storage specification for Elasticsearch data
+                                nodes
+                              properties:
+                                size:
+                                  description: The capacity of storage to provision.
+                                  type: string
+                                storageClassName:
+                                  description: 'The class of storage to provision. More
+                                    info: https://kubernetes.io/docs/concepts/storage/storage-classes/'
+                                  type: string
+                          required:
+                          - nodeCount
+                        type:
+                          description: The type of Log Storage to configure
+                          type: string
+                      required:
+                      - type
+                    managementState:
+                      description: Indicator if the resource is 'Managed' or 'Unmanaged'
+                        by the operator
+                      enum:
+                      - Managed
+                      - Unmanaged
+                      type: string
+                    visualization:
+                      description: Specification of the Visualization component for the
+                        cluster
+                      properties:
+                        kibana:
+                          description: Specification of the Kibana Visualization component
+                          properties:
+                            nodeSelector:
+                              description: Define which Nodes the Pods are scheduled on.
+                              type: object
+                            proxySpec:
+                              description: Specification of the Kibana Proxy component
+                              properties:
+                                resources:
+                                  description: The resource requirements for Kibana
+                                  properties:
+                                    limits:
+                                      description: 'Limits describes the maximum amount
+                                        of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                      type: object
+                                    requests:
+                                      description: 'Requests describes the minimum amount
+                                        of compute resources required. If Requests is omitted
+                                        for a container, it defaults to Limits if that is
+                                        explicitly specified, otherwise to an implementation-defined
+                                        value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                      type: object
+                            replicas:
+                              description: Number of instances to deploy for a Kibana deployment
+                              format: int32
+                              type: integer
+                            resources:
+                              description: The resource requirements for Kibana
+                              properties:
+                                limits:
+                                  description: 'Limits describes the maximum amount of compute
+                                    resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  type: object
+                                requests:
+                                  description: 'Requests describes the minimum amount of
+                                    compute resources required. If Requests is omitted for
+                                    a container, it defaults to Limits if that is explicitly
+                                    specified, otherwise to an implementation-defined value.
+                                    More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  type: object
+                          required:
+                          - replicas
+                        type:
+                          description: The type of Visualization to configure
+                          type: string
+                      required:
+                      - type
+          version: v1alpha1
+      - apiVersion: apiextensions.k8s.io/v1beta1
+        kind: CustomResourceDefinition
+        metadata:
+          name: elasticsearches.logging.openshift.io
+        spec:
+          group: logging.openshift.io
+          names:
             kind: Elasticsearch
-            displayName: Elasticsearch
-            description: An Elasticsearch cluster instance
-            resources:
-            - kind: Deployment
-              version: v1
-            - kind: StatefulSet
-              version: v1
-            - kind: ReplicaSet
-              version: v1
-            - kind: Pod
-              version: v1
-            - kind: ConfigMap
-              version: v1
-            - kind: Service
-              version: v1
-            - kind: Route
-              version: v1
-            specDescriptors:
-            - description: The name of the serviceaccount used by the Elasticsearch pods
-              displayName: Service Account
-              path: serviceAccountName
-              x-descriptors:
-                - 'urn:alm:descriptor:io.kubernetes:ServiceAccount'
-            - description: The name of the configmap used by the Elasticsearch pods
-              displayName: Config Map
-              path: configMapName
-              x-descriptors:
-                - 'urn:alm:descriptor:io.kubernetes:ConfigMap'
-            - description: The name of the secret used by the Elasticsearch pods
-              displayName: Secret
-              path: secretName
-              x-descriptors:
-                - 'urn:alm:descriptor:io.kubernetes:Secret'
-            - description: Limits describes the minimum/maximum amount of compute resources required/allowed
-              displayName: Resource Requirements
-              path: nodeSpec.resources
-              x-descriptors:
-                - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
-            statusDescriptors:
-            - description: The current health of Elasticsearch Cluster
-              displayName: Elasticsearch Cluster Health
-              path: clusterHealth
-              x-descriptors:
-                - 'urn:alm:descriptor:io.kubernetes.phase'
-            - description: The status for each of the Elasticsearch pods with the Client role
-              displayName: Elasticsearch Client Status
-              path: pods.client
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-            - description: The status for each of the Elasticsearch pods with the Data role
-              displayName: Elasticsearch Data Status
-              path: pods.data
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-            - description: The status for each of the Elasticsearch pods with the Master role
-              displayName: Elasticsearch Master Status
-              path: pods.master
-              x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
-      
-  packages: |-
-    - #! package-manifest: ./deploy/chart/catalog_resources/rh-operators/clusterlogging.v0.0.1.clusterserviceversion.yaml
-      packageName: cluster-logging
-      channels:
-      - name: preview
-        currentCSV: clusterlogging.v0.0.1
-      
-
+            listKind: ElasticsearchList
+            plural: elasticsearches
+            singular: elasticsearch
+          scope: Namespaced
+          validation:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: Specification of the desired behavior of the Elasticsearch
+                    cluster
+                  properties:
+                    managementState:
+                      description: Indicator if the resource is 'Managed' or 'Unmanaged'
+                        by the operator
+                      enum:
+                      - Managed
+                      - Unmanaged
+                      type: string
+                    nodeSpec:
+                      description: Default specification applied to all Elasticsearch nodes
+                      properties:
+                        image:
+                          description: The image to use for the Elasticsearch nodes
+                          type: string
+                        resources:
+                          description: The resource requirements for the Elasticsearch nodes
+                          properties:
+                            limits:
+                              description: 'Limits describes the maximum amount of compute
+                                resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              type: object
+                            requests:
+                              description: 'Requests describes the minimum amount of compute
+                                resources required. If Requests is omitted for a container,
+                                it defaults to Limits if that is explicitly specified, otherwise
+                                to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              type: object
+                    nodes:
+                      description: Specification of the different Elasticsearch nodes
+                      items:
+                        properties:
+                          nodeCount:
+                            description: Number of nodes to deploy
+                            format: int32
+                            type: integer
+                          nodeSelector:
+                            description: Define which Nodes the Pods are scheduled on.
+                            type: object
+                          nodeSpec:
+                            description: Specification of a specific Elasticsearch node
+                            properties:
+                              image:
+                                description: The image to use for the Elasticsearch node
+                                type: string
+                              resources:
+                                description: The resource requirements for the Elasticsearch
+                                  node
+                                properties:
+                                  limits:
+                                    description: 'Limits describes the maximum amount of
+                                      compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    type: object
+                                  requests:
+                                    description: 'Requests describes the minimum amount
+                                      of compute resources required. If Requests is omitted
+                                      for a container, it defaults to Limits if that is
+                                      explicitly specified, otherwise to an implementation-defined
+                                      value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    type: object
+                          roles:
+                            description: The specific Elasticsearch cluster roles the node
+                              should perform
+                            items:
+                              type: string
+                            type: array
+                          storage:
+                            description: The type of backing storage that should be used
+                              for the node
+                            properties:
+                              size:
+                                description: The max storage capacity for the node
+                                type: string
+                              storageClassName:
+                                description: The name of the storage class to use with creating
+                                  the node's PVC
+                                type: string
+                        type: object
+                      type: array
+                    redundancyPolicy:
+                      description: The policy towards data redundancy to specify the number
+                        of redundant primary shards
+                      enum:
+                      - FullRedundancy
+                      - MultipleRedundancy
+                      - SingleRedundancy
+                      - ZeroRedundancy
+                      type: string
+          version: v1alpha1
+  packages: |
+    |
+      - channels:
+        - currentCSV: clusterlogging.v0.0.1
+          name: preview
+        packageName: cluster-logging
