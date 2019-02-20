@@ -33,7 +33,7 @@ Please note that we only support CRDs, CSVs and Packages to be present in your b
 
 For OpenShift to become aware of the Quay application repository, an
 [`OperatorSource` CR](https://github.com/operator-framework/operator-marketplace#description)
-need to be added to the cluster. An example `OperatorSource` is provided [here](https://github.com/operator-framework/operator-marketplace/blob/master/deploy/examples/operatorsource.cr.yaml).
+need to be added to the cluster. An example `OperatorSource` is provided [here](https://github.com/operator-framework/operator-marketplace/blob/master/deploy/examples/community.operatorsource.cr.yaml).
 If your Quay repository is private, please follow [these](https://github.com/operator-framework/operator-marketplace/blob/master/docs/how-to-authenticate-private-repositories.md) instructions.
 
 ### Testing your operator
