@@ -1,0 +1,249 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [{
+       "apiVersion": "dynatrace.com/v1alpha1",
+       "kind": "OneAgent",
+       "metadata": {
+          "name": "oneagent",
+          "namespace": "dynatrace"
+       },
+       "spec": {
+          "apiUrl": "https://ENVIRONMENTID.live.dynatrace.com/api",
+          "skipCertCheck": false,
+          "tokens": "",
+          "nodeSelector": {},
+          "tolerations": [
+             {
+                "effect": "NoSchedule",
+                "key": "node-role.kubernetes.io/master",
+                "operator": "Exists"
+             }
+          ],
+          "image": "",
+          "args": [
+             "APP_LOG_CONTENT_ACCESS=1"
+          ],
+          "env": []
+       }
+      }]
+    categories: "Monitoring,OpenShift Optional"
+    certified: "false"
+    containerImage: quay.io/dynatrace/dynatrace-oneagent-operator:v0.2.0
+    createdAt: 2019-02-06T12:59:59Z
+    description: Install full-stack monitoring of Kubernetes clusters with the Dynatrace OneAgent.
+    support: Dynatrace
+  name: dynatrace-monitoring.v0.2.0
+  namespace: "placeholder"
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - description: Dyantrace OneAgent monitoring agent
+        displayName: Dynatrace OneAgent
+        kind: OneAgent
+        name: oneagents.dynatrace.com
+        resources:
+          - kind: DaemonSet
+            name: ""
+            version: v1beta2
+          - kind: Pod
+            name: ""
+            version: v1
+        specDescriptors:
+          - description: Credentials for the OneAgent to connect back to Dynatrace.
+            displayName: API and Pass Tokens
+            path: tokens
+            x-descriptors:
+              - 'urn:alm:descriptor:io.kubernetes:core:v1:Secret'
+          - description: 'Location of the Dynatrace API to connect to, including your specific environment ID'
+            displayName: API URL
+            path: apiUrl
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: Specifies if certificate checks should be skipped.
+            displayName: Skip Certificate Check
+            path: skipCertCheck
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanCheck'
+          - description: Node selector for where pods should be scheduled.
+            displayName: Node Selector
+            path: nodeSelector
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Node'
+          - description: The Dynatrace installer container image.
+            displayName: Image
+            path: image
+          - description: Define resources requests and limits for single Pods
+            displayName: Resource Requirements
+            path: resources
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+        statusDescriptors:
+          - description: Dynatrace version being used.
+            displayName: Version
+            path: version
+          - description: The timestamp when the instance was last updated.
+            displayName: Last Updated
+            path: updatedTimestamp
+            x-descriptors:
+              - 'urn:alm:descriptor:timestamp'
+        version: v1alpha1
+  description: |
+    Install full-stack monitoring of [Kubernetes clusters](https://www.dynatrace.com/technologies/kubernetes-monitoring/) with the Dynatrace OneAgent on your cluster. OneAgent connects back to Dynatrace's hosted monitoring tools.
+
+    ### Before Your Start
+
+    Add a Secret within the Project that contians your API and PaaS tokens.  Create tokens of type *Dynatrace API* (`API_TOKEN`) and *Platform as a Service* (`PAAS_TOKEN`) and use its values in the following commands respectively.  For assistance please refere to [Create user-generated access
+    tokens](https://www.dynatrace.com/support/help/get-started/introduction/why-do-i-need-an-access-token-and-an-environment-id/#create-user-generated-access-tokens).
+
+        $ kubectl -n dynatrace create secret generic oneagent --from-literal="apiToken=API_TOKEN" --from-literal="paasToken=PAAS_TOKEN"
+
+    You may update this Secret at any time to rotate the tokens.
+
+    ### Required Parameters
+
+    * `apiUrl` - provide the environment ID used in conjuction with this monitoring agent in the API adddress, eg `https://<ENVIRONMENTID>.live.dynatrace.com/api`
+
+    ### Advanced Options
+
+    **Image Override** - use a copy of the OneAgent container image from a registry other than Quay`s or Red Hat's
+
+    **NodeSelectors** - select a subset of your cluster's Nodes to run OneAgent on, based on labels
+
+    **Tolerations** - add specific tolerations to the agent so that it can monitor all of the Nodes in your cluster; we include the default toleration so that dynatrace also monitors the master nodes.
+
+    **Disable Certificate Checking** - disable any certificate validation that may interact poorly with proxies with in your cluster
+
+    For a complete list of supported parameters please consult the [Operator Deploy Guide](https://www.dynatrace.com/support/help/shortlink/openshift-deploy#parameters).
+  displayName: Dynatrace OneAgent
+  install:
+    spec:
+      deployments:
+        - name: dynatrace-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: dynatrace-oneagent-operator
+            template:
+              metadata:
+                labels:
+                  dynatrace: operator
+                  name: dynatrace-oneagent-operator
+                  operator: oneagent
+              spec:
+                containers:
+                  - command:
+                      - dynatrace-oneagent-operator
+                    env:
+                      - name: MY_POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                    image: quay.io/dynatrace/dynatrace-oneagent-operator:v0.2.0
+                    imagePullPolicy: Always
+                    name: dynatrace-oneagent-operator
+                    resources:
+                      limits:
+                        cpu: 200m
+                        memory: 128Mi
+                      requests:
+                        cpu: 100m
+                        memory: 64Mi
+                nodeSelector:
+                  beta.kubernetes.io/os: linux
+                serviceAccountName: dynatrace-oneagent-operator
+      permissions:
+        - rules:
+            - apiGroups:
+                - dynatrace.com
+              resources:
+                - oneagents
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+            - apiGroups:
+                - apps
+              resources:
+                - daemonsets
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+                - pods
+              verbs:
+                - get
+                - list
+                - watch
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - dynatrace.com
+              resources:
+                - oneagents/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - extensions
+              resources:
+                - podsecuritypolicies
+              resourceNames:
+                - dynatrace-oneagent-operator
+              verbs:
+                - use
+          serviceAccountName: dynatrace-oneagent-operator
+        - rules:
+            - apiGroups:
+                - extensions
+              resources:
+                - podsecuritypolicies
+              resourceNames:
+                - dynatrace-oneagent
+              verbs:
+                - use
+          serviceAccountName: dynatrace-oneagent
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+  keywords:
+    - monitoring
+    - dynatrace
+    - oneagent
+  links:
+    - name: Operator Deploy Guide
+      url: https://www.dynatrace.com/support/help/shortlink/kubernetes-deploy
+    - name: Kubernetes Monitoring Info
+      url: https://www.dynatrace.com/technologies/kubernetes-monitoring/
+  maintainers:
+    - email: support@dynatrace.com
+      name: Dynatrace LLC
+  maturity: alpha
+  provider:
+    name: Dynatrace LLC
+  version: 0.2.0
