@@ -5,6 +5,7 @@ An Operator's CSV must contain the following annotations for it to be displayed 
 ```yaml
 metadata:
   annotations:
+    capabilities: The operator's maturity level. This field can be omitted until a process to get this values is defined at a later date.
     categories: A list of comma separated list of categories from the values below.
     certified: The operator's certification. This field should be set to false until a process to get this value is defined at a later date.
     description: |-
@@ -21,7 +22,6 @@ spec:
   version: The operator version.
   provider:
     name: The provider of the operator. This value should be a name, not an email.
-  maturity: The operator's maturity level. This field can be omitted until a process to get this value is defined at a later date.
 ```
 
 ## Categories
@@ -52,6 +52,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
+    capabilities: Seamless Upgrades
     categories: "OpenShift Optional"
     certified: "false"
     containerImage: registry.svc.ci.openshift.org/openshift/origin-v4.0:descheduler-operator
