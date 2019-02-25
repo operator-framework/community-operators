@@ -1,0 +1,194 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: aws-service-operator.v0.0.1
+  namespace: placeholder
+  annotations:
+    categories: "Cloud Provider"
+    description: The AWS Service Operator allows you to manage AWS resources using Kubernetes Custom Resource Definitions.
+    containerImage: awsserviceoperator/aws-service-operator:v0.0.1-alpha3
+    createdAt: 2019-02-09T12:00:00Z
+    support: AWS Labs
+spec:
+  displayName: AWS Service Operator
+  description: >
+    The AWS Service Operator allows you to manage AWS resources using Kubernetes
+    Custom Resource Definitions. Using the AWS Service Operator enables a gitops
+    workflow to drive your infrastructure to the desired state leveraging
+    Kubernetes Custom Resource Definitions (CRD), the Kubernetes internal
+    control loop, and AWS CloudFormation orchestration.
+
+
+    In order to run the Operator the node will need AWS IAM privileges. This can
+    be done through a service like [kube2iam](https://github.com/jtblin/kube2iam). If you are using an Amazon Elastic
+    Container Service for Kubernetes (EKS) cluster, you most likely provisioned
+    this with CloudFormation.
+
+
+    The command shown below will use the CloudFormation stacks to try to update
+    the proper Instance Policy with the correct permissions. Make sure to
+    replace `${STACK_NAME}` with the nodegroup stack name from the
+    CloudFormation console. A more limited IAM role may be substituted if desired.
+
+
+        aws iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess --role-name $(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --output json | jq -r ".Stacks[0].Outputs[0].OutputValue" | sed -e 's/.*\///g')
+
+
+    Before running this operator, you will need to create a Secret that contains
+    your `cluster-name`, `region`, and `account-id`. You can do so based off the
+    template below:
+
+
+        apiVersion:v1
+        kind: Secret metadata:
+          name: aws-service-operator-config
+          namespace: <NAMESPACE>
+        type: Opaque
+        stringData:
+          CLUSTER_NAME: "<CLUSTER_NAME>"
+          REGION: "<REGION>"
+          ACCOUNT_ID: "<000000000000>"
+  keywords: ['AWS']
+  version: 0.0.1
+  maintainers:
+  - name: AWS Labs
+    email: heichris@amazon.com
+  provider:
+    name: Amazon Web Services, Inc.
+  labels:
+    name: aws-service-operator
+  selector:
+    matchLabels:
+      name: aws-service-operator
+  links:
+  - name: AWS Operator Source Code
+    url: https://github.com/awslabs/aws-service-operator
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: aws-service-operator
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          - pods
+          - configmaps
+          - services
+          - events
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - update
+          - patch
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+        - apiGroups:
+          - service-operator.aws
+          resources:
+          - "*"
+          verbs:
+          - "*"
+      deployments:
+      - name: aws-service-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: aws-service-operator
+          template:
+            metadata:
+              annotations:
+                iam.amazonaws.com/role: aws-service-operator
+              labels:
+                app: aws-service-operator
+            spec:
+              serviceAccountName: aws-service-operator
+              containers:
+              - name: aws-service-operator
+                image: awsserviceoperator/aws-service-operator:v0.0.1-alpha4
+                imagePullPolicy: Always
+                env:
+                - name: CLUSTER_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-service-operator-config
+                      key: CLUSTER_NAME
+                - name: REGION
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-service-operator-config
+                      key: REGION
+                - name: ACCOUNT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-service-operator-config
+                      key: ACCOUNT_ID
+                args:
+                  - server
+                  - --cluster-name=$(CLUSTER_NAME)
+                  - --region=$(REGION)
+                  - --account-id=$(ACCOUNT_ID)
+  customresourcedefinitions:
+    owned:
+    - name: cloudformationtemplates.service-operator.aws
+      version: v1alpha1
+      kind: CloudFormationTemplate
+      displayName: CloudFormationTemplate
+      description: Represents a resource for managing AWS CloudFormation Templates.
+    - name: dynamodbs.service-operator.aws
+      version: v1alpha1
+      kind: DynamoDB
+      displayName: DynamoDB
+      description: Represents a resource for managing an Amazon DynamoDB resource.
+    - name: ecrrepositories.service-operator.aws
+      version: v1alpha1
+      kind: ECRRepository
+      displayName: ECRRepository
+      description: Represents a resource for managing an Amazon ECR Repository.
+    - name: elasticaches.service-operator.aws
+      version: v1alpha1
+      kind: ElastiCache
+      displayName: ElastiCache
+      description: Represents a resource for managing an Amazon ElastiCache.
+    - name: s3buckets.service-operator.aws
+      version: v1alpha1
+      kind: S3Bucket
+      displayName: S3Bucket
+      description: Represents a resource for managing an Amazon S3 Bucket.
+    - name: snssubscriptions.service-operator.aws
+      version: v1alpha1
+      kind: SNSSubscription
+      displayName: SNSSubscription
+      description: Represents a resource for managing an Amazon Simple Notification Service Subscription.
+    - name: snstopics.service-operator.aws
+      version: v1alpha1
+      kind: SNSTopic
+      displayName: SNSTopic
+      description: Represents a resource for managing an Amazon Simple Notification Service (SNS).
+    - name: sqsqueues.service-operator.aws
+      version: v1alpha1
+      kind: SQSQueue
+      displayName: SQSQueue
+      description: Represents a resource for managing an Amazon Simple Queue Service (SQS).
