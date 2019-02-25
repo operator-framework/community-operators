@@ -12,8 +12,7 @@ You need to have an account with `quay.io`. If you don't have one you can sign u
 ### Create your Quay app-registry repository
 
 OperatorHub uses Quay's application repositories for storing the operator bundle. Follow [these instructions](https://docs.quay.io/guides/create-repo.html)
-to create your own application repository. Please note that the name of the repository should match the name of the
-operator in it's package. Example: for the following package, the Quay repository name will be `myoperator`:
+to create your own application repository. Please note that the name of the repository should match the `packageName` field in the operator's package. Example: for the following package, the Quay repository name will be `myoperator`:
 ```
 packageName: myoperator
 channels:
@@ -23,7 +22,7 @@ channels:
 
 ### Pushing your operator bundle to Quay
 
-Collect all your operator bundles files into a directory. You can then use the
+Collect all CSV, CRD, and Package yamls into a directory. You can then use the
 [operator-courier](https://github.com/operator-framework/operator-courier/#usage)
 tool to verify and push your operator bundle to the Quay application repository you created.
 
