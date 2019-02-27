@@ -1,4 +1,4 @@
-# Pulling OperatorBundles from quay.io
+# Pulling from quay.io
 
 ##Prerequisites
 The following prequistis are required run to the quay.io scripts:
@@ -6,7 +6,7 @@ The following prequistis are required run to the quay.io scripts:
 * [jq](https://stedolan.github.io/jq/) must be installed
 * A quay.io account
 
-To pull your operator bundle from quay.io, simply run the following command:
+To pull your operator from quay.io, simply run the following command:
 ```bash
 $ scripts/pull-from-quay $NAMESPACE $REPOSITORY
 ```
