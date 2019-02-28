@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Runs ci/test-operator on each operator with changes in a PR.
+DIR="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"
+OP_TYPES=( "upstream-community-operators" )
+for op_type in ${OP_TYPES[@]}; do
+  for file in $(git diff master --name-only 2>&1); do
+    if echo "$file" | grep "$op_type" | grep -qv "bundles"; then
+      OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
+      PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
+      # Get latest CSV version for the changed operator.
+      OP_VER="$(yq r --tojson "$PKG_FILE" "channels" \
+        | jq ".[] | .currentCSV" | sort -V | tail -1 \
+        | sed -E 's/".*v(.*)"/\1/')"
+      echo "# Testing '$OP_PATH' version '$OP_VER'"
+      "${DIR}/test-operator" "$OP_PATH" "$OP_VER"
+    fi
+  done
+done
