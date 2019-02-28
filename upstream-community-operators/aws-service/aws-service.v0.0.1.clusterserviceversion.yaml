@@ -9,6 +9,118 @@ metadata:
     containerImage: awsserviceoperator/aws-service-operator:v0.0.1-alpha3
     createdAt: 2019-02-09T12:00:00Z
     support: AWS Labs
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "CloudFormationTemplate",
+          "metadata": {
+            "name": "ecrrepository"
+          },
+          "data": {
+            "key": "ecrrepository.yaml",
+            "template": "AWSTemplateFormatVersion: 2010-09-09\nDescription: 'AWS Service Operator - Amazon ECR Repository (aso-1otq2cgc9)'\nParameters:\n  Namespace:\n    Description: >-\n      This is the namespace for the Kubernetes object.\n    Type: String\n  ResourceVersion:\n    Type: String\n    Description: >-\n      This is the resource version for the Kubernetes object.\n  ResourceName:\n    Description: >-\n      This is the resource name for the Kubernetes object\n    Type: String\n  ClusterName:\n    Description: >-\n      This is the cluster name for the operator\n    Type: String\n  RepositoryName:\n    Type: String\n    Description: >-\n      What should the ECR Repository be named\nResources:\n  ECRRepository:\n    Type: AWS::ECR::Repository\n    Properties:\n      RepositoryName: !Ref RepositoryName\nOutputs:\n  RepositoryName:\n    Value: !Ref ECRRepository\n    Description: Name of the topic\n  RepositoryARN:\n    Value: !GetAtt ECRRepository.Arn\n    Description: ARN of the Repository\n"
+          }
+        },
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "DynamoDB",
+          "metadata": {
+            "name": "example-table-name"
+          },
+          "spec": {
+            "hashAttribute": {
+              "name": "user_id",
+              "type": "S"
+            },
+            "rangeAttribute": {
+              "name": "created_at",
+              "type": "S"
+            },
+            "readCapacityUnits": 5,
+            "writeCapacityUnits": 5
+          }
+        },
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "ECRRepository",
+          "metadata": {
+            "name": "example-repository-name"
+          }
+        },
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "ElastiCache",
+          "metadata": {
+            "name": "memcached13"
+          },
+          "spec": {
+            "cacheSubnetGroupName": "loadtest-cluster-k8s",
+            "vpcSecurityGroupIds": "sg-0581b94aa3c0db58c, sg-02b6d0034e8c2fa1b",
+            "autoMinorVersionUpgrade": true,
+            "engine": "memcached",
+            "engineVersion": "1.5.10",
+            "numCacheNodes": 1,
+            "port": 11211,
+            "cacheNodeType": "cache.m4.large"
+          }
+        },
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "S3Bucket",
+          "metadata": {
+            "name": "Private"
+          },
+          "spec": {
+            "versioning": true,
+            "accessControl": "PublicRead",
+            "website": {
+              "enabled": true,
+              "indexPage": "index.html",
+              "errorPage": "500.html"
+            },
+            "logging": {
+              "enabled": false,
+              "prefix": "archive"
+            }
+          }
+        },
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "SNSSubscription",
+          "metadata": {
+            "name": "example-sns-subscription-name"
+          },
+          "spec": {
+            "topicName": "example-sns-topic-name",
+            "protocol": "sqs",
+            "endpoint": "example-sqs-queue-name"
+          }
+        },
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "SNSTopic",
+          "metadata": {
+            "name": "example-sns-topic-name"
+          },
+          "spec": null
+        },
+        {
+          "apiVersion": "service-operator.aws/v1alpha1",
+          "kind": "SQSQueue",
+          "metadata": {
+            "name": "example-sqs-queue-name"
+          },
+          "spec": {
+            "contentBasedDeduplication": true,
+            "delaySeconds": 5,
+            "usedeadletterQueue": false,
+            "maximumMessageSize": 262144,
+            "messageRetentionPeriod": 345600,
+            "visibilityTimeout": 30
+          }
+        }
+      ]
 spec:
   displayName: AWS Service Operator
   icon:
