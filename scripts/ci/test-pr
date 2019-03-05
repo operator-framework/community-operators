@@ -2,31 +2,12 @@
 
 set -e
 
-# Runs ci/test-operator on each operator with changes in a PR.
+# Runs scripts/ci/test-operator on each operator with changes in a PR.
 
-OP_TYPES=( "upstream-community-operators" )
 DIR="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"
-# Remove duplicates.
-declare -A SEEN
-for op_type in ${OP_TYPES[@]}; do
-  for file in $(git diff master --name-only 2>&1); do
-    # Run on operator packages with file deletions but still exist.
-    if [[ ! -e "$file" && ! -d "$(dirname "$file")" ]]; then
-      continue
-    fi
-    if echo "$file" | grep "^$op_type"; then
-      OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
-      if [[ -n "${SEEN[$OP_PATH]}" ]]; then
-        continue
-      fi
-      SEEN[$OP_PATH]="seen"
-      PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
-      # Get latest CSV version for the changed operator.
-      OP_VER="$(yq r --tojson "$PKG_FILE" "channels" \
-        | jq ".[] | .currentCSV" | sort -V | tail -1 \
-        | sed -E 's/".*v(.*)"/\1/')"
-      echo "# Testing '$OP_PATH' version '$OP_VER'"
-      "${DIR}/test-operator" "$OP_PATH" "$OP_VER"
-    fi
-  done
+: ${CI_OPERATORS_UPSTREAM:?"CI_OPERATORS_UPSTREAM is not set"}
+for path_ver in $CI_OPERATORS_UPSTREAM; do
+  OP_PATH="$(echo "$path_ver" | cut -d':' -f1)"
+  OP_VER="$(echo "$path_ver" | cut -d':' -f2)"
+  echo "${DIR}/test-operator" "$OP_PATH" "$OP_VER"
 done
