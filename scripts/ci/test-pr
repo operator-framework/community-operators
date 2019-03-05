@@ -2,20 +2,30 @@
 
 set -e
 
+OP_TYPES=( "upstream-community-operators" )
 # Runs ci/test-operator on each operator with changes in a PR.
 DIR="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"
-OP_TYPES=( "upstream-community-operators" )
+# Remove duplicates.
+declare -A SEEN
 for op_type in ${OP_TYPES[@]}; do
   for file in $(git diff master --name-only 2>&1); do
-    if echo "$file" | grep "$op_type" | grep -qv "bundles"; then
+    # Run on operator packages with file deletions but still exist.
+    if [[ ! -e "$file" && ! -d "$(dirname "$file")" ]]; then
+      continue
+    fi
+    if echo "$file" | grep "^$op_type"; then
       OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
+      if [[ -n "${SEEN[$OP_PATH]}" ]]; then
+        continue
+      fi
+      SEEN[$OP_PATH]="seen"
       PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
       # Get latest CSV version for the changed operator.
       OP_VER="$(yq r --tojson "$PKG_FILE" "channels" \
         | jq ".[] | .currentCSV" | sort -V | tail -1 \
         | sed -E 's/".*v(.*)"/\1/')"
       echo "# Testing '$OP_PATH' version '$OP_VER'"
-      "${DIR}/test-operator" "$OP_PATH" "$OP_VER"
+      echo "${DIR}/test-operator" "$OP_PATH" "$OP_VER"
     fi
   done
 done
