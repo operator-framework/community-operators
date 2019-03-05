@@ -14,14 +14,20 @@ metadata:
       In either case, only the first 135 characters will appear.
     containerImage: The repository that hosts the operator image. The format should match ${REGISTRYHOST}/${USERNAME}/${NAME}:${TAG}
     createdAt: The date that the operator was created. The format should match yyyy-mm-ddThh:mm:ssZ
-    support: The maintainer of the operator. This value should be a name, not an email.
+    capabilities: One of the following: Basic Install, Seamless Upgrades, Full Lifecycle, Deep Insights, Auto Pilot. For more information see https://www.operatorhub.io/images/capability-level-diagram.svg
 spec:
   displayName: A short name for the operator.
   description: A detailed description of the operator, preferably in markdown format.
   icon: A base 64 representation of an image associated with your operator
   version: The operator version.
+  maintainers:
+  - name: Name of a maintainer of the operator
+    email: Email to reach maintainer
   provider:
     name: The provider of the operator. This value should be a name, not an email.
+  links:
+  - name: Title of the link (ex: Blog, Source Code etc.)
+    url: url/link
 ```
 
 ## Categories
@@ -45,7 +51,7 @@ For the best user experience, choose from the following categories:
 
 ## Example CSV
 
-Below is an example of what the descheudler CSV may look like if it contained the expected annotiations:
+Below is an example of what the descheudler CSV may look like if it contained the expected annotations:
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
