@@ -26,15 +26,21 @@ if [[ -z "$OP_VER" || ! "$OP_VER" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ 
   echo "Operator version '$OP_VER' not valid."
   exit 1
 fi
-if [[ -z "$KUBECONFIG" || ! -e "$KUBECONFIG" ]]; then
-  echo "KUBECONFIG not available."
+DISTRO_TYPE_UPSTREAM="upstream"
+DISTRO_TYPE_OPENSHIFT="openshift"
+DISTRO_TYPE="${3:-$DISTRO_TYPE_UPSTREAM}"
+if [[ "$DISTRO_TYPE" != "$DISTRO_TYPE_UPSTREAM" && "$DISTRO_TYPE" != "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  echo "DISTRO_TYPE \"$DISTRO_TYPE\" is not valid. Must be one of: \"$DISTRO_TYPE_UPSTREAM\", \"$DISTRO_TYPE_OPENSHIFT\"."
   exit 1
 fi
-export KUBECONFIG="$KUBECONFIG"
-# kubectl config use-context admin
+if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  if [[ -z "$KUBECONFIG" || ! -e "$KUBECONFIG" ]]; then
+    echo "KUBECONFIG not available."
+    exit 1
+  fi
+fi
 
 TMP="$(mktemp -d --suffix "_test_pr")"
-
 set -u
 DEPLOY_DIR="${TMP}/deploy"
 PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
@@ -66,7 +72,11 @@ create_registry_dockerfile "Dockerfile" "$PKG_NAME"
 
 # Add scorecard proxy resources to the CSV.
 create_cr_files_from_metadata "$CSV_FILE" "$CR_DIR" "$NAMESPACE"
-create_permissions_files "$DEPLOY_DIR" "$CSV_FILE" "$PKG_NAME" "$NAMESPACE"
+# Locally-deployed OLM will already have created permissions files
+# for the operator.
+if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  create_permissions_files "$DEPLOY_DIR" "$CSV_FILE" "$PKG_NAME" "$NAMESPACE"
+fi
 create_kubeconfig_secret_file "$SECRET_FILE" "$NAMESPACE"
 insert_kubeconfig_volume "$CSV_FILE"
 insert_kubeconfig_secret_mount "$CSV_FILE"
