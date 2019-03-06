@@ -115,7 +115,7 @@ spec:
     * **Simple Monitoring** - Operator installs Prometheus and Grafana by default for cluster monitoring. 
 
 
-    **See [TiDB Operator User Guide](https://github.com/pingcap/tidb-operator/blob/master/docs/user-guide.md) for detailed instructions and best practices on deploying, operating, and troubleshooting a TiDB cluster.**  
+    **For proper setup, deployment, and troubleshooting instructions, please see [TiDB Operator User Guide](https://github.com/pingcap/tidb-operator/blob/master/docs/user-guide.md).**  
     
 
   icon:
@@ -133,6 +133,82 @@ spec:
     supported: false
   - type: AllNamespaces
     supported: false  
+  install:
+    strategy: deployment
+      spec:
+        permissions:
+        - serviceAccountName: tidb-controller-manager
+          rules:
+          - apiGroups: [""]
+            resources:
+              - services
+              - events
+            verbs: ["*"]
+          - apiGroups: [""]
+            resources: ["endpoints"]
+            verbs: ["create", "get", "update"]
+          - apiGroups: [""]
+            resources: ["persistentvolumeclaims"]
+            verbs: ["get", "list", "watch", "update", "delete"]
+          - apiGroups: [""]
+            resources: ["pods"]
+            verbs: ["get", "list", "watch","update", "delete"]
+          - apiGroups: ["apps"]
+            resources: ["statefulsets"]
+            verbs: ["*"]
+          - apiGroups: ["pingcap.com"]
+            resources: ["tidbclusters"]
+            verbs: ["*"]
+          - apiGroups: [""]
+            resources: ["nodes"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: [""]
+            resources: ["persistentvolumes"]
+            verbs: ["get", "list", "watch", "patch","update"]   
+        deployments:
+        - name: tidb-controller-manager
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app.kubernetes.io/name: tidb-operator
+                app.kubernetes.io/instance: release-name
+                app.kubernetes.io/component: controller-manager
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: tidb-operator
+                  app.kubernetes.io/instance: release-name
+                  app.kubernetes.io/component: controller-manager
+              spec:
+                serviceAccount: tidb-controller-manager
+                containers:
+                - name: tidb-operator
+                  image: pingcap/tidb-operator:v1.0.0-beta.1-p2
+                  imagePullPolicy: IfNotPresent
+                  resources:
+                      limits:
+                        cpu: 250m
+                        memory: 150Mi
+                      requests:
+                        cpu: 80m
+                        memory: 50Mi
+                  command:
+                    - /usr/local/bin/tidb-controller-manager
+                    - -default-storage-class-name=local-storage
+                    - -cluster-scoped=true
+                    - -auto-failover=false
+                    - -pd-failover-period=5m
+                    - -tidb-failover-period=5m
+                    - -v=2
+                  env:
+                    - name: NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: TZ
+                      value: UTC
+                      
   maturity: beta
   provider:
     name: PingCAP
