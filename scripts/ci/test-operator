@@ -2,9 +2,9 @@
 
 # This script transforms an operator dir structured in the style of
 # community-operators into one expected by operator-registry, inserts the
-# scorecard proxy container, and proxy kubeconfig  secret, volume, and mount
-# into a CSV, creates CR's from CSV metadata,  deploys the operator with the
-# OLM in a local cluster, and runs the SDK  scorecard against the operator.
+# scorecard proxy container, and proxy kubeconfig secret, volume, and mount
+# into a CSV, creates CR's from CSV metadata, deploys the operator with the
+# OLM in a local cluster, and runs the SDK scorecard against the operator.
 
 set -ex
 
@@ -26,11 +26,16 @@ if [[ -z "$OP_VER" || ! "$OP_VER" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ 
   echo "Operator version '$OP_VER' not valid."
   exit 1
 fi
+if [[ -z "$KUBECONFIG" || ! -e "$KUBECONFIG" ]]; then
+  echo "KUBECONFIG not available."
+  exit 1
+fi
+export KUBECONFIG="$KUBECONFIG"
+# kubectl config use-context admin
 
 TMP="$(mktemp -d --suffix "_test_pr")"
 
 set -u
-OLM_REPO_DIR="${TMP}/olm"
 DEPLOY_DIR="${TMP}/deploy"
 PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
 PKG_NAME="$(yq r "$PKG_FILE" "packageName")"
@@ -61,6 +66,7 @@ create_registry_dockerfile "Dockerfile" "$PKG_NAME"
 
 # Add scorecard proxy resources to the CSV.
 create_cr_files_from_metadata "$CSV_FILE" "$CR_DIR" "$NAMESPACE"
+create_permissions_files "$DEPLOY_DIR" "$CSV_FILE" "$PKG_NAME" "$NAMESPACE"
 create_kubeconfig_secret_file "$SECRET_FILE" "$NAMESPACE"
 insert_kubeconfig_volume "$CSV_FILE"
 insert_kubeconfig_secret_mount "$CSV_FILE"

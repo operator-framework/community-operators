@@ -4,9 +4,18 @@ set -e
 
 # Runs scripts/ci/test-operator on each operator with changes in a PR.
 
+DISTRO_TYPE_UPSTREAM="upstream"
+DISTRO_TYPE_OPENSHIFT="openshift"
+DISTRO_TYPE="${1:-$DISTRO_TYPE_UPSTREAM}"
+if [[ "$DISTRO_TYPE" != "$DISTRO_TYPE_UPSTREAM" && "$DISTRO_TYPE" != "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  echo "DISTRO_TYPE \"$DISTRO_TYPE\" is not valid. Must be one of: \"$DISTRO_TYPE_UPSTREAM\", \"$DISTRO_TYPE_OPENSHIFT\"."
+  exit 1
+fi
 DIR="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"
-: ${CI_OPERATORS_UPSTREAM:?"CI_OPERATORS_UPSTREAM is not set"}
-for path_ver in $CI_OPERATORS_UPSTREAM; do
+
+OPERATORS_TYPE="OPERATORS_${DISTRO_TYPE^^}"
+: ${!OPERATORS_TYPE:?"${OPERATORS_TYPE} is not set"}
+for path_ver in ${!OPERATORS_TYPE}; do
   OP_PATH="$(echo "$path_ver" | cut -d':' -f1)"
   OP_VER="$(echo "$path_ver" | cut -d':' -f2)"
   echo "Testing '$OP_PATH' version '$OP_VER'"

@@ -8,6 +8,15 @@ if [ -f /.dockerenv ]; then
   SUDO=
 fi
 
+# DISTRO_TYPE is either "upstream" or "openshift"
+DISTRO_TYPE_UPSTREAM="upstream"
+DISTRO_TYPE_OPENSHIFT="openshift"
+DISTRO_TYPE="${1:-$DISTRO_TYPE_UPSTREAM}"
+if [[ "$DISTRO_TYPE" != "$DISTRO_TYPE_UPSTREAM" && "$DISTRO_TYPE" != "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  echo "DISTRO_TYPE \"$DISTRO_TYPE\" is not valid. Must be one of: \"$DISTRO_TYPE_UPSTREAM\", \"$DISTRO_TYPE_OPENSHIFT\"."
+  exit 1
+fi
+
 # jq, yq
 curl -Lo jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
 chmod +x jq
@@ -33,12 +42,15 @@ KUBE_VER="v1.13.0"
 curl -Lo kubectl "https://storage.googleapis.com/kubernetes-release/release/${KUBE_VER}/bin/linux/amd64/kubectl"
 chmod +x kubectl
 $SUDO mv kubectl /usr/local/bin/
-# minikube and crictl dependency
-curl -Lo crictl.tar.gz "https://github.com/kubernetes-sigs/cri-tools/releases/download/${KUBE_VER}/crictl-${KUBE_VER}-linux-amd64.tar.gz"
-tar -zxvf crictl.tar.gz
-chmod +x crictl
-$SUDO mv crictl /usr/local/bin/
-rm crictl.tar.gz
-curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-chmod +x minikube
-$SUDO mv minikube /usr/local/bin/
+
+if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_UPSTREAM" ]]; then
+  # minikube and crictl dependency
+  curl -Lo crictl.tar.gz "https://github.com/kubernetes-sigs/cri-tools/releases/download/${KUBE_VER}/crictl-${KUBE_VER}-linux-amd64.tar.gz"
+  tar -zxvf crictl.tar.gz
+  chmod +x crictl
+  $SUDO mv crictl /usr/local/bin/
+  rm crictl.tar.gz
+  curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+  chmod +x minikube
+  $SUDO mv minikube /usr/local/bin/
+fi
