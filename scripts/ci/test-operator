@@ -41,6 +41,7 @@ if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
 fi
 
 TMP="$(mktemp -d --suffix "_test_pr")"
+trap_add_exit "rm -rf $TMP"
 set -u
 DEPLOY_DIR="${TMP}/deploy"
 PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
@@ -85,23 +86,33 @@ insert_proxy_container "$CSV_FILE" "$SC_PROXY_IMAGE"
 # Build a registry container containing operator manifests.
 docker build -t "$OP_REGISTRY_IMAGE" .
 
+# Define names for resource types.
+DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
+OPERATOR_GROUP_LIST=""
+for file in $(find "$DEPLOY_DIR" -name "*.og.yaml" -print); do
+  OPERATOR_GROUP_LIST="${OPERATOR_GROUP_LIST}${OPERATOR_GROUP_LIST:+" "}$(yq r "$file" "metadata.name")"
+done
+declare -A OBJECTS
+OBJECTS=(
+  ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
+  ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
+  ["operatorgroup"]="$OPERATOR_GROUP_LIST"
+  ["csv"]="$CSV_NAME"
+  ["deployment"]="$DEP_NAME"
+)
+
 # Create a namespace if necessary.
 if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
   kubectl create namespace "$NAMESPACE"
 fi
 
 apply_objects_incluster "$DEPLOY_DIR"
+# Clean up all created resources, CSV, and CRD's.
+trap_add_exit "delete_objects_incluster $DEPLOY_DIR"
+trap_add_exit "delete_objects_incluster $ABS_BUNDLE_PATH"
 
 # Create logs for operator debugging.
-DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
 LOG_FILE="${TMP}/info.log"
-declare -A OBJECTS
-OBJECTS=(
-  ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
-  ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
-  ["csv"]="$CSV_NAME"
-  ["deployment"]="$DEP_NAME"
-)
 trap_add_exit "log_operator_state $LOG_FILE OBJECTS $NAMESPACE; cat $LOG_FILE"
 
 # Wait for the deployment specified in the CSV to rollout successfully.
