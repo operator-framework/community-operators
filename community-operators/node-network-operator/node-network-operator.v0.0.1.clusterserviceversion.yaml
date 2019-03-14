@@ -1,0 +1,156 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |
+      [
+        {
+          "apiVersion": "nodenetwork.openshift.io/v1alpha1",
+          "kind": "NodeNetworkConfigurationPolicy",
+          "metadata": {
+            "name": "policy",
+            "labels": {
+              "machineconfiguration.openshift.io/role": "worker"
+            }
+          },
+          "spec": {
+            "priority": 99,
+            "desiredState": {
+              "interfaces": [
+                {
+                  "name": "eth1",
+                  "numVfs": 2,
+                  "mtu": 1200
+                }
+              ]
+            }
+          }
+        }
+      ]
+    certified: "false"
+    containerImage: quay.io/pliurh/node-network-operator:v0.0.1
+    createdAt: 2019/01/31
+    description: An operator to initialize SR-IOV interfaces in Openshift cluster
+    repository: https://github.com/pliurh/node-network-operator
+    support: Red Hat, Inc.
+    capabilities: Basic Install
+    categories: Networking
+  name: node-network-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: A node network configuration policy instance
+      kind: NodeNetworkConfigurationPolicy
+      name: nodenetworkconfigurationpolicies.nodenetwork.openshift.io
+      resources:
+      - kind: MachineConfig
+        name: ""
+        version: v1
+      version: v1alpha1
+    required:
+    - description: Represents configuration of nodes.
+      displayName: machine config
+      kind: MachineConfig
+      name: machineconfigs.machineconfiguration.openshift.io
+      version: v1
+  description: |-
+    # Node Network Operator for Openshift
+
+    ## Introdution
+    The node-network-operator is generally responsible for configuring the network for nodes,
+    which includes:
+    * Initialize and configure the SR-IOV NICs
+    * Set the MTU of interface
+
+    The node-network-operator creates a MachineConfig customer resourse, which triggers Openshift
+    machine-config-operator to put the udev configuration files on hosts.
+
+    ## Note
+    Any api could be changed any time without any notice. That said, your feedback is very
+    important and appreciated to make this project more stable and useful.
+
+    ## Prerequisites
+    This operator relies on Openshift machine-config-operator.
+  displayName: Node Network Operator
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - nodenetwork.openshift.io
+          resources:
+          - '*'
+          - nodenetworkconfigurationpolicies
+          verbs:
+          - '*'
+        - apiGroups:
+          - machineconfiguration.openshift.io
+          resources:
+          - machineconfigs
+          verbs:
+          - '*'
+        serviceAccountName: node-network-operator
+      deployments:
+      - name: node-network-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: node-network-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: node-network-operator
+            spec:
+              containers:
+              - command:
+                - node-network-operator
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: node-network-operator
+                image: quay.io/pliurh/node-network-operator:v0.0.1
+                imagePullPolicy: Always
+                name: node-network-operator
+                ports:
+                - containerPort: 60000
+                  name: metrics
+                readinessProbe:
+                  exec:
+                    command:
+                    - stat
+                    - /tmp/operator-sdk-ready
+                  failureThreshold: 1
+                  initialDelaySeconds: 4
+                  periodSeconds: 10
+                resources: {}
+              nodeSelector:
+                node-role.kubernetes.io/master: ""
+              restartPolicy: Always
+              serviceAccountName: node-network-operator
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/master
+                operator: Exists
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider:
+    name: Red Hat, Inc.
+  version: 0.0.1
+  keywords: ["network", "sr-iov"]
