@@ -1,0 +1,171 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    capabilities: Basic Install
+    alm-examples: |-
+      [{
+       "apiVersion": "hazelcast.com/v1alpha1",
+       "kind": "Hazelcast",
+       "metadata": {
+          "name": "hz"
+       },
+       "spec": {
+          "image": {
+            "tag": "3.11.2"
+          },
+          "hazelcast": {
+            "licenseKeySecretName": "hz-license-key-secret"
+          },
+          "securityContext": {
+            "runAsUser": 65534,
+            "fsGroup": 65534
+          }
+       }
+      }]
+    categories: "In-Memory Computing Platform"
+    certified: false
+    containerImage: hazelcast/hazelcast-enterprise-operator:0.0.1
+    createdAt: 2019-03-14T09:58:52Z
+    description: Install Hazelcast Enterprise cluster.
+    support: Hazelcast, Inc
+  name: hazelcast-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Hazelcast Enterprise cluster.
+      displayName: Hazelcast Enterprise
+      group: hazelcast.com
+      kind: Hazelcast
+      name: hazelcasts.hazelcast.com
+      version: v1alpha1
+  description: |
+    Hazelcast IMDG Enterprise is the most widely used in-memory data grid with hundreds of thousands of installed clusters around the world. It offers caching solutions ensuring that data is in the right place when it’s needed for optimal performance.
+
+    ### Before Your Start
+
+    Add a Secret within the Project that contains the Hazelcast License Key. If you don't have one, get a trial key from this [link](https://hazelcast.com/hazelcast-enterprise-download/trial/).
+
+        $ oc create secret generic hz-license-key-secret --from-literal=key=LICENSE-KEY-HERE
+
+    ### Configuration
+
+    For the complete configuration options, please refer to the [Hazelcast Enterprise Helm Chart](https://github.com/hazelcast/charts/tree/master/stable/hazelcast-enterprise) description.
+
+  displayName: Hazelcast Operator
+  install:
+    spec:
+      deployments:
+      - name: hazelcast-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: hazelcast-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: hazelcast-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: hazelcast-operator
+                image: hazelcast/hazelcast-operator:0.0.1
+                imagePullPolicy: Always
+                name: hazelcast-operator
+                resources: {}
+              serviceAccountName: hazelcast-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - hazelcast-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - hazelcast.com
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: hazelcast-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider: {}
+  version: 0.0.1
+  keywords:
+  - hazelcast
+  - keyvalue
+  - in-memory
+  - database
+  - caching
+  links:
+  - name: Hazelcast Operator Deploy Guide
+    url: https://github.com/hazelcast/hazelcast-operator
+  maintainers:
+  - name: leszko
+    email: rafal@hazelcast.com
+  - name: googlielmo
+    email: guglielmo@hazelcast.com
+  - name: mesutcelik
+    email: mesut@hazelcast.com
+  provider:
+    name: Hazelcast, Inc
