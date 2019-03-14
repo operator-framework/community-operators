@@ -1,16 +1,19 @@
+---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    "helm.sh/hook": crd-install
   creationTimestamp: null
   labels:
     api: federation
-    kubebuilder.k8s.io: 1.0.3
-  name: multiclusteringressdnsrecords.multiclusterdns.federation.k8s.io
+    kubebuilder.k8s.io: 1.0.4
+  name: dnsendpoints.multiclusterdns.federation.k8s.io
 spec:
   group: multiclusterdns.federation.k8s.io
   names:
-    kind: MultiClusterIngressDNSRecord
-    plural: multiclusteringressdnsrecords
+    kind: DNSEndpoint
+    plural: dnsendpoints
   scope: Namespaced
   subresources:
     status: {}
@@ -25,25 +28,30 @@ spec:
           type: object
         spec:
           properties:
-            hosts:
+            endpoints:
               items:
-                type: string
+                properties:
+                  dnsName:
+                    type: string
+                  labels:
+                    type: object
+                  recordTTL:
+                    format: int64
+                    type: integer
+                  recordType:
+                    type: string
+                  targets:
+                    items:
+                      type: string
+                    type: array
+                type: object
               type: array
-            recordTTL:
-              format: int64
-              type: integer
           type: object
         status:
           properties:
-            dns:
-              items:
-                properties:
-                  cluster:
-                    type: string
-                  loadBalancer:
-                    type: object
-                type: object
-              type: array
+            observedGeneration:
+              format: int64
+              type: integer
           type: object
   version: v1alpha1
 status:
