@@ -1,0 +1,181 @@
+#! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
+#! parse-kind: ClusterServiceVersion
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: infinispan-operator.v0.1.0
+  namespace: placeholder
+  annotations:
+    tectonic-visibility: ocs
+    capabilities: Basic Install
+    categories: "Database"
+    alm-examples: |
+      [
+        {
+          "apiVersion": "infinispan.org/v1",
+          "kind": "Infinispan",
+          "metadata": {
+            "name": "example-infinispan"
+          },
+          "spec": {
+            "size": 3
+          }
+        },
+        {
+          "apiVersion": "infinispan.org/v1",
+          "kind": "Infinispan",
+          "metadata": {
+            "name": "example-infinispan"
+          },
+          "config": {
+            "sourceType": "ConfigMap",
+            "sourceRef": "infinispan-app-configuration",
+            "name": "cloud-ephemeral.xml"
+          },
+          "spec": {
+            "size": 3
+          }
+        }
+      ]
+    description: TBD
+    containerImage: docker.io/jboss/infinispan-operator:0.1.0
+    createdAt: 2019-02-28T14:18:00Z
+    support: Infinispan
+    certified: "false"
+spec:
+  displayName: infinispan
+  description: |
+    TBD
+
+    TBD
+
+    TBD
+  keywords: ['infinispan', 'key value', 'database', 'datagrid', 'open source']
+  version: 0.1.0
+  maturity: alpha
+  replaces: infinispan-operator.v0.0.0
+  maintainers:
+    - name: Infinispan Community
+      email: infinispan-dev@lists.jboss.org
+  provider:
+    name: Red Hat
+  labels:
+    operated-by: infinispan-operator
+  selector:
+    matchLabels:
+      operated-by: infinispan-operator
+  links:
+    - name: Blog
+      url: https://blog.infinispan.org/
+    - name: Documentation
+      url: TBD
+    - name: etcd Operator Source Code
+      url: https://github.com/infinispan/infinispan-operator
+
+  icon:
+    - base64data: TBD
+      mediatype: image/png
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: true
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+        - serviceAccountName: infinispan-operator
+          rules:
+          - apiGroups:
+              - ""
+            resources:
+              - pods
+              - services
+              - endpoints
+              - persistentvolumeclaims
+              - events
+              - configmaps
+              - secrets
+            verbs:
+              - '*'
+          - apiGroups:
+              - ""
+            resources:
+              - namespaces
+            verbs:
+              - get
+          - apiGroups:
+              - apps
+            resources:
+              - deployments
+              - daemonsets
+              - replicasets
+              - statefulsets
+            verbs:
+              - '*'
+          - apiGroups:
+              - monitoring.coreos.com
+            resources:
+              - servicemonitors
+            verbs:
+              - get
+              - create
+          - apiGroups:
+              - infinispan.org
+            resources:
+              - '*'
+            verbs:
+              - '*'
+      deployments:
+        - name: infinispan-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: infinispan-operator-alm-owned
+            template:
+              metadata:
+                name: infinispan-operator-alm-owned
+                labels:
+                  name: infinispan-operator-alm-owned
+              spec:
+                serviceAccountName: infinispan-operator
+                containers:
+                  - name: infinispan-operator
+                    command:
+                      - infinispan-operator
+                    image: jboss/infinispan-operator:0.1.0
+                    ports:
+                      - containerPort: 60000
+                        name: metrics
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: "infinispan-operator"
+  customresourcedefinitions:
+    owned:
+      - name: infinispans.infinispan.org
+        version: v1
+        kind: Infinispan
+        displayName: TBD
+        description: TBD.
+        resources:
+          - kind: Service
+            version: v1
+          - kind: Pod
+            version: v1
+        specDescriptors:
+          - description: TBD.
+            displayName: Size
+            path: size
