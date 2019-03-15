@@ -52,9 +52,107 @@ spec:
       name: sysdigagents.sysdig.com
       version: v1alpha1
   description: |-
-    [Sysdig](https://www.sysdig.com/) is a unified platform for container and microservices monitoring, troubleshooting, security and forensics. Sysdig platform has been built on top of [Sysdig tool](https://sysdig.com/opensource/sysdig/) and [Sysdig Inspect](https://sysdig.com/blog/sysdig-inspect/) open-source technologies.
+    [Sysdig](https://www.sysdig.com/) is a unified platform for container and
+    microservices monitoring, troubleshooting, security and forensics. Sysdig
+    platform has been built on top of
+    [Sysdig tool](https://sysdig.com/opensource/sysdig/) and
+    [Sysdig Inspect](https://sysdig.com/blog/sysdig-inspect/) open-source
+    technologies.
 
-    This operator installs the Sysdig Agent for [Sysdig Monitor](https://sysdig.com/product/monitor/) and [Sysdig Secure](https://sysdig.com/product/secure/) to all nodes in your cluster via a DaemonSet.
+    This operator installs the Sysdig Agent for
+    [Sysdig Monitor](https://sysdig.com/product/monitor/) and
+    [Sysdig Secure](https://sysdig.com/product/secure/) to all nodes in your
+    cluster via a DaemonSet.
+
+    ## Settings
+
+    This operator, uses the same options than the
+    [Helm Chart](https://hub.helm.sh/charts/stable/sysdig), please take a look
+    to all the options in the following table:
+
+    | Parameter                       | Description                                                            | Default                                     |
+    | ---                             | ---                                                                    | ---                                         |
+    | `image.registry`                | Sysdig agent image registry                                            | `docker.io`                                 |
+    | `image.repository`              | The image repository to pull from                                      | `sysdig/agent`                              |
+    | `image.tag`                     | The image tag to pull                                                  | `0.89.0`                                    |
+    | `image.pullPolicy`              | The Image pull policy                                                  | `IfNotPresent`                              |
+    | `image.pullSecrets`             | Image pull secrets                                                     | `nil`                                       |
+    | `resources.requests.cpu`        | CPU requested for being run in a node                                  | `100m`                                      |
+    | `resources.requests.memory`     | Memory requested for being run in a node                               | `512Mi`                                     |
+    | `resources.limits.cpu`          | CPU limit                                                              | `200m`                                      |
+    | `resources.limits.memory`       | Memory limit                                                           | `1024Mi`                                    |
+    | `rbac.create`                   | If true, create & use RBAC resources                                   | `true`                                      |
+    | `serviceAccount.create`         | Create serviceAccount                                                  | `true`                                      |
+    | `serviceAccount.name`           | Use this value as serviceAccountName                                   | ` `                                         |
+    | `daemonset.updateStrategy.type` | The updateStrategy for updating the daemonset                          | `RollingUpdate`                             |
+    | `ebpf.enabled`                  | Enable eBPF support for Sysdig instead of `sysdig-probe` kernel module | `false`                                     |
+    | `ebpf.settings.mountEtcVolume`  | Needed to detect which kernel version are running in Google COS        | `true`                                      |
+    | `sysdig.accessKey`              | Your Sysdig Monitor Access Key                                         | `Nil` You must provide your own key         |
+    | `sysdig.settings`               | Settings for agent's configuration file                                | `{}`                                        |
+    | `secure.enabled`                | Enable Sysdig Secure                                                   | `false`                                     |
+    | `customAppChecks`               | The custom app checks deployed with your agent                         | `{}`                                        |
+    | `tolerations`                   | The tolerations for scheduling                                         | `node-role.kubernetes.io/master:NoSchedule` |
+
+    For example, if you want to deploy a DaemonSet with eBPF and with Sysdig Secure
+    enabled:
+
+    ```yaml
+    apiVersion: sysdig.com/v1alpha1
+    kind: SysdigAgent
+    metadata:
+      name: agent-with-ebpf-and-secure
+    spec:
+      ebpf:
+        enabled: true
+      secure:
+        enabled: true
+      sysdig:
+        accessKey: XXX
+    ```
+
+    Please, notice that `sysdig.accessKey` is **mandatory**. Once you have provided
+    the accessKey, you can apply this file with `kubectl apply -f`
+
+    ## Getting your Access Key
+
+    To retrieve the key and use it in the agent:
+
+    1. Log in to Sysdig Monitor or Sysdig Secure (maybe as administrator) and
+       select **Settings**.
+
+    2. Choose Agent Installation.
+
+    3. Use the Copy button to copy the access key at the top of the page.
+
+    If you need more help, you can read more about this process in the [Agent Installation: Overview and Key](
+    https://sysdigdocs.atlassian.net/wiki/spaces/Platform/pages/213352719/Agent+Installation+Overview+and+Key)
+    documentation page.
+
+    ## Verify Metrics in Sysdig Monitor UI
+
+    Once you have deployed the Sysdig Agent, it's time to verify that everything is
+    working as expected. So, we are going to log in Sysdig Monitor to do the check.
+
+    1. Access Sysdig Monitor:
+
+       **SaaS**: https://app.sysdigcloud.com
+
+       Log in with your Sysdig user name and password.
+
+    2. Select the **Explore** tab to see if metrics are displayed.
+
+    3. To verify that kube state metrics and cluster name are working correctly:
+
+       Select the **Explore tab** and create a grouping by `kubernetes.cluster.name` and `kubernetes.pod.name`.
+
+    4. Select an individual container or pod to see details.
+
+    Don't rush about getting Kubernetes metadata. Pods, deployments ... appear a
+    minute or two later than the nodes/containers themselves; if pod names do not
+    appear immediately, wait and retry the Explore view.
+
+    You can read more about verification in the [Verify Metrics in Sysdig Monitor UI section](https://sysdigdocs.atlassian.net/wiki/spaces/Platform/pages/256475257/GKE+Installation+Steps#GKEInstallationSteps-VerifyMetricsinSysdigMonitorUI)
+    in the documentation pages.
   displayName: Sysdig Agent Operator
   keywords:
   - monitoring
