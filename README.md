@@ -1,23 +1,47 @@
-# OperatorHub.io Community Operators
+# About this repository
 
-This repo is the canonical source for Operators that appear in [OperatorHub.io](https://operatorhub.io).
+This repo is the canonical source for Kubernetes Operators that appear on [OperatorHub.io](https://operatorhub.io), [OpenShift Container Platform](https://openshift.com) and [OKD](https://okd.io).
 
-## Adding your Operator
+# Know what to contribute
 
-To add your operator to this repo, you will need to submit a PR with your Operator resources in a new directory named after your Operator within the `community-operators/` directory:
+To add your operator to any of the above platforms, you will need to submit a PR with your Operator packaged for use with [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager/). This package contains all of the Custom Resource Definitions (CRDs), access control rules and references to the container image needed to install and securely run your Operator, plus other info like a description of its features and supported Kubernetes versions. [Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md), CRDs, and the package.yaml file for your operator.
+
+An Operator's CSV must contain the annotations mentioned [here][required-fields] for it to be displayed properly within the various platforms.
+
+Your PR needs to be formatted as a `bundle` which is a directory named after your Operator with all `CustomResourceDefinitions`, the `ClusterServiceVersion` and package definitons in separate YAML manifests like so:
 
 ```bash
-$ ls community-operators/my-operator/
+$ ls my-operator/
 my-operator.v1.0.0.clusterserviceversion.yaml
 my-operator-crd1.crd.yaml
 my-operator-crd2.crd.yaml
 my-operator.package.yaml
 ```
-Please note that the directory name should match the name of your operator in it's package.yaml.
+Please note that the directory name should match the `packageName` of your operator in it's `package.yaml`, and should be used as a prefix for all files in the bundle. Please follow the conventions of the example above.
 
-Each OperatorHub entry contains all of the Custom Resource Definitions (CRDs), access control rules and references to the container image needed to install and securely run your Operator, plus other info like a description of its features and supported Kubernetes versions. [Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md), CRDs, and the package.yaml file for your operator.
+# Where to contribute
 
-An Operator's CSV must contain the annotations mentioned [here][required-fields] for it to be displayed properly within the OperatorHub.io UI.
+There are 4 directories where you can contribute, depending on a set of requirements:
+
+| Target Directory               | Type of Operators              | Target Platform             | Requirements                                                  |
+|--------------------------------|--------------------------------|-----------------------------|---------------------------------------------------------------|
+| `community-operators`          | Community OpenShift Operators  | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
+| `upstream-community-operators` | Community Kubernetes Operators | Kubernetes / OperatorHub.io | needs to work on Kubernetes 1.7 or newer                      |
+| `redhat-operators`             | Red Hat-provided Operators     | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
+| `certified-operators`          | Certified 3rd party Operators  | OpenShift                   | needs to be commercially supported and certified with Red Hat |
+
+The column _Target Platform_ denotes both, where this Operator will be visible (embedded OperatorHub in OpenShift / OKD or OperatorHub.io) and where they are intended to run.<br/>
+**If you Operator fulfills multiple criteria place a copy of your bundle in the appropriate folders respectively.**
+
+# Before submitting a PR
+
+The maintainers will work with you to make sure your Operator has the required metadata to function properly and be displayed with useful information for the end user.
+
+You can help us with that by validating your `bundle` with [operator-courier](https://github.com/operator-framework/operator-courier). This tool will check against the [required fields][required-fields] in your CSV.
+
+```sh
+operator-courier verify --ui_validate_io path/to/bundle
+```
 
 ## Updating your Operator
 
