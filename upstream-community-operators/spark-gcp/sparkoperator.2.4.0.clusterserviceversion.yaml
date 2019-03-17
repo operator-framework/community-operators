@@ -1,0 +1,295 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: sparkoperator.v2.4.0
+  namespace: placeholder
+  annotations:
+    capabilities: Basic Install
+    categories: "Big Data"
+    certified: "False"
+    description: Apache Spark is a unified analytics engine for large-scale data processing.
+    containerImage: gcr.io/spark-operator/spark-operator:v2.4.0-v1beta1-latest
+    repository: https://github.com/GoogleCloudPlatform/spark-on-k8s-operator
+    alm-examples: |-
+        [
+          {
+            "apiVersion": "sparkoperator.k8s.io/v1beta1",
+            "kind": "SparkApplication",
+            "metadata": {
+              "name": "pyspark-pi"
+            },
+            "spec": {
+              "type": "Python",
+              "pythonVersion": "2",
+              "mode": "cluster",
+              "image": "gcr.io/spark-operator/spark-py:v2.4.0",
+              "imagePullPolicy": "Always",
+              "mainApplicationFile": "local:///opt/spark/examples/src/main/python/pi.py",
+              "sparkVersion": "2.4.0",
+              "restartPolicy": {
+                "type": "OnFailure",
+                "onFailureRetries": 3,
+                "onFailureRetryInterval": 10,
+                "onSubmissionFailureRetries": 5,
+                "onSubmissionFailureRetryInterval": 20
+              },
+              "driver": {
+                "cores": 0.1,
+                "coreLimit": "200m",
+                "memory": "512m",
+                "labels": {
+                  "version": "2.4.0"
+                },
+                "serviceAccount": "spark"
+              },
+              "executor": {
+                "cores": 1,
+                "instances": 1,
+                "memory": "512m",
+                "labels": {
+                  "version": "2.4.0"
+                }
+              }
+            }
+          },
+          {
+            "apiVersion": "sparkoperator.k8s.io/v1beta1",
+            "kind": "ScheduledSparkApplication",
+            "metadata": {
+              "name": "spark-pi-scheduled"
+            },
+            "spec": {
+              "schedule": "@every 5m",
+              "concurrencyPolicy": "Allow",
+              "template": {
+                "type": "Scala",
+                "mode": "cluster",
+                "image": "gcr.io/spark-operator/spark:v2.4.0",
+                "imagePullPolicy": "Always",
+                "mainClass": "org.apache.spark.examples.SparkPi",
+                "mainApplicationFile": "local:///opt/spark/examples/jars/spark-examples_2.11-2.4.0.jar",
+                "restartPolicy": {
+                  "type": "Never"
+                },
+                "driver": {
+                  "cores": 0.1,
+                  "coreLimit": "200m",
+                  "memory": "512m",
+                  "labels": {
+                    "version": "2.4.0"
+                  },
+                  "serviceAccount": "spark"
+                },
+                "executor": {
+                  "cores": 1,
+                  "instances": 1,
+                  "memory": "512m",
+                  "labels": {
+                    "version": "2.4.0"
+                  }
+                }
+              }
+            }
+          }
+        ]
+spec:
+  displayName: Spark Operator
+  description: |-
+    # Spark Operator
+    Apache Spark is a fast and general-purpose cluster computing system.
+    It provides high-level APIs in Java, Scala, Python and R, and an optimized engine that supports general execution graphs. 
+    It also supports a rich set of higher-level tools including Spark SQL for SQL and structured data processing, MLlib for 
+    machine learning, GraphX for graph processing, and Spark Streaming.
+
+    The [spark-on-k8s-operator](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator) allows Spark applications 
+    to be defined in a declarative manner and supports one-time Spark applications with `SparkApplication` 
+    and cron-scheduled applications with `ScheduledSparkApplication`.
+
+    Consult the [user guide](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/master/docs/user-guide.md) and 
+    [examples](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/tree/master/examples) to see how to 
+    write Spark applications for the operator.
+
+    See the [API spec](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/master/docs/api.md) and 
+    [architecture doc](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/master/docs/design.md#architecture) 
+    for more details on how the operator functions.
+
+    ## Before You Start
+    The driver pod for Spark applications requires a ServiceAccount with sufficient privileges.
+    See the doc on [ServiceAccount for Driver Pods](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/master/docs/quick-start-guide.md#about-the-service-account-for-driver-pods) for more details.
+    A ServiceAccount named `spark` is already created in the namespace where the Operator is deployed.
+    Use this ServiceAccount in the spec for your `SparkApplication` and `ScheduledSparkApplication`.
+
+  keywords: ['Spark', 'Apache Spark', 'Google', 'GCP']
+  icon:
+  - mediatype: image/png
+    base64data: iVBORw0KGgoAAAANSUhEUgAAAYQAAADKCAYAAAClmDd7AAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOydeXxcVdnHf8+ZmSxdadnadJK0lQLSAi8MJczMnckABSkgm0RoCgoqu6Iir+xYEX1BREXZZBEEmqJRQPalhXS2tMUAKhWkhTZbC2VtaUuSmXue94+kJZnMfs+dmYT7/Xz4fMide57nzHTmPPc851kIFhYWFiOYdxqn1jrY9k1JOIaAWQDGAvgAwCsAPWYfp/+l6q4N24s8zREBFXsCFhYWFvmwqWH3cT2OiusAvhiALc2tXQy+srap+8FCzW2kYhkECwuLEcc7jVNr7bA9D2DvrAcx/vhpfOIFs5tX95k3s5GNZRAsLCxGFJ2NzlkMvAjAmcfw5zeN2/P4Q+5qi6me12hAFHsCFhYWFtmyqWH3cQw8ivyMAQAcvcfWd+9SOafRhGUQLCwsRgw9jrK7Acw2JoXO6lhQfZWSCY0yLJeRhYXFiKCjsfpEgB9TJE4CdHhNU2dQkbxRgWUQLCwsSp51Z02vsPXFVwOYqVDsOxWx3gP3aH5/q0KZIxrLZWRhYVHyiL74uVBrDABgZq+j/OeKZY5oLINgYWFR0jBABFxkkuyL1p9edZAZskcilkGwsLAoaboanfORS75BbtiEEH/gRdZaCFgGwcLCotRhnG2yhrmda6rPMlnHiMA6VLawsChZuAG2TodzE4DJJqv6UNh5H+cD3R+arKeksXYIFhYWJUuXzXkIzDcGALCr1HFdAfSUNJZBsLCwKFkk4fCCKWM6r72xxlUwfSWIZRAsLCxKFkF0cAHV2Qjyzi/yAfMX9o1bWFiMBHj/Ais8pGuN89sF1lkyWIfKFhYWJcma+XuVl0/q2QrAXmDVH9lZ7lO1ZMMHBdZbdKwdgoWFRUni2HX7bBTeGADAZJ3EFzKD2TIIFhYWJQkxFdpdtBMGvtO1cNphxdJfLCyDYGFhUZKQRNEMAgAhmW7lhrStOUcdlkGwsLAoTYjmFHkGrk5H9blFnkNBsQyChYVFqWJkh/CRminw9RsbpuyuRlbpU4wDGwsLC4u0bFhQtVscqMpz+DbodChs/DKASQanMjlmt98AYMSFoq47a3qFiMmZLPUpRCyIbAICG+yV+jtVd23YnmyMFXZqYWFRcnQ1Tjtcgl7MazBhZc3irsPaF0w7j4juVDAdFsxe55LuVgWyTGPNwr0mlFNvgCQfCcDH/TusZA/9MQCtxPgr4rinurnrsx0vWDsECwuLkkMH7Z/v0ypL/AsAavbpvrvzLee3Acw1OB1iotu4AXOpGbpBWcpY3TC7bLxjy2GAnMegecQ9c8Gwc+ahDgB+JvjhwBXtC2q+Wbuk4wXAOkOwsLAoTfI+PxDUbxBoESSILgIgjU6GgYO6HM4LjMoxOAfqOmPagR0Lqi/paHQ+Pd6x+SOAlwN0DQFu5PeAP5VIPtOxsPo0wHIZWVhYlCAdjc6VAA7Na7Agf81DnaEdf3Y2Ov/AgIpooU/i7Nh35pJ17ymQlRXvNE6tdcA2j8HzGHQEAXuYpGorQxxouYwsLCxKCl4E0fkWZuc7XLfb/j3kSgxXwIFTAOxmcGq72BG/EcBZBuWkZFPD7uM+czgOExDzGJgHwNXvAiKzn97HCcjvWzsECwuLkqLzDOdeLLEmn7EEtFc3dU0fJnOh8xxm3GV4cgAzC3/tko6wAlnobHBWSof0DhiAIwEcjOK58jutHYKFhUVpIXFAvkMZ9K9k152zuu7tfMv5HeTrhvocIpK3cQAuakE85/k1wNZpqz6IiecJwjwGvARRkcVBcCFwWgbBwsKipJDAAXm7LkgmNQi0CLK9UVxIkCsBw+UoDuiocl4EdN2Szc3tjTUzATlPgOZ1go8EeDIBKBEjMBiyDIKFhUWpkX/JChavp3qptqmjraOx+m6Az89b/gAEXLf+jNq/TH+ofWPia2vP3HOPsnjZkQDPI8KRDFkLAFyKJmAoPZZBsLCwKCnIQMgpM/073esU46vYgVNh/IB5go31u9edNf3Usdu22XvLyn3MPA+gedCxP4gJKMldQDpWWofKFhYWJcOGc6vGxLeKLcjPrdNbvaFrXCbffmej89sM3JPfDIfRA6AMoyKni64ZBW/CwsJitKBvFXOQp4+fgP9kc9Dr3LvrPgZUlaGowKgwBogJkvePhjdiYWExSmADJa8Z6d1FO6BFkCzkd4HSKUNRdJianIu7uyyDYGFhUTIQc94hpxgoWZEN0x/a8AqI/5C3rtHFZ3aHfi0wOrY6FhYWowcjPRCy2iHsgNl2NQObDOgbFTDzD6se2NABWAbBwsKihGADBkGSyMkg1DZ1fExEV+Srb1RA9JfaJd07d0qWQbCwsCgJ1p9ROxVAvt3JPkiWE5CJ6sWdKg+YRxpre1F+zuALlkGwsLAoCUhnAwfKubmLduoEmKW8CF+8A+bNTOLEWYvXbhl80TIIFhYWJQGJ/A+URZ4GAQCmP7zhVQB35DveZDoAvp8YZwL4lSKZcWbRULu44z+JL1iZyhYWFqWBxP5513jm/A0CAOhl9mtEX/zrJvYbyJYPCPQSk3yRmJZVN3WtAYB1C6r2tUH8XoUCBi7a0SEtEcsgWFhYlAREfEC+pR5Y0D+N6J5x//pPOhqrLwP4PiNy8uAzgCIMXgqIpTV7d7xKi4Z2eOv6xrRdZZweB7CLYW3MN9cu6U5ZBtwqXWFhYVF0OAB7Z5XzU/Rn/uaKLLPFJkx58L1thuYAUGej8yUA9UbkZEACeJWApRJyqSwrC8+4f31PqptXN8wuG+fY/CwBhxtVzMDTNbGuE9L1hbZ2CBYWFkWnu2raHORnDADgbaPGAOg/YO4S/H0p6R9QuzauBWgpMS9FHC9VN3d9lM0gBqijbPO9xMaNAUCvlNv6vk5N6Q/PLYNgYWFRVN5pnFormX5jwF9h6PxgMM6Huv/Z2ei8nYGLDYh5H+BlBFoal/ZlMx5evz4fIV0LnNcQ4wwD8+iH0U0OPmHKA5mNpmUQLCwsCs76M2tnkK6fQKAGgN2g/CMeCdmXrMiGHqq4ppx7GgBMzXJIxnOAXGlvnNbAwCIjMgbYDkEnVz/Q2Z3NzZZBsLCwKAjtC2pmg2QDAcdD1139V5V0DFC2QwCAWYvXbmlvnHY5gf6U4hYdwGvZngPkSsfC6rlgvh/Gz3glQI01iztfznaAdahsYWFhCtwAW2d5tQcSJwPyZICmm6GHgL13hGeqggHqXOB8EYTAwN//JWApEZbFHfaXZty//hOV+nbQ3lgzkyBXIP+M7UHwJTVN3b/JZYS1Q7CwsFDGmvl7lVdM7jlCSpzcQTiRJA/E9Zv27LnduXfX26qFEsBvx8tOstt7/HbGa9Me3tCpWkci686avgvFYk+CSYExoDtrmrpyMgaAtUOwsLAwSGeDs1La5TxBooGBEwBMLKD6VTVNXXUF1GcK/zjX5dhj67tPAXSUAnHPV2/oOi6bZkGJWDsECwuLnOlscE6WDj5eQBzP4GMJYmwx+gez4gPlYrHH1ndvUWIMiN/QHY7T8jEGgGUQLCwssqT79KrquBAnAziJAT+BbFz8NvKvF3sCRulorL4U4AuMymFgk9Qdx85YnP/5hmUQLCwsUtLeWDMTkF8lUIMO9lCpuZmJR7RBWH/6tOMAvkGBqB4b80m1eeY87MAyCBYWFkMYFB7aAMj9+q8WfSeQFF2WjViDsP6MqoOFpD8DsBkUxQR8x7mk23BfB8sgWFh8weEG2Lod0/w60cnEOAmQ1cWeUzYwsGnmknXvFXse+dC1cJpTSnoCwFjj0uja6qbOxcblWAbBwuILS38ClDy7E9QAYDcqzU1AUhjYJBg/KvY88mFTw+7jPmN6goAqo7IIeNDZ1PlzFfMCLINgYfGForPBWSkdOIcY54B5TqkdCWSgC8BjTPxYTXf38nwjaYoJN8DW5ShfQsD/KBAX7Pm44hxS6M+zDIKFxRcAXgTR8da0rzFwIwEzRpAdeIeAJyWL5polHRGVi18x6LRX/wrg4xWIescRi59a88zaXgWydjJyvhYWFhZ50bGwei4xP8DAvsWeSxYwgJeZ8aiEfGzGkg1vFntCquhorL4A4NsViPrIJqRn2kMb/qtA1hAsg2BhMYppb5z2DQLdCaCy2HNJgw7QCgY324j/5lzc3VXsCammo7H6KwA/CeNemRgTz69d3L1MxbwSsVxGFhajlI7GaVcCpOzAUTE9/dVC8YTOjr+P1GihbGhfWLMfWD4MBestM3+vtskcYwBYOwQLi1FJ50JnIzMeQmn9xj8m4EkQHrWNlc9V3bVhe7EnZDbvLJixp4NiKxmoNSqLCDdUL+66QsW8UmHtECwsRhntjTWTmOXvURrG4H0CnpUsm7fGJz03u3l1X7EnVCjWnTW9QvTFHlVhDBj4W/WsrqtUzCsdlkGwsBhlEPO1IEwuln4G/isIj0LHY86Hu1Z9Hhm0oVhTKjgMUFef/gADbgXiVokYzjTahS0bLINgYTGK4EUQnW/xwiKo/g8DzYB4orapo60I+kuKzsbq6wFuMCyI0U0OnFLd1PWZgmllxDIIFhajiM43qw+GYAUNVjISJyAIxmOC5WOFaCAzUmhfOO2bYL5SgagtJDC/+oGurPohq8AyCBYWowmBvUzWsJYYN5KDH3U+0P2hybpGHJ0LnPXMuEuBKJ0Ip1cv7lLaLzoTopDKLCwszIVJlpurgdZLyPemfdZtSk/hkcy606dPZ8IjAMqMyiLgB9WLu55RMK2csHYIFiMSt9tdabfbd5kyZcqm5uZmvdjzKRWEpK1samwRzyMS8zodzq72hfijwybvrXpgQ4eZGkcKdlv8PGYVh/kcrm7qvtW4nNyxDEKR8R/m/7IU9ODgawy8GokuP8eIXJ/bV88kbk72GoH7JLABjBfGbqt46Pl/Pb/NiC4A0Dz+qwA6echFpqvDrS3PGpUNAHV1dRPs9vIGYpyM/siNyawDG7vfi2ke/3oGNzuk7e6WFS3rs5XpdfvPI6JBnzMvDUeDl6cbo3n81wN0zOdD+L5wa/C2XN6L5vG3ADQum3uZ4idEIpGsw3NipP/Dbri8flY4iXFtPC6uam90PkdMd1dv7HxyJBacUwWDXlNTakn0KBCSF5ZBKDJS0C8Adg2+JoDpAAwZBCY6LFHuztcwEKBO+Nr2cT1X+t3+k4KtwVfz1eV2HzENiF8F8NDyCMQaAEMGweVyOSrLx10A8DVg7JbkFgeAWQS6MiZ0AMg6VpsEjgQP+YyezDSGgWMJfNDnQuiWbPUBgNfrrQKjPsuFY3skEnk3F/kzmza2dzY621XEvmeJjYBjQXxsZ5VzQ8dCvk/XHffMMNi5ayRS3df5106HczWA2cYk8RGdC537F/r8ALDOEIqKz+07FOATE68zsGv/Ips/DJqT5a01UuDpQCCwS766BOnXI2mtHDowX5kA4Ha7J1eUj30W4FuApMZg6Dwg1uekgLH/4D8JnPYHGAgE7AR8efA1CcrpR0vScUDW9wKrgdxjzyVwR65jFFEFpqtsIv52R2P1C+2N0xr+ca7LUaS5FBxqhg6QiuQxwVyckiOWQSgiTHQDUmSTChE3tJgShi526SeCKXqML8xHj9sd2JfAZ6QQnPXil4jH49nDRo4VBByR7Rgd3J7tvfPnzy8HhkbkkE7/Sitf1/cGUDHoUrysDDlV4yShZ/3vwkBeT4gihrsBbMlnrCIEwPMI9Jc9tr3X0bnQ+X8dp1V/qYjzKRjVTZ2Pg7DSuCT+ateCaSqS2nLCMghFwuv1Hwvg8FSvk0Tei6nL5XIAPKTUMYEbIOQhEPIwJv4egCF11Jl5Xj667CRvRGrXY82hhx65a64y58+fXy7I/giAWQkv9TD49wKot8fEVLJxFRMdAeCPAHQiPWuDsPXjrbMT5r09uDL4dtpBesK/CeOtlpaW3Py9khLcCXzfwL/LsP+Y9Gtykj1AdXPXRwRcks9Y5TCmMONy2HhNR2N1uL3ReW5ng7OUK68aggAG049VyJKgG1XIyQXrDKE4CGL6RYIfeTuAMTv/ovzdLRUVFXuDMTj8MPbR5o8eX716Zx2ZlZrHfxCAbw26Z0quevxuv0cCJyRcHvI+ym19cwAsz0Xu1i3brwLDm3D5NWHHKcFgaF3C9Y0AXvK5fU06y6yjXaSN9k9oGfk6MrhnJLD/4O0cUe5P8Ew4cOjftCwSDinP7K1u6rq3o7H6RIC/qlp2nhDAXgK80oGftS90/skW53ucf+5+q9gTU01NU2ewo3HaCwAdZUgQwde5wHlM9ZIuJYEZ2WDtEIqAz+NrBHjwwqAT8aIhN3H+7hbBItEt8eYgY7BDQWKnpc256pHgBD8nh8EYUpqXSeRk2LxebxVLTny6fT2m99YHg8FEY7CTUGtoWWtra9bp/ZRwfsBI7y7qH0MJY3IzCIFAwI6EJjU2iYx686WXys8AUHJlJAjYgxj/K230345G5z/aG53nbji3akzmkSMHhu0KKAg5YuAGXlS4ddoyCAVm9uzZZQwsGnyNgIfj0vYohl7cx+1257W1lonnBwlPsv1y6SuDrzEoJ1+45taOB1FgiBrG1cPk5GjYiG3ngjB20KW4kPj6ypUrlfrEE89YKJvFnYa+F85xhyB75CwMPYPo+3DLh8q7Xu1g1uK1Wxyx+HwwXjdLhwJcBPwhvlW0dzROu3ndgqqR0NUtI7VNHW0MPGJYEOHAjv9OO1XBlLJiRLiMNE2bxGz7H5K8H4hrCDQNwCQGxgM0hsCSiTcT04cMvAdQOwStGrOl7FUVMfYqmTRxt/MBHnzApsdZXO907r5uY/d7Pfh8wbDZbLb9kMcTHjHtP+Somnmzpmmu/v8VexLjxwBmDh4jWP49BxUCJH6WcG1ZqDW03Ov17zXkuSjBRZJ58jh58HgGPRxcsfyNnGRkAQNDo7CYf6F5/IsyDBsSiUUkc1podRsS3VT2SRN3fVfz+IfdK3TUBVcG1+QiPxlTm999f83Cvbzl3PtQCbmPkrEbQJfYiC7pWOAMEXBXzycVzbMU9wwuJKzr15DNdhJgMDGE6DoO4JFC5HiUpEEIBAIVep/+FQa+AogjIHkfAu8Mnh/6m+L+v3nwdQYkY/u4Hl3z+INM/Bch8LdQKPR+Id9HIoFAYFy8TyYUveKm1taWNwFA89S/DfDnh466OBB5GASmob5ugC6ApAuAlAXyXwu1hh7PVr7m9p8B4H8GXxPAdQAgdH6TxRAtswOBgL2lpSXjl/nQQ4/cFRwb8hQuIP+a7byyxe12TwZQNeRi/65kbNIBydkaDodTurCSQTwsUEAAmJTk1l5RKXKSnY5Zi9du4UU4qXNN9Q/BfB0Gn1WVIgQvM6/aXD3xz8WeihGm/3njGx2N0x4A6GwjcgjYp2uq8yyg6x5FU0tJSbmMfG7foV5P/X3xPvkegx4D6AKA9zEg0gbgcGK6g3Xq8Ln9d2iaNjPjKJOI98lLAew56JLOJHf64Rk81N1CuUca1dXVTaDckpI+gpCnIct499mzZ5eB8JPB1wh4PhgNBgGgV5Ylup4qB1wlGbHb9erEa6TTf7IZmws2W3ne5zODeB05+oizDQVm4D/ZGNCcdC+CrFncebO02eag35WhIqXWDP4jmLWaJd2XHnJXW6zYkzFKHPKnSIjoywcmXLvurOkVme80RkkYBJ/b9xXN429lopUEPgvABBPUVDDhfEjxX5/Xf9PRBxydy9OgYTwezx4YHgr4LBHFNE2bqWnaTMEYuoNhzjnSqFyUz0H2nbJW6SzqwuFw1pEekybsegES3E2S8MCO91BW1jsRwJDCZ7otO8NGlKRscznUp/HL/A/sB5HzYTBzdgaBwKb5/Kc/2L6upqnrawJ8MAN/Qx6JbyYRY8J1vR9XHOxc0t2a+KKmaXv7PP7nAoGA6YuiSmY2bWwn4E4FoqptvXpeuUK5UFSXka/OdwDb6HcM1BdQrZ0Zl24f91mDpgXOCodbWgqhlGC7GsD4hMvHQYrjdvwxrCgZUc4Ll45EdxG2A9hR/qAPwPsA/k3Mj4daQ88jhyfF5C4vgBgPgVM/WwhJBwLIuP0n0rckyuEYzwSguNY+D8kFYNA9JPT/Szs3KR5mYO6gK6tz0Tjw2U0ffE2CPELow5rL67pueiVRZ1P3awBOXX9m7Qybrp/HwHlIOCMpFAy8xkJ+e/pDG15JfC0QCNjjvfIi6Pg5E7bknPdRAthYXh8j8S0a/vvPDeIr1izc655Zi9ealnRYFIMwf/788q1btl3PjB8Uaw4A1ULKF7xu/xWR1uDNMHELHTgsMD0OeW4eQyf7/f7qYDCY9YJIw9xM/KdwNKTkyUKP8Y8B7JHrOKbsnsiJqGPYP4Kgk5BjHkPmCeHAwXsoAqLhcPiddEN8Hv+QXRGx/GcuKvv6eH8xdOe2ORpdvgJFdt1Mf7B9HYDL1yzc6xdl3HP2QEJbTYHUf8bAT2tiXb/qL/swFF+d7wC9T94DGjDEhNcKNC+lVC3Z8EFH47TfApRXouEgdqvgnh8C+KmKeSWj4C4jtzuw76ebt69kxqUo/qG2nQg3aR7/PQ0NDaaViNSFvB5AXnXqOZ6zeyMhnFIoKZDl8/l2Z+Yf5Dk8K9dXKBTaCGBIRBEzzvP5fPulGzfPNW9iDnMhEIbIY0pfj8jr9VYxMCTjulcvy8mtI4adH/C/UUJ+/FmL126pbeq6pTrWNZNZngBghakKGSGbkAfVNnXdmGgMAoFAhebxL2IbvTx4V8ZMyg7aC01lRe9NDGwyKoeBS9eeuWfOD2XZUlCD4PXWz7eRbE1IyioFvrWx672m/pIPatE07UAGFiRc3grg4xT/DX1SyjGxCwmVFlnkVnwtJXG6FkO3vIzU7+HThNHOgciejBDRQwmXKlmnpT637yuJt2paQNO8vmd6ynp82b4NTdNmJLwPOfbTsrRhrUIOS/TbsGrVspy6hRHzUEPNVJK5AdQMvXbJhidqmrrczMJHoGYkfieNsZmBH1Tv0xWY9tCGYTkYvsN83niffAXAT5DYaIZl2l1cKbP7Hz/4lEA3KRA1rky3X6ZATlIK9oSueerPBfMdKJGD7GEQvl5ZPkYHsBAqn9x08X+gQe+ZsS0mHXutXLlsmO8YADSP/1kAny9+OSR2BeoCzjjk4IWX7XbjSUl+v3+GjGOIy4tBiyPR5WcmncdhgelxIYc8zQlRdiCAlzLpKu9x3NZT3vd9DHVNTWWiZzWPrx2g1wGMA/BlSLkHQCCJrH8gJGn/hH/ctzPlqkhQ4rlM7iUrwHMGe4yYcJrm8R+ddI7M54ZaQ8uSvVZIapd0hAGE2xtrZgrI7zPwbeQWmjsEIjxF4POdi7u7El9zuVxjKsvHXsvA/yLFGiEII3aHAAB6me1WW1/8YgDDoulygy7sPr3qt2b0sS7I4uzz+n4I8J2F0pc/tMDnrTfq59uJ11vvA2H+UBW4NZUxGGDIUxNn6W4BgJidE59kO1taWgwfUMo4/xxDn9Z0UPz6VPe3rGjpADCkjARlGdmztG3pZgmciaRPpVQL4Dj0ByHsNBi2SlvWNYwYQ8tPgDMv7iIhiS2fGkZElPhvMwn90VrD/tPJsT5X+WZS29TxTnVT1/d7qaKKgR8g50N+fo/B36xe3HV8MmPg9dbPrywf+waAy5BujeCRbRBm3L++h4GUv5scqIgLca0COcMwfYH2ev0LmelmZB8KWVSYeZHX6z9FhSxiviHh0laycdIuZp9PAIkhoLNcLldWiURieFijYXeRr853AECnDb3KD0QikXQlFySAtUOuUPZuwmg0+DyBv4b+CKlMbMnJ6CV+Rlks7kwJdY9kbp9rsjOINGyPRl8syYVvxznDpnF7fonBX8+mzDOBmu3Mc2qbuh9IfE3TtEmax/8HYn4aWRxkk4NGrMtoBzWxrnsJuZVMTwYBZ68/beqXM9+ZG6YaBE0LBIhxL0aIMRiAiHG/pml7GxEyYFQ8CZd/mzFbmkXiQmsrLx+XVQemxBpGxJkLtmWCbfRLDP2exCA441MOI9GwiZwOx0PR0N/tUswGeAlSJfYQ3gXwu1zkgnJrijMQbDDkhydyNLSFaIpTSA65qy1W29TdXLO467DU5wy8HqBjqps6v161ZMMHiTI0d30DpPgvgGyj7/qCwWC30bkXG2qGziAVUUI2YbcvUiBnCKadIXg8gTmQ8lHkGV1TZMZD2v7idrvduVTQHIwQHGIeUrMIdrs9Y2/cjz99Pzhp0qQh48ZtGZPOxfS5Tpv8MTPvzCIu/6wip4PPJBCEHBKyao/Z+1qiwWHb/kQcZeL8eDy+sy68lGU5H0wO9Edu9Hq94wULPyBqGDwGTBsI8u0p06a0NTc35yTXLsWxcXt8p4GzZfFvAiGHuIz2nDo1674LAMAiFiGirBrE2Hrt2eyKSoYd5wzdZ1Tto0vxPYDcYDxXEe/9xR7N729NvN/n801lSbeB+eQk4tKxHiVuKLOleu/Ov3S85byMEsq/5Axzw/ozqm5Mlr+RL6Y8udfV1U2w28r/Sf29gUcyt4ejwYuKPQkLi1EA+Tz15zP4BuRXieC5cDR4jOpJDcbrrT987KflqwpRELOz0XksA08ZFkR4tmZx1/zMN2aHKS4ju63illFgDADgQq/Xv7DYk7CwGMl4PEd8yevxL2Xw7ci7LA2ben7gd/v3J+ZHto7rHZKjsu6s6RXtjTUu1T0Jqpu6ngYjZFgQ45jOBU5llR6UGwSf23fSQD2iUYFg3BIIBMYVex4WFiMRTdPqBOKv59IbOxlkYsip3++fIQnPAdhFJOSL2LfFxxDkPzrfcr7b0ehc3L5w2jfXn1E7VYVehhhWBiYvBH6hRA4UGwSfz7c7E6ko5FQqdBDjhJaWlmG+UAsLi8ywpIUY2hQoT0HmGASfz7e7jOM5AFP71dCQ86Lq5q6PBoIXdgfQSEz3C6lv6Gh0vt3Z6PxD+4Kqr+ZbhbR2SUeYgaeNvgdmeNoXTjveqBxA9Q5Bp6Z5siMAACAASURBVN9gaHlnlWwC8BpAbegvPWzuIs14xF4mDgy2BqOm6rGwGMUIZHeYnhEJ5S6jQCAwDjo9BWBneXYinjPsxuRZ5TMZOJdIPG7ri3/U0Vj9Qnuj87L2xhoX53A2KwiXQ8FhOTH9QoVbS1mUkc/tO5SBRlXyBugA6Gam+HNJ4t6F1xs4mFieDuA7AHKpZ5OOXia+NBIN3apInoXFFxZOKJWeL7YKm1KD4HK5HPGY3gzQ3ISXhhkEAq9mYF4acZUAzyNgHiDR2TjtvU6IoAQvZWF7YvpD7RtTDaxe3PXvjoXOP4OHlbfJlf271jhPB7qajAhRFmWkuf2Pg6CqRV8fEV89bsK43z3zzDMZm0sEAoHd4jF5MxjfMKKUgLWQfFpoRUhZGJeFxRcY0jz+7TDuMvokHA0m6yyXL+T11P8x1VmnvUzs3tLSsjN3onOh8xxm3JWnLgngVQKWSsilW2OTgrObV/cNvmH9mbUzhK6/icTaTbmz7tPYxH0T5eeCEoOgadrekOINqHFBbYEUXwuvaFma60Cf1/dDZroJefQwJeDPfXrvuaqbuVtYfFEJ1AWccZtUUW/nlXA06FIgBwCgefy/AvCjVK8TcyDUGtpZcr1r4bTDJNOwpj15sgWMZRD8PLPt+dqmjncAoL3ReTf1ezoMQhfWNHXeke9oNWcIUpypSNZnEjQvH2MAAKFI6DcEPg25VWf8DKDzQtHg6ZYxsLBQh7RJRe1q1ZWs0Nz+i5DGGADDD5bLy3tXQ13BywkgnAymOwjy7Y5G55qORuetRGS4nEU/fHVng7My39GqDpW/rkjOT6PR5S8bERCKhv7GjMuzvP1N0vmwcHR5vttBCwuLFOiEGSrksKIII81dvwCUudQJJZwj9JeuRtYFFHNkLwAXgflXiuRVwYFv5zvYsEHQNK0GgKG6PwAAxrYxWyuUHORGWoO/Ygyrq5+o8EF7mZgbWhkyXO/HwsJiOMRqDIKKstd+j/8IEN+HLNY8Fkl7X6vpK1IYLs034sj4DkG3eQ3LAABCVGXKeGWv47sAktWp2Q7Qt8LR0Des/AILCzNhNS4jg41xvN7AIRL4O7Ktq8aYg+Hnqzn10C4mDNR2rqlOFxWVEsMGgUkOj9vNRw4oqwJu2bK0belmMH136FVaTTaeG44uv0+lLgsLiyQQKTEIJPM/Q/B4jvgSsXwS/U2VsmWi3+93DrnCxhtNFRJmbshnnOE8BAH6korTFmLOtl581oRblz+quf2PgHAKGPd+1rf14ra2thFTTdLtdlcKUT6bpDwAxLMZVEuEKcTYM0l9/a0AugnYxMA6MF6RJF4pK8ObLS0t8WLMv1RwuVxjKisrvwxdzAbxbEDUALwr+rNPd0X/YhEH8CnATKCPGNQO4rWQWCOJ3ujt3fqPtra2WFHfyEiDleQgyLGTx+blv/f5fLuzHn8GeSTL6jrNwaBGQDrL1YJKvL/XIKi/iVQ+44yheX0vgCmv7UkCn9jLxNSWlpYeBbJ24vV6q0ja68Oty5eolGsGgUCgIt6LAEg/HKAjAByEPEJoE9gK0LNM/JjDIZ5S0UGt1Jk/f375li3bPWA5T4COYuBgGP8cP2XgRQF6Toft6Wj0xZxKYJcygUBgXDweH9JPXMqyCUL0JX5mHw/+IxwOf4wUBAKBinif3A7ja0xnOBrM2DwnEa/XO57Y1oL+f/ucIdBloejyX+74e838vcrLJ/VsRQHbDhuE9TL7mBn3r89pPTX+5phUFX7bJd7H3wJwuyJ5AIBIJLIBQMkag4aGBtuGDZuOJvDp8T55EggTFFclHwfwqcQ4Nd4nY5qn/m8Q+m/D4XDGblcjDU3TXJDiG1s3b1tIwK4AKWyOjfEEnMjgEwXiUvP6XgSJ34XDy5+Eyh7c5iI8nnqXjTCfGXMZPIeAqfE+WZ7oPRaIAzLtE/FWAONTvajr+kyAVHyRc3YXzZ49u0yw7a+cpzEAACYe0pRq1jNre9sbnW8TsE++MgsMcV/vngByenAxbhAIurqfA/9c07Rnw+HwiG+Vlwm32z3ZTmXf2dj97oXU3yu4EDgAPh1SnK55/CuY8LNIJGi4uFYx8Xq94wXE+ZLpQsj+kusFWJ0FmOaBeZ7m8b8Fxs/DrcEHC6M6dwYKuJ1PhG8DXMsDszS0WlOGhVpXFHIKyjXCSEyeuOsDDBxtSO/wdrRAfw21kWIQ4LDbcnYVK9ghZNX3Nlt2gRR/93q9nkgk8qlCuSWD2+2ebCP7ZQB9l8Fjithd9DBiPKV5fc8KnS4Jrgi+UayJ5EMgENhNj/HFzPxdBiYVsUfr3iD8yefxnw/J3y2lsifzXPMm9lb0Xc1xXECEsSplZ8oNkIQZpMA85hpyqnn8v2bgtMx3poc4aUTS6wC+ZlR2odjy2cT3gYzNDYegYoewUfFz0Ryw7UEAp2CUtMwDdvpUfwTgf6GuEJ9xmI6RAkdqHv+vP9784bWrV+dfB6UQuFwuR2X5uO/F++S1KKHPkQE3BL2sefx36hy7NN/Wq6rwuX0n9Yi+O8CYYsozB2eI/JFiJlRYhBxCTjW3/3IA3zeuFADRbcPnIiKgEbMkvZ1PTSPDx+YEetuojOEycaLPW79ItdxioWmBQLxPvgrgepTQIjYIB4DLJk3cLappmvEkQ5PQ3IFjKsvH/Rvgm1Gan6MAcKEgR8Tv9ytxmeRKIBCwax7/Iib6GxhTTFMkMizUpCYHgTIZngG8Xv9CkLJGMbeEo8uHnWXWLOlYCtDZBLwIoMQjzvj5fEYZj6OS0pTDSWa+2uv1qyqJURTq6uomaB7fA5DyJQD7Fns+mWEXpGjzev2Gt9wqcbvdlZrHfwtIPgNwyftwCThIxvEPn9v3lULqras7cs94n3wRwE9gUnvcHYgMLiNSVPaa7ZzRZeT1+o8lxv1Q43/9Yzga/GGyFwjgmqbO+6ubuo7Uy+x7gKkR4IcBlFzkHrMtrzLYhj/AQCCwS7xPfghzvoB9xHxsqDW0zATZpuLx1M+1gZu4v1bJSIMBXBGOBm8s9kS83sBhguWDI/Rz1An8nVA0dL/ZigKBwG7xPvkSktTzNwMhsV+6cyfN4/8UuSWDJeOzcDQ4FmkO6z2e+rkC/KICXWDQQ5Ho8m8iR1c1N8DWYa9xC5LHS+CkYkciMfBSbVNXXi1LDS/iA3Htic1rVFHGRH/1eAIF+ZKrQvPUXyjAkRG6iAH9Dwo3DJQJLtp5rc9Tfw6xDI7gz9HGoHs1T/2ZZiqZ55o3Md4nn0GBjAEA3hbbljKc0ePx7AEFC/RA28yUxsDtDuwlwLlmIaeAHnOU0dnI49ySmqHXLukIVzd1XV7b1LUvQ3yJgR8AFMlHnkF6bIKT7nCyQdVT/d8UyUnGLgLyuYEieiXNgP/2FoBvQ79ffqTzI5+3/qeFVtrQ0GDTPP4bGHwXRv7nKAC+z+fxnWGG8Pnz55f3lvc9A+AQM+SnYGO6jH+iMjU1jNJEGHm93ipB8gUAeyjQ9ML4iWNOV5XRX9vU8U5tU9ctNU2dmh6zTyPGOQA9AcD0QAMiXOx8qPuf+Y5XYhCEHX+EuTHYVZDiKbfbPdlEHYZwu92V8V75OICLiz0XlTDzNV63/7xC6XO73ZUbN7z7JIDLCqWzANgYdJ/X6z9WteBPN2/7NQNu1XLTkiEUlKSaPggMTnqgXFdXN4HY9hShP+/EINExWytOzqYzYz7MaF7/bvWSrntqmjpPoBh2ZcijCPgdGN2KVTET/7B6cdfdRoQoMQjBYHAdAy+pkJWGOTZyPOP1elNmRxaLQCAwzkaOp0CYX+y5mAERbvN6648yW4/L5RpjE/bHwXSM2bqKgJ0YS/yH+b+sSuDAofWFquTlQPrIQkV9EJLlIMyePbvMYS/7G4D/UaBiFZN+jMoqy+mobu76rLZpw9Lqpq7vV+/TVSOI3WD6PwWF8zqJcWzt4u7fGp2jsoNgYvkbVbLScChJ8bjb7c67I5BqXC7XmHhMPgvg8GLPxURsxHz/oYceqbwA4Q6OPuDosZXlY59WVBerVJkgBf7icrnGGBU0f/78ciZSWuYlW1jy+vQ3qDEI4GHZ0GLSxN0WK/qO/Fvn2PxiJcDSIkjn4u4VNUs6r6xZ0rX/wLnD90F4Ftm6lhjdAF/VSxVzqpd0PatiXsoKNYVbw0/6PP7njaaMZ4QoYIPj7/Pnz/+qWdu8bHG5XI4x5WObmaGmJ0RpU1XmiN2N/oRBpQQCAfv2vp6/Ic8KjSOMOZXlY68DcKkRIZ9u3n4RFIV25ozIkBtAiualD90haB7/bwA+VYHkNfaYODr8cutHCmQpYaC38u8A/G7dWdMrHL2xg5jIxcC+xNiTiXYBy+0g8QmTfBPSFnp//O4rD7lLbQVepREkPp9vP9bpnyhERUDCo3aH+HoRSzuT11P/AIFNOSwsWZhOCbcuf1SlSM3jux2gC1TKLHGkYPiCrcFoPoNnz55dNmmXXdtNTTxLAxP5I5HloVSvax7feiioz8WkT9jxBO/z1l/LzCoCHDol7L7RVK1WJUoX7lAo9B+vu/73RPmHPWUN4+RYH98N4FsoQlExzeP/MQpjDBjAGjBeY+K1BPEegB4AYJK7EmgaJM8G0SFQEn6XAeJfBAKBJ1QZYq/XdwW4YMZgAwNvEvhtgD4C45OBgqiTAJ4M0F4AZkNN5Eo6hE64FYALeXx3J0+cfAoXyRgAgCOeuuCcy+VyAORM9XoOvL/TGHjqz1FkDN5j0o+KRoKWMUiB8if5nr6tl1WWj60D4FEtOxECn6V5/dvCkeB3M9+tDu2wwDxA/txEFT0MPEWMR2LSsWzlymUZu8m5XC5HZeV4L1ieDsbpMK+0w756H58NwFA0AwD43L4jmel6BXNKRQ8BzwP8KNlpeTAYzKpQmv8w/5eloPkAnwUkrXppGAIO0tz1p4ZblzfnOpYhFhaxsGpPy8qWZK1pAQBlZeNrAWm09wSAfneRptV/lSWrOCv5gGx8RDgUMStnalRgStKR3++vlnG8AmA3M+Qn4efhaPDqQigKzA1MiTvkv9DfbUs17xPRb20Out1II5u6uroJZfaK7zLzZQAmKJwfAICB9ZFo8EswkHTT382K/glgqrqZDcBYB6Jb7WX0R6MNgbze+sOJcRPALlXTG8QbU6ftuX9zc7Oe7QC3211pI8eHAFQFVmxm0BMEXouBnWc6CLQlFF1+R6rXPR7/0QJ4zvi06GEI/bfQxTIYr9S6GUIeGQ6H24zPa3RjWhbqwBfjSRQosSixw5FZ+Dz+vzNwgmKx7wH0yzFby/+gMgQuMDcwJeaQt5IZJXtZzA+3tuQb2UCax/8EgONUTgmEdxn8056e7fcqbncpvG7fxUT0Syj+PhP4+FA09FS293s89W4BzuvsIYE4gBvtZeJXKrvoed3+84hwp2FBzC0gOhDAJIOStkrQ0dHo8lbDc/oCYFoBrGg0+DyYcq4Lki8MvsHr9Z1vpg6v1/9N9caAHtY5tl84uvzXquOhW15ueTcSDZ7KxN9D/wKgDiHPzXeo5qk/A2qNATPonli8d59IJHSnCb2PZaQ19FuSfDgS2kgah3L6HG1q4u/jBD4pHA1erbqlKimqcgqiAIwbgz5iPtUyBtljakXEcOvyJUR8uZk6BkHEdLvmqT/bDOGapk0ixq8UivyYwAvC0eULWlvNDX+LREK3QtApANSF6TKOzydzPBAI7ALwTcrmAXwClidEosvPWbly5RaFcocRWhGKEPMxAJTpYeBYn8+XtdtMMmYZ18m/zGVXkhNERSn7nYQYWH4t1BpS4L764mCqQQCAUCR0E8C/NlvPAATw3T6PT0Ws8lCkWARFZyIMrIeQh4SioYdVyMuGcHj5EwMhsqp2bA4byo7MdVA8Jq8HsKeiObyps5gbbg0/qUheRkKtoVXE/E2oO9W1S0lZl7QgMmwQemPxMvN+j0zFyY0Yik7gbxTyezFaMN0gAEA4GroUhAcKoQv9dWMWq6xF73YH9gWgKjTyLZsd/mL0jQ5FQ38F8DNlAknmVM7C6/XuA4Yqt95rEvH61taWtYrkZU2oNfQYCMqyhEkilxpHBg0Cv7xq1bIPjclIK7/YBoGJ+PxCPmyNJgpiEADwx598eA6IlxZI30DZ7Pq5KoQJ4qug4jCR8R97TNQHg8FO47PKj3A0eB0BSnyqDMrJIBCLqwCoCEl8Q+fYkdFodJMCWXlR0VN2FYD3lQgjHIEsAjwaGhpsAE83qMy0SJt5rnkTYdzvbxC6NBQJ3VPcOYxcCmUQsHr16j6GPAVAoZqQjxPEj/v9/mojQjyeI75E4NMVzGeTncVxLS+3vKtAlhEkdD4fQNahjqkgYLqmaVktAP46/yyAGo3qBLBRwj7f7HOXTCxtW7oZDFWlwXfxeI7I+GT93nvv1QBJm79nTX9Snjn0Onq/ZJbsbGDiK8PR5YVyT49KCmYQACASiXxKNj4GwFsFUciYosfx96MPODrvOGZB8f+F8QQ+KYAFLSta1huUo4TQytC/CFCypRa6yKp6p26jH8P47kAy0cJSKTvwWd+2+whQ4n4hih+Y6R5dJ8ONgiSp74G+E6GoqF1e8NuRSOiG4ukfHRTUIABAKBR6X2dxHICM2bcqIOCgz8b13JvP2EAgMA4MBU+1/NtgNPiicTnqYCGVRPqw4P0y3dNfv54XGNVFTDdGIsvNLrOeNW1tbdsl0x9VyCJGRsNKCiKMbHr6XgaGUFXULj/lX9I89V+kelimUHCDAACtrS1rBeMoKI/pTg4Dp/k8vpzdPrGYPA2A0f4LnWO2Vl5rUIZywuHwP1X4kxmU0U1gF+ULjGeb8tu2crrOmAz12MBLVMhhcMbIK2bDrUQ5RrH1BmWkFq6q7HX+M7hJZb+JLyJFMQgAEGwN/luCjgOjIM0pGPT7gV6vWUPMZylQfHmhGnDkDhsPy2POWDNJEL5tWA3RJS0tLRlLKxSaYGvw1YHev4YgpowGgcBGDcLG1tZWE9s4Fj3kdIwU+EsgEKgo8jxGLEUzCAAQjS5vZYFGqM6iTc5uAo5bsr3Z5/PtDpCh1oQErJ3q3PPPRmSYCRNFDMuASLuD8vv9MxgwGu31SiQSfMKgDPMg490CibBLFnqMhpyaHepcbIMAAHP0mFQXWv0Fo6gGAQAikeDjBD4bBSlxwaf7PX5/VrfqOA6GD0Hp17kULis0Dge1wqAxFuC0xfNknAy3FWXCjShiec+MMBQY1oxhpwTjPYTNOz/oX0tqTJSfNcz4kddbPyrb2ZpN0Q0CAISioYcA/LgQunTgJ9ncx2xwIWNs69N7FhuSYTItLS1bARhK7GJObxAAw32mP5owYezfDcowF5tcbVQEZTB4bvcRVQAMukIydDozgKZpThgMiVUIEfM9gUCgUNWWRw0lYRAAIBwN3gyC6WFjBBzhq/MdkMWNhtxFEHja7No6SmD8x5gASlmG2eVyOcBsrNc0YUmxW6VmgYow6rQ7NZtNGj6w5SRN61VBesnUMNpBVby/gZZFDpSMQQCAcCR4JYPMzzIUdE66l71ebxUAQwltYCpdn/dgBDYaGk+pa+iXl4+fbTS6iIGnjYwvBOFweDMMujwlKH2inWQFC655OwSQoggjQgQKkib74ZM0T33eVXm/iJSUQQDAVdP2OJ+Ax01VQjgFad+77RCjOoSdW4zKKAjSYIMaxvZULxHJjMlWGYg5HCJoUEYhkAC2GhSRNgSbFCy46VpfGoaEkgNlYv4zManra8L864FaZBZZUGoGAc3Nzfr23m0LAKwwUU2V1xs4OPXLPNug/O5i1ivKCYKh/rdMlDJTlxgHGZEN0FsD5xwjAUPuQULqzxEApPEY/950rS8Nw8qK2r3z0ZYPFgF4XYk0wlgbycWzZ88uUyJvlFNyBgHozwDtizuOB8i0/qfEnLLnM4GMPlEY9MsXFGMN0Tm1y4mQOfs2LcSFKXGiBDKUa8LEaQ0CwajLiNbDxEg+hhqXEUl6Z/Xq1X2C8Q0AqhodHTxp4mQrFDULStIgAMCqVcs+lLAdB8CcImaUpkcuw6BB4IKXZM6H/lwLVBkSImRHqpeYMMWQbC5QzSsl8Dgjo0mK7gy3GHsCZ5NzENSUreBtsW3twEDCH/g3CmQOQJf63L6c+3d80ShZgwAA0eiLbzPhTJjxZJN+C76PMdGFKclhFCmNJd4BgE1S6uq1bNggKG3vaDKGyj6zoJQuRpfL5YBhww3TDILb7a4EK2l6tLGtrW3nmdT4ieOuNR4FtxPBRH869NAjd1Ukb1RS0gYBACKR4NPEdKN6yZw0iWYgwihjOYZ0EKjPyPhCISQdZlCEXrGt4p/JXuiv3Q9DPz4SXLJJfYMZ8E+PMSJDCD3lDqGsbHwtjCZJKiivkQohxExk0c8hM0N3Mc8880wvC/FtKIs6wrQyR8wKRU1DyRsEAAi1Lr8awAtqpVLSUgE2thmOSGDiEWEQmHC0QRFvparTtGHDhjEwuIgxUwGy140zceLEzGUn0hObMmVKymY/QhgPOTU1B0Eqy0EYNsdIpGUFEX6vSD7AONnr9RuurTVaGREGAYC0S3EukDrmPQ+SZn1K4wfKIKaS35Z6vd59gDTnKFlAaZodxeNxw0+MnEXBt1JACGEsZwXckbbEiTQewcMsTMxBsCmKMEqeJ7G9Z9tVZDCjfogWiVv6v/8WiYwUg4CWFS3rmekOhSKTPr0qKDEMZFESuuhIYbjPg6TUu7bx8fGGDYKK2PtCQJKmGxOQ/uldxecwptdu3g6BVCTNpd7FtLW1bYfks6DqLJEwlthuhaImYcQYBACwsdJU9ORx46QintpwmWJTCQQCFUT0LYNiYlLGUmZji5gwXsGWeG/DMgoAQ9QaFJB+sTYYwUPAh0vblm42IiMtrKrKaepM6tCKUATAnWr0AAC7Jk/YbZE6eaMDJQbB7T5imgo5mQiuCL6h7HCMkfQHQoCKp/v96uqOLFl3h96nnwPj+QdL0/U1HjhbSJnFnKWOOaX8Oe6AIacbGp/Jv8+G+wyYGnKqKgchUyb1mK0VP4bCntBMfJnf4z9ClbzRgCGD4DvM59W8/rCN4i9ASZRBVrypRAphfdKraro+iTJbX0mW33W73ZUMutyoHBL8SOa7+H2DaoTDFjd68G06BGHoOyMyPuQYc8mwiRFGA6j4zWTMpH7+X89vE6Bzoa4UupDAA263e7IieSOevAyCxxOYo7n9j7OgMBheAF/2eXzHKp5bcoTRmjE7GJ48Fpgb2NN4q8cd0Mlq5KjFRvbrYTSmHfisN1b2aMa7mN41qAcAvq5AhsmwIZcRC065YM9zzZsIwNiCZWIOwkAXQkNJef1kl0kdjAZfZFBePdJTMM0GhxWKOkBOBsHjOaLW5/bfLyBfA+Grg19jwPBTZzYQG8sR+BzxWuIV3aYrOwxm4HiPJzBHlTwVaFpAA+gHhgUR/rhq1bK0pRb672MFSUV8nM/n28+4HFOZbmSwlDKlQeh19Br/TrJ5Re2IytScH+SQSR3Xe34EQF2tMMIpPo/vLGXyRjBZGQS32z1Z8/hvEIi/yYRvImmEDmn9C46pCACGQiV3CmIOJV5joaZi4w4VguQVCuUZIjA3MAVSLobxc6O4sOHmbG4kwr8N6gIAYp1+pECOKQxkvqZtI5oWxrZoNJratSYUuGOkeWWvSUlZbuS0i1m5cuUWJjpPid4BmOlWTdNGRBCDmaRdHI4+4Oixmsd/tY0c6wBchkwdm6S8XuHchqFpAT8bzH4dYFOwNTisy5XyMEfGaV5vwGg2sGHq6uomxBzyaShoccigh4PBYFZPnDLJLixPzvJ6632KZOXNQAmJIZSV9U43JLT/QDm1T1xBjSAphIllrxVVOc3xnCMSWf4MMf6kRDcAEMZCisXJ/o2/SCQ1CC6Xy6F56i/cPr5nLYCfAcjUJnEH9V6v/wRls0tEykuVyGE8gST+SmZj0SJJsBHLxXV1ddl+fspxuVxjHLbyRwhGS1EDAHRG9mVEBno2G4s06kcQ870ul8tQeQgjeL3e8ZXlY25JvG44ByHDQsjGgxz03t7NKQsQGkZNEEZemdTlfWXfB5CpKGAuHFJZPvZahfJGHIkGgXwe3+ljysf+B+Db8ilORowbzbCymru+AcBxaqSJvya/TtPVyB/CTIet4g8oQs5HYG5gSmX52JcAqKnySLgzGm3Juk59S0tLDxjLlegGZlVWjH1ooEZSQXG73ZNJ2l4AaNgOi0HTDQmnTK4SYyGnDHS2tbWpKiM9HDVVTvPKpF7atnQzWJ6vQv8grvR66421fR3B7FykPB7/0ZrH/w8GLWEYytbdt7J8jNLeyJqmHQjiP6iRxu1TnbsnzbBVFU+dRPLpmsd/NwpoFPxu//4xh2wFcKgikRsresquynUQC1bXApNx8sau9/6AwoU4w+/2728j+yoQ6hjDDz6JjR0oZ+EqMfqdHBE5CPlmUodbw08CvETFHAYQxPyFDUUVHk/9XK/Hv0wAzwFI00UsF+gSze03XBoBADRNc0GK52GwvPAOiMRdyerGBAIBOxlN1krPtzSP7/758+eXm6gDDQ0NNp/X97+SsIoMRr8Mhgk/zCfb1eGwPQxAXbE/wrc1r//PgUBAQahjerxe/zcl0LqjFIlI4tZgoumGlNjSHvgKAMayoE3so+xyuRxktPc4jGdS98XLvgfgPaPzGITTRmWKHkBHFkKA7yVAfbYe4U+a22+oPILPU38BpIgA2EPRrDYz6cnrIfXACcCuSE8K6MxPN297WdM0o72Gk+LxBOZs3PDecu7vSZs+ACAXiJ+NRIJ/zmdoS0vLByD8XdlcAIDREO+VK71er9FWp0lxuwN7aV7fC8S4f0heCid92jb0hCxl6pBQTdOcAAw9QCQzYqooL59YA6NlufsxZLRWrVr2IZi+p2Aeg+BTNbf/G2pllj4CoHtMkm0H4R7N47/F6/XmFJanadqB0VaKIwAADRVJREFUmsf/PINvh8EfRAK3hsPhpM1rYjZF4XOZ2R9SrPJ6fD8f6FhmGL/fP8Prqb9PQL42kCioku5YvOwsIwIEq6xBMwBhP2Lbq5rHf4umaUp2j/46/yzN47vLRvJ1MM0bppKHPW2TwSxiHre1LOWCTbrxstIsTSx7Tbqi8wPjcwy3Lm8GKMXZYJ4QbvPX+WcplVni2HXue8hGjhuh8onycwjAxcS2UzRP/U069z2Uqv6Ny+VyVJZVfgUQZ0LiVKj3t2+I6b2/TDlRo77g3Cgj0JWs44eax3e/YLoj2BrMKWbf5XI5xpSNOUISXSDjOJ7AZhy29klQw8qVywxtx4PR4Iuaxx8CoDp01AHgYkjxDa+7/j6y6XeGw+Gc2m56vd7xgsWJDHGaBM8HKOXnKMqHhm/6fL4prBtqjLMpVT8JAGASMw1XabDp5uUgKIowUpVJbS+jC+J97Ic6j8I4tmGxy+XymnowX0LYW1tbP9I8vmaAzjRRjxPgW2zkuNHr8a8SjH8xoWvgtd1BfCCYXFB0TpAMJlyycuXK5BVO0R9ySlSws8odVAJ0gSRc4PX41xPwNBhtLMS/YjHbOl3/ZEtbW1vM7XZXCiEmCSlmMYkDCexh4BgGJpo5Yyb+UTQSbFUhi5ivYaIWFbKSsAsR/xBS/EDz+F8lwotgDkuSa8d+Onb9jkU3EAiM6+vDdCI5U4AOYWY/GHUMVGSx8G5qaWkZWjYlhplGHlsog6uECDPYoD0gMu8MAcQzlFQVUpRJ3dLS8oHX67+EGA+pkAcADMytKBtzNYCfqJJZyvT7zAXfAmmqQdhBBQF+JviHXGXTF+IXMvnASdB0ZSWz8mDgAPhCEEAsUWaXgH0sNM/AR8U7PiYuzDQJD0QioVtViQu1hpb7PP7HGTAvT6V/R3owMw4G6FJiG7aP69n5Gcb7ZP/6zXl9isMW1v7M9vz/NTJXOTWc9LU1FAoZLTCYGomZSuK9FGZSRyLBxZrX/zUwlNUSI6KrfW7fi6HWkKoQ6pJFAEA4HG4DsKLIczGL7RDyuxnvUrX9HQUQ8PzHn3x4jmq5kvQLAHyiWm5BSJovwIbqDBEoUylnYwYhY46DQRTlIKjOpCbBFwFIelaYJ4KJHlR1VlXKfL7hZfpdEedhGky4MEu/smUQ+nnJViZOXL16tfK+0JFIZANAl6mWWxCSHXwaLHXCktenfd2ofJPLXpOa34zyTOpQKLSRwJeolAmgGixGfSjqToMw1bnHXwC8UcS5mMHtkUgwY72TgVZ6RktCjwZWMekntrS0qOxdPYRwdPndBOQVwlpUkoWcGnXp2FJn57pcrjFgGGsONDwqShl1dXUTlNQVY3SYcWAbiobuB+MZpUIZDV6vf6FSmSXGToPQ3NysE/iaYk5GJQS8PH7i2KyeEiZM2L0GI6ydqAms0Dk2PxKJfGqyHo5z7GwAr5isRy1JF2+jncziKRfsioqKGTCYkS0odVlto9hslWpCTk3Mk9BhPweKXZTEuM3v949ab8KQRTAUDT0CKKs9U0ze6NMdX33mmWd6s7lZiILlIJQmjCc+6912ZLqWmCppbW39TML+dajNLjUVKYf6ud1udyWAqQZE9k2dOjVlYTYiu+EFlzl14x2jEEnT+ygbpbX1xW4TXJQTpY4Hi1FTqxAkZuaysONsGce/oKQLUlFYw6TPW7kymPVioyyeegRCjDtt5eJ7ba1t8ULqjUZffNvv9h8lCS8C2K2QuvMgNm3arl2DL9jt9hmsG3qCb09WQmUnOhuO4CG7iSGniiKMzMykBvpdlD6P/2sMqGvFyvC+u2HTVQCuS3eb5q5vSFWDjZgbQq2hlzSP/wMAYKKFkcjynS4uj8ezh4D9dQB2CHnUQOCP6QxzkwSDwXUEUn0gUyjWMOmB/sPLXFBU031k0UPE54Ragxe0tLQU1BjsINga/LdgHE1A5u5rRYSSLd66sYcIQoaF0HhvDq7cXNluUEZKlPUOYWluJBTAOuznAlDqCmXmazyeene6e3T0LYOQR0HIowD8l4CXd/zdJ/teHrhtEgCdGOcOHitgPxP9LsNJML2kzmC9SQhFl99NZpQbMJflEnEtd2OAL2LI6ZsSwh2KhMwqW5I1wdbgqyzkoQDeLPZc0jA8BwHCWGvL5HWRdqIggidtFrRhVPVBSNNPWhXR6IvtTHylYrF2wZy210lra+tH4XC4LRwOtxGwhUE7/05Ikv0TwMd7vd7PA1sY3wL4AcVzzkjKg9TtfdsuHmgkU+owM900ddqeR0aj0U15STAaT21yeJ9C4iDcYC8TB0WjLaq6mRkmHA6/o3PMCyBpWfJik+zgk42WOqH02blMhkupmPudVLRDSNdPWiWRSOh2BoJKhRJmOGxlhpM3Cfw6GG0kbd8AAL/b7wGhhsnWbHySuZHSILS1tcU+3vLhqQQ8XsgJ5QThXQI3RFqX/zitPzajGIPx3kLXmPh7AFKWxig6hAiEPCwcCV5hZlhpvrS2tn4Ujga/8v/t3V1sFFUUB/D/ubPdCkRLULAENI0mqKQQEkJxl91lA7X6QIwISkLEmBg08UHfTJ98NbyZ+PGg4oug0YoxIfiB2mxndmYLWkmMTSQkqKFFxAeJ0Gi3O/f4UFBsy37dmd125/wed3fu3DS7PXNnzj0HoGcRTJe1wMxR1A6kuMts1Aq3Sti07HXIV95sXvYawJW6L+Jqp60YngJwpdIHa0P7gij1T0QHQdgPgDThaRAOMwc918rKplqOjo4WO1fd/iiAAzCushUoDfC7xam2bsdzjpgM1Luxt8Mon5ox4brur67rvOZzbC0YH5vMJwRnCLw779qpRj2YMsB5b+hNJr+HgcFmT+YaZpyZ/eLs7mk1jVnmVklPz/ZbAXSYjB9m9k46nV7+v7Lg9Qp7J/UM073AKfiaRIQ3svdnu0yGsOL0PoDlqdTWHQAeY6im3M6tmHs/MDDg5z27H0x7AIRXF6VKBBwnzZvynvPkyZNfGz+MLMaLpuUB/m2SXigMjucL9i5o9QDAedO5mU0L3zBhTyyu1poGzUZzXXfU9eztxLwTzd0sqRk44qP4+ey32OgK3vf9GwaEeHyyy2RsINz8fq0tw9XLVSFunLuRvDf0Sgi/zY6S8o1SUXO53BUGfQDN7wB01nVz3wY5wWpVvRkrXxga8HnqXoDfAtDorJQpAg5D6Q2OZz/oDDuBbWrylXG2yKwvdX4491Xec9JqupfxFwC0yTlqcIlBb5PmlOPZPa5rf9isDKIgOAXnk7xnd0PRw2js/phxAAdiWt3tevbuQqHw1/Vv9q3vWwKzVNk/yu35IG3eB8EK9bmWNlodXUNUvnRHSLTP1n4EW+sIAKXOj114yWwIOgjgNibdtGSPmtKZrn6Jn8lkMi/zFF5kYF8gS8e5MYARAB+pGN6zbftcKGcxzacus+y1PXsQwGB2c3Z1SeknQNgLYJ3B2eZyDsCXBP7UilvH5uPzAUM6nx86CuBoMrntbuKpvUT0OIDugM9zBoTjpHnAKTgOygTx4rJiG4ror/9UVP6+ucZZKJPxARVX35scXw6zOkvQRvMDACadC2A6NSsUcj+m0+kU+7QTQE3Nu2ZYhOv6yBBRZ3ZzdnXuRG5s5gc14SDAM3+bDKCfmEYAwHVzw6nk1hfa2tQhAIjHcaFURD8zh/O/bw5GW0v61vctmbj570cI2AVGCoBpB7CLYJwAUU7DOuJ5g6HlUV+TSmZeB/BcvccT+HnHc16t9vPZTdnOUkxvA3EWoHUA7kH1fSB+4+l85lNMOKW1OlEo5OZzumZo0un0Sq1pGzFvAbAOoG4AS6s8/CKA0wC+A2hEw7Ib8V0TYr4LtBFBKpVaw6wSCtigGXfQ9Nb+O4FZq4jfAYyDcI6Zx4jVD6qNh6cf+jRWakv6MzA9VO/xBN7heM4xkzkkk8kVSqmVSqsOn7CUNLUT6SJra4ItnmS2znd0tI9VW4ojqhKJxLJYLNbJbK0g329nqFsAgKD/JNBljvGlUqn008xbQEKIaQ1vETbfpJKZ0wDW1Hu8z+q+qF6lCyFaS9QrfCrAKN+b29vxc0BzEUKIpop0QMhkMqsAtBsMMd6CD3GFEBEV6YDAU2ZF7bhCk3QhhFhIIh0QTOuxqIVTw0gIISqKeEBQZiuEkGu5CyFEI0U6IGjTEr6yQhBCtJBIBwQybIzDqnwJYyGEWEgiHRBM+yBobclDZSFEy4jsxrREIrHIorYJ1P83mMx79mI0rnCdEEKEKrIrBKXUXTALiL9AgoEQooVENiAEUGJYnh8IIVpKdAMCmQUEkgwjIUSLiWxA0KzMVggVmqQLIcRCE9mAYNoknWWFIIRoMZENCDDclCZ7EIQQrSa6AQHoMjlY60nZgyCEaCmRDAi9G3s7UH27xblcLtckXQghFqJIBoRivGi0QxkgWR0IIVpOrNkTaIYS0U0KGPnvFV6MqhvlMDPjUCgTE0KIJvoH72Qbri+yC+0AAAAASUVORK5CYII=
+  maturity: alpha
+  version: 2.4.0
+  provider:
+    name: GoogleCloudPlatform
+  links:
+  - name: GoogleCloudPlatform/spark-on-k8s-operator
+    url: https://github.com/GoogleCloudPlatform/spark-on-k8s-operator
+  - name: Slack Channel
+    url: https://kubernetes.slack.com/messages/CALBDHMTL
+  labels:
+    name: spark-operator
+  selector:
+    matchLabels:
+      name: spark-operator
+  customresourcedefinitions:
+    owned:
+    - kind: ScheduledSparkApplication
+      name: scheduledsparkapplications.sparkoperator.k8s.io
+      version: v1beta1
+      displayName: ScheduledSparkApplication
+      description: A configuration file for a ScheduledSparkApplication custom resource.
+    - kind: SparkApplication
+      name: sparkapplications.sparkoperator.k8s.io
+      version: v1beta1
+      displayName: SparkApplication
+      description: A configuration file for a SparkApplication custom resource.
+      resources:
+        - kind: Service
+          version: v1
+        - kind: Pod
+          version: v1
+      statusDescriptors:
+        - description: Current state of the application.
+          displayName: Application State
+          path: applicationState.state
+          x-descriptors: 
+            - 'urn:alm:descriptor:text'
+        - description: Indicates the error message in case of failures.
+          displayName: Error Message
+          path: applicationState.errorMessage
+          x-descriptors: 
+            - 'urn:alm:descriptor:io.kubernetes.phase:reason'
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: true
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: false
+  install:
+    spec:
+      deployments:
+      - name: spark-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: spark-operator
+              app.kubernetes.io/version: v2.4.0-v1beta1
+          strategy:
+            type: Recreate
+          template:
+            metadata:
+              creationTimestamp: null
+              initializers:
+                pending: []
+              labels:
+                app.kubernetes.io/name: spark-operator
+                app.kubernetes.io/version: v2.4.0-v1beta1
+            spec:
+              containers:
+              - args:
+                - -logtostderr
+                - -install-crds=false
+                - -namespace=$(WATCH_NAMESPACE)
+                image: gcr.io/spark-operator/spark-operator:v2.4.0-v1beta1-latest
+                imagePullPolicy: Always
+                name: spark-operator
+                resources: {}
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+              serviceAccountName: spark-operator
+      permissions:
+      - serviceAccountName: spark
+        rules:
+          - apiGroups:
+            - ""
+            resources:
+            - "pods"
+            verbs:
+            - "*"
+          - apiGroups:
+            - ""
+            resources:
+            - "services"
+            verbs:
+            - "*"
+          - apiGroups:
+            - security.openshift.io
+            resources:
+            - securitycontextconstraints
+            verbs:
+            - use
+            resourceNames:
+            - anyuid
+      - serviceAccountName: spark-operator
+        rules:
+          - apiGroups:
+            - ""
+            resources:
+            - pods
+            verbs:
+            - '*'
+          - apiGroups:
+            - ""
+            resources:
+            - services
+            - configmaps
+            - secrets
+            verbs:
+            - create
+            - get
+            - delete
+          - apiGroups:
+            - extensions
+            resources:
+            - ingresses
+            verbs:
+            - create
+            - get
+            - delete
+          - apiGroups:
+            - ""
+            resources:
+            - events
+            verbs:
+            - create
+            - update
+            - patch
+          - apiGroups:
+            - sparkoperator.k8s.io
+            resources:
+            - sparkapplications
+            - scheduledsparkapplications
+            verbs:
+            - '*'
+      clusterpermissions:
+      - serviceAccountName: spark-operator
+        rules:
+          - apiGroups:
+            - ""
+            resources:
+            - nodes
+            verbs:
+            - get
+          - apiGroups:
+            - admissionregistration.k8s.io
+            resources:
+            - mutatingwebhookconfigurations
+            verbs:
+            - create
+            - get
+            - update
+            - delete
+    strategy: deployment
