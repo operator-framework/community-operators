@@ -1,0 +1,29 @@
+dist: xenial
+language: python
+os: linux
+sudo: required
+
+python:
+- "3.6"
+
+env:
+- CHANGE_MINIKUBE_NONE_USER=true DISTRO_TYPE=upstream
+
+before_install:
+# check-pr needs to be sourced so it can pass the test early.
+- source scripts/ci/check-pr
+
+install:
+- scripts/ci/install-deps $DISTRO_TYPE
+
+before_script:
+- sudo minikube start --vm-driver=none --kubernetes-version="v1.11.0" --extra-config=apiserver.v=4
+- sudo chown -R $USER ${HOME}/.{mini,}kube
+- kubectl config use-context minikube
+- scripts/ci/install-olm-local
+
+jobs:
+  include:
+  - name: Scorecard on minikube
+    # operators-env exports variables containing all operators to be tested.
+    script: eval $(scripts/ci/operators-env) && scripts/ci/test-pr $DISTRO_TYPE
