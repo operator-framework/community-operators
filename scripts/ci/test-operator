@@ -75,8 +75,9 @@ create_registry_dockerfile "Dockerfile" "$PKG_NAME"
 create_cr_files_from_metadata "$CSV_FILE" "$CR_DIR" "$NAMESPACE"
 # Locally-deployed OLM will already have created permissions files
 # for the operator.
-if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
-  create_permissions_files "$DEPLOY_DIR" "$CSV_FILE" "$PKG_NAME" "$NAMESPACE"
+if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]] || \
+  kubectl get operatorgroups --namespace="$NAMESPACE" | grep "No resources found."; then
+    create_permissions_files "$DEPLOY_DIR" "$CSV_FILE" "$PKG_NAME" "$NAMESPACE"
 fi
 create_kubeconfig_secret_file "$SECRET_FILE" "$NAMESPACE"
 insert_kubeconfig_volume "$CSV_FILE"
