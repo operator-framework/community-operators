@@ -2,23 +2,32 @@
 
 set -e
 
-# Make sure the TRAVIS_COMMIT_RANGE is valid, by catching any errors and exiting.
-if [[ -z "$TRAVIS_COMMIT_RANGE" ]] || ! git rev-list --quiet $TRAVIS_COMMIT_RANGE; then
-  echo "Invalid commit range."
-  exit 0
+DIRS=()
+GIT_INFO=""
+
+if [[ "$1" == "openshift" ]]; then
+  DIRS=( "community-operators" )
+  GIT_INFO=master
+else
+  DIRS=( "upstream-community-operators" )
+  GIT_INFO="$TRAVIS_COMMIT_RANGE"
+  # Make sure the TRAVIS_COMMIT_RANGE is valid, by catching any errors and exiting.
+  if [[ -z "$GIT_INFO" ]] || ! git rev-list --quiet $GIT_INFO; then
+    echo "Invalid commit range."
+    exit 0
+  fi
 fi
 
 # Only run CI if an operator package was modified.
-if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -q '\.yaml'; then
+if ! git diff --name-only $GIT_INFO | grep -q '\.yaml'; then
   echo "Only non-manifest files were updated, not running the CI."
   exit 0
 fi
 
-# Only run Travis CI on changes to certain directories.
-DIRS=( "upstream-community-operators" )
+# Only run CI on changes to certain directories.
 IS_TESTABLE=1
 for d in "${DIRS[@]}"; do
-  if git diff --name-only $TRAVIS_COMMIT_RANGE | grep -q "$d"; then
+  if git diff --name-only $GIT_INFO | grep -q "$d"; then
     IS_TESTABLE=0
     break
   fi
