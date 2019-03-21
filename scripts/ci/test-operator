@@ -58,6 +58,7 @@ pushd "$DEPLOY_DIR"
 NAMESPACE="$PKG_NAME"
 CATALOGSOURCE_FILE="${PKG_NAME}.catalogsource.yaml"
 SUBSCRIPTION_FILE="${PKG_NAME}.subscription.yaml"
+OPERATOR_GROUP_FILE="${PKG_NAME}.operatorgroup.yaml"
 SC_PROXY_IMAGE="quay.io/operator-framework/scorecard-proxy:master"
 # Make sure this registry is public before proceeding.
 OP_REGISTRY_IMAGE="quay.io/operatorframework/${PKG_NAME}:${OP_VER}-registry"
@@ -69,16 +70,13 @@ set +u
 # Create catalog manifests and Dockerfile to create a registry image.
 create_catalogsource_file "$CATALOGSOURCE_FILE" "$PKG_NAME" "$OP_REGISTRY_IMAGE" "$NAMESPACE"
 create_subscription_file "$SUBSCRIPTION_FILE" "$PKG_NAME" "$PKG_NAME" "$CSV_NAME" "$NAMESPACE"
+if kubectl get operatorgroups --namespace="$NAMESPACE" 2>&1 | grep "No resources found."; then
+  create_operator_group_file "$OPERATOR_GROUP_FILE" "$PKG_NAME" "$CSV_FILE" "$NAMESPACE"
+fi
 create_registry_dockerfile "Dockerfile" "$PKG_NAME"
 
 # Add scorecard proxy resources to the CSV.
 create_cr_files_from_metadata "$CSV_FILE" "$CR_DIR" "$NAMESPACE"
-# Locally-deployed OLM will already have created permissions files
-# for the operator.
-if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]] || \
-  kubectl get operatorgroups --namespace="$NAMESPACE" 2>&1 | grep "No resources found."; then
-    create_permissions_files "$DEPLOY_DIR" "$CSV_FILE" "$PKG_NAME" "$NAMESPACE"
-fi
 create_kubeconfig_secret_file "$SECRET_FILE" "$NAMESPACE"
 insert_kubeconfig_volume "$CSV_FILE"
 insert_kubeconfig_secret_mount "$CSV_FILE"
@@ -89,15 +87,11 @@ docker build -t "$OP_REGISTRY_IMAGE" .
 
 # Define names for resource types.
 DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
-OPERATOR_GROUP_LIST=""
-for file in $(find "$DEPLOY_DIR" -name "*.og.yaml" -print); do
-  OPERATOR_GROUP_LIST="${OPERATOR_GROUP_LIST}${OPERATOR_GROUP_LIST:+" "}$(yq r "$file" "metadata.name")"
-done
 declare -A OBJECTS
 OBJECTS=(
   ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
   ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
-  ["operatorgroup"]="$OPERATOR_GROUP_LIST"
+  ["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")"
   ["csv"]="$CSV_NAME"
   ["deployment"]="$DEP_NAME"
 )

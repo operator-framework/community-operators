@@ -49,15 +49,16 @@ EOF
 # create_operator_group_file creates an operator group for the operator CSV.
 function create_operator_group_file() {
   local op_group_file="$1"
-  local name="$2"
-  local service_account="$3"
+  local op_name="$2"
+  local csv_file="$3"
   local namespace="$4"
 
+  local service_account="$(yq r "$csv_file" "spec.install.spec.deployments[0].spec.template.spec.serviceAccountName")"
   cat <<EOF > "$op_group_file"
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
 metadata:
-  name: ${name}-og
+  name: ${op_name}-og
   namespace: $namespace
 spec:
   serviceaccount: $service_account
@@ -95,36 +96,6 @@ function create_cr_files_from_metadata() {
     tmp="$(mktemp -p "$cr_dir" "XXXXXXXXXX.cr.yaml")"
     echo "$obj" | yq w - "metadata.namespace" "$namespace" > "$tmp"
   done < <(echo "$alm_examples" | jq -c '.[]')
-}
-
-function create_permissions_files() {
-  local deploy_dir="$1"
-  local csv_file="$2"
-  local op_name="$3"
-  local namespace="$4"
-
-  declare -A service_accounts_set
-  local prefix sa_name
-
-  local permissions_json="$(yq r --tojson "$csv_file" "spec.install.spec.permissions")"
-  while read -r obj; do
-    sa_name="$(echo "$obj" | jq ".serviceAccountName" | yq r -)"
-    prefix="${deploy_dir}/$(echo "$sa_name" | tr -cd '[[:alnum:]]')"
-    if [[ -z "${service_accounts_set[$sa_name]}" ]]; then
-      create_operator_group_file "${prefix}.og.yaml" "$op_name" "$sa_name" "$namespace"
-      service_accounts_set[$sa_name]="$sa_name"
-    fi
-  done < <(echo "$permissions_json" | jq -c ".[]")
-
-  local cluster_permissions_json="$(yq r --tojson "$csv_file" "spec.install.spec.clusterPermissions")"
-  while read -r obj; do
-    sa_name="$(echo "$obj" | jq ".serviceAccountName" | yq r -)"
-    prefix="${deploy_dir}/$(echo "$sa_name" | tr -cd '[[:alnum:]]')"
-    if [[ -z "${service_accounts_set[$sa_name]}" ]]; then
-      create_operator_group_file "${prefix}.og.yaml" "$op_name" "$sa_name" "$namespace"
-      service_accounts_set[$sa_name]="$sa_name"
-    fi
-  done < <(echo "$cluster_permissions_json" | jq -c ".[]")
 }
 
 # insert_proxy_container inserts a proxy container into the operator pod
