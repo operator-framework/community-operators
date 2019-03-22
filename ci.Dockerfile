@@ -1,4 +1,4 @@
-FROM golang:1.10-stretch
+FROM python:3.6-stretch
 ARG DISTRO_TYPE
 ENV DISTRO_TYPE ${DISTRO_TYPE}
 COPY . .
