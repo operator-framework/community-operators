@@ -25,5 +25,14 @@ before_script:
 jobs:
   include:
   - name: Scorecard on minikube
+    script:
+    # Since travis conditionals can't operate on bash scripts, the first script
+    # line will check whether only scripts have been updated, and if so use
+    # the jaeger operator as an operator to test script correctness.
+    - |-
+      ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -q '\.yaml' && \
+      OPERATORS_UPSTREAM="community-operators/jaeger:$(yq r --tojson upstream-community-operators/jaeger/jaeger.package.yaml "channels" \
+      | jq ".[] | .currentCSV" | sort -V | tail -1 | sed -E 's/"[a-zA-Z\-]+\.?v?([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?)"/\1/')" \
+      scripts/ci/test-pr $DISTRO_TYPE && exit 0
     # operators-env exports variables containing all operators to be tested.
-    script: eval $(scripts/ci/operators-env) && scripts/ci/test-pr $DISTRO_TYPE
+    - eval $(scripts/ci/operators-env) && scripts/ci/test-pr $DISTRO_TYPE
