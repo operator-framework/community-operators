@@ -14,25 +14,25 @@ else
   # Make sure the TRAVIS_COMMIT_RANGE is valid, by catching any errors and exiting.
   if [[ -z "$GIT_INFO" ]] || ! git rev-list --quiet $GIT_INFO; then
     echo "Invalid commit range."
-    exit 0
+    exit 1
   fi
-fi
-
-# Only run CI if an operator package was modified.
-if ! git diff --name-only $GIT_INFO | grep -q '\.yaml'; then
-  echo "Only non-manifest files were updated, not running the CI."
-  exit 0
 fi
 
 # Only run CI on changes to certain directories.
-IS_TESTABLE=1
-for d in "${DIRS[@]}"; do
-  if git diff --name-only $GIT_INFO | grep -q "$d"; then
-    IS_TESTABLE=0
-    break
+if git diff --name-only $GIT_INFO | grep -q '\.yaml'; then
+  IS_TESTABLE=1
+  for d in "${DIRS[@]}"; do
+    if git diff --name-only $GIT_INFO | grep -q "$d"; then
+      IS_TESTABLE=0
+      break
+    fi
+  done
+  if [[ $IS_TESTABLE -gt 0 ]]; then
+    echo "No testable operators or scripts were updated, not running the CI."
+    exit 0
   fi
-done
-if [[ $IS_TESTABLE -gt 0 ]]; then
-  echo "No testable operators were updated, not running the CI."
+elif [[ "$1" == "openshift" ]] || ! git diff --name-only $GIT_INFO | grep -E -q '(scripts/ci)|(scripts/lib)'; then
+  # Only run CI if an operator package or CI script was modified.
+  echo "No manifest or script files were updated, not running the CI."
   exit 0
 fi
