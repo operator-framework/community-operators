@@ -17,9 +17,9 @@ metadata:
           "hazelcast": {
             "licenseKeySecretName": "hz-license-key-secret"
           },
-          "securityContext": {
-            "runAsUser": 65534,
-            "fsGroup": 65534
+          "serviceAccount": {
+            "create": false,
+            "name": "hazelcast"
           }
        }
       }]
@@ -45,6 +45,10 @@ spec:
     Hazelcast IMDG Enterprise is the most widely used in-memory data grid with hundreds of thousands of installed clusters around the world. It offers caching solutions ensuring that data is in the right place when it’s needed for optimal performance.
 
     ### Before Your Start
+
+    Add Security Context Constraint `anyuid` to the `hazelcast` ServiceAccount.
+
+        $ oc adm policy add-scc-to-user anyuid -z hazelcast
 
     Add a Secret within the Project that contains the Hazelcast License Key. If you don't have one, get a trial key from this [link](https://hazelcast.com/hazelcast-enterprise-download/trial/).
 
@@ -162,6 +166,16 @@ spec:
           verbs:
           - '*'
         serviceAccountName: hazelcast-operator
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - endpoints
+          - pods
+          verbs:
+          - get
+          - list
+        serviceAccountName: hazelcast
     strategy: deployment
   installModes:
   - supported: true
