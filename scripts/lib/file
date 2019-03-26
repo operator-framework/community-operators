@@ -46,15 +46,19 @@ spec:
 EOF
 }
 
-# create_operator_group_file creates an operator group for the operator CSV.
+# create_operator_group_file creates an operator group for the operator CSV if
+# the CSV does not support AllNamespaces.
 function create_operator_group_file() {
   local op_group_file="$1"
   local op_name="$2"
   local csv_file="$3"
   local namespace="$4"
 
-  local service_account="$(yq r "$csv_file" "spec.install.spec.deployments[0].spec.template.spec.serviceAccountName")"
-  cat <<EOF > "$op_group_file"
+  while read -r mode; do
+    if [[ "$(echo "$mode" | jq -r ".type")" == "AllNamespaces" && \
+      "$(echo "$mode" | jq -r ".supported")" == "false" ]]; then
+        local service_account="$(yq r "$csv_file" "spec.install.spec.deployments[0].spec.template.spec.serviceAccountName")"
+        cat <<EOF > "$op_group_file"
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
 metadata:
@@ -65,6 +69,8 @@ spec:
   targetNamespaces:
   - $namespace
 EOF
+    fi
+  done < <(yq r --tojson "$csv_file" "spec.installModes" | jq -c '.[]')
 }
 
 # create_registry_dockerfile creates a registry Dockerfile.
