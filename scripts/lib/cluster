@@ -57,9 +57,10 @@ function apply_objects_incluster() {
 # delete_objects_incluster deletes cluster resources using manifests in $1.
 function delete_objects_incluster() {
   local deploy_dir="$1"
+  local namespace="$2"
 
   for f in $(find "$deploy_dir" -maxdepth 1 -name "*.yaml" -print); do
-    kubectl delete --ignore-not-found=true -f "$f"
+    kubectl delete --ignore-not-found=true "$(yq r "$f" "kind" | awk '{ print tolower($0) }')" "$(yq r "$f" "metadata.name")" --namespace="$namespace"
   done
 }
 

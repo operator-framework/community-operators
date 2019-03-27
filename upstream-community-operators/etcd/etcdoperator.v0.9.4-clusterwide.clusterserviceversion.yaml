@@ -3,7 +3,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: etcdoperator-community.v0.9.2
+  name: etcdoperator.v0.9.4-clusterwide
   namespace: placeholder
   annotations:
     tectonic-visibility: ocs
@@ -15,7 +15,10 @@ metadata:
           "apiVersion": "etcd.database.coreos.com/v1beta2",
           "kind": "EtcdCluster",
           "metadata": {
-            "name": "example"
+            "name": "example",
+            "annotations": {
+              "etcd.database.coreos.com/scope": "clusterwide"
+            }
           },
           "spec": {
             "size": 3,
@@ -55,7 +58,10 @@ metadata:
           }
         }
       ]
-    description: Creates and maintain highly-available etcd clusters on Kubernetes
+    description: Create and maintain highly-available etcd clusters on Kubernetes
+    containerImage: quay.io/coreos/etcd-operator@sha256:66a37fd61a06a43969854ee6d3e21087a98b93838e284a6086b13917f96b0d9b
+    createdAt: 2019-02-28T01:03:00Z
+    repository: https://github.com/coreos/etcd-operator
 spec:
   displayName: etcd
   description: |
@@ -96,9 +102,9 @@ spec:
 
     * **Customize Storage** - [Set a custom StorageClass](https://github.com/coreos/etcd-operator/blob/master/doc/user/spec_examples.md#custom-persistentvolumeclaim-definition) that you would like to use.
   keywords: ['etcd', 'key value', 'database', 'coreos', 'open source']
-  version: 0.9.2
+  version: 0.9.4-clusterwide
   maturity: alpha
-  replaces: etcdoperator-community.v0.9.0
+  replaces: etcdoperator.v0.9.2-clusterwide
   maintainers:
   - name: etcd Community
     email: etcd-dev@googlegroups.com
@@ -126,15 +132,15 @@ spec:
   - type: OwnNamespace
     supported: true
   - type: SingleNamespace
-    supported: true
+    supported: false
   - type: MultiNamespace
     supported: false
   - type: AllNamespaces
-    supported: false
+    supported: true
   install:
     strategy: deployment
     spec:
-      permissions:
+      clusterPermissions:
       - serviceAccountName: etcd-operator
         rules:
         - apiGroups:
@@ -186,7 +192,8 @@ spec:
                 command:
                 - etcd-operator
                 - --create-crd=false
-                image: quay.io/coreos/etcd-operator@sha256:c0301e4686c3ed4206e370b42de5a3bd2229b9fb4906cf85f3f30650424abec2
+                - -cluster-wide
+                image: quay.io/coreos/etcd-operator@sha256:66a37fd61a06a43969854ee6d3e21087a98b93838e284a6086b13917f96b0d9b
                 env:
                 - name: MY_POD_NAMESPACE
                   valueFrom:
@@ -197,7 +204,7 @@ spec:
                     fieldRef:
                       fieldPath: metadata.name
               - name: etcd-backup-operator
-                image: quay.io/coreos/etcd-operator@sha256:c0301e4686c3ed4206e370b42de5a3bd2229b9fb4906cf85f3f30650424abec2
+                image: quay.io/coreos/etcd-operator@sha256:66a37fd61a06a43969854ee6d3e21087a98b93838e284a6086b13917f96b0d9b
                 command:
                 - etcd-backup-operator
                 - --create-crd=false
@@ -211,7 +218,7 @@ spec:
                     fieldRef:
                       fieldPath: metadata.name
               - name: etcd-restore-operator
-                image: quay.io/coreos/etcd-operator@sha256:c0301e4686c3ed4206e370b42de5a3bd2229b9fb4906cf85f3f30650424abec2
+                image: quay.io/coreos/etcd-operator@sha256:66a37fd61a06a43969854ee6d3e21087a98b93838e284a6086b13917f96b0d9b
                 command:
                 - etcd-restore-operator
                 - --create-crd=false
