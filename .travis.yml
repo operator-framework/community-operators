@@ -11,13 +11,13 @@ env:
 
 before_install:
 # check-pr needs to be sourced so it can pass the test early.
-- source scripts/ci/check-pr
+- source scripts/ci/check-pr $DISTRO_TYPE
 
 install:
 - scripts/ci/install-deps $DISTRO_TYPE
 
 before_script:
-- sudo minikube start --vm-driver=none --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4
+- sudo minikube start --memory=4096 --vm-driver=none --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4
 - sudo chown -R $USER ${HOME}/.{mini,}kube
 - kubectl config use-context minikube
 - scripts/ci/install-olm-local
@@ -25,5 +25,15 @@ before_script:
 jobs:
   include:
   - name: Scorecard on minikube
+    script:
+    # Since travis conditionals can't operate on bash scripts, the first script
+    # line will check whether only scripts have been updated, and if so use
+    # the jaeger operator as an operator to test script correctness.
+    - |-
+      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -q '\.yaml'; then \
+        OPERATORS_UPSTREAM="upstream-community-operators/jaeger:$(yq r --tojson upstream-community-operators/jaeger/jaeger.package.yaml "channels" \
+        | jq ".[] | .currentCSV" | sort -V | tail -1 | sed -E 's/"[a-zA-Z\-]+\.?v?([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?)"/\1/')" \
+        scripts/ci/test-pr $DISTRO_TYPE && exit 0
+      fi
     # operators-env exports variables containing all operators to be tested.
-    script: eval $(scripts/ci/operators-env) && scripts/ci/test-pr $DISTRO_TYPE
+    - eval $(scripts/ci/operators-env) && scripts/ci/test-pr $DISTRO_TYPE
