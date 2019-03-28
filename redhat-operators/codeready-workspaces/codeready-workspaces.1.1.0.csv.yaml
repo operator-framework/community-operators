@@ -16,7 +16,7 @@ metadata:
              "server":{
                 "cheFlavor":"codeready",
                 "cheImage": "quay.io/crw/server-container",
-                "cheImageTag": "1.1-45",
+                "cheImageTag": "1.1-52",
                 "tlsSupport":false,
                 "selfSignedCert":false
              },
@@ -36,7 +36,7 @@ metadata:
                 "keycloakClientId":""
              },
              "storage":{
-                "pvcStrategy":"common",
+                "pvcStrategy":"per-workspace",
                 "pvcClaimSize":"1Gi",
                 "preCreateSubPaths": true
              }
@@ -45,7 +45,7 @@ metadata:
       ]
     certified: "true"
     categories: "Developer Tools"
-    containerImage: quay.io/crw/operator-container:1.1-7
+    containerImage: quay.io/crw/operator-container:1.1-20
     createdAt: 2019-03-06
     description: A Kube-native development solution that delivers portable and collaborative developer workspaces in OpenShift.
     support: Red Hat, Inc.
@@ -54,7 +54,7 @@ spec:
   install:
     strategy: deployment
     spec:
-      clusterPermissions:
+      permissions:
         - serviceAccountName: codeready-operator
           rules:
             - apiGroups:
@@ -132,7 +132,7 @@ spec:
               spec:
                 containers:
                   - name: codeready-operator
-                    image: quay.io/crw/operator-container:1.1-7
+                    image: quay.io/crw/operator-container:1.1-20
                     env:
                       - name: WATCH_NAMESPACE
                         valueFrom:
@@ -223,13 +223,35 @@ spec:
 
     ## Pre-Reqs
 
-    The operator service account will require cluster-admin privileges if you enable either `server.selfSignedCerts` or `auth.openShiftoAuth`.
+    The operator service account will require extra privileges if you enable either `server.selfSignedCerts` or `auth.openShiftoAuth` which are false in CR template by default.
     After the operator is installed, grant the **codeready-operator** service account such privileges:
 
 
+    When **auth.openShiftoAuth** is enabled:
+
+
     ```
-    oc adm policy add-cluster-role-to-user cluster-admin -z codeready-operator -n=$CodeReadyNamespace
+
+    oc create clusterrole codeready-operator --resource=oauthclients --verb=get,create,delete,update,list,watch
+
+    oc create clusterrolebinding codeready-operator --clusterrole=codeready-operator --serviceaccount=${NAMESPACE}:codeready-operator
+
     ```
+
+    When **server.selfSignedCerts** is enabled:
+
+
+    ```
+
+    oc create role secret-reader --resource=secrets --verb=get -n=openshift-ingress
+
+    oc create rolebinding codeready-operator --role=secret-reader --serviceaccount=${NAMESPACE}:codeready-operator -n=openshift-ingress
+
+    ```
+
+
+    `${NAMESPACE}` is an OpenShift project where you installed the operator.
+
 
     ## How to Install
 
