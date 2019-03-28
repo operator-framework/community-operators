@@ -101,3 +101,20 @@ function get_op_namespace() {
     exit 1
   fi
 }
+
+function get_channel_name() {
+  local pkg_file="$1"
+  local csv_name="$2"
+
+  declare -A channels
+  while read -r channel; do
+    channels["$(echo "$channel" | jq -r ".currentCSV")"]="$(echo "$channel" | jq -r ".name")"
+  done < <(yq r --tojson "$pkg_file" "channels" | jq -c '.[]')
+
+  if [[ -n "${channels["$csv_name"]}" ]]; then
+    echo ${channels["$csv_name"]}
+  else
+    echo "No matching channel exists for this CSV in the package file"
+    exit 1
+  fi
+}
