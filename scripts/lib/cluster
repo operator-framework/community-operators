@@ -81,3 +81,23 @@ function log_operator_state() {
   done
   kubectl describe pods --namespace="$namespace" >> "$log_file" 2>&1
 }
+
+function get_op_namespace() {
+  local csv_file="$1"
+  local op_name="$2"
+
+  declare -A modes
+  while read -r mode; do
+    modes["$(echo "$mode" | jq -r ".type")"]="$(echo "$mode" | jq -r ".supported")"
+  done < <(yq r --tojson "$csv_file" "spec.installModes" | jq -c '.[]')
+
+  if [[ ${modes["AllNamespaces"]} == "true" ]]; then
+    echo "operators"
+  elif [[ ${modes["SingleNamespace"]} == "true" ]]; then
+    echo "$op_name"
+  else
+    # Operators should have at least one of SingleNamespace, AllNamespaces true.
+    echo "Both SingleNamespace and AllNamespaces cannot be false"
+    exit 1
+  fi
+}
