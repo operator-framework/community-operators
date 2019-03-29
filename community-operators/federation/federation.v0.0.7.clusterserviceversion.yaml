@@ -13,6 +13,367 @@ metadata:
     containerImage: "quay.io/kubernetes-multicluster/federation-v2:v0.0.7"
     createdAt: "2019-01-01T00:00:00Z"
     repository: https://github.com/openshift/federation-v2-operator
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "clusterregistry.k8s.io/v1alpha1",
+          "kind": "Cluster",
+          "metadata": {
+            "name": "cluster-name"
+          },
+          "spec": {
+            "authInfo": {},
+            "kubernetesApiEndpoints": {
+              "serverEndpoints": [
+                {
+                  "clientCIDR": "0.0.0.0/0",
+                  "serverAddress": "https://cluster-name.example.com:6443"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "apiVersion": "core.federation.k8s.io/v1alpha1",
+          "kind": "FederatedCluster",
+          "metadata": {
+            "name": "cluster-name"
+          },
+          "spec": {
+            "clusterRef": {
+              "name": "cluster-name"
+            },
+            "secretRef": {
+              "name": "<name-of-secret>"
+            }
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedDeployment",
+          "metadata": {
+            "name": "hello"
+          },
+          "spec": {
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            },
+            "template": {
+              "apiVersion": "extensions/v1beta1",
+              "kind": "Deployment",
+              "metadata": {
+                "name": "hello"
+              },
+              "spec": {
+                "replicas": 1,
+                "template": {
+                  "metadata": {
+                    "labels": {
+                      "app": "hello"
+                    }
+                  },
+                  "spec": {
+                    "containers": [
+                      {
+                        "name": "hello",
+                        "image": "openshift/hello-openshift:latest",
+                        "ports": [
+                          {
+                            "containerPort": 80
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedClusterRole",
+          "metadata": {
+            "name": "test-clusterrole"
+          },
+          "spec": {
+            "template": {
+              "rules": [
+                {
+                  "apiGroups": [
+                    "*"
+                  ],
+                  "resources": [
+                    "*"
+                  ],
+                  "verbs": [
+                    "*"
+                  ]
+                }
+              ]
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            }
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedClusterRoleBinding",
+          "metadata": {
+            "name": "test-clusterrolebinding"
+          },
+          "spec": {
+            "template": {
+              "subjects": [
+                {
+                  "kind": "Group",
+                  "name": "test-user",
+                  "apiGroup": "rbac.authorization.k8s.io"
+                }
+              ],
+              "roleRef": {
+                "kind": "ClusterRole",
+                "name": "cluster-admin",
+                "apiGroup": "rbac.authorization.k8s.io"
+              }
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            }
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedConfigMap",
+          "metadata": {
+            "name": "test-configmap",
+          },
+          "spec": {
+            "template": {
+              "data": {
+                "A": "ala ma kota"
+              }
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            },
+            "overrides": [
+              {
+                "clusterName": "cluster2",
+                "clusterOverrides": [
+                  {
+                    "path": "data",
+                    "value": {
+                      "foo": "bar"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedIngress",
+          "metadata": {
+            "name": "test-ingress",
+          },
+          "spec": {
+            "template": {
+              "spec": {
+                "rules": [
+                  {
+                    "host": "ingress.example.com",
+                    "http": {
+                      "paths": [
+                        {
+                          "backend": {
+                            "serviceName": "test-service",
+                            "servicePort": 80
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            }
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedJob",
+          "metadata": {
+            "name": "test-job"
+          },
+          "spec": {
+            "template": {
+              "spec": {
+                "parallelism": 1,
+                "selector": {
+                  "matchLabels": {
+                    "app": "busybox"
+                  }
+                },
+                "manualSelector": true,
+                "template": {
+                  "metadata": {
+                    "labels": {
+                      "app": "busybox"
+                    }
+                  },
+                  "spec": {
+                    "terminationGracePeriodSeconds": 0,
+                    "restartPolicy": "Never",
+                    "containers": [
+                      {
+                        "name": "busybox",
+                        "image": "busybox",
+                        "command": [
+                          "/bin/sh",
+                          "-c",
+                          "trap : TERM INT; (while true; do sleep 1000; done) & wait"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            },
+            "overrides": [
+              {
+                "clusterName": "cluster2",
+                "clusterOverrides": [
+                  {
+                    "path": "spec.parallelism",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedNamespace",
+          "metadata": {
+            "name": "test-namespace"
+          },
+          "spec": {
+            "placement": {
+              "clusterNames": [
+                "cluster-name"
+              ]
+            }
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedSecret",
+          "metadata": {
+            "name": "test-secret"
+          },
+          "spec": {
+            "template": {
+              "data": {
+                "A": "YWxhIG1hIGtvdGE="
+              },
+              "type": "Opaque"
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            },
+            "overrides": [
+              {
+                "clusterName": "cluster2",
+                "clusterOverrides": [
+                  {
+                    "path": "data",
+                    "value": {
+                      "A": null
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedService",
+          "metadata": {
+            "name": "test-service",
+          },
+          "spec": {
+            "template": {
+              "spec": {
+                "selector": {
+                  "app": "nginx"
+                },
+                "type": "NodePort",
+                "ports": [
+                  {
+                    "name": "http",
+                    "port": 80
+                  }
+                ]
+              }
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            }
+          }
+        },
+        {
+          "apiVersion": "types.federation.k8s.io/v1alpha1",
+          "kind": "FederatedServiceAccount",
+          "metadata": {
+            "name": "test-serviceaccount",
+          },
+          "spec": {
+            "template": {
+              "automountServiceAccountToken": true
+            },
+            "placement": {
+              "clusterNames": [
+                "cluster2",
+                "cluster1"
+              ]
+            }
+          }
+        }
+      ]
 spec:
   displayName: Federation
   description: |
