@@ -46,10 +46,6 @@ spec:
 
     ### Before Your Start
 
-    Add Security Context Constraint `anyuid` to the `hazelcast` ServiceAccount.
-
-        $ oc adm policy add-scc-to-user anyuid -z hazelcast
-
     Add a Secret within the Project that contains the Hazelcast License Key. If you don't have one, get a trial key from this [link](https://hazelcast.com/hazelcast-enterprise-download/trial/).
 
         $ oc create secret generic hz-license-key-secret --from-literal=key=LICENSE-KEY-HERE
@@ -175,6 +171,17 @@ spec:
           verbs:
           - get
           - list
+        serviceAccountName: hazelcast
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          resourceNames:
+          - anyuid
+          verbs:
+          - use
         serviceAccountName: hazelcast
     strategy: deployment
   installModes:
