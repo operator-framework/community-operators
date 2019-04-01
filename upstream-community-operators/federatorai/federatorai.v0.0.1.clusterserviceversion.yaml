@@ -4,11 +4,11 @@ metadata:
   name: federatorai.v0.0.1
   namespace: placeholder
   annotations:
-    capabilities: Basic Install
-    categories: OpenShift Optional
+    capabilities: Seamless Upgrades
+    categories: "AI/Machine Learning, OpenShift Optional"
     certified: "false"
-    repository: https://github.com/containers-ai/federatorai-operator
-    containerImage: prophetstor/federatorai-operator:0.0.1
+    repository: https://quay.io/repository/prophetstor/federatorai-operator
+    containerImage: quay.io/prophetstor/federatorai-operator:v0.0.1
     createdAt: 2019-03-19T00:59:59Z
     description: FederatorAI Operator provides easy configuration and management of AI-based Kubernetes resource orchestrator
     support: ProphetStor Data Services, Inc.
@@ -92,7 +92,7 @@ spec:
   - type: MultiNamespace
     supported: false
   - type: AllNamespaces
-    supported: false
+    supported: true
   install:
     strategy: deployment
     spec:
@@ -112,6 +112,7 @@ spec:
           - alamedaservices
           verbs:
           - list
+          - update
           - watch
         - apiGroups:
           - rbac.authorization.k8s.io
@@ -138,12 +139,25 @@ spec:
           - list
           - watch
         - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+        - apiGroups:
           - apps
           resources:
           - deployments
           verbs:
           - list
           - watch
+          - create
         - apiGroups:
           - apiextensions.k8s.io
           resources:
@@ -331,8 +345,6 @@ spec:
           - alamedarecommendations
           verbs:
           - get
-          - list
-          - watch
           - create
           - update
           - patch
@@ -355,8 +367,6 @@ spec:
           - customresourcedefinitions
           verbs:
           - get
-          - create
-          - update
         - apiGroups:
           - ''
           resources:
@@ -364,15 +374,6 @@ spec:
           verbs:
           - create
           - watch
-          - list
-        - apiGroups:
-          - admissionregistration.k8s.io
-          resources:
-          - validatingwebhookconfigurations
-          verbs:
-          - watch
-          - create
-          - update
           - list
         - apiGroups:
           - ''
@@ -385,12 +386,6 @@ spec:
           - list
       - serviceAccountName: alameda-datahub
         rules:
-        - apiGroups:
-          - ''
-          resources:
-          - namespaces
-          verbs:
-          - get
         - apiGroups:
           - autoscaling.containers.ai
           resources:
@@ -471,7 +466,7 @@ spec:
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
-                      fieldPath: metadata.namespace
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
