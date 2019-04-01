@@ -1,15 +1,15 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: microcks-operator.v0.1.0
+  name: microcks-operator.v0.2.0
   namespace: placeholder
   annotations:
     capabilities: Basic Install
     categories: "Integration & Delivery"
     description: "Open Source mocking and testing platform for API and microservices"
     certified: "false"
-    containerImage: quay.io/microcks/microcks-ansible-operator:0.1.0
-    createdAt: 2019-03-14T21:20:00Z
+    containerImage: quay.io/microcks/microcks-ansible-operator:0.2.0
+    createdAt: 2019-04-01T09:01:00Z
     support: microcks.github.io
     repository: https://github.com/microcks/microcks-ansible-operator
     alm-examples: |-
@@ -40,11 +40,40 @@ metadata:
               "volumeSize": "2Gi"
             }
           }
+        },
+        {
+          "apiVersion": "microcks.github.io/v1alpha1",
+          "kind": "MicrocksInstall",
+          "metadata": {
+            "name": "my-microcksinstall-minikube"
+          },
+          "spec": {
+            "name": "my-microcksinstall-minikube",
+            "version": "0.7.1",
+            "microcks": {
+              "replicas": 2,
+              "url": "microcks.192.168.99.100.nip.io"
+            },
+            "postman": {
+              "replicas": 2
+            },
+            "keycloak": {
+              "install": true,
+              "persistent": true,
+              "volumeSize": "1Gi",
+              "url": "keycloak.192.168.99.100.nip.io"
+            },
+            "mongodb": {
+              "install": true,
+              "persistent": true,
+              "volumeSize": "2Gi"
+            }
+          }
         }
       ]
 spec:
   displayName: Microcks Operator
-  version: 0.1.0
+  version: 0.2.0
   description: >
     Microcks is an open source project those goal is to provide a platform for referencing, deploying mocks and allow contract-testing of Services and APIs. It can also be considered as a Service Virtualization solution because it will allow you to provide fake API or Service implementation before development being actually done. It supports both REST API and SOAP WebServices and perfectly integrates into an iterative,contract-first delivery process.
     
@@ -121,6 +150,12 @@ spec:
           verbs:
           - '*'
         - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes/custom-host
+          verbs:
+          - create
+        - apiGroups:
           - extensions
           resources:
           - ingresses
@@ -154,7 +189,7 @@ spec:
               serviceAccountName: microcks-ansible-operator
               containers:
                 - name: microcks-ansible-operator
-                  image: quay.io/microcks/microcks-ansible-operator:0.1.0
+                  image: quay.io/microcks/microcks-ansible-operator:0.2.0
                   imagePullPolicy: Always
                   env:
                     - name: WATCH_NAMESPACE
