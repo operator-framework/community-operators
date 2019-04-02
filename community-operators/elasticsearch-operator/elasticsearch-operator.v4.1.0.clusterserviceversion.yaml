@@ -1,0 +1,253 @@
+#! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
+#! parse-kind: ClusterServiceVersion
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: elasticsearch-operator.v4.1.0
+  namespace: placeholder
+  annotations:
+    categories: "OpenShift Optional, Logging & Tracing"
+    capabilities: "Seamless Upgrades"
+    certified: "false"
+    description: |-
+      The Elasticsearch Operator for OKD provides a means for configuring and managing an Elasticsearch cluster for tracing and cluster logging.
+      ## Prerequisites and Requirements
+      ### Elasticsearch Operator Namespace
+      The Elasticsearch Operator must be deployed to the global operator group namespace
+      ### Memory Considerations
+      Elasticsearch is a memory intensive application.  The initial
+      set of OKD nodes may not be large enough to support the Elasticsearch cluster.  Additional OKD nodes must be added
+      to the OKD cluster if you desire to run with the recommended(or better) memory. Each ES node can operate with a
+      lower memory setting though this is not recommended for production deployments.
+    containerImage: quay.io/openshift/origin-elasticsearch-operator:latest
+    createdAt: 2019-02-20T08:00:00Z
+    support: AOS Cluster Logging, Jaeger
+    alm-examples: |-
+        [
+            {
+                "apiVersion": "logging.openshift.io/v1",
+                "kind": "Elasticsearch",
+                "metadata": {
+                  "name": "elasticsearch"
+                },
+                "spec": {
+                  "managementState": "Managed",
+                  "nodeSpec": {
+                    "image": "quay.io/openshift/origin-logging-elasticsearch5:latest",
+                    "resources": {
+                      "limits": {
+                        "memory": "1Gi"
+                      },
+                      "requests": {
+                        "memory": "512Mi"
+                      }
+                    }
+                  },
+                  "nodes": [
+                    {
+                        "nodeCount": 1,
+                        "roles": ["client","data","master"],
+                        "redundancyPolicy": "SingleRedundancy"
+                    }
+                  ]
+                }
+            }
+        ]
+spec:
+  displayName: Elasticsearch Operator
+
+  description: |
+    The Elasticsearch Operator for OKD provides a means for configuring and managing an Elasticsearch cluster for use in tracing and cluster logging.
+    This operator only supports OKD Cluster Logging and Jaeger.  It is tightly coupled to each and is not currently capable of
+    being used as a general purpose manager of Elasticsearch clusters running on OKD.
+
+    It is recommended this operator be deployed to the **openshift-operators** namespace to properly support the Cluster Logging and Jaeger use cases.
+
+    Once installed, the operator provides the following features:
+    * **Create/Destroy**: Deploy an Elasticsearch cluster to the same namespace in which the Elasticsearch custom resource is created.
+
+  keywords: ['elasticsearch', 'jaeger']
+
+  maintainers:
+  - name: Red Hat, AOS Logging
+    email: aos-logging@redhat.com
+
+  provider:
+    name: Red Hat, Inc
+
+  links:
+  - name: Elastic
+    url: https://www.elastic.co/
+  - name: Elasticsearch Operator
+    url: https://github.com/openshift/elasticsearch-operator
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: elasticsearch-operator
+        rules:
+        - apiGroups:
+          - logging.openshift.io
+          resources:
+          - "*"
+          verbs:
+          - "*"
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - pods/exec
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - "*"
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - "*"
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheusrules
+          - servicemonitors
+          verbs:
+          - "*"
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - "*"
+        - nonResourceURLs:
+          - "/metrics"
+          verbs:
+          - get
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          - subjectaccessreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+      deployments:
+      - name: elasticsearch-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: elasticsearch-operator
+          template:
+            metadata:
+              labels:
+                name: elasticsearch-operator
+            spec:
+              serviceAccountName: elasticsearch-operator
+              containers:
+                - name: elasticsearch-operator
+                  image: quay.io/openshift/origin-elasticsearch-operator:latest
+                  imagePullPolicy: IfNotPresent
+                  command:
+                  - elasticsearch-operator
+                  ports:
+                  - containerPort: 60000
+                    name: metrics
+                  env:
+                    - name: WATCH_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.annotations['olm.targetNamespaces']
+                    - name: OPERATOR_NAME
+                      value: "elasticsearch-operator"
+                    - name: PROXY_IMAGE
+                      value: "quay.io/openshift/origin-oauth-proxy:latest"
+  version: 4.1.0
+  customresourcedefinitions:
+    owned:
+    - name: elasticsearches.logging.openshift.io
+      version: v1
+      kind: Elasticsearch
+      displayName: Elasticsearch
+      description: An Elasticsearch cluster instance
+      resources:
+      - kind: Deployment
+        version: v1
+      - kind: StatefulSet
+        version: v1
+      - kind: ReplicaSet
+        version: v1
+      - kind: Pod
+        version: v1
+      - kind: ConfigMap
+        version: v1
+      - kind: Service
+        version: v1
+      - kind: Route
+        version: v1
+      specDescriptors:
+      - description: The name of the serviceaccount used by the Elasticsearch pods
+        displayName: Service Account
+        path: serviceAccountName
+        x-descriptors:
+          - 'urn:alm:descriptor:io.kubernetes:ServiceAccount'
+      - description: The name of the configmap used by the Elasticsearch pods
+        displayName: Config Map
+        path: configMapName
+        x-descriptors:
+          - 'urn:alm:descriptor:io.kubernetes:ConfigMap'
+      - description: The name of the secret used by the Elasticsearch pods
+        displayName: Secret
+        path: secretName
+        x-descriptors:
+          - 'urn:alm:descriptor:io.kubernetes:Secret'
+      - description: Limits describes the minimum/maximum amount of compute resources required/allowed
+        displayName: Resource Requirements
+        path: nodeSpec.resources
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+      statusDescriptors:
+      - description: The current health of Elasticsearch Cluster
+        displayName: Elasticsearch Cluster Health
+        path: clusterHealth
+        x-descriptors:
+          - 'urn:alm:descriptor:io.kubernetes.phase'
+      - description: The status for each of the Elasticsearch pods with the Client role
+        displayName: Elasticsearch Client Status
+        path: pods.client
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
+      - description: The status for each of the Elasticsearch pods with the Data role
+        displayName: Elasticsearch Data Status
+        path: pods.data
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
+      - description: The status for each of the Elasticsearch pods with the Master role
+        displayName: Elasticsearch Master Status
+        path: pods.master
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'

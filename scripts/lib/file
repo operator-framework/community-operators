@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+
+# This script contains functions to create OLM and registry files.
+
+# create_catalogsource_file creates a CatalogSource for the OLM.
+function create_catalogsource_file() {
+  local catalogsource_file="$1"
+  local op_name="$2"
+  local op_image="$3"
+  local namespace="$4"
+
+  cat <<EOF > "$catalogsource_file"
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: ${op_name}-ocs
+  namespace: $namespace
+spec:
+  displayName: $op_name Community Operator
+  image: $op_image
+  publisher: community-operators
+  sourceType: grpc
+EOF
+}
+
+# create_subscription_file creates a subscription for OLM to manage.
+function create_subscription_file() {
+  local subscription_file="$1"
+  local op_name="$2"
+  local pkg_name="$3"
+  local channel="$4"
+  local csv_name="$5"
+  local namespace="$6"
+
+  cat <<EOF > "$subscription_file"
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: ${op_name}-sub
+  namespace: $namespace
+spec:
+  name: $pkg_name
+  source: ${op_name}-ocs
+  sourceNamespace: $namespace
+  startingCSV: $csv_name
+  channel: $channel
+EOF
+}
+
+# create_operator_group_file creates an operator group for the operator CSV if
+# the CSV does not support AllNamespaces.
+function create_operator_group_file() {
+  local op_group_file="$1"
+  local op_name="$2"
+  local csv_file="$3"
+  local namespace="$4"
+
+  while read -r mode; do
+    if [[ "$(echo "$mode" | jq -r ".type")" == "AllNamespaces" && \
+      "$(echo "$mode" | jq -r ".supported")" == "false" ]]; then
+        cat <<EOF > "$op_group_file"
+apiVersion: operators.coreos.com/v1alpha2
+kind: OperatorGroup
+metadata:
+  name: ${op_name}-og
+  namespace: $namespace
+spec:
+  targetNamespaces:
+  - $namespace
+EOF
+    fi
+  done < <(yq r --tojson "$csv_file" "spec.installModes" | jq -c '.[]')
+}
+
+# create_registry_dockerfile creates a registry Dockerfile.
+function create_registry_dockerfile() {
+  local reg_dockerfile="$1"
+  local op_name="$2"
+
+  cat <<EOF > "$reg_dockerfile"
+FROM quay.io/openshift/origin-operator-registry:latest
+COPY $op_name manifests/${op_name}
+RUN /usr/bin/initializer -o bundles.db
+ENTRYPOINT ["/usr/bin/registry-server"]
+CMD ["-d", "bundles.db", "-t", "termination.log"]
+EOF
+}
+
+# create_cr_files_from_metadata takes a CSV's metadata bytes and transforms CR's
+# from the "alm-examples" annontation, if present, into YAML manifest files.
+function create_cr_files_from_metadata() {
+  local csv_file="$1"
+  local cr_dir="$2"
+  local namespace="$3"
+
+  local alm_examples="$(yq r "$csv_file" "metadata.annotations.alm-examples")"
+  [[ "$alm_examples" == "null" ]] && return 0
+
+  local tmp
+  while read -r obj; do
+    tmp="$(mktemp -p "$cr_dir" "XXXXXXXXXX.cr.yaml")"
+    echo "$obj" | yq w - "metadata.namespace" "$namespace" > "$tmp"
+  done < <(echo "$alm_examples" | jq -c '.[]')
+}
+
+# insert_proxy_container inserts a proxy container into the operator pod
+# into a CSV's deployment.
+function insert_proxy_container() {
+  local csv_file="$1"
+  local proxy_image="$2"
+  local dep_tmpl="spec.install.spec.deployments[0].spec.template.spec"
+  local containers_json="$(yq r --tojson "$csv_file" "$dep_tmpl")"
+
+  local container='{name: "scorecard-proxy",
+  command: ["scorecard-proxy"],
+  env: [{
+    name: "WATCH_NAMESPACE",
+    valueFrom: {fieldRef: {apiVersion: "v1", fieldPath: "metadata.namespace"}}
+  }],
+  image: "'"$proxy_image"'",
+  imagePullPolicy: "Always",
+  ports: [{name: "proxy", containerPort: 8889}],
+  resources: {}}'
+  local containers_yaml="$(jq ". + {containers: (.containers + [$container])}" \
+    <<< "$containers_json" | yq r -)"
+
+  yq w -i "$csv_file" "$dep_tmpl" "$containers_yaml"
+  sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
+}
+
+# create_kubeconfig_secret_file creates a Secret manifest for the proxy
+# kubeconfig.
+function create_kubeconfig_secret_file() {
+  local secret_file="$1"
+  local namespace="$2"
+  # Expected proxy url. The proxy is configured to listen on port 8889.
+  local server="localhost:8889"
+  # Username for scorecard namespaced owner reference.
+  local username="$(echo '{"apiVersion":"","kind":"","name":"scorecard","uid":"","Namespace":"'$namespace'"}' | base64 -w 0)"
+  # Kubeconfig used to communicate with the proxy.
+  local kubeconfig="apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: http://${username}@${server}
+  name: proxy-server
+contexts:
+- context:
+    cluster: proxy-server
+    user: admin/proxy-server
+  name: $namespace/proxy-server
+current-context: $namespace/proxy-server
+preferences: {}
+users:
+- name: admin/proxy-server
+  user:
+    username: $username
+    password: unused"
+  local kubeconfig_base64="$(echo "$kubeconfig" | base64 -w 0)"
+
+  cat <<EOF > "$secret_file"
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scorecard-kubeconfig
+  namespace: $namespace
+data:
+  kubeconfig: $kubeconfig_base64
+EOF
+}
+
+# insert_kubeconfig_volume inserts a volume for the proxy's kubeconfig Secret
+# into a CSV's deployment.
+function insert_kubeconfig_volume() {
+  local csv_file="$1"
+  local dep_tmpl="spec.install.spec.deployments[0].spec.template.spec"
+  local volumes_json="$(yq r --tojson "$csv_file" "$dep_tmpl")"
+
+  local volume='{name: "scorecard-kubeconfig",
+  secret: {
+    secretName: "scorecard-kubeconfig",
+    items: [{key: "kubeconfig", path: "config"}]
+  }}'
+  local volumes_yaml="$(jq ". + {volumes: (.volumes + [$volume])}" \
+    <<< "$volumes_json" | yq r -)"
+
+  yq w -i "$csv_file" "$dep_tmpl" "$volumes_yaml"
+  sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
+}
+
+# insert_kubeconfig_secret_mount inserts a volume mount for the proxy's
+# kubeconfig Secret and an env variable pointing to the config location
+# into a CSV's deployment.
+function insert_kubeconfig_secret_mount() {
+  local csv_file="$1"
+  local dep_tmpl="spec.install.spec.deployments[0].spec.template.spec"
+  local dep_json="$(yq r --tojson "$csv_file" "$dep_tmpl")"
+  local containers_json="$(jq ".containers" <<< "$dep_json")"
+
+  local mount='{name: "scorecard-kubeconfig", mountPath: "/scorecard-secret"}'
+  local containers_json="$(jq "[.[] | . + {volumeMounts: (.volumeMounts + [$mount])}]" \
+    <<< "$containers_json")"
+
+  local container_env='{name: "KUBECONFIG", value: "/scorecard-secret/config"}'
+  local containers_json="$(jq "[.[] | . + {env: (.env + [$container_env])}]" \
+    <<< "$containers_json")"
+
+  local dep_yaml="$(jq ". + {containers: $containers_json}" \
+    <<< "$dep_json" | yq r -)"
+
+  yq w -i "$csv_file" "$dep_tmpl" "$dep_yaml"
+  sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
+}

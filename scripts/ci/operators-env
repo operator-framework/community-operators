@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Exports a variable containing a space-delimited list of each operator
+# with changes in a PR and the latest CSV version for that operator in the form:
+# "xxxxx-operators/operator1:v0.0.1 xxxxx-operators/operator2:v0.0.1"
+
+declare -A OP_TYPES
+OP_TYPES=(
+  ["upstream"]="upstream-community-operators"
+  ["openshift"]="community-operators"
+)
+DIR="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"
+# Remove duplicates.
+declare -A SEEN
+for op_distro in "${!OP_TYPES[@]}"; do
+  OP_TYPE_VAR="OPERATORS_${op_distro^^}"
+  declare $OP_TYPE_VAR=""
+  for op_type in ${OP_TYPES[$op_distro]}; do
+    for file in $(git diff master --name-only 2>&1); do
+      # Run on operator packages with file deletions but still exist.
+      if [[ ! -e "$file" && ! -d "$(dirname "$file")" ]]; then
+        continue
+      fi
+      if echo "$file" | grep -q "^$op_type"; then
+        OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
+        if [[ -n "${SEEN[$OP_PATH]}" ]]; then
+          continue
+        fi
+        SEEN[$OP_PATH]="seen"
+        PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
+        # Get latest CSV version for the changed operator.
+        OP_VER="$(yq r --tojson "$PKG_FILE" "channels" \
+          | jq ".[] | .currentCSV" | sort -V | tail -1 \
+          | sed -E 's/"[a-zA-Z\-]+\.?v?([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?)"/\1/')"
+        declare $OP_TYPE_VAR="${!OP_TYPE_VAR}${!OP_TYPE_VAR:+" "}${OP_PATH}:${OP_VER}"
+      fi
+    done
+  done
+  echo "export $OP_TYPE_VAR=\"${!OP_TYPE_VAR}\";"
+done

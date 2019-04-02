@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+
+# This script transforms an operator dir structured in the style of
+# community-operators into one expected by operator-registry, inserts the
+# scorecard proxy container, and proxy kubeconfig secret, volume, and mount
+# into a CSV, creates CR's from CSV metadata, deploys the operator with the
+# OLM in a local cluster, and runs the SDK scorecard against the operator.
+
+set -ex
+
+for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
+  . "$f"
+done
+
+# Relative path to the dir containing operator manifests. Usually something
+# like "community-operators/automationbroker".
+[[ -z "$OP_PATH" ]] && OP_PATH="$1"
+if [[ ! -d "$OP_PATH" ]]; then
+  echo "Relative path to operator package '$OP_PATH' does not exist."
+  exit 1
+fi
+# This script assumes versions are written as "v0.0.1" in file names and
+# fields, but OP_VER is expected to not include a "v" prefix, ex. "0.0.1".
+# Also support versions with tagged names, ex. "0.3.0-beta1"
+[[ -z "$OP_VER" ]] && OP_VER="$2"
+if [[ -z "$OP_VER" || ! "$OP_VER" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+(-[a-zA-Z0-9]+)?$ ]]; then
+  echo "Operator version '$OP_VER' not valid."
+  exit 1
+fi
+DISTRO_TYPE_UPSTREAM="upstream"
+DISTRO_TYPE_OPENSHIFT="openshift"
+DISTRO_TYPE="${3:-$DISTRO_TYPE_UPSTREAM}"
+if [[ "$DISTRO_TYPE" != "$DISTRO_TYPE_UPSTREAM" && "$DISTRO_TYPE" != "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  echo "DISTRO_TYPE \"$DISTRO_TYPE\" is not valid. Must be one of: \"$DISTRO_TYPE_UPSTREAM\", \"$DISTRO_TYPE_OPENSHIFT\"."
+  exit 1
+fi
+if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  if [[ -z "$KUBECONFIG" || ! -e "$KUBECONFIG" ]]; then
+    echo "KUBECONFIG not available."
+    exit 1
+  fi
+fi
+
+TMP="$(mktemp -d --suffix "_test_pr")"
+trap_add_exit "rm -rf $TMP"
+set -u
+DEPLOY_DIR="${TMP}/deploy"
+PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
+PKG_NAME="$(yq r "$PKG_FILE" "packageName")"
+ABS_BUNDLE_PATH="${DEPLOY_DIR}/${PKG_NAME}/${OP_VER}"
+CR_DIR="${DEPLOY_DIR}/crs"
+mkdir -p "$ABS_BUNDLE_PATH"
+mkdir -p "$CR_DIR"
+
+# Organize expected dir structure for the registry image build.
+operator-courier nest "${OP_PATH}" "${DEPLOY_DIR}/${PKG_NAME}"
+pushd "$DEPLOY_DIR"
+# Set PKG_FILE again with the nested path.
+PKG_FILE="$(find "$DEPLOY_DIR" -name "*.package.yaml" -print -quit)"
+CATALOGSOURCE_FILE="${PKG_NAME}.catalogsource.yaml"
+SUBSCRIPTION_FILE="${PKG_NAME}.subscription.yaml"
+OPERATOR_GROUP_FILE="${PKG_NAME}.operatorgroup.yaml"
+SC_PROXY_IMAGE="quay.io/operator-framework/scorecard-proxy:master"
+# Make sure this registry is public before proceeding.
+OP_REGISTRY_IMAGE="quay.io/operatorframework/${PKG_NAME}:${OP_VER}-registry"
+SECRET_FILE="${DEPLOY_DIR}/scorecard.secret.yaml"
+CSV_FILE="$(find "$ABS_BUNDLE_PATH" -name "*${OP_VER}.clusterserviceversion.yaml" -print -quit)"
+CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
+CHANNEL_NAME="$(get_channel_name "$PKG_FILE" "$CSV_NAME")"
+NAMESPACE="$(get_op_namespace "$CSV_FILE" "$PKG_NAME")"
+set +u
+
+# Create catalog manifests and Dockerfile to create a registry image.
+create_catalogsource_file "$CATALOGSOURCE_FILE" "$PKG_NAME" "$OP_REGISTRY_IMAGE" "$NAMESPACE"
+create_subscription_file "$SUBSCRIPTION_FILE" "$PKG_NAME" "$PKG_NAME" "$CHANNEL_NAME" "$CSV_NAME" "$NAMESPACE"
+if kubectl get operatorgroups --namespace="$NAMESPACE" 2>&1 | grep "No resources found."; then
+  create_operator_group_file "$OPERATOR_GROUP_FILE" "$PKG_NAME" "$CSV_FILE" "$NAMESPACE"
+fi
+create_registry_dockerfile "Dockerfile" "$PKG_NAME"
+
+# Add scorecard proxy resources to the CSV.
+create_cr_files_from_metadata "$CSV_FILE" "$CR_DIR" "$NAMESPACE"
+create_kubeconfig_secret_file "$SECRET_FILE" "$NAMESPACE"
+insert_kubeconfig_volume "$CSV_FILE"
+insert_kubeconfig_secret_mount "$CSV_FILE"
+insert_proxy_container "$CSV_FILE" "$SC_PROXY_IMAGE"
+
+# Build a registry container containing operator manifests.
+docker build -t "$OP_REGISTRY_IMAGE" .
+
+# Define names for resource types.
+DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
+declare -A OBJECTS
+OBJECTS=(
+  ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
+  ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
+  ["csv"]="$CSV_NAME"
+  ["deployment"]="$DEP_NAME"
+)
+if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
+  OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
+fi
+
+# Create a namespace if necessary.
+if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
+  kubectl create namespace "$NAMESPACE"
+fi
+
+apply_objects_incluster "$DEPLOY_DIR"
+# Clean up all created resources, CSV, and CRD's.
+trap_add_exit "delete_objects_incluster $DEPLOY_DIR $NAMESPACE"
+trap_add_exit "delete_objects_incluster $ABS_BUNDLE_PATH $NAMESPACE"
+
+# Create logs for operator debugging.
+LOG_FILE="${TMP}/info.log"
+trap_add_exit "log_operator_state $LOG_FILE OBJECTS $NAMESPACE; cat $LOG_FILE"
+
+# Wait for the deployment specified in the CSV to rollout successfully.
+wait_on_deployment "$DEP_NAME" "$NAMESPACE"
+
+# Run scorecard tests on the operator.
+# TODO: run against multiple CR's. Right now the scorecard only works with one
+# CR.
+for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
+  operator-sdk scorecard \
+    --cr-manifest "$cr_file" \
+    --crds-dir "$ABS_BUNDLE_PATH" \
+    --olm-deployed \
+    --csv-path "$CSV_FILE" \
+    --namespace "$NAMESPACE" \
+    --init-timeout 60 \
+    --proxy-image "$SC_PROXY_IMAGE" \
+    --kubeconfig "$KUBECONFIG" \
+    --verbose
+done

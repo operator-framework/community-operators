@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+set -ex
+
+# Don't use sudo when running in a container.
+SUDO=sudo
+if [ -f /.dockerenv ]; then
+  SUDO=
+fi
+
+# DISTRO_TYPE is either "upstream" or "openshift"
+DISTRO_TYPE_UPSTREAM="upstream"
+DISTRO_TYPE_OPENSHIFT="openshift"
+DISTRO_TYPE="${1:-$DISTRO_TYPE_UPSTREAM}"
+if [[ "$DISTRO_TYPE" != "$DISTRO_TYPE_UPSTREAM" && "$DISTRO_TYPE" != "$DISTRO_TYPE_OPENSHIFT" ]]; then
+  echo "DISTRO_TYPE \"$DISTRO_TYPE\" is not valid. Must be one of: \"$DISTRO_TYPE_UPSTREAM\", \"$DISTRO_TYPE_OPENSHIFT\"."
+  exit 1
+fi
+
+# jq, yq
+curl -Lo jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+chmod +x jq
+$SUDO mv jq /usr/local/bin/
+curl -Lo yq https://github.com/mikefarah/yq/releases/download/2.2.1/yq_linux_amd64
+chmod +x yq
+$SUDO mv yq /usr/local/bin/
+# operator-courier
+# export PATH="${HOME}/.local/bin:${PATH}"
+python3 -m pip install operator-courier
+# SDK
+SDK_VER="v0.6.0"
+curl -Lo operator-sdk "https://github.com/operator-framework/operator-sdk/releases/download/${SDK_VER}/operator-sdk-${SDK_VER}-x86_64-linux-gnu"
+chmod +x operator-sdk
+$SUDO mv operator-sdk /usr/local/bin/
+# helm
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get | bash
+# kubectl
+KUBE_VER="v1.13.0"
+curl -Lo kubectl "https://storage.googleapis.com/kubernetes-release/release/${KUBE_VER}/bin/linux/amd64/kubectl"
+chmod +x kubectl
+$SUDO mv kubectl /usr/local/bin/
+
+if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_UPSTREAM" ]]; then
+  # minikube and crictl dependency
+  curl -Lo crictl.tar.gz "https://github.com/kubernetes-sigs/cri-tools/releases/download/${KUBE_VER}/crictl-${KUBE_VER}-linux-amd64.tar.gz"
+  tar -zxvf crictl.tar.gz
+  chmod +x crictl
+  $SUDO mv crictl /usr/local/bin/
+  rm crictl.tar.gz
+  curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+  chmod +x minikube
+  $SUDO mv minikube /usr/local/bin/
+fi
