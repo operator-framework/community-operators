@@ -16,7 +16,7 @@ metadata:
              "server":{
                 "cheFlavor":"codeready",
                 "cheImage": "quay.io/crw/server-container",
-                "cheImageTag": "1.1-52",
+                "cheImageTag": "1.1-54",
                 "tlsSupport":false,
                 "selfSignedCert":false
              },
@@ -45,7 +45,7 @@ metadata:
       ]
     certified: "true"
     categories: "Developer Tools"
-    containerImage: quay.io/crw/operator-container:1.1-20
+    containerImage: quay.io/crw/operator-container:1.1-23
     createdAt: 2019-03-06T11:59:59Z
     description: A Kube-native development solution that delivers portable and collaborative developer workspaces in OpenShift.
     support: Red Hat, Inc.
@@ -132,7 +132,7 @@ spec:
               spec:
                 containers:
                   - name: codeready-operator
-                    image: quay.io/crw/operator-container:1.1-20
+                    image: quay.io/crw/operator-container:1.1-23
                     env:
                       - name: WATCH_NAMESPACE
                         valueFrom:
@@ -223,10 +223,15 @@ spec:
 
     ## Pre-Reqs
 
+    In addition to a standard namespaced role, this operator may require a **ClusterRole** that allows the operator service account to:
+
+    * read secrets in openshift-ingress namespace (the operator will get TLS secret in openshift-ingress namespace to extract certificate and add it to Java trust store for CodeReady Workspaces server)
+
+    * list, get, create, update, patch, watch and delete oauthclients at a cluster scope (the operator creates oAuthclient and OpenShift v3 identity provider in Keycloak to enable Login With OpenShift in CodeReady Workspaces)
+
+
     The operator service account will require extra privileges if you enable either `server.selfSignedCerts` or `auth.openShiftoAuth` which are false in CR template by default.
     After the operator is installed, grant the **codeready-operator** service account such privileges:
-
-
     When **auth.openShiftoAuth** is enabled:
 
 
@@ -238,8 +243,8 @@ spec:
 
     ```
 
-    When **server.selfSignedCerts** is enabled:
 
+    When **server.selfSignedCerts** is enabled:
 
     ```
 
@@ -268,7 +273,7 @@ spec:
 
     * Bundled PostgreSQL and Red Hat SSO
 
-    * Common PVC strategy
+    * Per-Workspace PVC strategy
 
     * Auto-generated passwords
 
@@ -340,7 +345,7 @@ spec:
 
     #### Self-signed Certificates
 
-    To use CodeReady Workspaces with TLS enabled, but the OpenShift router does not use certificates signed by a public authority, you can use self-signed certificates, which the operator can create for you (requires cluster-admin privileges):
+    To use CodeReady Workspaces with TLS enabled, but the OpenShift router does not use certificates signed by a public authority, you can use self-signed certificates, which the operator can fetch for you (requires cluster-admin privileges):
 
 
     ```
