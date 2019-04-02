@@ -1,0 +1,543 @@
+#! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
+#! parse-kind: ClusterServiceVersion
+apiVersion: istio.banzaicloud.io/v1beta1
+kind: ClusterServiceVersion
+metadata:
+  name: istio-operator.0.1.4
+  namespace: placeholder
+  annotations:
+    capabilities: Full Lifecycle
+    categories: "Monitoring, Logging & Tracing, Security"
+    certified: "false"
+    description: Installs and maintain Istio service mesh
+    containerImage: banzaicloud/istio-operator:0.1.4
+    repository: https://github.com/banzaicloud/istio-operator/tree/release-1.1
+    createdAt: "2019-04-01T08:00:00Z"
+    support: Banzai Cloud
+    alm-examples: |
+      [
+        {
+            "apiVersion": "istio.banzaicloud.io/v1beta1",
+            "kind": "Istio",
+            "metadata": {
+                "name": "istio-sample",
+            },
+            "spec": {
+                "autoInjectionNamespaces": [
+                    "default"
+                ],
+                "citadel": {
+                    "image": "docker.io/istio/citadel:1.1.1",
+                    "replicaCount": 1
+                },
+                "defaultPodDisruptionBudget": {
+                    "enabled": true
+                },
+                "galley": {
+                    "image": "docker.io/istio/galley:1.1.1",
+                    "replicaCount": 1
+                },
+                "gateways": {
+                    "egress": {
+                        "maxReplicas": 5,
+                        "minReplicas": 1,
+                        "replicaCount": 1,
+                        "sds": {
+                            "image": "node-agent-k8s"
+                        }
+                    },
+                    "ingress": {
+                        "maxReplicas": 5,
+                        "minReplicas": 1,
+                        "replicaCount": 1,
+                        "sds": {
+                            "image": "node-agent-k8s"
+                        }
+                    },
+                    "k8singress": {}
+                },
+                "imageHub": "docker.io/istio",
+                "imageTag": "1.1.0",
+                "includeIPRanges": "*",
+                "mixer": {
+                    "image": "docker.io/istio/mixer:1.1.1",
+                    "maxReplicas": 5,
+                    "minReplicas": 1,
+                    "replicaCount": 1
+                },
+                "mtls": false,
+                "nodeAgent": {
+                    "image": "docker.io/istio/node-agent-k8s:1.1.1"
+                },
+                "outboundTrafficPolicy": {
+                    "mode": "ALLOW_ANY"
+                },
+                "pilot": {
+                    "image": "docker.io/istio/pilot:1.1.1",
+                    "maxReplicas": 5,
+                    "minReplicas": 1,
+                    "replicaCount": 1,
+                    "traceSampling": 1
+                },
+                "proxy": {
+                    "image": "docker.io/istio/proxyv2:1.1.1"
+                },
+                "proxyInit": {
+                    "image": "docker.io/istio/proxy_init:1.1.1"
+                },
+                "sds": {},
+                "sidecarInjector": {
+                    "image": "docker.io/istio/sidecar_injector:1.1.1",
+                    "replicaCount": 1,
+                    "rewriteAppHTTPProbe": true
+                },
+                "tracing": {
+                    "zipkin": {
+                        "address": "zipkin.istio-system:9411"
+                    }
+                },
+                "version": "1.1.1",
+            }
+        },
+        {
+            "apiVersion": "istio.banzaicloud.io/v1beta1",
+            "kind": "RemoteIstio",
+            "metadata": {
+                "name": "remoteistio-sample",
+            },
+            "spec": {
+                "autoInjectionNamespaces": [
+                    "default"
+                ],
+                "citadel": {
+                    "enabled": true,
+                    "replicaCount": 1
+                },
+                "enabledServices": [
+                    {
+                        "labelSelector": "istio=pilot",
+                        "name": "istio-pilot"
+                    },
+                    {
+                        "labelSelector": "istio-mixer-type=policy",
+                        "name": "istio-policy"
+                    },
+                    {
+                        "labelSelector": "statsd-prom-bridge",
+                        "name": "istio-statsd"
+                    },
+                    {
+                        "labelSelector": "istio-mixer-type=telemetry",
+                        "name": "istio-telemetry"
+                    },
+                    {
+                        "labelSelector": "app=jaeger",
+                        "name": "zipkin"
+                    }
+                ],
+                "includeIPRanges": "*",
+                "proxy": {},
+                "proxyInit": {},
+                "sidecarInjector": {
+                    "enabled": true,
+                    "initCNIConfiguration": {},
+                    "replicaCount": 1
+                }
+            }
+        }
+      ]
+spec:
+  displayName: Istio
+  description: |
+    # Istio-operator
+
+    Istio-operator is a Kubernetes operator to deploy and manage [Istio](https://istio.io/) resources for a Kubernetes cluster.
+
+    ## Overview
+
+    [Istio](https://istio.io/) is an open platform to connect, manage, and secure microservices and it is emerging as the `standard` for building service meshes on Kubernetes. It is built out on multiple components and a rather complex deployment scheme (around 14 Helm subcharts and 50+ CRDs). Installing, upgrading and operating these components requires deep understanding of Istio and Helm (the standard/supported way of deploying [Istio](https://istio.io/)).
+
+    The goal of the **Istio-operator** is to automate and simplify these and enable popular service mesh use cases (multi cluster federation, canary releases, resource reconciliation, etc) by introducing easy higher level abstractions.
+  keywords: ['istio', 'multi cluster', 'federation', 'service mesh', 'banzaicloud', 'open source']
+  version: 0.1.4
+  maturity: alpha
+  maintainers:
+  - name: Banzai Cloud
+    email: info@banzaicloud.com
+  provider:
+    name: Banzai Cloud
+  labels:
+    alm-owner-istio: istio-operator
+    operated-by: istio-operator
+  selector:
+    matchLabels:
+      alm-owner-istio: istio-operator
+      operated-by: istio-operator
+  links:
+  - name: Blog
+    url: https://banzaicloud.com/tags/istio
+  - name: Documentation
+    url: https://github.com/banzaicloud/istio-operator/blob/release-1.1/README.md
+  - name: Istio Operator Source Code
+    url: https://github.com/banzaicloud/istio-operator/tree/release-1.1
+
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDMyMCAzMjAiPgogIDxnIGlkPSJsb2dvIiBmaWxsPSIjZmZmIj4KICAgIDxyZWN0IGlkPSJiYWNrZ3JvdW5kIiBmaWxsPSIjNDY2QkIwIiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgLz4KICAgIDxwb2x5Z29uIGlkPSJodWxsIiBwb2ludHM9IjgwIDI1MCAyNDAgMjUwIDE0MCAyODAgODAgMjUwIi8+CiAgICA8cG9seWdvbiBpZD0ibWFpbnNhaWwiIHBvaW50cz0iODAgMjQwIDE0MCAyMzAgMTQwIDEyMCA4MCAyNDAiLz4KICAgIDxwb2x5Z29uIGlkPSJoZWFkc2FpbCIgcG9pbnRzPSIxNTAgMjMwIDI0MCAyNDAgMTUwIDQwIDE1MCAyMzAiLz4KICA8L2c+Cjwvc3ZnPgo=
+    mediatype: image/svg+xml
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+      - serviceAccountName: istio-operator
+        rules:
+        - apiGroups:
+          - apps
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - pods/status
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          - services
+          - endpoints
+          - pods
+          - replicationcontrollers
+          - services
+          - endpoints
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+          - patch
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - extensions
+          resources:
+          - ingresses
+          - ingresses/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - extensions
+          resources:
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - extensions
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - extensions
+          resources:
+          - replicasets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - autoscaling
+          resources:
+          - horizontalpodautoscalers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          - roles
+          - rolebindings
+          - ""
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - istio.banzaicloud.io
+          resources:
+          - istios
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - istio.banzaicloud.io
+          resources:
+          - istios/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - authentication.istio.io
+          - cloud.istio.io
+          - config.istio.io
+          - istio.istio.io
+          - networking.istio.io
+          - rbac.istio.io
+          - scalingpolicy.istio.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - istio.banzaicloud.io
+          resources:
+          - remoteistios
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - istio.banzaicloud.io
+          resources:
+          - remoteistios/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - validatingwebhookconfigurations
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - istio.banzaicloud.io
+          resources:
+          - istios
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+      deployments:
+      - name: istio-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              k8s-app: istio-operator
+              control-plane: controller-manager
+              controller-tools.k8s.io: "1.0"
+          template:
+            metadata:
+              annotations:
+                prometheus.io/scrape: "true"
+                prometheus.io/port: "8080"
+              labels:
+                k8s-app: istio-operator
+                control-plane: controller-manager
+                controller-tools.k8s.io: "1.0"
+            spec:
+              serviceAccountName: istio-operator
+              containers:
+              - name: istio-operator
+                command:
+                - /manager
+                args:
+                - --metrics-addr=:8080
+                - --watch-created-resources-events=true
+                image: banzaicloud/istio-operator:0.1.4
+                imagePullPolicy: Always
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 256Mi
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                ports:
+                - containerPort: 443
+                  name: webhook-server
+                  protocol: TCP
+                - containerPort: 8080
+                  name: metrics
+                  protocol: TCP
+              terminationGracePeriodSeconds: 30
+  customresourcedefinitions:
+    owned:
+    - name: istios.istio.banzaicloud.io
+      version: v1beta1
+      kind: Istio
+      displayName: Istio service mesh
+      description: Represents an Istio service mesh
+    - name: remoteistios.istio.banzaicloud.io
+      version: v1beta1
+      kind: RemoteIstio
+      displayName: Remote member cluster
+      description: Represents a Remote Cluster of an Istio service mesh
