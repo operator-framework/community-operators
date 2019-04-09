@@ -9,11 +9,11 @@ metadata:
     certified: "false"
     repository: https://quay.io/repository/prophetstor/federatorai-operator
     containerImage: quay.io/prophetstor/federatorai-operator:v0.0.1
-    createdAt: 2019-03-19T00:59:59Z
+    createdAt: 2019-04-09T13:00:00Z
     description: FederatorAI Operator provides easy configuration and management of AI-based Kubernetes resource orchestrator
     support: ProphetStor Data Services, Inc.
     alm-examples: >-
-      [{"apiVersion":"federatorai.containers.ai/v1alpha1","kind":"AlamedaService","metadata":{"name":"my-alamedaservice"},"spec":{"enableexecution":true,"enablegui":true,"version":"v0.3.7","prometheusservice":"https://prometheus-k8s.openshift-monitoring:9091","persistentvolumeclaim":""}}]
+      [{"apiVersion":"federatorai.containers.ai/v1alpha1","kind":"AlamedaService","metadata":{"name":"my-alamedaservice"},"spec":{"enableexecution":false,"enablegui":true,"version":"v0.3.7","prometheusservice":"https://prometheus-k8s.openshift-monitoring:9091","persistentvolumeclaim":""}}]
 spec: 
   version: 0.0.1
   maturity: alpha
@@ -35,7 +35,8 @@ spec:
         metadata:
           name: my-alamedaservice
         spec:
-          enableexecution: true
+          # experimental feature, set true to enable
+          enableexecution: false
           enablegui: true
           version: v0.3.7
           prometheusservice: https://prometheus-k8s.openshift-monitoring:9091
@@ -74,16 +75,37 @@ spec:
       - kind: Pod
         version: v1
       specDescriptors:
-      - description: Enable Execution
+      - description: Deploy components to automatically execute Alameda recommendation
         displayName: Enable Execution
         path: enableexecution
         x-descriptors:
         - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
-      - description: Enable dashboard
-        displayName: Enable GUI
+      - description: Deploy Grafana to visualize Alameda prediction and recommendation
+        displayName: Enable Dashboard
         path: enablegui
         x-descriptors:
         - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+      - description: Alameda core component image version tag
+        displayName: Alameda Version
+        path: version
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+      - description: Prometheus database connection settings for metrics retrieval
+        displayName: Prometheus Service
+        path: prometheusservice
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+      - description: Persistent volume claim configurations
+        displayName: Persistent Volume Claim
+        path: persistentvolumeclaim
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+      statusDescriptors:
+        - description: Alameda service condictions
+          displayName: Conditions
+          path: conditions
+          x-descriptors:
+          - 'urn:alm:descriptor:io.kubernetes.conditions'
   installModes:
   - type: OwnNamespace
     supported: true
@@ -121,7 +143,6 @@ spec:
           - ""
           resources:
           - nodes
-          - replicationcontrollers
           - pods
           - persistentvolumeclaims
           - serviceaccounts
@@ -132,10 +153,23 @@ spec:
         - apiGroups:
           - ""
           resources:
+          - replicationcontrollers
+          verbs:
+          - "*"
+        - apiGroups:
+          - ""
+          resources:
           - serviceaccounts
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
           - secrets
           verbs:
           - create
+          - list
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -144,6 +178,7 @@ spec:
           verbs:
           - create
           - list
+          - update
           - watch
         - apiGroups:
           - rbac.authorization.k8s.io
@@ -159,16 +194,13 @@ spec:
           resources:
           - deployments
           verbs:
-          - create
-          - list
-          - watch
+          - "*"
         - apiGroups:
           - apps
           resources:
           - replicasets
           verbs:
-          - list
-          - watch
+          - "*"
         - apiGroups:
           - apiextensions.k8s.io
           resources:
@@ -194,9 +226,7 @@ spec:
           resources:
           - deploymentconfigs
           verbs:
-          - get
-          - list
-          - watch
+          - "*"
       permissions:
       - serviceAccountName: federatorai-operator
         rules:
@@ -215,9 +245,7 @@ spec:
         - apiGroups:
           - apps
           resources:
-          - deployments
           - daemonsets
-          - replicasets
           - statefulsets
           verbs:
           - "*"
