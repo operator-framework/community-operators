@@ -9,11 +9,69 @@ function wait_on_deployment() {
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        echo "failed to rollout deployloyment \"$dep\""
+        echo "FAIL: Failed to rollout deployloyment \"$dep\""
         exit 1
       fi
       echo "retrying check rollout status for deployment \"$dep\"..."
   done
+
+  echo "Successfully rolled out deployment \"$dep\" in namespace \"$namespace\""
+}
+
+function check_subscription_passes() {
+  local sub="$1"
+  local namespace="$2"
+  local retries=10 # 1 minute timeout
+
+  echo "Checking subscription \"$sub\" reaches \"AtLatestKnown\" state"
+  while ! kubectl get "subscription/${sub}" --namespace=${namespace} -o json | jq .status -e &> /dev/null; do
+      sleep 6
+      retries=$((retries - 1))
+      if [[ $retries == 0 ]]; then
+        echo "FAIL: Failed to pick up subscription \"$sub\""
+        kubectl get "subscription/${sub}" --namespace=${namespace} -o yaml
+        exit 1
+      fi
+      echo "retrying check of subscription status for \"$sub\"..."
+  done
+
+  # Check that subscription status is set to "AtLatestKnown"
+  while ! [[ `kubectl get "subscription/${sub}" --namespace=${namespace} -o json | jq .status.state` == \"AtLatestKnown\" ]]; do
+      sleep 6
+      retries=$((retries - 1))
+      if [[ $retries == 0 ]]; then
+        echo "FAIL: Failed to reach "AtLatestKnown" subscription status for \"$sub\""
+        kubectl get "subscription/${sub}" --namespace=${namespace} -o yaml
+        installplan="`kubectl get subscription/packageserver -n olm -o json | jq .status.installplan.name`"
+        echo "  installplan status for \"$installplan\":"
+        kubectl get "installplan/${installplan}" --namespace=${installplan} -o yaml
+        exit 1
+      fi
+      echo "subscription status for \"$sub\": `kubectl get "subscription/${sub}" --namespace=${namespace} -o json | jq .status.state`"
+  done
+
+  echo "Successfully installed subscription \"$sub\" in namespace \"$namespace\""
+}
+
+function check_csv_passes() {
+  local csv="$1"
+  local namespace="$2"
+  local retries=10 # 1 minute timeout
+
+  echo "Check that clusterserviceversion \"$csv\" status is set to \"Succeeded\""
+  while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase` == \"Succeeded\" ]]; do
+      sleep 6
+      retries=$((retries - 1))
+      if [[ $retries == 0 ]]; then
+        echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\""
+        # Print out CSV on error
+        kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o yaml
+        exit 1
+      fi
+      echo "clusterserviceversion phase for \"$csv\": `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase`"
+  done
+
+  echo "Successfully installed clusterserviceversion \"$csv\" in namespace \"$namespace\""
 }
 
 function check_cluster_available() {
