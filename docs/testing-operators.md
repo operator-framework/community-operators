@@ -28,6 +28,40 @@ The scorecard assigns points to each passing component of the scorecard. The tot
 
 **Note**: no explicit number of points or percentage is necessary to achieve before merging _yet_. These are suggestions to improve your operator.
 
+##### Running scorecard locally
+
+**Note**: This section is under development, and may not work for all platforms.
+
+It's possible to run the Operator SDK scorecard locally for operator validation.
+
+- If you have a minikube cluster, you can install OLM by running the following:
+
+```bash
+$ kubectl config use-context minikube
+$ ./scripts/ci/install-olm
+```
+
+  Additionally, you should configure your shell to set up minikube with your local docker registry by running the following: 
+
+```bash
+$ eval $(minikube docker-env)
+```
+
+- If you have an OpenShift cluster with OLM preinstalled, make sure that your `KUBECONFIG` environment variable is set.
+
+Once you have installed the other prerequisite tools outlined in `scripts/ci/install-deps`, you can run the following:
+
+```bash
+$ ./scripts/ci/test-operator "$OP_PATH" "$OP_VERSION" "$DISTRO_TYPE"
+```
+
+Where:
+- `OP_PATH` is the relative path to your operator manifests stored in a flat directory (same format used for PRs)
+- `OP_VERSION` is the value of the operator CSV's `spec.version` field, which should look like a semver
+- `DISTRO_TYPE` is either `"upstream"` if you are using a minikube cluster, or `"openshift"` if you are using an OpenShift cluster
+
+This will print out the scorecard output for your operator on a local cluster.
+
 #### operator-courier
 
 The [`operator-courier verify`][courier] command verifies that a set of files is valid and can be bundled and pushed to [quay.io][quay]. Read the [docs][courier-docs] for more information.
