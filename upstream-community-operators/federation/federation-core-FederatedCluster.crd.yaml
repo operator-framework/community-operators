@@ -6,10 +6,13 @@ metadata:
     "helm.sh/hook": crd-install
   creationTimestamp: null
   labels:
-    api: federation
-    kubebuilder.k8s.io: 1.0.4
+    controller-tools.k8s.io: "1.0"
   name: federatedclusters.core.federation.k8s.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: ready
+    type: string
   group: core.federation.k8s.io
   names:
     kind: FederatedCluster
@@ -21,36 +24,61 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
           properties:
             clusterRef:
+              description: Name of the cluster registry Cluster resource from which
+                to source api endpoints. TODO(marun) should this go away in favor
+                of a 1:1 mapping?
               type: object
             secretRef:
+              description: Name of the secret containing kubeconfig to access the
+                referenced cluster.  Admin needs to ensure that the required secret
+                exists. Secret should be in the same namespace where federation control
+                plane is hosted and it should have kubeconfig in its data with key
+                "kubeconfig".  This will later be changed to a reference to secret
+                in federation control plane when the federation control plane supports
+                secrets.  This can be left empty if the cluster allows insecure access.
               type: object
           type: object
         status:
           properties:
             conditions:
+              description: Conditions is an array of current cluster conditions.
               items:
                 properties:
                   lastProbeTime:
+                    description: Last time the condition was checked.
                     format: date-time
                     type: string
                   lastTransitionTime:
+                    description: Last time the condition transit from one status to
+                      another.
                     format: date-time
                     type: string
                   message:
+                    description: Human readable message indicating details about last
+                      transition.
                     type: string
                   reason:
+                    description: (brief) reason for the condition's last transition.
                     type: string
                   status:
+                    description: Status of the condition, one of True, False, Unknown.
                     type: string
                   type:
+                    description: Type of cluster condition, Ready or Offline.
                     type: string
                 required:
                 - type
@@ -58,8 +86,12 @@ spec:
                 type: object
               type: array
             region:
+              description: Region is the name of the region in which all of the nodes
+                in the cluster exist.  e.g. 'us-east1'.
               type: string
             zone:
+              description: Zone is the name of availability zone in which the nodes
+                of the cluster exist, e.g. 'us-east1-a'.
               type: string
           type: object
   version: v1alpha1
@@ -67,4 +99,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: null
+  conditions: []
+  storedVersions: []
