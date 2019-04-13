@@ -9,6 +9,7 @@ metadata:
     description: Spinnaker is an Open Source, multi-cloud Continuous delivery platform to perform software releases with high velocity and confidence.
     support: OpsMx
     createdAt: 2019-04-08T19:49:35Z
+    repository: https://github.com/OpsMx/opsmx-spinnaker-operator
     alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"OpsmxSpinnakerOperator","metadata":{"name":"op-spin"},"spec":{"halyard":{"spinnakerVersion":"1.13.1","image":{"repository":"opsmx11/operator-halyard","tag":"1.18.0"}},"dockerRegistries":[{"name":"dockerhub","address":"index.docker.io","repositories":["library/alpine","library/ubuntu","library/centos","library/nginx"]}],"spinnakerFeatureFlags":["artifacts","jobs"],"minio":{"enabled":true,"imageTag":"RELEASE.2018-06-09T02-18-09Z","serviceType":"ClusterIP","accessKey":"spinnakeradmin","secretKey":"spinnakeradmin","bucket":"spinnaker","nodeSelector":{},"persistence":{"enabled":false}},"rbac":{"create":false},"serviceAccount":{"create":false,"halyardName":"opsmx-spinnaker-operator","spinnakerName":null}}}]'
   name: opsmx-spinnaker-operator.v1.13.1
   namespace: placeholder
@@ -19,6 +20,8 @@ spec:
     - kind: OpsmxSpinnakerOperator
       name: opsmxspinnakeroperators.charts.helm.k8s.io
       version: v1alpha1
+      displayName: opsmxspinnakeroperator
+      description: OpsmxSpinnakerOperator
   displayName: Opsmx Spinnaker Operator
   install:
     spec:
@@ -52,14 +55,63 @@ spec:
                 name: opsmx-spinnaker-operator
                 resources: {}
               serviceAccountName: opsmx-spinnaker-operator
-      clusterPermissions:
+      permissions:
       - rules:
         - apiGroups:
-          - "*"
+          - batch
           resources:
-          - "*"
+          - jobs
           verbs:
-          - "*"
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          - extensions
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - opsmx-spinnaker-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - charts.helm.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
         serviceAccountName: opsmx-spinnaker-operator
     strategy: deployment
   installModes:
