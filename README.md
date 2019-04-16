@@ -21,17 +21,18 @@ Please note that the directory name should match the `packageName` of your opera
 
 # Where to contribute
 
-There are 4 directories where you can contribute, depending on a set of requirements:
+There are 3 directories where you can contribute, depending on a set of requirements:
 
 | Target Directory               | Type of Operators              | Target Platform             | Requirements                                                  |
 |--------------------------------|--------------------------------|-----------------------------|---------------------------------------------------------------|
 | `community-operators`          | Community OpenShift Operators  | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
 | `upstream-community-operators` | Community Kubernetes Operators | Kubernetes / OperatorHub.io | needs to work on Kubernetes 1.7 or newer                      |
 | `redhat-operators`             | Red Hat-provided Operators     | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
-| `certified-operators`          | Certified 3rd party Operators  | OpenShift                   | needs to be commercially supported and certified with Red Hat |
 
 The column _Target Platform_ denotes both, where this Operator will be visible (embedded OperatorHub in OpenShift / OKD or OperatorHub.io) and where they are intended to run.<br/>
 **If you Operator fulfills multiple criteria place a copy of your bundle in the appropriate folders respectively.**
+
+For partners and ISVs, certified operators can now be submitted via connect.redhat.com
 
 # Before submitting a PR
 
