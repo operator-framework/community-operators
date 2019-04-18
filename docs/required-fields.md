@@ -60,6 +60,7 @@ For the best user experience, choose from the following categories:
 | Streaming & Messaging |
 | Monitoring |
 | OpenShift Optional |
+| Developer Tools |
 
 If none of these categories fit your operator, please open a PR against this repo to edit this doc and we will work with you to propagate this change to [operator-courier](https://github.com/operator-framework/operator-courier) so that your operator can get through CI tests.
 
