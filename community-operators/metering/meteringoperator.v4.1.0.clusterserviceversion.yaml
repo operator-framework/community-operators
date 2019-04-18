@@ -1,7 +1,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: metering-operator.v0.13.0
+  name: metering-operator.v4.1.0
   namespace: placeholder
   annotations:
     alm-examples: |-
@@ -13,14 +13,123 @@ metadata:
             "name": "operator-metering"
           },
           "spec": {}
+        },
+        {
+          "apiVersion": "metering.openshift.io/v1alpha1",
+          "kind": "Report",
+          "metadata": {
+            "name": "unready-deployment-replicas-hourly"
+          },
+          "spec": {
+            "generationQuery": "unready-deployment-replicas",
+            "schedule": {
+              "period": "hourly"
+            }
+          }
+        },
+        {
+          "apiVersion": "metering.openshift.io/v1alpha1",
+          "kind": "ReportGenerationQuery",
+          "metadata": {
+            "name": "unready-deployment-replicas"
+          },
+          "spec": {
+            "columns": [
+              {
+                "name": "period_start",
+                "type": "timestamp"
+              },
+              {
+                "name": "period_end",
+                "type": "timestamp"
+              },
+              {
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "name": "deployment",
+                "type": "string"
+              },
+              {
+                "name": "total_replica_unready_seconds",
+                "type": "double"
+              },
+              {
+                "name": "avg_replica_unready_seconds",
+                "type": "double"
+              }
+            ],
+            "inputs": [
+              {
+                "name": "ReportingStart"
+              },
+              {
+                "name": "ReportingEnd"
+              }
+            ],
+            "query": "SELECT\n    timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}' AS period_start,\n    timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}' AS period_end,\n    labels['namespace'] AS namespace,\n    labels['deployment'] AS deployment,\n    sum(amount * \"timeprecision\") AS total_replica_unready_seconds,\n    avg(amount * \"timeprecision\") AS avg_replica_unready_seconds\nFROM {| dataSourceTableName \"unready-deployment-replicas\" |}\nWHERE \"timestamp\" >= timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}'\nAND \"timestamp\" < timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}'\nGROUP BY labels['namespace'], labels['deployment']\nORDER BY total_replica_unready_seconds DESC, avg_replica_unready_seconds DESC, namespace ASC, deployment ASC\n",
+            "reportDataSources": [
+              "unready-deployment-replicas"
+            ],
+            "view": {
+              "disabled": true
+            }
+          }
+        },
+        {
+          "apiVersion": "metering.openshift.io/v1alpha1",
+          "kind": "ReportDataSource",
+          "metadata": {
+            "name": "unready-deployment-replicas"
+          },
+          "spec": {
+            "promsum": {
+              "query": "unready-deployment-replicas"
+            }
+          }
+        },
+        {
+          "apiVersion": "metering.openshift.io/v1alpha1",
+          "kind": "ReportPrometheusQuery",
+          "metadata": {
+            "name": "unready-deployment-replicas"
+          },
+          "spec": {
+            "query": "sum(kube_deployment_status_replicas_unavailable) by (namespace, deployment)\n"
+          }
+        },
+        {
+          "apiVersion": "metering.openshift.io/v1alpha1",
+          "kind": "StorageLocation",
+          "metadata": {
+            "name": "s3-storage-example"
+          },
+          "spec": {
+            "hive": {
+              "tableProperties": {
+                "location": "s3a://bucketName/path/in/bucket"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "metering.openshift.io/v1alpha1",
+          "kind": "PrestoTable",
+          "metadata": {
+            "name": "sample-do-not-create-manually"
+          },
+          "spec": {}
         }
       ]
+    capabilities: Basic Install
     categories: OpenShift Optional, Monitoring
     certified: "false"
-    containerImage: quay.io/coreos/metering-helm-operator:0.13.0
+    containerImage: quay.io/openshift/origin-metering-helm-operator:latest
     createdAt: 2019-01-01T11:59:59Z
     description: Chargeback and reporting tool to provide accountability for how resources
       are used across a cluster
+    repository: https://github.com/operator-framework/operator-metering
     support: Red Hat, Inc.
 
 spec:
@@ -57,14 +166,22 @@ spec:
     * **Configure AWS Billing Data Source** - To assign Pod $$ costs on AWS, create a [read-only IAM user](https://github.com/operator-framework/operator-metering/blob/master/Documentation/configuring-aws-billing.md) ([example-policy](https://github.com/operator-framework/operator-metering/blob/master/Documentation/aws/read-only.json)) and [configure Metering](https://github.com/operator-framework/operator-metering/blob/master/manifests/metering-config/aws-billing.yaml) to use it.
 
   keywords: [metering metrics reporting prometheus chargeback]
-  version: 0.13.0
+  version: "4.1.0"
   maturity: alpha
   maintainers:
     - email: sd-operator-metering@redhat.com
       name: Red Hat
 
+  links:
+    - name: Documentation
+      url: https://github.com/operator-framework/operator-metering/blob/master/Documentation/index.md
+
   provider:
     name: Red Hat
+
+  icon:
+    - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMzcgMTI3Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2MwMDt9LmNscy0ye2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPm9wZXJhdG9yX2xvZ29fbWV0ZXJpbmdfY29sb3I8L3RpdGxlPjxnIGlkPSJQYWdlLTEiPjxwYXRoIGlkPSJGaWxsLTEiIGNsYXNzPSJjbHMtMSIgZD0iTTY2LjUsMjRBNDIuNSw0Mi41LDAsMSwxLDI0LDY2LjUsNDIuNTEsNDIuNTEsMCwwLDEsNjYuNSwyNCIvPjxwYXRoIGlkPSJGaWxsLTUiIGNsYXNzPSJjbHMtMiIgZD0iTTQxLjUzLDczLDc2LjA4LDI5Yy43NywxLjUyLDAsMi4zOC0uMywzLjI5LTMuMTQsOC42MS02LjIzLDE3LjI4LTkuNTIsMjUuODQtLjgxLDIuMTctLjQ2LDIuNjgsMS44MiwyLjY4SDkwLjMyYy42LDAsMS40Mi0uMywxLjc3LjM2cy0uNDEsMS4xNi0uNzYsMS42N0w2MywxMDAuMzNjLS40NS42MS0uOSwxLjUyLTEuNzIsMS4wN3MtLjMtMS4zNywwLTIuMTNjMi4xOC04LDQuMjYtMTUuOTEsNi41NC0yMy44Ni41Ni0xLjg3LDAtMi4yOC0xLjcyLTIuMjNINDVaIi8+PC9nPjxwYXRoIGQ9Ik0xMjIuNzMsNTIuNzljMC01LjE5LDIuNDYtMTAuODYsOS4yMS0xMC44NnM5LjIxLDUuNjcsOS4yMSwxMC44Ni0yLjQzLDEwLjg2LTkuMjEsMTAuODZTMTIyLjczLDU4LDEyMi43Myw1Mi43OVptMTQuNywwYzAtMy40NS0xLjQxLTcuNDEtNS40OS03LjQxcy01LjQ5LDQuMTctNS40OSw3LjQxYzAsMy40MiwxLjQxLDcuNDEsNS40OSw3LjQxUzEzNy40Myw1NiwxMzcuNDMsNTIuNzlaIi8+PHBhdGggZD0iTTE0NS41LDQyLjI5aDguNzNjNS4yMiwwLDcuMDUsMy4zLDcuMDUsNi41MSwwLDMtMiw2LjU0LTcuMDUsNi41NEgxNDkuMXY3Ljk1aC0zLjZabTEyLjA2LDYuNTFhMi45LDIuOSwwLDAsMC0zLjE1LTMuMDlIMTQ5LjF2Ni4yMWg1LjMxQTIuOTQsMi45NCwwLDAsMCwxNTcuNTYsNDguOFoiLz48cGF0aCBkPSJNMTY0LjU4LDQyLjI5aDEzLjY4djMuMzlIMTY4LjE4djUuMDdoNi4yMXYzLjM5aC02LjIxVjU5LjloMTAuNzR2My4zOUgxNjQuNThaIi8+PHBhdGggZD0iTTE4Myw0Mi4yOWg5LjNjNS4yMiwwLDYuOSwzLjA5LDYuOSw2LjM5YTYuMTUsNi4xNSwwLDAsMS00LjMyLDZsNC4yLDguNjFIMTk1TDE5MSw1NS4wN2gtNC4zOHY4LjIySDE4M1ptOS4zNiw5LjM2YzIuMzQsMCwzLjEyLTEuNDQsMy4xMi0zcy0uNjYtMy0zLjEyLTNoLTUuNzZ2NS45NFoiLz48cGF0aCBkPSJNMjE1LjI1LDU4LjdoLTguMzFsLTEuNjUsNC41OWgtMy44MWw3LjgzLTIxaDMuNTdsNy44LDIxSDIxNi45Wm0tMy40NS05LjU0YTE3LjYzLDE3LjYzLDAsMCwxLS42OS0yLjEzYy0uMTguNjMtLjQ4LDEuNTMtLjY5LDIuMTNsLTIuMzQsNi4zaDZaIi8+PHBhdGggZD0iTTIyOS43MSw2My4yOWgtMy42VjQ1Ljc0aC02VjQyLjI5aDE1LjU0djMuNDVoLTZaIi8+PHBhdGggZD0iTTIzNy42OSw1Mi43OWMwLTUuMTksMi40Ni0xMC44Niw5LjIxLTEwLjg2czkuMjEsNS42Nyw5LjIxLDEwLjg2LTIuNDMsMTAuODYtOS4yMSwxMC44NlMyMzcuNjksNTgsMjM3LjY5LDUyLjc5Wm0xNC43LDBjMC0zLjQ1LTEuNDEtNy40MS01LjQ5LTcuNDFzLTUuNDksNC4xNy01LjQ5LDcuNDFjMCwzLjQyLDEuNDEsNy40MSw1LjQ5LDcuNDFTMjUyLjM5LDU2LDI1Mi4zOSw1Mi43OVoiLz48cGF0aCBkPSJNMjYwLjQ2LDQyLjI5aDkuM2M1LjIyLDAsNi45LDMuMDksNi45LDYuMzlhNi4xNSw2LjE1LDAsMCwxLTQuMzIsNmw0LjIsOC42MWgtNC4wNWwtNC4wNS04LjIyaC00LjM4djguMjJoLTMuNlptOS4zNiw5LjM2YzIuMzQsMCwzLjEyLTEuNDQsMy4xMi0zcy0uNjYtMy0zLjEyLTNoLTUuNzZ2NS45NFoiLz48cGF0aCBkPSJNMTQ1LDEwMC4yOVY4NS40MWMwLTEsLjA4LTIuNi4xNi0zLjM2LS4zNiwxLjA4LS44OCwyLjQ0LTEuMjgsMy40NGwtNi43OSwxNS4yOC02LjgtMTUuMzZjLS40NC0xLTEtMi4yOC0xLjMyLTMuMzYuMDguNzYuMTYsMi4zNi4xNiwzLjM2djE0Ljg4aC00Ljh2LTI4aDQuODRsNy4yLDE2LjQ0Yy4yOC42OC41NiwxLjQ0Ljc2LDIuMDguMi0uNjQuNDgtMS40Ljc2LTIuMDhsNy4yMy0xNi40NGg0LjY4djI4WiIvPjxwYXRoIGQ9Ik0xNTYuNjEsNzIuMjloMTguMjN2NC41MkgxNjEuNDF2Ni43Nmg4LjI4djQuNTJoLTguMjh2Ny42OGgxNC4zMXY0LjUySDE1Ni42MVoiLz48cGF0aCBkPSJNMTkyLjA5LDEwMC4yOWgtNC44Vjc2Ljg5aC04di00LjZIMjAwdjQuNmgtNy45NVoiLz48cGF0aCBkPSJNMjA1LjA1LDcyLjI5aDE4LjIzdjQuNTJIMjA5Ljg1djYuNzZoOC4yN3Y0LjUyaC04LjI3djcuNjhoMTQuMzF2NC41MkgyMDUuMDVaIi8+PHBhdGggZD0iTTIyOS41Nyw3Mi4yOUgyNDJjNywwLDkuMiw0LjEyLDkuMiw4LjUyYTguMiw4LjIsMCwwLDEtNS43Niw4bDUuNiwxMS40OGgtNS40bC01LjQtMTFoLTUuODN2MTFoLTQuOFpNMjQyLDg0Ljc3YzMuMTIsMCw0LjE2LTEuOTIsNC4xNi00LDAtMS44OC0uODgtNC00LjE2LTRoLTcuNjd2Ny45MloiLz48cGF0aCBkPSJNMjU3LjE3LDcyLjI5SDI2MnYyOGgtNC44WiIvPjxwYXRoIGQ9Ik0yODYuMzYsMTAwLjI5bC0xMS42LTE3LjY4Yy0uMzYtLjU2LS44LTEuMzYtMS4xNi0yLjA4YTE2LjEzLDE2LjEzLDAsMCwxLC4xMywyLjA4djE3LjY4SDI2OXYtMjhoNC42M2wxMS4zMiwxNy40YTIxLDIxLDAsMCwxLDEuMTYsMi4xMiwyMC41NCwyMC41NCwwLDAsMS0uMTItMi4xMlY3Mi4yOWg0Ljc2djI4WiIvPjxwYXRoIGQ9Ik0yOTYuNTMsODYuMjljMC02Ljg0LDMuODctMTQuNDgsMTIuMjctMTQuNDgsNS40LDAsOCwyLjcyLDkuOCw1LjY0bC00LjI4LDIuNDRjLTEuMjQtMS44NC0yLjg4LTMuNDQtNS41Mi0zLjQ0LTUuNjQsMC03LjMyLDUuNDgtNy4zMiw5Ljg0LDAsNSwyLjEyLDkuODQsNy4zMiw5Ljg0YTUuMjIsNS4yMiwwLDAsMCw1LjQtNS4yNHYtLjQ0aC00LjkyVjg1LjkzaDkuOHYzLjg4YzAsNy4xMi00LjQ4LDExLTEwLjI4LDExQzMwMC4xNywxMDAuNzcsMjk2LjUzLDkzLjYxLDI5Ni41Myw4Ni4yOVoiLz48L3N2Zz4K
+      mediatype: image/svg+xml
 
   labels:
     operator-metering: "true"
@@ -328,7 +445,7 @@ spec:
                     value: "30"
                   - name: RELEASE_HISTORY_LIMIT
                     value: "3"
-                  image: quay.io/coreos/metering-helm-operator:0.13.0
+                  image: quay.io/openshift/origin-metering-helm-operator:v4.0
                   imagePullPolicy: Always
                   name: metering-operator
                   resources:
@@ -347,7 +464,7 @@ spec:
                         fieldPath: metadata.namespace
                   - name: TILLER_HISTORY_MAX
                     value: "3"
-                  image: quay.io/coreos/metering-helm-operator:0.13.0
+                  image: quay.io/openshift/origin-metering-helm-operator:v4.0
                   imagePullPolicy: Always
                   livenessProbe:
                     failureThreshold: 3
