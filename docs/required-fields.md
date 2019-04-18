@@ -54,6 +54,7 @@ For the best user experience, choose from the following categories:
 | Integration & Delivery |
 | Database |
 | Cloud Provider |
+| Developer Tools |
 | Logging & Tracing |
 | Streaming & Messaging |
 | Monitoring |
