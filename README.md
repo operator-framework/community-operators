@@ -29,10 +29,13 @@ There are 3 directories where you can contribute, depending on a set of requirem
 | `upstream-community-operators` | Community Kubernetes Operators | Kubernetes / OperatorHub.io | needs to work on Kubernetes 1.7 or newer                      |
 | `redhat-operators`             | Red Hat-provided Operators     | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
 
-The column _Target Platform_ denotes both, where this Operator will be visible (embedded OperatorHub in OpenShift / OKD or OperatorHub.io) and where they are intended to run.<br/>
-**If you Operator fulfills multiple criteria place a copy of your bundle in the appropriate folders respectively.**
+The column _Target Platform_ denotes where this Operator will be visible (embedded OperatorHub in OpenShift and OKD, or OperatorHub.io for Kubernetes) and where it's intended to run.
+
+**If you Operator works on both Kubernetes and OpenShift, place a copy of your bundle in the `upstream-community-operators` directory, as well as the appropriate OpenShift directory.**
 
 For partners and ISVs, certified operators can now be submitted via connect.redhat.com
+
+Note that OpenShift and OKD clusters by default come with access to operators from `community-operators`, `redhat-operators`, and certified operators. Please keep this in mind when submitting operators, as duplicate operators across these sources will not be tolerated. 
 
 # Before submitting a PR
 
@@ -50,12 +53,16 @@ Similarly, to update your operator you need to submit a PR with any changes to y
 
 [Read more about testing your Operator](docs/testing-operators.md)
 
-## Future Automation
+## Operator CI Pipeline
 
-New Operators are reviewed manually by the maintainers to ensure that contain all [required information][required-fields]. In the near future, automation will be added to check for required values and run a suite of automated tests against a live cluster.
+New Operator PRs are automatically checked for [required fields][required-fields] using the [`operator-courier`][operator-courier] and are run through a [`operator-sdk scorecard`][sdk-scorecard] test against a live cluster. PRs are also reviewed manually by the maintainers to ensure that the automated tests are running smoothly and that Operators with additional setup can be verified.
+
+[You can learn more about the tests run on submitted Operators in this doc](doc/testing-operators.md)
 
 ## Reporting Bugs
 
 Report bugs using the project issue tracker.
 
 [required-fields]: https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md
+[operator-courier]: https://github.com/operator-framework/operator-courier
+[sdk-scorecard]:https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md
