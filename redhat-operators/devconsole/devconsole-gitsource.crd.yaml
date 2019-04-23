@@ -1,0 +1,106 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: gitsources.devconsole.openshift.io
+spec:
+  group: devconsole.openshift.io
+  names:
+    kind: GitSource
+    listKind: GitSourceList
+    plural: gitsources
+    singular: gitsource
+    shortNames:
+      - gs
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this
+            representation of an object. Servers should convert recognized
+            schemas to the latest internal value, and may reject unrecognized
+            values.'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource
+            this object represents. Servers may infer this from the endpoint
+            the client submits requests to. Cannot be updated. In CamelCase.'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            contextDir:
+              description: ContextDir is a path to subfolder in the repo.
+                Optional.
+              type: string
+            flavor:
+              description: Flavor of the git provider like github, gitlab,
+                bitbucket, generic, etc. Optional.
+              type: string
+            httpProxy:
+              description: HttpProxy is optional.
+              type: string
+            httpsProxy:
+              description: HttpsProxy is optional.
+              type: string
+            noProxy:
+              description: NoProxy can be used to specify domains for which no
+                proxying should be performed. Optional.
+              type: string
+            ref:
+              description: Ref is a git reference. Optional. "master" is used
+                by default.
+              type: string
+            secretRef:
+              description: SecretRef refers to the secret that contains
+                credentials to access the git repo. Optional.
+              properties:
+                name:
+                  description: Name is the name of the secret that contains
+                    credentials to access the git repo
+                  type: string
+              required:
+                - name
+              type: object
+            url:
+              description: URL of the git repo
+              type: string
+          required:
+            - url
+          type: object
+        status:
+          type: object
+          properties:
+            state:
+              description: State represents current state of the GitSource, can
+                be either initializing or ready
+              type: string
+            connection:
+              description: Connection has information whether the last attempt
+                to reach the git source was successful or not. Optional
+              properties:
+                state:
+                  description: State is the result of the attempt to reach
+                    a GitSource. Can be either Failed or OK
+                  type: string
+                error:
+                  description: Error has the error message if the attempt to
+                    reach a GitSource failed
+                  type: string
+                reason:
+                  description: Reason is a short predefined string representing
+                    a reason for the connection failure
+                    Possible values are [RepoNotReachable, BranchNotFound, BadCredentials, InternalFailure]
+                  type: string
+              required:
+                - state
+  additionalPrinterColumns:
+    - name: Status
+      type: string
+      JSONPath: .status.state
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true

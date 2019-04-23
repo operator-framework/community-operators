@@ -1,0 +1,93 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: gitsourceanalyses.devconsole.openshift.io
+spec:
+  group: devconsole.openshift.io
+  names:
+    kind: GitSourceAnalysis
+    listKind: GitSourceAnalysisList
+    plural: gitsourceanalyses
+    singular: gitsourceanalysis
+    shortNames:
+      - gsa
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest
+          internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            gitSourceRef:
+              description: GitSourceRef refers to the GitSource to be analyzed
+              minimum: 1
+              properties:
+                name:
+                  description: Name is the name of the GitSource within the same namespace that contains
+                    all necessary information of the git repo to by analyzed
+                  type: string
+                  minimum: 1
+        status:
+          properties:
+            analyzed:
+              description: Analyzed says if the GitSource analysis is done or not
+              type: boolean
+              minimum: 1
+            buildEnvStatistics:
+              description: BuildEnvStatistics holds information about detected languages
+                and build types in the GitSource. Optional
+              properties:
+                sortedLanguages:
+                  description: SortedLanguages contains sorted languages detected in the
+                    git repository defined by GitSource where the first language is with the most used
+                  type: array
+                  items:
+                    type: string
+                detectedBuildTypes:
+                  description: DetectedBuildTypes contains list of detected build types
+                    in the git repository defined by the GitSource
+                  type: array
+                  items:
+                    properties:
+                      language:
+                        description: Language is a programing language the build type if used for
+                        type: string
+                        minimum: 1
+                      name:
+                        description: Name is a name of the build type
+                        type: string
+                        minimum: 1
+                      detectedFiles:
+                        description: DetectedFiles contains a list of files used by the build type
+                          that are detected in the git repository defined by GitSource
+                        type: array
+                        items:
+                          type: string
+            error:
+              description: Error contains an error message in case the build environment detection fails. Optional
+              type: string
+            reason:
+              description: Reason is a short predefined string representing
+                a reason for the build type detection failure.
+                Possible values are [NotSupportedType, DetectionFailed, InternalFailure]
+              type: string
+  additionalPrinterColumns:
+    - name: Status
+      type: string
+      JSONPath: .status.analyzed
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
