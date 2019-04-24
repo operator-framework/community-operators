@@ -1,0 +1,190 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    capabilities: Full Lifecycle
+    description: The operator that enables a developer-focused perspective in OpenShift 4
+    categories: "Developer Tools"
+  name: devconsole-operator.v0.1.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: Component
+      name: components.devconsole.openshift.io
+      version: v1alpha1
+      displayName: Component
+      description: Describes how an application component is built and deployed.
+    - kind: GitSource
+      name: gitsources.devconsole.openshift.io
+      version: v1alpha1
+      displayName: Git Source
+      description: Describes a Git repository to be used as a codebase.
+    - kind: GitSourceAnalysis
+      version: v1alpha1
+      name: gitsourceanalyses.devconsole.openshift.io
+      displayName: Git Source Analysis
+      description: Triggers analysis of a codebase defined as a GitSource.
+  description: >
+    The operator that enables a developer-focused perspective in OpenShift 4.
+    This enables a perspective (view) switcher to transition between the
+    traditional Kubernetes and Cluster Administration console, referred to as
+    Administrator, to this new perspective Developer perspective.
+
+    This new Developer perspective provides a high-level abstraction over
+    Kubernetes and OpenShift primitives to allow developers to focus on
+    their application development.
+
+    Within the Developer perspective there are these main areas:
+
+    * Add - The place to create and build the application using one of this method:
+
+      - Importing source code from Git
+      - Deploying an existing image
+      - Browse a catalog to deploy or connect application services
+      - Deploy quick-starters or samples
+
+    * Topology - The landing page that shows application structure and
+      health in an easy-to-use diagram
+    * Builds - Lists OpenShift BuildConfig resources for the selected
+      project
+    * Pipelines - Lists Tekton Pipeline resources for the selected project
+
+  displayName: Developer Console
+  install:
+    spec:
+      deployments:
+      - name: devconsole-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: devconsole-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: devconsole-operator
+            spec:
+              containers:
+              - command:
+                - devconsole-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  value: ""
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: devconsole-operator
+                image: REPLACE_IMAGE
+                imagePullPolicy: Always
+                name: devconsole-operator
+                ports:
+                - containerPort: 60000
+                  name: metrics
+                readinessProbe:
+                  exec:
+                    command:
+                    - stat
+                    - /tmp/operator-sdk-ready
+                  failureThreshold: 1
+                  initialDelaySeconds: 4
+                  periodSeconds: 10
+                resources: {}
+              serviceAccountName: devconsole-operator
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - devconsole.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - build.openshift.io
+          resources:
+          - buildconfigs
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - get
+          - create
+          - list
+          - watch
+        serviceAccountName: devconsole-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.1.0
