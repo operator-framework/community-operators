@@ -57,7 +57,7 @@ Similarly, to update your operator you need to submit a PR with any changes to y
 
 New Operator PRs are automatically checked for [required fields][required-fields] using the [`operator-courier`][operator-courier] and are run through a [`operator-sdk scorecard`][sdk-scorecard] test against a live cluster. PRs are also reviewed manually by the maintainers to ensure that the automated tests are running smoothly and that Operators with additional setup can be verified.
 
-[You can learn more about the tests run on submitted Operators in this doc](doc/testing-operators.md)
+[You can learn more about the tests run on submitted Operators in this doc](docs/testing-operators.md)
 
 ## Reporting Bugs
 
