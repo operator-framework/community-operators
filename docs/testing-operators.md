@@ -40,7 +40,32 @@ Operators submitted to the `upstream-community-operators/` directory are tested 
 
 Operators submitted to the `community-operators/` directory are tested against an OpenShift 4.0 cluster deployed on AWS using the [`ci-operator`][ci-operator].
 
-## Manual testing
+## Manual testing on Kubernetes
+
+This section is for operator authors who want their operators to be available on OperatorHub.io which implies the target platform for this Operator is plain Kubernetes. Follow the below steps to test your Operator using OLM:
+
+### Pre-Requisite
+
+OLM is the component that will lifecycle your Operator. It also provides a packaging concept for storing Operators in a catalog that you can make available on cluster. Operators are installed from catalogs.
+Follow these steps to deploy OLM: https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/install/install.md.
+
+**Tip**: you can get a local minikube-based OLM installation easily by running `make run-local` in your local copy of the [OLM repository][olm-repository].
+
+### Package your Operator in an OLM catalog
+
+Assuming you have Operator manifests (CSVs, CRDs, package.yaml) on-disk, you can follow these instructions to put them into a catalog: https://github.com/operator-framework/operator-registry#manifest-format
+
+The result is a docker container which you can push to registry of your choice. This is a catalog containing your Operator manifests.
+
+### Install your Operator using OLM and your catalog
+
+With the catalog created, you can follow these instructions to add your catalog to OLM: https://github.com/operator-framework/operator-registry#using-the-catalog-with-operator-lifecycle-manager
+
+In the last step you will create a `Subscription` that references your Operator from the catalog. Note that currently, in the same namespace where you create this, you also need to have an [`OperatorGroup`][operatorgroup] object defined. Its `spec.targetNamespaces` should at least contain the current namespace - or none at all to denote your Operator works cluster-wide.
+
+Once the `Subscription` is created with an `OperatorGroup` present, OLM will install your Operator. The result is `ClusterServiceVersion` object in the namespace representing your installed Operator. It should be in state `Succeeded`. Your Operator is now deployed and ready to be tested.
+
+## Manual testing on OpenShift
 
 This section is for operator authors who want their operators to be available on OpenShift 4.0 clusters through OperatorHub and want to manually test that end to end workflow. The OLM comes pre-installed in OpenShift 4.0 clusters.
 
@@ -91,3 +116,5 @@ Once the `OperatorSource` CR has been added to the cluster, the new operator wil
 [operatorsource-cr-example]:https://github.com/operator-framework/operator-marketplace/blob/master/deploy/examples/community.operatorsource.cr.yaml
 [marketplace-private-repo]:https://github.com/operator-framework/operator-marketplace/blob/master/docs/how-to-authenticate-private-repositories.md
 [marketplace-install]:https://github.com/operator-framework/operator-marketplace#installing-an-operator-using-marketplace
+[olm-repository]:https://github.com/operator-framework/operator-registry#using-the-catalog-with-operator-lifecycle-manager
+[operatorgroup]:https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/operatorgroups.md#target-namespace-selection

@@ -39,6 +39,14 @@ Note that OpenShift and OKD clusters by default come with access to operators fr
 
 # Before submitting a PR
 
+## Test your Operator
+
+Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md).
+
+You can help speed up the reviewof your PR by [testing manually](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md#manual-testing-on-kubernetes).
+
+## Verify your Operator Metadata
+
 The maintainers will work with you to make sure your Operator has the required metadata to function properly and be displayed with useful information for the end user.
 
 You can help us with that by validating your `bundle` with [operator-courier](https://github.com/operator-framework/operator-courier). This tool will check against the [required fields][required-fields] in your CSV.
@@ -46,6 +54,10 @@ You can help us with that by validating your `bundle` with [operator-courier](ht
 ```sh
 operator-courier verify --ui_validate_io path/to/bundle
 ```
+
+## Preview your Operator on OperatorHub.io
+
+If you are submitting your Operator in the `upstream-community-operators` directory your Operator will appear on OperatorHub.io. You can preview how your Operator would be rendered there by using this tool: [https://operatorhub.io/preview](https://operatorhub.io/preview)
 
 ## Updating your Operator
 
