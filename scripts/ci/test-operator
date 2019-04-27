@@ -6,7 +6,7 @@
 # into a CSV, creates CR's from CSV metadata, deploys the operator with the
 # OLM in a local cluster, and runs the SDK scorecard against the operator.
 
-set -ex
+set -e
 
 for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
   . "$f"
@@ -86,7 +86,7 @@ insert_kubeconfig_secret_mount "$CSV_FILE"
 insert_proxy_container "$CSV_FILE" "$SC_PROXY_IMAGE"
 
 # Build a registry container containing operator manifests.
-docker build -t "$OP_REGISTRY_IMAGE" .
+docker build -t "$OP_REGISTRY_IMAGE" . > /dev/null
 
 # Define names for resource types.
 DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
@@ -111,9 +111,12 @@ apply_objects_incluster "$DEPLOY_DIR"
 trap_add_exit "delete_objects_incluster $DEPLOY_DIR $NAMESPACE"
 trap_add_exit "delete_objects_incluster $ABS_BUNDLE_PATH $NAMESPACE"
 
-# Create logs for operator debugging.
-LOG_FILE="${TMP}/info.log"
-trap_add_exit "log_operator_state $LOG_FILE OBJECTS $NAMESPACE; cat $LOG_FILE"
+# Check that subscription is picked up
+check_subscription_passes "${PKG_NAME}-sub" "$NAMESPACE"
+
+# Wait for csv, then check that clusterserviceversion has Succeeded
+sleep 6
+check_csv_passes "$CSV_NAME" "$NAMESPACE"
 
 # Wait for the deployment specified in the CSV to rollout successfully.
 wait_on_deployment "$DEP_NAME" "$NAMESPACE"
@@ -122,6 +125,7 @@ wait_on_deployment "$DEP_NAME" "$NAMESPACE"
 # TODO: run against multiple CR's. Right now the scorecard only works with one
 # CR.
 for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
+  echo "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$cr_file""
   operator-sdk scorecard \
     --cr-manifest "$cr_file" \
     --crds-dir "$ABS_BUNDLE_PATH" \
@@ -132,4 +136,14 @@ for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
     --proxy-image "$SC_PROXY_IMAGE" \
     --kubeconfig "$KUBECONFIG" \
     --verbose
+
+  # If scorecard errors out, print out operator logs
+  if [[ $? != 0 ]]; then
+    echo "\nFAIL: Scorecard test errored out. Printing operator state:"
+    LOG_FILE="${TMP}/info.log"
+    log_operator_state $LOG_FILE OBJECTS $NAMESPACE
+    cat $LOG_FILE
+  else
+    echo "\nPASS: Scorecard test passed"
+  fi
 done

@@ -21,19 +21,31 @@ Please note that the directory name should match the `packageName` of your opera
 
 # Where to contribute
 
-There are 4 directories where you can contribute, depending on a set of requirements:
+There are 3 directories where you can contribute, depending on a set of requirements:
 
 | Target Directory               | Type of Operators              | Target Platform             | Requirements                                                  |
 |--------------------------------|--------------------------------|-----------------------------|---------------------------------------------------------------|
 | `community-operators`          | Community OpenShift Operators  | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
 | `upstream-community-operators` | Community Kubernetes Operators | Kubernetes / OperatorHub.io | needs to work on Kubernetes 1.7 or newer                      |
 | `redhat-operators`             | Red Hat-provided Operators     | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
-| `certified-operators`          | Certified 3rd party Operators  | OpenShift                   | needs to be commercially supported and certified with Red Hat |
 
-The column _Target Platform_ denotes both, where this Operator will be visible (embedded OperatorHub in OpenShift / OKD or OperatorHub.io) and where they are intended to run.<br/>
-**If you Operator fulfills multiple criteria place a copy of your bundle in the appropriate folders respectively.**
+The column _Target Platform_ denotes where this Operator will be visible (embedded OperatorHub in OpenShift and OKD, or OperatorHub.io for Kubernetes) and where it's intended to run.
+
+**If you Operator works on both Kubernetes and OpenShift, place a copy of your bundle in the `upstream-community-operators` directory, as well as the appropriate OpenShift directory.**
+
+For partners and ISVs, certified operators can now be submitted via connect.redhat.com
+
+Note that OpenShift and OKD clusters by default come with access to operators from `community-operators`, `redhat-operators`, and certified operators. Please keep this in mind when submitting operators, as duplicate operators across these sources will not be tolerated. 
 
 # Before submitting a PR
+
+## Test your Operator
+
+Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md).
+
+You can help speed up the review of your PR by [testing manually](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md#manual-testing-on-kubernetes).
+
+## Verify your Operator Metadata
 
 The maintainers will work with you to make sure your Operator has the required metadata to function properly and be displayed with useful information for the end user.
 
@@ -43,18 +55,26 @@ You can help us with that by validating your `bundle` with [operator-courier](ht
 operator-courier verify --ui_validate_io path/to/bundle
 ```
 
+## Preview your Operator on OperatorHub.io
+
+If you are submitting your Operator in the `upstream-community-operators` directory your Operator will appear on OperatorHub.io. You can preview how your Operator would be rendered there by using this tool: [https://operatorhub.io/preview](https://operatorhub.io/preview)
+
 ## Updating your Operator
 
 Similarly, to update your operator you need to submit a PR with any changes to your Operator resources. Within your CSV, add the additional `replaces: my-operator.v1.0.0` parameter which indicates that existing installations of your Operator may be upgraded seamlessly to the new version. It is encouraged to use continuous delivery to update your Operator often as new features are added and bugs are fixed.
 
 [Read more about testing your Operator](docs/testing-operators.md)
 
-## Future Automation
+## Operator CI Pipeline
 
-New Operators are reviewed manually by the maintainers to ensure that contain all [required information][required-fields]. In the near future, automation will be added to check for required values and run a suite of automated tests against a live cluster.
+New Operator PRs are automatically checked for [required fields][required-fields] using the [`operator-courier`][operator-courier] and are run through a [`operator-sdk scorecard`][sdk-scorecard] test against a live cluster. PRs are also reviewed manually by the maintainers to ensure that the automated tests are running smoothly and that Operators with additional setup can be verified.
+
+[You can learn more about the tests run on submitted Operators in this doc](docs/testing-operators.md)
 
 ## Reporting Bugs
 
 Report bugs using the project issue tracker.
 
 [required-fields]: https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md
+[operator-courier]: https://github.com/operator-framework/operator-courier
+[sdk-scorecard]:https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md

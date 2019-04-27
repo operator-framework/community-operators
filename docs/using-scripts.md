@@ -14,7 +14,6 @@ $ scripts/pull-from-quay $NAMESPACE $REPOSITORY
 In the command above, `$NAMESPACE` is the [quay.io](https://quay.io) namespace. Possible values include:
 
 * [redhat-operators](https://quay.io/organization/redhat-operators)
-* [certified-operators](https://quay.io/organization/certified-operators)
 * [community-operators](https://quay.io/organization/community-operators)
 * your personal quay.io namespace.
 

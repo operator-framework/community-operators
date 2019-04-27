@@ -4,40 +4,42 @@
 
 Before you begin, we strongly advise that you follow Operator-Lifecycle-Manager's docs on [building a CSV for the Operator Framework](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md). These outline the functional purpose of the CSV and which fields are required for installing your Operator CSV through OLM.
 
-## Required fields for OperatorHub.io
+## Required fields for OperatorHub
 
-An Operator's CSV must contain the following annotations for it to be displayed properly within OperatorHub.io. A full example is shown at the bottom of this document.
+An Operator's CSV must contain the following fields and annotations for it to be displayed properly within OperatorHub.io and OperatorHub in OCP. Below is a guideline, explaining each field and at the bottom of this document is a full example of such a CSV.
 
 ```yaml
 metadata:
   annotations:
     capabilities: One of the following: Basic Install, Seamless Upgrades, Full Lifecycle, Deep Insights, Auto Pilot. For more information see https://www.operatorhub.io/images/capability-level-diagram.svg
-    categories: A list of comma separated list of categories from the values below. If not set, this will be set to "Other" in the UI.
-    description: |-
-      A short description of the operator that will be displayed on the marketplace tile.
-      If this annotation is not present, the `spec.description` value will be shown instead.
-      In either case, only the first 135 characters will appear.
+    categories: A comma separated list of categories from the values below. If not set, this will be set to "Other" in the UI
     containerImage: The repository that hosts the operator image. The format should match ${REGISTRYHOST}/${USERNAME}/${NAME}:${TAG}
     createdAt: The date that the operator was created. The format should match yyyy-mm-ddThh:mm:ssZ
-    repository: Optional. The URL operator's source code repository.
-    alm-examples: A string of a JSON list of example CRs for the operator's CRDs. These should be able to work without modification, unless otherwise stated in the operator description.
+    support: The name of the individual, company, or service that maintains this operator
+    repository: (Optional) a URL to a source code repository of the Operator, intended for community Operators to direct users where to file issues / bug
+    alm-examples: A string of a JSON list of example CRs for the operator's CRDs
+    description: |-
+      A short description of the operator that will be displayed on the marketplace tile
+      If this annotation is not present, the `spec.description` value will be shown instead
+      In either case, only the first 135 characters will appear
 spec:
-  displayName: A short, readable name for the operator.
-  description: A detailed description of the operator, preferably in markdown format.
-  icon: A base 64 representation of an image associated with your operator
-  version: The operator version in semver format.
+  displayName: A short, readable name for the operator
+  description: A detailed description of the operator, preferably in markdown format
+  icon: 
+  - base64data: A base 64 representation of an image or logo associated with your operator
+    mediatype: One of the following: image/png, image/jpeg, image/gif, image/svg+xml
+  version: The operator version in semver format
   maintainers:
-  - name: Name of a maintainer of the operator
+  - name: The name of the individual, company, or service that maintains this operator
     email: Email to reach maintainer
   provider:
-    name: The provider of the operator. This value should be a name, not an email.
+    name: The name of the individual, company, or service that provides this operator
   links:
   - name: Title of the link (ex: Blog, Source Code etc.)
     url: url/link
   keywords:
   - 'A list of words that relate to your operator'
   - 'These are used when searching for operators in the UI'
-
 ```
 
 ### Categories
@@ -54,10 +56,13 @@ For the best user experience, choose from the following categories:
 | Integration & Delivery |
 | Database |
 | Cloud Provider |
+| Developer Tools |
 | Logging & Tracing |
 | Streaming & Messaging |
 | Monitoring |
 | OpenShift Optional |
+
+If none of these categories fit your operator, please open a PR against this repo to edit this doc and we will work with you to propagate this change to [operator-courier](https://github.com/operator-framework/operator-courier) so that your operator can get through CI tests.
 
 ## Example CSV
 
