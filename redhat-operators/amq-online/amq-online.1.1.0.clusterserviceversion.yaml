@@ -1,0 +1,1030 @@
+#! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
+#! parse-kind: ClusterServiceVersion
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: amqonline.1.1.0
+  namespace: placeholder
+  annotations:
+    categories: "Streaming & Messaging"
+    certified: "false"
+    description: Red Hat AMQ Online provides messaging as a managed service on OpenShift
+    containerImage: registry.redhat.io/amq7/amq-online-1-controller-manager:1.1
+    createdAt: 2019-04-02
+    capabilities: Seamless Upgrades
+    support: Red Hat
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "StandardInfraConfig",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {
+            "broker": {
+              "resources": {
+                "memory": "1Gi",
+                "storage": "5Gi"
+              },
+              "addressFullPolicy": "FAIL"
+            },
+            "router": {
+              "linkCapacity": 50,
+              "resources": {
+                "memory": "512Mi"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "BrokeredInfraConfig",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {
+            "broker": {
+              "resources": {
+                "memory": "4Gi"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta2",
+          "kind": "AddressPlan",
+          "metadata": {
+            "name": "standard-small-queue"
+          },
+          "spec": {
+            "addressType": "queue",
+            "shortDescription": "Small Queue",
+            "resources": {
+              "router": 0.01,
+              "broker": 0.1
+            }
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta2",
+          "kind": "AddressSpacePlan",
+          "metadata": {
+            "name": "standard-small"
+          },
+          "spec": {
+            "addressSpaceType": "standard",
+            "infraConfigRef": "default",
+            "shortDescription": "Small Address Space Plan",
+            "resourceLimits": {
+              "router": 1.0,
+              "broker": 2.0,
+              "aggregate": 2.0
+            },
+            "addressPlans": [
+              "standard-small-queue"
+            ]
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "AuthenticationService",
+          "metadata": {
+            "name": "standard-authservice"
+          },
+          "spec": {
+            "type": "standard"
+          }
+        },
+        {
+          "apiVersion": "enmasse.io/v1beta1",
+          "kind": "AddressSpace",
+          "metadata": {
+            "name": "myspace"
+          },
+          "spec": {
+            "plan": "standard-small",
+            "type": "standard"
+          }
+        },
+        {
+          "apiVersion": "enmasse.io/v1beta1",
+          "kind": "Address",
+          "metadata": {
+            "name": "myspace.myqueue"
+          },
+          "spec": {
+            "address": "myqueue",
+            "plan": "standard-small-queue",
+            "type": "queue"
+          }
+        },
+        {
+          "apiVersion": "user.enmasse.io/v1beta1",
+          "kind": "MessagingUser",
+          "metadata": {
+            "name": "myspace.user"
+          },
+          "spec": {
+            "authentication": {
+              "password": "ZW5tYXNzZQ==",
+              "type": "password"
+            },
+            "authorization": [
+              {
+                "addresses": [
+                  "myqueue"
+                ],
+                "operations": [
+                  "send",
+                  "recv"
+                ]
+              }
+            ],
+            "username": "user"
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "ConsoleService",
+          "metadata": {
+            "name": "console"
+          },
+          "spec": {}
+        },
+        {
+          "apiVersion": "iot.enmasse.io/v1alpha1",
+          "kind": "IoTConfig",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {}
+        }
+      ]
+
+spec:
+  maturity: stable
+  displayName: AMQ Online
+  description: |
+    **Red Hat AMQ Online** provides messaging as a managed service on OpenShift.
+      With AMQ Online, administrators can configure a cloud-native,
+      multi-tenant messaging service either in the cloud or on premise.
+      Developers can provision messaging using the Red Hat AMQ Console.
+      Multiple development teams can provision the brokers and queues from the
+      console, without requiring each team to install, configure, deploy,
+      maintain, or patch any software. 
+
+    **The core capabilities include:**
+
+      * **Built-in authentication and authorization** - Use the built-in authentication service or
+        plug in your own authentication service for authentication and
+        authorization of messaging clients.
+
+      * **Self-service messaging for applications** - The service administrator deploys
+        and manages the messaging infrastructure, while applications can request
+        messaging resources regardless of the messaging infrastructure.
+
+      * **Support for a wide variety of messaging patterns** - Choose between
+        JMS-style messaging with strict guarantees, or messaging that supports
+        a larger number of connections and higher throughput.
+
+    ## Post-installation tasks
+
+    To fully use AMQ Online, you need to create a few
+    infrastructure components after the installation, including:
+
+      * An authentication service
+      * Infrastructure configuration for the standard and brokered address space
+      * Address and address space plans
+      * (Optional) Create RBAC roles to allow users to self-manage addresses and
+        address spaces.
+
+    For a complete overview of how to configure AMQ Online, see
+    [Configuring AMQ Online](https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html-single/installing_and_managing_amq_online_on_openshift_container_platform/index#configuring-messaging).
+
+    ### Quickstart infrastructure configuration
+
+    If you simply want to get started quickly, you can import the following
+    YAML by saving the content to a file and apply it by running the 
+    `oc apply -f <file>` command. You can also split the content (at the `---` marker)
+    and import the single YAML document using the Web UI: 
+
+    ~~~yaml
+    ---
+    apiVersion: admin.enmasse.io/v1beta1
+    kind: StandardInfraConfig
+    metadata:
+      name: default
+    ---
+    apiVersion: admin.enmasse.io/v1beta2
+    kind: AddressPlan
+    metadata:
+      name: standard-small-queue
+    spec:
+      addressType: queue
+      resources:
+        router: 0.01
+        broker: 0.1
+    ---
+    apiVersion: admin.enmasse.io/v1beta2
+    kind: AddressSpacePlan
+    metadata:
+      name: standard-small
+    spec:
+      addressSpaceType: standard
+      infraConfigRef: default
+      addressPlans:
+      - standard-small-queue
+      resourceLimits:
+        router: 2.0
+        broker: 3.0
+        aggregate: 4.0
+    ---
+    apiVersion: admin.enmasse.io/v1beta1
+    kind: AuthenticationService
+    metadata:
+      name: standard-authservice
+    spec:
+      type: standard
+    ~~~
+
+    ### Creating infrastructure using the Web UI
+
+    You must create a new instance of each of the following custom resources. You can
+   use the example data directly, which is provided when using the
+    Web UI:
+
+      * *Authentication Service* – Create an authentication service.
+      * *Brokered Infra Config* – Create the broker infrastructure configuration.
+      * *Standard Infra Config* – Create the standard infrastructure
+        configuration.
+
+    You must also create at least one address space plan and one address plan.
+  
+
+   
+     
+
+    *Note*: The name of the address space plan and address plan is required
+    later when creating new addresses. Some examples use specific plan
+    names, which might not be available in your environment. You can
+    create those plans, or edit the examples to use different plan names.
+
+    ## Configuration for messaging tenants
+
+    While service administrators perform the infrastructure configuration, the following
+    resources are for the actual users of the system, the messaging tenants.
+
+    You need to create those resources to satisfy your particular use case.
+
+      * *Address space* – A container for addresses
+      * *Address* – A messaging address (address, topic, queue, and so on)
+      * *Messaging user* – Manages access to an address
+
+  version: 1.1.0
+  keywords: ['amq', 'messaging', 'amqp', 'iot', 'mqtt']
+  icon:
+  - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTQ1Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2UwMDt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPlJlZEhhdC1Mb2dvLUhhdC1Db2xvcjwvdGl0bGU+PHBhdGggZD0iTTE1Ny43Nyw2Mi42MWExNCwxNCwwLDAsMSwuMzEsMy40MmMwLDE0Ljg4LTE4LjEsMTcuNDYtMzAuNjEsMTcuNDZDNzguODMsODMuNDksNDIuNTMsNTMuMjYsNDIuNTMsNDRhNi40Myw2LjQzLDAsMCwxLC4yMi0xLjk0bC0zLjY2LDkuMDZhMTguNDUsMTguNDUsMCwwLDAtMS41MSw3LjMzYzAsMTguMTEsNDEsNDUuNDgsODcuNzQsNDUuNDgsMjAuNjksMCwzNi40My03Ljc2LDM2LjQzLTIxLjc3LDAtMS4wOCwwLTEuOTQtMS43My0xMC4xM1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMjcuNDcsODMuNDljMTIuNTEsMCwzMC42MS0yLjU4LDMwLjYxLTE3LjQ2YTE0LDE0LDAsMCwwLS4zMS0zLjQybC03LjQ1LTMyLjM2Yy0xLjcyLTcuMTItMy4yMy0xMC4zNS0xNS43My0xNi42QzEyNC44OSw4LjY5LDEwMy43Ni41LDk3LjUxLjUsOTEuNjkuNSw5MCw4LDgzLjA2LDhjLTYuNjgsMC0xMS42NC01LjYtMTcuODktNS42LTYsMC05LjkxLDQuMDktMTIuOTMsMTIuNSwwLDAtOC40MSwyMy43Mi05LjQ5LDI3LjE2QTYuNDMsNi40MywwLDAsMCw0Mi41Myw0NGMwLDkuMjIsMzYuMywzOS40NSw4NC45NCwzOS40NU0xNjAsNzIuMDdjMS43Myw4LjE5LDEuNzMsOS4wNSwxLjczLDEwLjEzLDAsMTQtMTUuNzQsMjEuNzctMzYuNDMsMjEuNzdDNzguNTQsMTA0LDM3LjU4LDc2LjYsMzcuNTgsNTguNDlhMTguNDUsMTguNDUsMCwwLDEsMS41MS03LjMzQzIyLjI3LDUyLC41LDU1LC41LDc0LjIyYzAsMzEuNDgsNzQuNTksNzAuMjgsMTMzLjY1LDcwLjI4LDQ1LjI4LDAsNTYuNy0yMC40OCw1Ni43LTM2LjY1LDAtMTIuNzItMTEtMjcuMTYtMzAuODMtMzUuNzgiLz48L3N2Zz4=
+    mediatype: image/svg+xml
+  maintainers:
+  - name: Red Hat, Inc.
+    email: customerservice@redhat.com
+  provider:
+    name: Red Hat, Inc.
+  labels:
+    app: enmasse
+  selector:
+    matchLabels:
+      app: enmasse
+  links:
+  - name: Product Page
+    url: https://access.redhat.com/products/red-hat-amq
+  - name: Documentation
+    url: https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html/using_amq_online_on_openshift_container_platform
+
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+      - serviceAccountName: enmasse-operator
+        rules:
+        - apiGroups: [ "apps" ]
+          resources: [ "deployments" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch", "delete" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps", "secrets", "persistentvolumeclaims", "services" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch", "delete" ]
+        - apiGroups: [ "", "route.openshift.io" ]
+          resources: [ "routes", "routes/custom-host", "routes/status"]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "authenticationservices", "authenticationservices/finalizers", "consoleservices", "consoleservices/finalizers" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch" ]
+        - apiGroups: [ "iot.enmasse.io" ]
+          resources: [ "iotconfigs", "iotconfigs/finalizers" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch" ]
+      - serviceAccountName: address-space-controller
+        rules:
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "addressplans", "addressspaceplans", "brokeredinfraconfigs", "standardinfraconfigs", "authenticationservices", "consoleservices"]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "pods" ]
+          verbs: [ "get", "list" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps" ]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "" ]
+          resources: [ "events" ]
+          verbs: [ "create", "update", "patch", "get", "list" ]
+        - apiGroups: [ "" ]
+          resources: [ "services", "secrets", "persistentvolumeclaims" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "networking.k8s.io", "extensions" ]
+          resources: [ "networkpolicies" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "route.openshift.io", "" ]
+          resources: [ "routes", "routes/custom-host", "routes/status" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "apps", "extensions" ]
+          resources: [ "statefulsets", "deployments", "replicasets" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+      - serviceAccountName: address-space-admin
+        rules:
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "addressplans", "addressspaceplans", "brokeredinfraconfigs", "standardinfraconfigs", "authenticationservices", "consoleservices"]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "pods", "secrets" ]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps" ]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "" ]
+          resources: [ "events" ]
+          verbs: [ "create", "update", "patch", "get", "list" ]
+        - apiGroups: [ "" ]
+          resources: [ "persistentvolumeclaims", "services" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "apps" ]
+          resources: [ "statefulsets", "deployments" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+      - serviceAccountName: api-server
+        rules:
+        - apiGroups: [ "" ]
+          resources: [ "services", "secrets" ]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps" ]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "addressspaceplans", "addressplans", "standardinfraconfigs", "brokeredinfraconfigs", "authenticationservices", "consoleservices"]
+          verbs: [ "get", "list", "watch" ]
+      clusterPermissions:
+      - serviceAccountName: standard-authservice
+        rules:
+        - apiGroups: [ "authentication.k8s.io" ]
+          resources: [ "tokenreviews" ]
+          verbs: [ "create" ]
+      - serviceAccountName: enmasse-operator
+        rules:
+        - apiGroups: [ "oauth.openshift.io" ]
+          resources: [ "oauthclients" ]
+          verbs: [ "create", "get", "update", "list", "watch" ]
+      - serviceAccountName: api-server
+        rules:
+        - apiGroups: [ "authentication.k8s.io" ]
+          resources: [ "tokenreviews" ]
+          verbs: [ "create" ]
+        - apiGroups: [ "authorization.k8s.io" ]
+          resources: [ "subjectaccessreviews" ]
+          verbs: [ "create" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps" ]
+          resourceNames: [ "extension-apiserver-authentication" ]
+          verbs: [ "get" ]
+      deployments:
+      - name: enmasse-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: enmasse
+              name: enmasse-operator
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                name: enmasse-operator
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              serviceAccountName: enmasse-operator
+              containers:
+              - name: controller
+                image: registry.redhat.io/amq7/amq-online-1-controller-manager:1.1
+                imagePullPolicy: Always
+                env:
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: OPERATOR_NAME
+                  value: "enmasse-operator"
+                - name: IMAGE_PULL_POLICY
+                  value: "Always"
+                - name: CONTROLLER_DISABLE_ALL
+                  value: "true"
+                - name: CONTROLLER_ENABLE_IOT_CONFIG
+                  value: "true"
+                - name: CONTROLLER_ENABLE_AUTHENTICATION_SERVICE
+                  value: "true"
+                - name: IOT_AUTH_SERVICE_IMAGE
+                  value: registry.redhat.io/amq7-tech-preview/amq-online-1-iot-auth-service:1.1
+                - name: IOT_DEVICE_REGISTRY_FILE_IMAGE
+                  value: registry.redhat.io/amq7-tech-preview/amq-online-1-iot-device-registry-file:1.1
+                - name: IOT_GC_IMAGE
+                  value: registry.redhat.io/amq7-tech-preview/amq-online-1-iot-gc:1.1
+                - name: IOT_HTTP_ADAPTER_IMAGE
+                  value: registry.redhat.io/amq7-tech-preview/amq-online-1-iot-http-adapter:1.1
+                - name: IOT_MQTT_ADAPTER_IMAGE
+                  value: registry.redhat.io/amq7-tech-preview/amq-online-1-iot-mqtt-adapter:1.1
+                - name: IOT_TENANT_SERVICE_IMAGE
+                  value: registry.redhat.io/amq7-tech-preview/amq-online-1-iot-tenant-service:1.1
+                - name: IOT_PROXY_CONFIGURATOR_IMAGE
+                  value: registry.redhat.io/amq7-tech-preview/amq-online-1-iot-proxy-configurator:1.1
+                - name: QDROUTERD_BASE_IMAGE
+                  value: registry.redhat.io/amq7/amq-interconnect:1.4
+                - name: NONE_AUTHSERVICE_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-none-auth-service:1.1
+                - name: KEYCLOAK_IMAGE
+                  value: registry.redhat.io/redhat-sso-7/sso73-openshift:latest
+                - name: KEYCLOAK_PLUGIN_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-auth-plugin:1.1
+                - name: CONTROLLER_ENABLE_CONSOLE_SERVICE
+                  value: "true"
+                - name: CONSOLE_INIT_IMAGE
+                  value: "registry.redhat.io/amq7/amq-online-1-console-init:1.1"
+                - name: CONSOLE_PROXY_OPENSHIFT_IMAGE
+                  value: "openshift/oauth-proxy:latest"
+                - name: CONSOLE_PROXY_KUBERNETES_IMAGE
+                  value: "quay.io/pusher/oauth2_proxy:latest"
+                - name: CONSOLE_HTTPD_IMAGE
+                  value: "registry.redhat.io/amq7/amq-online-1-console-httpd:1.1"
+                resources:
+                  limits:
+                    memory: 128Mi
+      - name: user-api-server
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: enmasse
+              component: user-api-server
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                component: user-api-server
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              containers:
+              - env:
+                - name: JAVA_OPTS
+                  value: -verbose:gc -Xlog:gc*
+                - name: CERT_DIR
+                  value: /api-server-cert
+                - name: ENABLE_RBAC
+                  value: "true"
+                - name: APISERVER_CLIENT_CA_CONFIG_NAME
+                  value: extension-apiserver-authentication
+                - name: APISERVER_CLIENT_CA_CONFIG_NAMESPACE
+                  value: kube-system
+                - name: APISERVER_ROUTE_NAME
+                  value: restapi
+                - name: STANDARD_AUTHSERVICE_CONFIG_NAME
+                  value: keycloak-config
+                - name: STANDARD_AUTHSERVICE_CREDENTIALS_SECRET_NAME
+                  value: keycloak-credentials
+                - name: STANDARD_AUTHSERVICE_CERT_SECRET_NAME
+                  value: standard-authservice-cert
+                image: registry.redhat.io/amq7/amq-online-1-api-server:1.1
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                name: api-server
+                ports:
+                - containerPort: 8080
+                  name: http
+                - containerPort: 8443
+                  name: https
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 512Mi
+                volumeMounts:
+                - mountPath: /api-server-cert
+                  name: apiservice-cert
+                  readOnly: true
+              serviceAccountName: api-server
+
+      - name: api-server
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: enmasse
+              component: api-server
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                component: api-server
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              containers:
+              - env:
+                - name: JAVA_OPTS
+                  value: -verbose:gc -Xlog:gc*
+                - name: CERT_DIR
+                  value: /api-server-cert
+                - name: ENABLE_RBAC
+                  value: "true"
+                - name: APISERVER_CLIENT_CA_CONFIG_NAME
+                  value: extension-apiserver-authentication
+                - name: APISERVER_CLIENT_CA_CONFIG_NAMESPACE
+                  value: kube-system
+                - name: APISERVER_ROUTE_NAME
+                  value: restapi
+                - name: STANDARD_AUTHSERVICE_CONFIG_NAME
+                  value: keycloak-config
+                - name: STANDARD_AUTHSERVICE_CREDENTIALS_SECRET_NAME
+                  value: keycloak-credentials
+                - name: STANDARD_AUTHSERVICE_CERT_SECRET_NAME
+                  value: standard-authservice-cert
+                image: registry.redhat.io/amq7/amq-online-1-api-server:1.1
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                name: api-server
+                ports:
+                - containerPort: 8080
+                  name: http
+                - containerPort: 8443
+                  name: https
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 512Mi
+                volumeMounts:
+                - mountPath: /api-server-cert
+                  name: apiservice-cert
+                  readOnly: true
+              serviceAccountName: api-server
+      - name: address-space-controller
+        spec:
+          replicas: 1
+          strategy:
+            type: RollingUpdate
+          selector:
+            matchLabels:
+              app: enmasse
+              name: address-space-controller
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                name: address-space-controller
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              containers:
+              - env:
+                - name: JAVA_OPTS
+                  value: -verbose:gc
+                - name: ENABLE_EVENT_LOGGER
+                  value: "true"
+                - name: EXPOSE_ENDPOINTS_BY_DEFAULT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: exposeEndpointsByDefault
+                      name: address-space-controller-config
+                      optional: true
+                - name: ENVIRONMENT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: environment
+                      name: address-space-controller-config
+                      optional: true
+                - name: TEMPLATE_DIR
+                  value: /opt/templates
+                - name: RESOURCES_DIR
+                  value: /opt
+                - name: STANDARD_AUTHSERVICE_CONFIG_NAME
+                  value: keycloak-config
+                - name: STANDARD_AUTHSERVICE_CREDENTIALS_SECRET_NAME
+                  value: keycloak-credentials
+                - name: STANDARD_AUTHSERVICE_CERT_SECRET_NAME
+                  value: standard-authservice-cert
+                - name: WILDCARD_ENDPOINT_CERT_SECRET
+                  valueFrom:
+                    configMapKeyRef:
+                      key: wildcardEndpointCertSecret
+                      name: address-space-controller-config
+                      optional: true
+                - name: RESYNC_INTERVAL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: resyncInterval
+                      name: address-space-controller-config
+                      optional: true
+                - name: RECHECK_INTERVAL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: recheckInterval
+                      name: address-space-controller-config
+                      optional: true
+                - name: IMAGE_PULL_POLICY
+                  value: Always
+                - name: ROUTER_IMAGE
+                  value: registry.redhat.io/amq7/amq-interconnect:1.4
+                - name: STANDARD_CONTROLLER_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-standard-controller:1.1
+                - name: AGENT_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-agent:1.1
+                - name: BROKER_IMAGE
+                  value: registry.redhat.io/amq-broker-7/amq-broker-72-openshift:latest
+                - name: BROKER_PLUGIN_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-broker-plugin:1.1
+                - name: TOPIC_FORWARDER_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-topic-forwarder:1.1
+                - name: MQTT_GATEWAY_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-mqtt-gateway:1.1
+                - name: MQTT_LWT_IMAGE
+                  value: registry.redhat.io/amq7/amq-online-1-mqtt-lwt:1.1
+                image: registry.redhat.io/amq7/amq-online-1-address-space-controller:1.1
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                name: address-space-controller
+                ports:
+                - containerPort: 8080
+                  name: http
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 256Mi
+              serviceAccountName: address-space-controller
+  apiservicedefinitions:
+    owned:
+    - group: enmasse.io
+      version: v1beta1
+      kind: AddressSpace 
+      name: addressspaces
+      displayName: Address Space
+      description: A group of messaging addresses that can be accessed via the same endpoint
+      deploymentName: api-server
+      containerPort: 8443
+      specDescriptors:
+        - description: The address space type.
+          displayName: Type
+          path: type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The address space plan.
+          displayName: Plan
+          path: plan
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+      statusDescriptors:
+        - description: Address space ready.
+          displayName: Ready
+          path: isReady
+          x-descriptors:
+            - 'urn:alm:descriptor:text'
+    - group: enmasse.io
+      version: v1beta1
+      kind: Address
+      name: addresses
+      displayName: Address
+      description: A messaging address that can be used to send/receive messages to/from
+      deploymentName: api-server
+      containerPort: 8443
+      specDescriptors:
+        - description: The address type.
+          displayName: Type
+          path: type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The address plan.
+          displayName: Plan
+          path: plan
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+      statusDescriptors:
+        - description: Address ready.
+          displayName: Ready
+          path: isReady
+          x-descriptors:
+            - 'urn:alm:descriptor:text'
+        - description: Address phase
+          displayName: Phase
+          path: phase
+          x-descriptors:
+            - 'urn:alm:descriptor:text'
+    - group: user.enmasse.io
+      version: v1beta1
+      kind: MessagingUser
+      name: messagingusers
+      displayName: Messaging User
+      description: A messaging user that can connect to an Address Space
+      deploymentName: user-api-server
+      containerPort: 8443
+      specDescriptors:
+        - description: The user name.
+          displayName: Username
+          path: username
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The authentication type
+          displayName: Authentication type
+          path: authentication.type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+        - description: The password
+          displayName: Password
+          path: authentication.password
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:label'
+  customresourcedefinitions:
+    owned:
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: AuthenticationService
+        name: authenticationservices.admin.enmasse.io
+        displayName: Authentication Service
+        description: Authentication service configuration available to address spaces.
+        specDescriptors:
+          - description: The type of authentication service
+            displayName: Type
+            path: type
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: StandardInfraConfig
+        name: standardinfraconfigs.admin.enmasse.io
+        displayName: Standard Infra Config
+        description: Infrastructure configuration template for the standard address space type
+        specDescriptors:
+          - description: The minimal number of AMQP router replicas to create.
+            displayName: Minimum Router Replicas
+            path: router.minReplicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - description: The link capacity of AMQP producer links attached to the routers.
+            displayName: Link capacity
+            path: router.linkCapacity
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The amount of memory to configure for AMQP router pods.
+            displayName: Router Memory
+            path: router.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The amount of memory to configure for message brokers.
+            displayName: Broker Memory
+            path: broker.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The amount of storage to configure for message brokers.
+            displayName: Broker Storage
+            path: broker.resources.storage
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The storage class name to use for message broker persistent volumes.
+            displayName: Broker Storage Class
+            path: broker.storageClassName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The policy to apply when message queues are full.
+            displayName: Broker Address Full Policy
+            path: broker.addressFullPolicy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The amount of memory to configure for the admin operator.
+            displayName: Admin Memory
+            path: admin.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: BrokeredInfraConfig
+        name: brokeredinfraconfigs.admin.enmasse.io
+        displayName: Brokered Infra Config
+        description: Infrastructure configuration template for the brokered address space type
+        specDescriptors:
+          - description: The amount of memory to configure for message brokers.
+            displayName: Broker Memory
+            path: broker.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The amount of storage to configure for message brokers.
+            displayName: Broker Storage
+            path: broker.resources.storage
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The storage class name to use for message broker persistent volumes.
+            displayName: Broker Storage Class
+            path: broker.storageClassName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The policy to apply when message queues are full.
+            displayName: Broker Address Full Policy
+            path: broker.addressFullPolicy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The amount of memory to configure for the admin operator.
+            displayName: Admin Memory
+            path: admin.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+      - group: admin.enmasse.io
+        version: v1beta2
+        kind: AddressSpacePlan
+        name: addressspaceplans.admin.enmasse.io
+        displayName: Address Space Plan
+        description: Plan describing the capabilities and resource limits of a given address space type
+        specDescriptors:
+          - description: The name to be displayed in the console UI.
+            displayName: Display Name
+            path: displayName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The reference to the infrastructure config used by this plan.
+            displayName: InfraConfig Reference
+            path: infraConfigRef
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The description to be shown in the console UI.
+            displayName: Short Description
+            path: shortDescription
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The quota for broker resources
+            displayName: Broker Quota
+            path: resourceLimits.broker
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The quota for router resources
+            displayName: Router Quota
+            path: resourceLimits.router
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The aggregate quota for all resources
+            displayName: Aggregate Quota
+            path: resourceLimits.aggregate
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+      - group: admin.enmasse.io
+        version: v1beta2
+        kind: AddressPlan
+        name: addressplans.admin.enmasse.io
+        displayName: Address Plan
+        description: Plan describing the resource usage of a given address type
+        specDescriptors:
+          - description: The name to be displayed in the console UI.
+            displayName: Display Name
+            path: displayName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The description to be shown in the console UI.
+            displayName: Short Description
+            path: shortDescription
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The broker resource usage.
+            displayName: Broker Usage
+            path: resources.broker
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: The router resource usage.
+            displayName: Router Usage
+            path: resources.router
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+      - group: iot.enmasse.io
+        version: v1alpha1
+        kind: IoTConfig
+        name: iotconfigs.iot.enmasse.io
+        displayName: IoT Config
+        description: IoT Infrastructure Configuration Singleton
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: ConsoleService
+        name: consoleservices.admin.enmasse.io
+        displayName: Console Service
+        description: Console Service Singleton for deploying global console.
+        specDescriptors:
+          - description: The discovery Metadata URL
+            displayName: Discovery Metadata URL
+            path: discoveryMetadataUrl
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: Console certificate secret name
+            displayName: Console certificate secret name
+            path: certificateSecret.name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: OAUTH Client Secret Name
+            displayName: OAUTH Client Secret Name
+            path: oauthClientSecret.name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: Scope
+            displayName: Scope
+            path: scope
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
+          - description: Host to use for ingress
+            displayName: Host
+            path: host
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:label'
