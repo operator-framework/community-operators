@@ -7,11 +7,11 @@ metadata:
     capabilities: Full Lifecycle
     categories: "Database"
     certified: "false"
-    containerImage: docker.elastic.co/cloud/eck-operator:0.8.0
+    containerImage: docker.elastic.co/eck/eck-operator:0.8.0
     createdAt: 2019-04-30T18:35:59Z
-    description: A way to run Elasticsearch, Kibana, and Elastic APM Server on Kubernetes
+    description: A way to run Elasticsearch and Kibana on Kubernetes
     support: Elastic.co
-    alm-examples: '[{"apiVersion":"elasticsearch.k8s.elastic.co/v1alpha1","kind":"Elasticsearch","metadata":{"labels":{"controller-tools.k8s.io":"1.0"},"name":"elasticsearch-sample"},"spec":{"version":"6.7.0","nodes":[{"config":{"node.master":true,"node.data":true,"xpack.license.self_generated.type":"trial","node.attr.attr_name":"attr_value"},"resources":{"limits":{"memory":"1Gi","cpu":"1000m"}},"nodeCount":3}],"expose":"LoadBalancer"}},{"apiVersion":"kibana.k8s.elastic.co/v1alpha1","kind":"Kibana","metadata":{"labels":{"controller-tools.k8s.io":"1.0"},"name":"kibana-sample"},"spec":{"version":"6.7.0","nodeCount":1,"expose":"LoadBalancer"}}, {"apiVersion":"apm.k8s.elastic.co/v1alpha1","kind":"ApmServer","metadata":{"labels":{"controller-tools.k8s.io":"1.0"},"name":"apmserver-sample"},"spec":{"version":"6.7.0","nodeCount":"1\nexpose: LoadBalancer"}},{"apiVersion":"associations.k8s.elastic.co/v1alpha1","kind":"ApmServerElasticsearchAssociation","metadata":{"labels":{"controller-tools.k8s.io":"1.0"},"name":"apmelasticsearchassociation-sample"},"spec":{"elasticsearch":{"name":"elasticsearch-sample","namespace":"default"},"apmServer":{"name":"apm-server-sample","namespace":"default"}}},{"apiVersion":"associations.k8s.elastic.co/v1alpha1","kind":"KibanaElasticsearchAssociation","metadata":{"labels":{"controller-tools.k8s.io":"1.0"},"name":"kibanaelasticsearchassociation-sample"},"spec":{"elasticsearch":{"name":"elasticsearch-sample","namespace":"default"},"kibana":{"name":"kibana-sample","namespace":"default"}}}]'
+    alm-examples: '[{"apiVersion":"elasticsearch.k8s.elastic.co\/v1alpha1","kind":"Elasticsearch","metadata":{"name":"elasticsearch-sample"},"spec":{"version":"6.7.2","nodes":[{"config":{"node.master":true,"node.data":true,"node.attr.attr_name":"attr_value"},"podTemplate":{"metadata":{"labels":{"foo":"bar"}},"spec":{"containers":[{"name":"elasticsearch","resources":{"limits":{"memory":"1Gi","cpu":1}}}]}},"nodeCount":3}],"http":{"service":{"spec":{"type":"LoadBalancer"}}}}},{"apiVersion":"kibana.k8s.elastic.co\/v1alpha1","kind":"Kibana","metadata":{"name":"kibana-sample"},"spec":{"version":"6.7.2","nodeCount":1,"elasticsearchRef":{"name":"elasticsearch-sample"},"http":{"service":{"spec":{"type":"LoadBalancer"}}},"podTemplate":{"metadata":{"labels":{"foo":"bar"}},"spec":{"containers":[{"name":"kibana","resources":{"limits":{"memory":"1Gi","cpu":1}}}]}}}}]'
 spec:
   customresourcedefinitions:
     owned:
@@ -26,26 +26,9 @@ spec:
         kind: Kibana
         name: kibanas.kibana.k8s.elastic.co
         version: v1alpha1
-      - description: Elastic APM Server
-        displayName: Elastic APM
-        kind: ApmServer
-        name: apmservers.apm.k8s.elastic.co
-        version: v1alpha1
-      - description: Elasticsearch / Kibana association
-        displayName: Elasticsearch / Kibana association
-        kind: KibanaElasticsearchAssociation
-        name: kibanaelasticsearchassociations.associations.k8s.elastic.co
-        version: v1alpha1
-      - description: Elasticsearch / Elastic APM Server association
-        displayName: Elasticsearch / Elastic APM Server association
-        kind: ApmServerElasticsearchAssociation
-        name: apmserverelasticsearchassociations.associations.k8s.elastic.co
-        version: v1alpha1
   keywords:
     - elasticsearch
     - kibana
-    - elastic apm
-    - apm
     - analytics
     - search
     - database
@@ -69,7 +52,7 @@ spec:
     - type: MultiNamespace
       supported: false
     - type: AllNamespaces
-      supported: false
+      supported: true
   install:
     strategy: deployment
     spec:
@@ -87,10 +70,10 @@ spec:
             spec:
               serviceAccount: elastic-operator
               containers:
-              - image: docker.elastic.co/cloud/eck-operator:0.8.0
+              - image: docker.elastic.co/eck/eck-operator:0.8.0
                 imagePullPolicy: Always
                 name: manager
-                args: ["manager", "--operator-roles", "all"]
+                args: ["manager", "--operator-roles", "global,namespace"]
                 env:
                 - name: NAMESPACE
                   valueFrom:
@@ -100,10 +83,8 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.operatorNamespace']
-                - name: WEBHOOK_PODS_LABEL
-                  value: elastic-operator
                 - name: OPERATOR_IMAGE
-                  value: docker.elastic.co/cloud/eck-operator:0.8.0
+                  value: docker.elastic.co/eck/eck-operator:0.8.0
                 resources:
                   limits:
                     cpu: 100m
@@ -111,16 +92,6 @@ spec:
                   requests:
                     cpu: 100m
                     memory: 20Mi
-                ports:
-                - containerPort: 9876
-                  name: webhook-server
-                  protocol: TCP
-                volumeMounts:
-                - mountPath: /tmp/cert
-                  name: cert
-              volumes:
-              - name: cert
-                emptyDir: {}
               terminationGracePeriodSeconds: 10
       permissions:
       - serviceAccountName: elastic-operator
@@ -229,24 +200,8 @@ spec:
               - update
               - patch
               - delete
-      clusterPermissions:
-      - serviceAccountName: elastic-operator
-        rules:
-        - apiGroups:
-          - admissionregistration.k8s.io
-          resources:
-          - mutatingwebhookconfigurations
-          - validatingwebhookconfigurations
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
   maintainers:
     - email: anurag.gupta@elastic.co
       name: 'Elastic'
   description: |-
-    Elastic Cloud on Kubernetes helps you run Elasticsearch, Kibana, and Elastic APM Server
+    Elastic Cloud on Kubernetes helps you run Elasticsearch and Kibana on Kubernetes
