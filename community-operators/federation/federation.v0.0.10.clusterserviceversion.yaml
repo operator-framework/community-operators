@@ -3,14 +3,14 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: federation.v0.0.8
+  name: federation.v0.0.10
   namespace: placeholder
   annotations:
     capabilities: Basic Install
     categories: "OpenShift Optional, Integration & Delivery"
     description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes Federation.
     certified: "false"
-    containerImage: "quay.io/kubernetes-multicluster/federation-v2:v0.0.8"
+    containerImage: "quay.io/kubernetes-multicluster/federation-v2:v0.0.10"
     createdAt: "2019-01-01T00:00:00Z"
     repository: https://github.com/openshift/federation-v2-operator
 spec:
@@ -39,11 +39,11 @@ spec:
     federation will be deployed to manage objects _only_ in `my-namespace` in
     the host cluster and target clusters.
 
-    After installing Federation instance, you will use the `kubefed2` command
+    After installing Federation instance, you will use the `kubefedctl` command
     line tool to do two types of configuration:
       
-    - Configure federation to connect to your target clusters with `kubefed2 join`
-    - Create new federation APIs for the API types you want to federate with `kubefed2 enable`
+    - Configure federation to connect to your target clusters with `kubefedctl join`
+    - Create new federation APIs for the API types you want to federate with `kubefedctl enable`
 
 
     **Important Note**: To add federation capability to your namespace, you are
@@ -56,21 +56,21 @@ spec:
     where federation is installed as `<namespace>` in command examples. The
     upstream user guide uses `federation-system` as the name of this namespace.
 
-    ### Get the kubefed2 CLI tool
+    ### Get the kubefedctl CLI tool
 
     Before you use federation, you should ensure that you're using the binary
     for this version. You can get it from the releases on GitHub.
 
-        curl -Ls https://github.com/kubernetes-sigs/federation-v2/releases/download/v0.0.8/kubefed2.tgz | tar xz
+        curl -Ls https://github.com/kubernetes-sigs/federation-v2/releases/download/v0.0.10/kubefedctl.tgz | tar xz
 
     ### Joining Clusters
 
-    Use the `kubefed2 join` command to connect clusters you want federation to
-    spread resources to. `kubefed2 join` reads information about how to connect
+    Use the `kubefedctl join` command to connect clusters you want federation to
+    spread resources to. `kubefedctl join` reads information about how to connect
     to the joining cluster and the cluster hosting federation from your
     KUBECONFIG.
 
-        kubefed2 join cluster-name \
+        kubefedctl join cluster-name \
           --cluster-context mycluster \            # name of a KUBECONFIG context for the cluster to join
           --host-cluster-context mycluster \       # name of a KUBECONFIG context for the hosting cluster
           --add-to-registry \                      # add clusters to the cluster-registry
@@ -79,7 +79,7 @@ spec:
           --limited-scope=true \                   # ensure that created serviceaccount has permissions only scoped to the namespace
           -v 2
     
-    `kubefed2 join` creates `FederatedCluster` and `Cluster` resources named
+    `kubefedctl join` creates `FederatedCluster` and `Cluster` resources named
     `cluster-name` to represent the joined cluster.
 
     `Cluster` resources hold endpoint information about clusters federation connects to.
@@ -141,13 +141,13 @@ spec:
           region: us-east-1
           zone: us-east-1a
 
-    See also the upstream [user guide](https://github.com/kubernetes-sigs/federation-v2/blob/v0.0.8/docs/userguide.md#join-clusters) for more information.
+    See also the upstream [user guide](https://github.com/kubernetes-sigs/federation-v2/blob/v0.0.10/docs/userguide.md#join-clusters) for more information.
 
     ### Unjoining Clusters
 
-    Use the `kubefed2 unjoin` command to remove a previously joined cluster.
+    Use the `kubefedctl unjoin` command to remove a previously joined cluster.
 
-        kubefed2 unjoin mycluster \
+        kubefedctl unjoin mycluster \
           --host-cluster-context mycluster \       # name of a KUBECONFIG context for the hosting cluster
           --registry-namespace=<namespace> \       # namespace where federation is deployed
           -v 2
@@ -164,7 +164,7 @@ spec:
     ### Enabling federation for new API types
 
     Federation allows you to spread any API type to target clusters. Use
-    `kubefed2 enable <API type>` for the API types you want to add federation
+    `kubefedctl enable <API type>` for the API types you want to add federation
     capability for. Enabling federation for an API type does two things:
 
     1. Creates a new API type to represent the federation API surface for that type
@@ -174,7 +174,7 @@ spec:
       controller to handle the new federation API
 
 
-        kubefed2 enable deployments.extensions \
+        kubefedctl enable deployments.extensions \
           --federation-namespace=<namespace>
     
     Running this command produces a new CRD in the hosting cluster to be the
@@ -184,7 +184,7 @@ spec:
         No resources found.
 
     `FederatedTypeConfig` resources configure federation to watch the new
-    federation API surface created by `kubefed2 enable`.
+    federation API surface created by `kubefedctl enable`.
 
         kubectl get federatedtypeconfigs -n <namespace>
 
@@ -195,15 +195,15 @@ spec:
 
 
     **Important Note**: You must enable Federation support for Namespaces in
-    this configuration before other types will work. Use `kubefed2 enable
+    this configuration before other types will work. Use `kubefedctl enable
     namespaces`.
 
 
     **Important Note**: Federation is currently installed **without** any
-    `FederatedTypeConfig` resources created. You must run `kubefed2 enable`
+    `FederatedTypeConfig` resources created. You must run `kubefedctl enable`
     operation for each API type you want to add federation capability for.
 
-    See also the upstream [user guide](https://github.com/kubernetes-sigs/federation-v2/blob/v0.0.8/docs/userguide.md#enabling-federation-of-an-api-type) for more information.
+    See also the upstream [user guide](https://github.com/kubernetes-sigs/federation-v2/blob/v0.0.10/docs/userguide.md#enabling-federation-of-an-api-type) for more information.
 
     ### Example: federating deployments
 
@@ -246,26 +246,26 @@ spec:
 
     ### Disabling federation for an API type
 
-    Use the `kubefed2 disable` command to disable federation for an API type.
+    Use the `kubefedctl disable` command to disable federation for an API type.
 
-        kubefed2 disable deployments.extensions --federation-namespace=<namespace>
+        kubefedctl disable deployments.extensions --federation-namespace=<namespace>
 
     This will disable the propagation of federated deployments, but leave the
     API surface and `FederatedTypeConfig` intact.
 
     To fully remove the API surface, use the `--delete-from-api` flag:
 
-        kubefed2 disable deployments.extensions --federation-namespace=<namespace> --delete-from-api
+        kubefedctl disable deployments.extensions --federation-namespace=<namespace> --delete-from-api
 
-    See also the upstream [user guide](https://github.com/kubernetes-sigs/federation-v2/blob/v0.0.8/docs/userguide.md#disabling-federation-of-an-api-type) for more information.
+    See also the upstream [user guide](https://github.com/kubernetes-sigs/federation-v2/blob/v0.0.10/docs/userguide.md#disabling-federation-of-an-api-type) for more information.
   keywords: ['kubernetes', 'federation', 'hybrid', 'hybrid cloud', 'multi-cluster', 'cluster']
-  version: 0.0.8
+  version: 0.0.10
   maturity: alpha
   provider:
     name: Red Hat
   labels:
     alm-owner-federation: federation
-    alm-status-descriptors: federation.v0.0.8
+    alm-status-descriptors: federation.v0.0.10
   links:
   - name: Federation Concepts
     url: https://github.com/kubernetes-sigs/federation-v2#concepts
@@ -349,7 +349,7 @@ spec:
             spec:
               containers:
                 - name: controller-manager
-                  image: quay.io/kubernetes-multicluster/federation-v2:v0.0.8
+                  image: quay.io/kubernetes-multicluster/federation-v2:v0.0.10
                   resources:
                     limits:
                       cpu: 100m
@@ -361,17 +361,13 @@ spec:
                     - /root/controller-manager
                   args:
                     - --federation-namespace=$(FEDERATION_NAMESPACE)
-                    - --limited-scope=true
-                    - --registry-namespace=$(CLUSTER_REGISTRY_NAMESPACE)
                     - -v=5
                     - --logtostderr
                   imagePullPolicy: IfNotPresent
                   env:
+                  - name: DEFAULT_FEDERATION_SCOPE
+                    value: Namespaced
                   - name: FEDERATION_NAMESPACE
-                    valueFrom:
-                      fieldRef:
-                        fieldPath: metadata.namespace
-                  - name: CLUSTER_REGISTRY_NAMESPACE
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.namespace
