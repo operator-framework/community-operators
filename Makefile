@@ -1,5 +1,6 @@
 SDK_VER="v0.6.0"
 KUBE_VER="v1.13.0"
+VM_DRIVER=none
 
 check_path:
 	@if [ ! -d ${OP_PATH} ]; then echo "Operator path not found"; exit 1; fi
@@ -7,7 +8,7 @@ check_path:
 help:
     @grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-dependencies.check: check_path
+dependencies.check:
 	@scripts/utils/check-deps
 
 dependencies.install.yq:
@@ -53,7 +54,7 @@ dependencies.install.minikube:
 	@echo "Installed"
 
 minikube.start:
-	@sudo minikube start --vm-driver=none --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator
+	@sudo minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator
 	@sudo kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
 	@sudo kubectl delete catalogsource operatorhubio-catalog -n olm
 

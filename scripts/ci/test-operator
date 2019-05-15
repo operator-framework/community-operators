@@ -86,7 +86,13 @@ insert_kubeconfig_secret_mount "$CSV_FILE"
 insert_proxy_container "$CSV_FILE" "$SC_PROXY_IMAGE"
 
 # Build a registry container containing operator manifests.
-docker build -t "$OP_REGISTRY_IMAGE" . > /dev/null
+
+if [[ -z "$REG_IMAGE" ]]; then
+  docker build -t "$REG_IMAGE" . > /dev/null
+  docker push "$REG_IMAGE" > /dev/null
+else 
+  docker build -t "$OP_REGISTRY_IMAGE" . > /dev/null
+fi
 
 # Define names for resource types.
 DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
