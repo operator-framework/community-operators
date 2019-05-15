@@ -8,10 +8,207 @@ metadata:
   annotations:
     capabilities: Basic Install
     categories: "OpenShift Optional, Integration & Delivery"
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "clusterregistry.k8s.io/v1alpha1",
+          "kind": "Cluster",
+          "metadata": {
+            "name": "cluster-name"
+          },
+          "spec": {
+            "authInfo": {},
+            "kubernetesApiEndpoints": {
+              "serverEndpoints": [
+                {
+                  "clientCIDR": "0.0.0.0/0",
+                  "serverAddress": "https://cluster-name.example.com:6443"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "apiVersion": "core.federation.k8s.io/v1alpha1",
+          "kind": "FederatedCluster",
+          "metadata": {
+            "name": "cluster-name"
+          },
+          "spec": {
+            "clusterRef": {
+              "name": "cluster-name"
+            },
+            "secretRef": {
+              "name": "<name-of-secret>"
+            }
+          }
+        },
+        {
+          "apiVersion": "core.federation.k8s.io/v1alpha1",
+          "kind": "FederatedTypeConfig",
+          "metadata": {
+            "name": "deployments.extensions"
+          },
+          "spec": {
+            "federatedType": {
+              "group": "types.federation.k8s.io",
+              "kind": "FederatedDeployment",
+              "pluralName": "federateddeployments",
+              "version": "v1alpha1"
+            },
+            "namespaced": "true",
+            "propagationEnabled": "true",
+            "target": {
+              "group": "extensions",
+              "kind": "Deployment",
+              "pluralName": "deployments",
+              "version": "v1beta1"
+            }
+          }
+        },
+        {
+          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
+          "kind": "Domain",
+          "metadata": {
+            "name": "test-domain"
+            },
+          "spec": {
+            "domain": "your.domain.name"
+            }
+        },
+        {
+          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
+          "kind": "ServiceDNSRecord",
+          "metadata": {
+            "name": "test-service"
+            },
+          "spec": {
+            "domainRef": "test-domain",
+            "recordTTL": "300"
+            }
+        },
+        {
+          "apiVersion": "federatedservicestatuses.core.federation.k8s.io/v1alpha1",
+          "kind": "FederatedServiceStatus",
+          "metadata": {
+            "name": "test-federatedservicestatus"
+            },
+          "spec": {
+            "clusterStatus": {
+               "clusterName": "test-cluster", 
+               "status": "cluster-status"
+                }
+            }
+        },
+        {
+          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
+          "kind": "DNSEndpoint",
+          "metadata": {
+            "name": "service-testservice"
+            },
+          "spec": {
+            "endpoints": [
+              {
+                "dnsName": "test-service.test-namespace.test-domain.svc.your.domain.name",
+                "recordTTL": "300",
+                "recordType": "A",
+                "targets": [
+                  "test-cluster"
+                  ]
+              }
+              ]
+            }
+          },
+        {
+          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
+          "kind": "IngressDNSRecord",
+          "metadata": {
+            "name": "test-ingress"
+            },
+          "spec": {
+            "hosts": [
+              "ingress.example.com"
+              ],
+              "recordTTL": "300"
+            }
+        },
+        {
+          "apiVersion": "scheduling.federation.k8s.io/v1alpha1",
+          "kind": "ReplicaSchedulingPreference",
+          "metadata": {
+            "name": "test-deployment"
+            },
+          "spec": {
+            "targetKind": "FederatedDeployment",
+            "totalReplicas": "10",
+            "rebalance": "true",
+            "clusters": {
+              "cluster1": {
+                "weight": "2"
+                },
+              "cluster2": {
+                "weight": "3"
+                }
+              }
+            }
+        },
+        {
+          "apiVersion": "propagatedversions.core.federation.k8s.io/v1alpha1",
+          "kind": "PropagatedVersion",
+          "metadata": {
+            "name": "test-propagation"
+            },
+          "spec": {
+            "clusterVersions": {
+               "clusterName": "test-cluster",
+               "version": "0.0.10"  
+                }
+            }
+        },
+        {
+          "apiVersion": "core.federation.k8s.io/v1alpha1",
+          "kind": "FederationConfig",
+          "metadata": {
+            "name": "test-federationconfig"
+            },
+          "spec": {
+            "scope": "Cluster",
+            "controllerDuration": {
+              "availableDelay": "20s",
+              "unavailableDelay": "60s",
+              "clusterMonitorPeriod": "40s"
+              },
+            "leaderElect": {
+              "leaseDuration": "15s",
+              "renewDeadline": "10s",
+              "retryPeriod": "5s",
+              "resourceLock": "configmaps"
+              },
+            "featureGates": [
+              {
+                "name": "PushReconciler",
+                "enabled": "true"
+                },
+              {
+                "name": "SchedulerPreferences",
+                "enabled": "true"
+              },
+             {
+               "name": "CrossClusterServiceDiscovery",
+               "enabled": "true"
+              },
+              {
+               "name": "FederatedIngress"
+               }
+            ]
+          },
+          "enabled": "true"
+        }
+      ]
     description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes Federation.
     certified: "false"
     containerImage: "quay.io/kubernetes-multicluster/federation-v2:v0.0.10"
-    createdAt: "2019-01-01T00:00:00Z"
+    createdAt: "2019-05-06T18:56:00Z"
     repository: https://github.com/openshift/federation-v2-operator
 spec:
   displayName: Federation
@@ -75,8 +272,6 @@ spec:
           --host-cluster-context mycluster \       # name of a KUBECONFIG context for the hosting cluster
           --add-to-registry \                      # add clusters to the cluster-registry
           --federation-namespace=<namespace> \     # namespace where federation is deployed
-          --registry-namespace=<namespace> \       # namespace where federation is deployed
-          --limited-scope=true \                   # ensure that created serviceaccount has permissions only scoped to the namespace
           -v 2
     
     `kubefedctl join` creates `FederatedCluster` and `Cluster` resources named
@@ -85,8 +280,8 @@ spec:
     `Cluster` resources hold endpoint information about clusters federation connects to.
 
         kubectl get clusters -n <namespace>
-        NAME           AGE
-        cluster-name   7s
+        NAME            READY     AGE
+        cluster-name    True      6s
     
         kubectl get clusters cluster-name -o yaml
         apiVersion: clusterregistry.k8s.io/v1alpha1
@@ -111,8 +306,8 @@ spec:
     `KUBECONFIG` information that federation uses to connect to `Clusters`.
 
         kubectl get federatedclusters -n <namespace>
-        NAME           AGE
-        cluster-name   7s
+        NAME            READY     AGE
+        cluster-name    True      7s
         
         kubectl get federatedclusters cluster-name -o yaml                                                                                                                                                                     
         apiVersion: core.federation.k8s.io/v1alpha1
@@ -149,7 +344,9 @@ spec:
 
         kubefedctl unjoin mycluster \
           --host-cluster-context mycluster \       # name of a KUBECONFIG context for the hosting cluster
-          --registry-namespace=<namespace> \       # namespace where federation is deployed
+          --cluster-context mycluster \            # name of a KUBECONFIG context for the cluster to unjoin
+          --federation-namespace=<namespace> \     # namespace where federation is deployed
+          --remove-from-registry \                 # Remove the cluster from the cluster registry running in the host cluster context.
           -v 2
 
     This command deletes the `FederatedCluster` and `Cluster` for the unjoining
@@ -181,16 +378,19 @@ spec:
     federation API surface for the deployments resource.
 
         kubectl get crd/federateddeployments.types.federation.k8s.io
-        No resources found.
+        NAME                                           CREATED AT
+        federateddeployments.types.federation.k8s.io   2019-05-16T14:18:27Z
 
     `FederatedTypeConfig` resources configure federation to watch the new
     federation API surface created by `kubefedctl enable`.
 
         kubectl get federatedtypeconfigs -n <namespace>
+        NAME                     AGE
+        deployments.extensions   74s
 
 
     **Important Note**: Federation of a CRD requires that the CRD be installed
-    on all member clusters. If the CRD is not installed on a member cluster,
+    on host cluster and all member clusters. If the CRD is not installed on a member cluster,
     propagation to that cluster will fail.
 
 
@@ -240,7 +440,7 @@ spec:
 
     You should be able to see the deployment in the target cluster!
 
-        kubectl get deployments
+        kubectl get deployments hello -n <namespace> --context=<mycluster>
         NAME    READY   UP-TO-DATE   AVAILABLE   AGE
         hello   1/1     1            1           33s
 
@@ -250,19 +450,31 @@ spec:
 
         kubefedctl disable deployments.extensions --federation-namespace=<namespace>
 
-    This will disable the propagation of federated deployments, but leave the
-    API surface and `FederatedTypeConfig` intact.
+    This will disable the propagation of federated deployments and delete the corresponding  
+    Federated API resource.
 
-    To fully remove the API surface, use the `--delete-from-api` flag:
+    To fully remove the API surface, use the `--delete-crd` flag:
 
-        kubefedctl disable deployments.extensions --federation-namespace=<namespace> --delete-from-api
+        kubefedctl disable deployments.extensions --federation-namespace=<namespace> --delete-crd
+
+        Disabled propagation for FederatedTypeConfig "federation-test/deployments.extensions"
+        Verifying propagation controller is stopped for FederatedTypeConfig "federation-test/deployments.extensions"
+        Propagation controller for FederatedTypeConfig "federation-test/deployments.extensions" is stopped
+        customresourcedefinition "federateddeployments.types.federation.k8s.io" deleted
+        federatedtypeconfig "federation-test/deployments.extensions" deleted
 
     See also the upstream [user guide](https://github.com/kubernetes-sigs/federation-v2/blob/v0.0.10/docs/userguide.md#disabling-federation-of-an-api-type) for more information.
   keywords: ['kubernetes', 'federation', 'hybrid', 'hybrid cloud', 'multi-cluster', 'cluster']
   version: 0.0.10
+  icon:
+  - base64data: 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
+    mediatype: image/png
   maturity: alpha
   provider:
     name: Red Hat
+  maintainers:
+  - email: kubefed-operator@redhat.com
+    name: Kubefed Team
   labels:
     alm-owner-federation: federation
     alm-status-descriptors: federation.v0.0.10
