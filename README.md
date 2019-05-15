@@ -21,21 +21,20 @@ Please note that the directory name should match the `packageName` of your opera
 
 # Where to contribute
 
-There are 3 directories where you can contribute, depending on a set of requirements:
+There are 2 directories where you can contribute, depending on a set of requirements:
 
 | Target Directory               | Type of Operators              | Target Platform             | Requirements                                                  |
 |--------------------------------|--------------------------------|-----------------------------|---------------------------------------------------------------|
 | `community-operators`          | Community OpenShift Operators  | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
 | `upstream-community-operators` | Community Kubernetes Operators | Kubernetes / OperatorHub.io | needs to work on Kubernetes 1.7 or newer                      |
-| `redhat-operators`             | Red Hat-provided Operators     | OpenShift / OKD             | needs to work on OpenShift 3.11 or newer                      |
 
 The column _Target Platform_ denotes where this Operator will be visible (embedded OperatorHub in OpenShift and OKD, or OperatorHub.io for Kubernetes) and where it's intended to run.
 
-**If you Operator works on both Kubernetes and OpenShift, place a copy of your bundle in the `upstream-community-operators` directory, as well as the appropriate OpenShift directory.**
-
 For partners and ISVs, certified operators can now be submitted via connect.redhat.com
 
-Note that OpenShift and OKD clusters by default come with access to operators from `community-operators`, `redhat-operators`, and certified operators. Please keep this in mind when submitting operators, as duplicate operators across these sources will not be tolerated. 
+**If you Operator works on both Kubernetes and OpenShift, place a copy of your bundle in the `upstream-community-operators` directory, as well as the `community-operators` directory.**
+
+Note that OpenShift and OKD clusters by default come with access to operators from `community-operators`, certified operators, and additional Red Hat operators. Please keep this in mind when submitting operators, as duplicate operators between these sources will not be tolerated. 
 
 # Before submitting a PR
 
