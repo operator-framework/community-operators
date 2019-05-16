@@ -1,0 +1,105 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"Xl","metadata":{"name":"xl-release"},"spec":{"global":{"repository":"turbonomic","tag":"7.16.0"}}}]'
+    capabilities: Basic Install
+  name: operator.v7.16.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: Xl
+      name: xls.charts.helm.k8s.io
+      version: v1alpha1
+  description: Placeholder description
+  displayName: Operator
+  install:
+    spec:
+      deployments:
+      - name: t8c-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: t8c-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: t8c-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: t8c-operator
+                image: t8c-operator:7.16.0
+                imagePullPolicy: Always
+                name: t8c-operator
+                resources: {}
+              serviceAccountName: t8c-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - charts.helm.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: t8c-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider: {}
+  version: 7.16.0
