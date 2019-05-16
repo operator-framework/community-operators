@@ -1,0 +1,105 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"Kubeturbo","metadata":{"name":"kubeturbo-example"},"spec":{"restAPIConfig":{"opsManagerPassword":"Turbo_password","opsManagerUserName":"Turbo_username"},"serverMeta":{"turboServer":"https://Turbo_server_URL","version":6.3}}}]'
+    capabilities: Basic Install
+  name: kubeturbo-operator.v6.3.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: Kubeturbo
+      name: kubeturbos.charts.helm.k8s.io
+      version: v1alpha1
+  description: Placeholder description
+  displayName: Kubeturbo Operator
+  install:
+    spec:
+      deployments:
+      - name: kubeturbo-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: kubeturbo-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: kubeturbo-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: kubeturbo-operator
+                image: turbonomic/kubeturbo-operator:6.3
+                imagePullPolicy: Always
+                name: kubeturbo-operator
+                resources: {}
+              serviceAccountName: kubeturbo-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - charts.helm.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: kubeturbo-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider: {}
+  version: 6.3.0
