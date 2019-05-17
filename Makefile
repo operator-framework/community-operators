@@ -10,6 +10,7 @@ help:
 
 dependencies.check:
 	@scripts/utils/check-deps
+	@echo "Cheking dependencies finished"
 
 dependencies.install.yq:
 	@curl -Lo yq https://github.com/mikefarah/yq/releases/download/2.2.1/yq_linux_amd64
@@ -58,11 +59,10 @@ minikube.start:
 	@sudo kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
 	@sudo kubectl delete catalogsource operatorhubio-catalog -n olm
 
-operator.community.verify: check_path
-	@operator-courier verify ${OP_PATH}
-
 operator.test: check_path
+	@make make.operator.verify
+	@if [ -f "~/.kube/config" ]; then echo "Running in your default cluster"; else make minikube.start; fi
 	@scripts/ci/test-operator
 
-operator.upstream.verify: check_path
-	@operator-courier verify --ui_validate_io ${OP_PATH}
+operator.verify: check_path
+	operator-courier verify --ui_validate_io ${OP_PATH}
