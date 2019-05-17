@@ -29,6 +29,8 @@ You can check the prerequisites with make script:
 make dependencies.check
 ```
 
+It will be also check if you run test command
+
 ## Install missing dependencies
 If you miss something we prepare install script for needed dependencies:
 
@@ -36,40 +38,37 @@ If you miss something we prepare install script for needed dependencies:
 make dependencies.install.missing_dependencies
 ```
 
-## Check operator with courrier
+## Check operator with courrier only
 Community operator check:
 
 ```
-make operator.community.verify
-```
-
-Upstream operator check: 
-
-```
-make operator.upstream.verify
+make operator.verify
 ```
 
 ## Run scorecard operator
-firstly you need run the minikube
+You need run the minikube or have some kubernetes instance configured.
+If you want test it in minikube which will be automaticaly started if you don't have any kubeconfig in home directory or you can run it manualy: 
 
 ```
 make minikube.start
 ```
 
-and then run your scoreboard on your operator in minikube
+If you want test your operator agains scoreboard and operator courrier, which check the dependency and also run minikube if you don't have any kubeconfig available.
 
 ```
-make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1
+make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VM_DRIVER=kvm2
 ``` 
+
+## If you run in existing instance of kubernetes or VM minikube
+
+you also need specify your image to push bundled operator registry
+
+```
+make  operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 REG_IMAGE=operator-registry-image
+```
 
 if you need or want run minikube with vm driver other then default you can specify it
 
 ```
 make minikube.start VM_DRIVER=kvm2
-```
-
-but you also need specify your image to push bundled operator registry
-
-```
-make  operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 REG_IMAGE=quay.io/operator-registry
 ```
