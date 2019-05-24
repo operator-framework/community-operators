@@ -24,9 +24,15 @@ fi
 # Also support versions with tagged names, ex. "0.3.0-beta1"
 [[ -z "$OP_VER" ]] && OP_VER="$2"
 if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-  echo "Operator version '$OP_VER' not valid."
-  exit 1
+  echo "Try detect operator version..."
+  OP_VER="$(cat community-operators/etcd/etcd.package.yaml | grep -Po '\.v.*$$' -m 1 | grep -Po '[^\.v].*')"
+  echo "Operator version detected $OP_VER"
+  if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
+    echo "Operator version not valid."
+    exit 1
+  fi
 fi
+
 DISTRO_TYPE_UPSTREAM="upstream"
 DISTRO_TYPE_OPENSHIFT="openshift"
 DISTRO_TYPE="${3:-$DISTRO_TYPE_UPSTREAM}"
