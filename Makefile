@@ -56,9 +56,10 @@ dependencies.install.minikube: ## Install the local minikube
 	@echo "Installed"
 
 minikube.start: ## Start local minikube with OLM
-	@sudo minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator
-	@sudo kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
-	@sudo kubectl delete catalogsource operatorhubio-catalog -n olm
+	sudo minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator
+	sudo kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
+	sudo kubectl delete catalogsource operatorhubio-catalog -n olm
+	@echo "Minikube started"
 
 operator.test: check_path ## Operator test which run courier and scoreboard
 	make operator.verify
