@@ -49,6 +49,7 @@ For the best user experience, choose from the following categories:
 | Category  |
 |-----------|
 | AI/Machine Learning |
+| Application Runtime |
 | Big Data |
 | Security |
 | Networking |
