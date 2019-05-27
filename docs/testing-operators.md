@@ -29,6 +29,8 @@ where *my-operator* is the name of your Operatpr. If you don't have this format 
 
 [Testing on OpenShift](#testing-operator-deployment-on-openshift)
 
+[Testing with `scorecard`](#testing-operator-deployment-on-openshift)
+
 ## Pre-Requisites
 
 ### Kubernetes cluster
@@ -384,6 +386,16 @@ Change to the *Installed Operators* section in the left-hand navigation menu to 
 ![See your installed Operator](images/my-operator-installed.png)
 
 It should have transitioned into the state *InstallationSucceeded*. You can now test it by starting to use it's APIs.
+
+## Testing with scorecard
+
+If your Operator is up and running you can verify it's working as intended using it's APIs. Additionally you can run [operator-sdk](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md)'s `scorecard` utility for a more formal check on style.
+
+Assuming you are still in your top-level directory where `my-operator` is your bundle location:
+
+```
+operator-sdk scorecard --olm-deployed --crds-dir my-operator/ --csv-path my-operator/my-operator.v1.0.0.clusterserviceversion.yaml
+```
 
 ## Resources
 
