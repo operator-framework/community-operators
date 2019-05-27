@@ -46,7 +46,6 @@ For "community" operators targeting OCP/OKD and OperatorHub on OpenShift:
 
 The following repositories are used throughout the process and should be cloned locally:
 
-* [community-operators](https://github.com/operator-framework/community-operators)
 * [operator-marketplace](https://github.com/operator-framework/operator-marketplace)
 * [operator-courier](https://github.com/operator-framework/operator-courier)
 * [operator-lifecycle-manager](https://github.com/operator-framework/operator-lifecycle-manager)
