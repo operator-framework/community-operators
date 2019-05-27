@@ -29,7 +29,7 @@ where *my-operator* is the name of your Operatpr. If you don't have this format 
 
 [Testing on OpenShift](#testing-operator-deployment-on-openshift)
 
-[Testing with `scorecard`](#testing-operator-deployment-on-openshift)
+[Testing with `scorecard`](#testing-with-scorecard)
 
 ## Pre-Requisites
 
