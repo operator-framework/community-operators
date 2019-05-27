@@ -23,7 +23,7 @@ where *my-operator* is the name of your Operatpr. If you don't have this format 
     * [operator-courier](#operator-courier)
     * [Quay Login](#quay-login)
 * [Linting](#linting)
-* [Push to Quay.io](#push-to-quay.io)
+* [Push to Quay.io](#push-to-quayio)
 
 [Testing on Kubernetes](#testing-operator-deployment-on-kubernetes)
 
