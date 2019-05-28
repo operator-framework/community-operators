@@ -372,7 +372,7 @@ To install your Operator simply click it's icon and in the proceeding dialog cli
 
 ![Install your Operator from OperatorHub](images/my-operator-install.png)
 
-You will be asked where to install your Operator. Select either of the desired installation modes, if your Operator supports it and then click *Subscribe*
+ You will be asked where to install your Operator. Select either of the desired installation modes, if your Operator supports it and then click *Subscribe*
 
 ![Install your Operator from OperatorHub](images/my-operator-subscription.png)
 
