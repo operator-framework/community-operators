@@ -1,13 +1,13 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: portworx-operator.v1.0.0
+  name: portworx-operator.v1.0.3
   namespace: placeholder
   annotations:
     capabilities: Full Lifecycle
     categories: "Storage"
     description: Cloud native storage solution for production workloads
-    containerImage: portworx/px-operator:1.0.2
+    containerImage: portworx/px-operator:1.0.3
     repository: https://github.com/libopenstorage/operator
     createdAt: 2019-04-28T08:00:00Z
     support: Portworx, Inc
@@ -37,7 +37,7 @@ metadata:
       ]
 spec:
   displayName: Portworx Enterprise
-  version: 1.0.0
+  version: 1.0.3
   minKubeVersion: "1.10.0"
   maturity: alpha
   maintainers:
@@ -79,15 +79,20 @@ spec:
     install, configuration, upgrades and manages the Portworx Enterprise cluster
     lifecycle.
 
-    ## Prerequisite
+    ## Uninstall
 
-    Portworx runs as a privileged pod. Hence you need to add the Portworx service accounts to the privileged security context.
-
+    Deleting the StorageCluster object for Portworx cluster does not stop Portworx service running on the nodes to avoid application downtime.
+    To uninstall Portworx completely without wiping the data, you should add the following delete strategy to the StorageCluster spec:
     ```
-    oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:px-lh-account
-    oc adm policy add-scc-to-user anyuid system:serviceaccount:kube-system:px-lh-account
-    oc adm policy add-scc-to-user anyuid system:serviceaccount:default:default
-    oc adm policy add-scc-to-user privileged system:serviceaccount:kube-system:px-csi-account
+    spec:
+      deleteStrategy:
+        type: Uninstall
+    ```
+    To uninstall Portworx and **wipe all the data**, you should use the following delete strategy:
+    ```
+    spec:
+      deleteStrategy:
+        type: UninstallAndWipe
     ```
 
     ## Tutorials
@@ -364,7 +369,7 @@ spec:
                 - --verbose
                 - --driver=portworx
                 - --leader-elect=true
-                image: portworx/px-operator:1.0.2
+                image: portworx/px-operator:1.0.3
                 imagePullPolicy: Always
                 name: portworx-operator
                 resources: {}
