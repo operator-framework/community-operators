@@ -31,6 +31,8 @@ where *my-operator* is the name of your Operatpr. If you don't have this format 
 
 [Testing with `scorecard`](#testing-with-scorecard)
 
+[Additional Ressources](#additional-resources)
+
 ## Pre-Requisites
 
 ### Kubernetes cluster
@@ -396,7 +398,7 @@ Assuming you are still in your top-level directory where `my-operator/` is your 
 operator-sdk scorecard --olm-deployed --crds-dir my-operator/ --csv-path my-operator/my-operator.v1.0.0.clusterserviceversion.yaml
 ```
 
-## Resources
+## Additional Resources
 
 * [Cluster Service Version Spec](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md)
 * [Example Bundle](https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/etcd)
