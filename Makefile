@@ -10,7 +10,7 @@ check_path:
 	@if [ ! -d ${OP_PATH} ]; then echo "Operator path not found"; exit 1; fi
 
 dependencies.check: ## Check your local dependencies
-	@scripts/utils/check-deps
+	@scripts/utils/check-deps.py
 	@echo "Cheking dependencies finished"
 
 dependencies.install.yq: ## Install yq
@@ -57,14 +57,19 @@ dependencies.install.minikube: ## Install the local minikube
 
 minikube.start: ## Start local minikube with OLM
 	sudo minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator
-	sudo kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
-	sudo kubectl delete catalogsource operatorhubio-catalog -n olm
 	@echo "Minikube started"
 
 operator.test: check_path ## Operator test which run courier and scoreboard
-	make operator.verify
-	@if [ -f ~/.kube/config ]; then echo "Running in your default cluster"; else make minikube.start; fi
+	@make operator.verify
+	#@if [ -f ~/.kube/config ]; then echo "Running in your default cluster"; else make minikube.start; fi
+	#@if [ -f ~/.minikube/client.key ]; then sudo chmod 766 ~/.minikube/client.key fi
+	#kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
+	#kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
+	#kubectl delete catalogsource operatorhubio-catalog -n olm
+	@echo "--------------------START OPERATOR TESTING--------------------"
 	scripts/ci/test-operator
+	@echo "--------------------OPERATOR TESTING FINISHED--------------------"
 
 operator.verify: check_path ## Run only courier
 	operator-courier verify --ui_validate_io ${OP_PATH}
+	@echo "--------------------VERIFICATION END--------------------"
