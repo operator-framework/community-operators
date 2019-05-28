@@ -388,9 +388,9 @@ It should have transitioned into the state *InstallationSucceeded*. You can now 
 
 ## Testing with scorecard
 
-If your Operator is up and running you can verify it's working as intended using it's APIs. Additionally you can run [operator-sdk](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md)'s `scorecard` utility for a more formal check on style.
+If your Operator is up and running you can verify it's working as intended using it's APIs. Additionally you can run [operator-sdk](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md)'s `scorecard` utility for validating against good practice and correctness of your Operator.
 
-Assuming you are still in your top-level directory where `my-operator` is your bundle location:
+Assuming you are still in your top-level directory where `my-operator/` is your bundle location and an environment variable called `KUBECONFIG` points to a running `minikube` or OpenShift cluster with OLM present:
 
 ```
 operator-sdk scorecard --olm-deployed --crds-dir my-operator/ --csv-path my-operator/my-operator.v1.0.0.clusterserviceversion.yaml
