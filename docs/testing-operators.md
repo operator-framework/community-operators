@@ -254,7 +254,7 @@ NAME                      STATUS      MESSAGE                                   
 johndoe-operators         Succeeded   The object has been successfully reconciled   93s
 ```
 
-Additionally, a `CatalogSource` is created in the namespace indicated in `spec.targetNamespace` (in the above example, `operators`):
+Additionally, a `CatalogSource` is created in the namespace indicated in `spec.targetNamespace` (in the above example, `olm`):
 
 ```
 kubectl get catalogsource -n olm
@@ -265,12 +265,13 @@ johndoe-operators              Custom      grpc   Custom      3m32s
 ```
 ### 7. Create an OperatorGroup
 
-An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must in the namespace where your operator should be deployed, we'll use `default` in this example:
+An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must in the namespace where your operator should be deployed, we'll use `default` in this example.
 
-> If your Operator supports watching all namespaces (as indicated by `spec.installModes` in the CSV) you can omit the following step and place your `Subscription` in the `operators` namespace instead.
+It's configuration depends on your Operator supporting watching it's own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
 
+Create the following file as  `operator-group.yaml` if your Operator supports watching its' own or a single namespace.
 
-Create the following as the file `operator-group.yaml`
+If your Operator supports watching all namespaces you can omit the following step and place your `Subscription` (see next step) in the `operators` namespace instead.
 
 ```
 apiVersion: operators.coreos.com/v1alpha2
@@ -305,6 +306,8 @@ spec:
   source: johndoe-operators
   sourceNamespace: olm
 ```
+
+If your Operator supports watching all namespaces, change the namespace of the Subscription from `default` to `operators`.
 
 ### 9. Verify Operator health
 
