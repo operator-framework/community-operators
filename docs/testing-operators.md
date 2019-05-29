@@ -333,7 +333,7 @@ kubectl get deployment -n default
 
 ## Testing Operator Deployment on OpenShift
 
-On OpenShift Container Platform and OKD 4.1 or newer `operator-marketplace` and `operator-lifeycle-manager` are already installed. You can start right away by creating an `OperatorSource` in the `openshift-marketplace` namespace as a user with the `cluster-admin` role.
+On OpenShift Container Platform and OKD 4.1 or newer `operator-marketplace` and `operator-lifeycle-manager` are already installed. You can start right away by creating an `OperatorSource` in the `openshift-marketplace` namespace as a user with the `cluster-admin` role. You will then use the UI to install your Operator. If you are interested what happens in the background, go through the [Testing on Kubernetes](#testing-operator-deployment-on-kubernetes) section above.
 
 ### 1. Create the OperatorSource
 
