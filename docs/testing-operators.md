@@ -149,13 +149,13 @@ minikube start
 
 Install OLM into the cluster in the `olm` namespace:
 
-First, create all it's Custom Resource Definitions:
+First, create all its Custom Resource Definitions:
 
 ```
 find operator-lifecycle-manager/deploy/upstream/manifests/latest/ -name '*.crd.yaml' -exec kubectl apply -f {} \;
 ```
 
-Then apply the rest of it's manifests.
+Then apply the rest of its manifests.
 
 ```
 kubectl apply -f operator-lifecycle-manager/deploy/upstream/manifests/latest/
@@ -267,9 +267,9 @@ johndoe-operators              Custom      grpc   Custom      3m32s
 
 An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must in the namespace where your operator should be deployed, we'll use `default` in this example.
 
-It's configuration depends on your Operator supporting watching it's own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
+Its configuration depends on your Operator supporting watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
 
-Create the following file as  `operator-group.yaml` if your Operator supports watching its' own or a single namespace.
+Create the following file as  `operator-group.yaml` if your Operator supports watching its own or a single namespace.
 
 If your Operator supports watching all namespaces you can omit the following step and place your `Subscription` (see next step) in the `operators` namespace instead.
 
@@ -378,7 +378,7 @@ Go to your OpenShift UI and find your Operator by filtering for the *Custom* cat
 
 ### 3. Install your Operator from OperatorHub
 
-To install your Operator simply click it's icon and in the proceeding dialog click *Install*.
+To install your Operator simply click its icon and in the proceeding dialog click *Install*.
 
 ![Install your Operator from OperatorHub](images/my-operator-install.png)
 
@@ -396,7 +396,7 @@ Change to the *Installed Operators* section in the left-hand navigation menu to 
 
 ![See your installed Operator](images/my-operator-installed.png)
 
-It should have transitioned into the state *InstallationSucceeded*. You can now test it by starting to use it's APIs.
+It should have transitioned into the state *InstallationSucceeded*. You can now test it by starting to use its APIs.
 
 ## Testing with scorecard
 
