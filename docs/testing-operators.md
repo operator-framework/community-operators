@@ -96,6 +96,7 @@ A token takes the following form and should be saved in an environment variable:
 ```
 export QUAY_TOKEN="basic abcdefghijkl=="
 ```
+
 ### Linting
 
 `operator-courier` will verify the fields included in the Operator metadata (CSV). The fields can also be manually reviewed according to [the operator CSV documentation](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md).
@@ -114,16 +115,16 @@ The Operator metadata in its bundle format will be uploaded into your namespace 
 
 The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/*.package.yaml`.
 
-> The `PACKAGE_VERSION` is entirely up for you to decide. Best practice is it coincides with your Operator version.
+The `PACKAGE_VERSION` is entirely up for you to decide. Best practice is it coincides with your Operator version.
 
 ```
 OPERATOR_DIR=my-operator/
-QUAY_USERNAME=johndoe
+QUAY_NAMESPACE=johndoe
 PACKAGE_NAME=my-operator
 PACKAGE_VERSION=1.0.0
 TOKEN=$QUAY_TOKEN
 
-operator-courier push $OPERATOR_DIR $QUAY_USERNAME $PACKAGE_NAME $PACKAGE_VERSION $TOKEN
+operator-courier push $OPERATOR_DIR $QUAY_NAMESPACE $PACKAGE_NAME $PACKAGE_VERSION $TOKEN
 ```
 
 Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab.
@@ -354,13 +355,13 @@ spec:
 Create the object:
 
 ```
-kubectl apply -f operator-source.yaml
+oc apply -f operator-source.yaml
 ```
 
 Check if the `OperatorSource` was processed correctly:
 
 ```
-kubectl get operatorsource johndoe-operators -n openshift-marketplace
+oc get operatorsource johndoe-operators -n openshift-marketplace
 
 NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME            PUBLISHER   STATUS      MESSAGE                                       AGE
 johndoe-operators   appregistry   https://quay.io/cnr   johndoe    John Doe's Operators   John Doe    Succeeded   The object has been successfully reconciled   30s
