@@ -61,11 +61,10 @@ minikube.start: ## Start local minikube with OLM
 
 operator.test: check_path ## Operator test which run courier and scoreboard
 	@make operator.verify
-	#@if [ -f ~/.kube/config ]; then echo "Running in your default cluster"; else make minikube.start; fi
-	#@if [ -f ~/.minikube/client.key ]; then sudo chmod 766 ~/.minikube/client.key fi
-	#kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
-	#kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
-	#kubectl delete catalogsource operatorhubio-catalog -n olm
+	@if [ -f ~/.kube/config ]; then echo "Running in your default cluster"; else make minikube.start; fi
+	@if [ -f ~/.minikube/client.key ]; then sudo chmod 766 ~/.minikube/client.key fi
+	kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
+	kubectl delete catalogsource operatorhubio-catalog -n olm
 	@echo "--------------------START OPERATOR TESTING--------------------"
 	scripts/ci/test-operator
 	@echo "--------------------OPERATOR TESTING FINISHED--------------------"
