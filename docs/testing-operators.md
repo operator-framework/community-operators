@@ -110,7 +110,7 @@ If there is no output, the bundle passed `operator-courier` validation. If there
 
 ### Push to quay.io
 
-The Operator metadata in it's bundle format will be uploaded into your namespace in [quay.io](http://quay.io).
+The Operator metadata in its bundle format will be uploaded into your namespace in [quay.io](http://quay.io).
 
 The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/*.package.yaml`.
 
@@ -148,11 +148,17 @@ minikube start
 
 Install OLM into the cluster in the `olm` namespace:
 
+First, create all it's Custom Resource Definitions:
+
+```
+find operator-lifecycle-manager/deploy/upstream/manifests/latest/ -name '*.crd.yaml' -exec kubectl apply -f {} \;
+```
+
+Then apply the rest of it's manifests.
+
 ```
 kubectl apply -f operator-lifecycle-manager/deploy/upstream/manifests/latest/
 ```
-
-> You may need to run this command twice if error occur related to `unable to recognize [...] no matches for kind [...]`
 
 ### 3. Install the Operator Marketplace
 
