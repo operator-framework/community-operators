@@ -12,7 +12,7 @@ my-operator-crd2.crd.yaml
 my-operator.package.yaml
 ```
 
-where *my-operator* is the name of your Operatpr. If you don't have this format yet, refer to our [README](https://github.com/operator-framework/community-operators/blob/master/README.md). We will refer to this example of `my-operator` in the following instructions.
+where *my-operator* is the name of your Operator. If you don't have this format yet, refer to our [README](https://github.com/operator-framework/community-operators/blob/master/README.md). We will refer to this example of `my-operator` in the following instructions.
 
 # Table of Contents
 
@@ -106,13 +106,13 @@ The following command will run `operator-courier` against the bundle directory `
 operator-courier verify --ui_validate_io my-operator/
 ```
 
-If there is no output, the bundle passed `operator-courier` validation. If there are errors, your bundle will not work. If there are warning we still encourage you to fix them before proceeding to the next step.
+If there is no output, the bundle passed `operator-courier` validation. If there are errors, your bundle will not work. If there are warnings we still encourage you to fix them before proceeding to the next step.
 
 ### Push to quay.io
 
 The Operator metadata in it's bundle format will be uploaded into your namespace in [quay.io](http://quay.io).
 
-> The value for `PACKAGE_NAME` *must* be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/*.package.yaml`.
+The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/*.package.yaml`.
 
 > The `PACKAGE_VERSION` is entirely up for you to decide. Best practice is it coincides with your Operator version.
 
@@ -390,7 +390,7 @@ It should have transitioned into the state *InstallationSucceeded*. You can now 
 
 ## Testing with scorecard
 
-If your Operator is up and running you can verify it's working as intended using it's APIs. Additionally you can run [operator-sdk](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md)'s `scorecard` utility for validating against good practice and correctness of your Operator.
+If your Operator is up and running you can verify it is working as intended using its APIs. Additionally you can run [operator-sdk](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md)'s `scorecard` utility for validating against good practice and correctness of your Operator.
 
 Assuming you are still in your top-level directory where `my-operator/` is your bundle location and an environment variable called `KUBECONFIG` points to a running `minikube` or OpenShift cluster with OLM present:
 
