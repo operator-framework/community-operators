@@ -21,7 +21,7 @@ The `$REPOSITORY` is the name of the folder you created under the `$NAMESPACE` d
 
 For example, for `community-operators/etcd` the `$NAMESPACE` would be `community-operators` and the `$REPOSITORY` would be `etcd`.
 
-# Testing operator localy
+# Testing operator locally
 
 ## Prerequisites
 You can check the prerequisites with make script:
@@ -29,9 +29,11 @@ You can check the prerequisites with make script:
 make dependencies.check
 ```
 
+it is option there to install all detected missing dependencies
+
 It will be also check if you run test command
 
-## Install missing dependencies
+## Manual installation missing dependencies
 If you miss something we prepare install script for needed dependencies:
 
 ```
@@ -39,6 +41,8 @@ make dependencies.install.missing_dependencies
 ```
 
 ## Check operator with courrier only
+operator currier verify your CSV more detail in [docs](https://github.com/operator-framework/operator-courier)
+
 Community operator check:
 
 ```
@@ -47,28 +51,24 @@ make operator.verify
 
 ## Run scorecard operator
 You need run the minikube or have some kubernetes instance configured.
-If you want test it in minikube which will be automaticaly started if you don't have any kubeconfig in home directory or you can run it manualy: 
+If you want test it in minikube which will be automatically started if you don't have any kubeconfig in home directory or you can run it manually: 
 
 ```
 make minikube.start
 ```
 
-If you want test your operator agains scoreboard and operator courrier, which check the dependency and also run minikube if you don't have any kubeconfig available.
+If you want test your operator against scoreboard and operator courrier, which check the dependency and also run minikube if you don't have any kubeconfig available.
 
 ```
 make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VM_DRIVER=kvm2
 ``` 
+### Options:
 
-## If you run in existing instance of kubernetes or VM minikube
+` OP_VER ` - version of operator if is not provided it will be parsed by operator package yaml
+ 
+` OP_PATH ` - relative path to your operator which is required
 
-you also need specify your image to push bundled operator registry
+` VM_DRIVER ` - it's driver for minikube if you need start one
 
-```
-make  operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 REG_IMAGE=operator-registry-image
-```
+` REG_IMAGE ` - registry image which will be use while testing operator and there will be pushed image with registry with your operator (it's required if you provide VM_DRIVER or when you start test in existing cluster)
 
-if you need or want run minikube with vm driver other then default you can specify it
-
-```
-make minikube.start VM_DRIVER=kvm2
-```
