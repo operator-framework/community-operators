@@ -149,17 +149,9 @@ minikube start
 
 Install OLM into the cluster in the `olm` namespace:
 
-First, create all its Custom Resource Definitions:
-
 ```
 kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
 kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
-```
-
-Then apply the rest of its manifests.
-
-```
-kubectl apply -f operator-lifecycle-manager/deploy/upstream/manifests/latest/
 ```
 
 ### 3. Install the Operator Marketplace
