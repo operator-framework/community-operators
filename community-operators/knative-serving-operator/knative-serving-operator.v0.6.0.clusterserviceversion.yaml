@@ -2,18 +2,18 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"serving.knative.dev/v1alpha1","kind":"Install","metadata":{"name":"knative-serving"},"spec":{"config":{"autoscaler":{"container-concurrency-target-default":"100","container-concurrency-target-percentage":"1.0","enable-scale-to-zero":"true","max-scale-up-rate":"10","panic-window":"6s","scale-to-zero-grace-period":"30s","stable-window":"60s","tick-interval":"2s"},"controller":{"registriesSkippingTagResolving":"ko.local,dev.local"},"defaults":{"revision-cpu-request":"400m","revision-timeout-seconds":"300"},"gc":{"stale-revision-create-delay":"24h","stale-revision-lastpinned-debounce":"5h","stale-revision-minimum-generations":"1","stale-revision-timeout":"15h"},"logging":{"loglevel.activator":"info","loglevel.autoscaler":"info","loglevel.controller":"info","loglevel.queueproxy":"info","loglevel.webhook":"info"}}}}]'
+    alm-examples: '[{"apiVersion":"serving.knative.dev/v1alpha1","kind":"KnativeServing","metadata":{"name":"knative-serving"},"spec":{"config":{"autoscaler":{"container-concurrency-target-default":"100","container-concurrency-target-percentage":"1.0","enable-scale-to-zero":"true","max-scale-up-rate":"10","panic-window":"6s","scale-to-zero-grace-period":"30s","stable-window":"60s","tick-interval":"2s"},"controller":{"registriesSkippingTagResolving":"ko.local,dev.local"},"defaults":{"revision-cpu-request":"400m","revision-timeout-seconds":"300"},"gc":{"stale-revision-create-delay":"24h","stale-revision-lastpinned-debounce":"5h","stale-revision-minimum-generations":"1","stale-revision-timeout":"15h"},"logging":{"loglevel.activator":"info","loglevel.autoscaler":"info","loglevel.controller":"info","loglevel.queueproxy":"info","loglevel.webhook":"info"}}}}]'
     capabilities: Seamless Upgrades
     categories: Networking,Integration & Delivery,Cloud Provider,Developer Tools
     certified: "false"
-    containerImage: quay.io/openshift-knative/knative-serving-operator:v0.5.2
+    containerImage: quay.io/openshift-knative/knative-serving-operator:v0.6.0
     createdAt: "2019-05-03T17:00:00Z"
     description: |-
       Knative Serving builds on Kubernetes to support deploying and
       serving of serverless applications and functions.
     repository: https://github.com/openshift-knative/knative-serving-operator
     support: Red Hat
-  name: knative-serving-operator.v0.5.2
+  name: knative-serving-operator.v0.6.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -21,65 +21,56 @@ spec:
     owned:
     - description: Represents an installation of a particular version of Knative Serving
       displayName: Knative Serving
-      kind: Install
-      name: installs.serving.knative.dev
-      resources:
-      - kind: Namespace
-        name: ""
-        version: v1
-      - kind: CustomResourceDefinition
-        name: ""
-        version: v1beta1
-      - kind: Service
-        name: ""
-        version: v1
-      - kind: Deployment
-        name: ""
-        version: v1
-      - kind: Pod
-        name: ""
-        version: v1
-      - kind: ConfigMap
-        name: ""
-        version: v1
-      specDescriptors:
-      - description: The target namespace into which Knative Serving will be installed
-        displayName: Namespace
-        path: namespace
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:namespaceSelector
-      - description: Entries corresponding to Knative Serving ConfigMaps
-        displayName: Config
-        path: config
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:ConfigMap
+      kind: KnativeServing
+      name: knativeservings.serving.knative.dev
+      version: v1alpha1
       statusDescriptors:
-      - description: The actual Knative Serving resources installed by the operator
-        displayName: Resources
-        path: resources
       - description: The version of Knative Serving installed
         displayName: Version
         path: version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:label
-      version: v1alpha1
-    # required:
-    # - name: gateways.networking.istio.io
-    #   version: v1alpha3
-    #   kind: Gateway
-    #   description: An Istio ingress gateway
-    #   displayName: Istio Gateway
+
+      # The scorecard complains that these are missing, but their
+      # presence breaks the console, so commented for now
+
+      # resources:
+      # - kind: CustomResourceDefinition
+      #   name: ""
+      #   version: v1beta1
+      # - kind: Service
+      #   name: ""
+      #   version: v1
+      # - kind: Deployment
+      #   name: ""
+      #   version: v1
+      # - kind: ConfigMap
+      #   name: ""
+      #   version: v1
+      # specDescriptors:
+      # - description: Entries corresponding to Knative Serving ConfigMaps
+      #   displayName: Config
+      #   path: config
+
   description: |
     Knative Serving builds on Kubernetes to support deploying and
     serving of serverless applications and functions. Serving is easy
-    to get started with and scales to support advanced scenarios.
-
-    The Knative Serving project provides middleware primitives that enable:
+    to get started with and scales to support advanced scenarios. The
+    Knative Serving project provides middleware primitives that
+    enable:
 
     - Rapid deployment of serverless containers
     - Automatic scaling up and down to zero
     - Routing and network programming for Istio components
     - Point-in-time snapshots of deployed code and configurations
+
+    ## Prerequisites
+
+    ### Istio
+
+    Knative requires Istio, and this operator will attempt to discover
+    it. If not found, it will install the Maistra Operator and a
+    minimal Maistra ControlPlane.
+
+    ## Further Information
 
     For documentation on using Knative Serving, see the
     [serving section](https://www.knative.dev/docs/serving/) of the
@@ -126,9 +117,9 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: knative-serving-operator
-                image: quay.io/openshift-knative/knative-serving-operator:v0.5.2
+                image: quay.io/openshift-knative/knative-serving-operator:v0.6.0
                 args:
-                  - --filename=https://raw.githubusercontent.com/openshift/knative-serving/release-v0.5.2/openshift/release/knative-serving-v0.5.2.yaml
+                  - --filename=https://raw.githubusercontent.com/openshift/knative-serving/release-v0.6.0/openshift/release/knative-serving-v0.6.0.yaml
                 imagePullPolicy: Always
                 name: knative-serving-operator
                 resources: {}
@@ -209,5 +200,6 @@ spec:
     name: Knative Team
   maturity: alpha
   provider:
-    name: Red Hat
-  version: 0.5.2
+    name: Knative Community
+  replaces: knative-serving-operator.v0.5.2
+  version: 0.6.0
