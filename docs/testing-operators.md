@@ -115,7 +115,7 @@ The Operator metadata in its bundle format will be uploaded into your namespace 
 
 The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/*.package.yaml`.
 
-The `PACKAGE_VERSION` is entirely up for you to decide. Best practice is it coincides with your Operator version.
+The `PACKAGE_VERSION` is entirely up for you to decide. The version is independent of the Operator version since your bundle will contain all versions of your Operator metadata files. If you already uploaded your bundle to Quay.io at an earlier point, make sure to increment the version.
 
 ```
 OPERATOR_DIR=my-operator/
@@ -124,7 +124,7 @@ PACKAGE_NAME=my-operator
 PACKAGE_VERSION=1.0.0
 TOKEN=$QUAY_TOKEN
 
-operator-courier push $OPERATOR_DIR $QUAY_NAMESPACE $PACKAGE_NAME $PACKAGE_VERSION $TOKEN
+operator-courier push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
 ```
 
 Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab.
@@ -227,10 +227,10 @@ spec:
 
 In the above example:
 
-* `olm` is a namespace that OLM is watching fot `CatalogSource` objects
+* `olm` is a namespace that OLM is watching for `CatalogSource` objects
 * `packages` is a comma-separated list of operators that have been pushed to quay.io and should be deployable by this source.
 
-> The file above assumes `my-operators` as the name of the operator bundle. Adjust accordingly.
+> The file above assumes `my-operator` as the name of the operator bundle. Adjust accordingly.
 
 Deploy the `CatalogSourceConfig` resource:
 
