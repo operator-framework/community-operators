@@ -40,9 +40,9 @@ Note that OpenShift and OKD clusters by default come with access to operators fr
 
 ## Test your Operator
 
-Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md).
+Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](https://github.com/operator-framework/community-operators/blob/master/docs/ci.md).
 
-You can help speed up the review of your PR by [testing manually](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md#manual-testing-on-kubernetes).
+You can help speed up the review of your PR by [testing manually](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md).
 
 ## Verify your Operator Metadata
 
