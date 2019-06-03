@@ -1,6 +1,6 @@
 # Testing your Operator with Operator Framework
 
-These instructions walk you through how to test if your Operator deploys correctly with Operator Framework.
+These instructions walk you through how to test if your Operator deploys correctly with Operator Framework. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
 
 The process below assume that you have an Kubernetes Operator in the Operator Framework *bundle* format, for example:
 
@@ -12,7 +12,7 @@ my-operator-crd2.crd.yaml
 my-operator.package.yaml
 ```
 
-where *my-operator* is the name of your Operator. If you don't have this format yet, refer to our [README](https://github.com/operator-framework/community-operators/blob/master/README.md). We will refer to this example of `my-operator` in the following instructions.
+where *my-operator* is the name of your Operator. If you don't have this format yet, refer to our [contribution documentation](./contributing.md). We will refer to this example of `my-operator` in the following instructions.
 
 # Table of Contents
 
