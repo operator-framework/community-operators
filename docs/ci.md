@@ -35,3 +35,23 @@ Operators submitted to the `upstream-community-operators/` directory are tested 
 ### OpenShift operators
 
 Operators submitted to the `community-operators/` directory are tested against an OpenShift 4.0 cluster deployed on AWS using the [`ci-operator`][ci-operator].
+
+[olm]:https://github.com/operator-framework/operator-lifecycle-manager/
+[sdk-scorecard]:https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md
+[courier]:https://github.com/operator-framework/operator-courier/
+[minikube]:https://kubernetes.io/docs/setup/minikube/
+[travis-ci]:https://travis-ci.org/
+[ci-operator]: https://github.com/openshift/release/tree/master/ci-operator
+[scripts-ci]:../scripts/ci/
+[registry-bundle]:https://github.com/operator-framework/operator-registry#manifest-format
+[courier-verify]:https://github.com/operator-framework/operator-courier/#command-line-interface
+[registry]:https://github.com/operator-framework/operator-registry
+[olm-alm-examples]:https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md#crd-templates
+[courier-docs]:https://github.com/operator-framework/operator-courier/#operator-courier
+[quay]:https://quay.io
+[quay-create-repo]:https://docs.quay.io/guides/create-repo.html
+[operator-courier]:https://github.com/operator-framework/operator-courier/#usage
+[operatorsource-cr]:https://github.com/operator-framework/operator-marketplace#description
+[operatorsource-cr-example]:https://github.com/operator-framework/operator-marketplace/blob/master/deploy/examples/community.operatorsource.cr.yaml
+[marketplace-private-repo]:https://github.com/operator-framework/operator-marketplace/blob/master/docs/how-to-authenticate-private-repositories.md
+[marketplace-install]:https://github.com/operator-framework/operator-marketplace#installing-an-operator-using-marketplace
