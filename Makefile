@@ -2,6 +2,7 @@
 SDK_VER="v0.6.0"
 KUBE_VER="v1.13.0"
 VM_DRIVER=none
+MAKEFLAGS += --no-print-directory
 OP_PATH=''
 OK=\033[0;32m
 WARN=\033[0;33m
@@ -73,10 +74,10 @@ operator.registry.build: check_path ## Build registry image
 
 
 operator.test: check_path ## Operator test which run courier and scoreboard
-	@make operator.verify --no-print-directory
-	@if [ -f ~/.kube/config ]; then printf "Find kube config %s\t[ ${OK} LOCAL ${NC} ]\n"  | expand  -t 30; else printf "Find kube config %s\t[ ${WARN} NOT FOUND ${NC} ]\n"  | expand  -t 30; make minikube.start --no-print-directory; fi
-	@make operator.olm.install --no-print-directory
-	@make operator.registry.build --no-print-directory
+	@make operator.verify
+	@if [ -f ~/.kube/config ]; then printf "Find kube config %s\t[ ${OK} LOCAL ${NC} ]\n"  | expand  -t 50; else printf "Find kube config %s\t[ ${WARN} NOT FOUND ${NC} ]\n"  | expand  -t 50; make minikube.start; fi
+	@make operator.olm.install
+	@make operator.registry.build
 	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scoreboard"
 
 operator.verify: check_path ## Run only courier
