@@ -2,6 +2,13 @@
 SDK_VER="v0.6.0"
 KUBE_VER="v1.13.0"
 VM_DRIVER=none
+OP_PATH=''
+OK=\033[0;32m
+WARN=\033[0;33m
+ERR=\033[0;31m
+NC=\033[0m
+force_color_prompt=yes
+VERBOSE=0
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -55,20 +62,22 @@ dependencies.install.minikube: ## Install the local minikube
 	@sudo mv minikube /usr/local/bin/
 	@echo "Installed"
 
-minikube.start: ## Start local minikube with OLM
-	sudo minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator
-	@echo "Minikube started"
+minikube.start: ## Start local minikube
+	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator" "Start minikube"
+
+operator.olm.install: ## Install OLM to your cluster
+	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
+
+operator.registry.build: check_path ## Build registry image
+	@scripts/ci/run-script "scripts/ci/build-registry-image" "Build registry image"
+
 
 operator.test: check_path ## Operator test which run courier and scoreboard
-	@make operator.verify
-	@if [ -f ~/.kube/config ]; then echo "Running in your default cluster"; else make minikube.start; fi
-	@if [ -f ~/.minikube/client.key ]; then sudo chmod 766 ~/.minikube/client.key; fi
-	kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.8.1/olm.yaml
-	kubectl delete catalogsource operatorhubio-catalog -n olm
-	@echo "--------------------START OPERATOR TESTING--------------------"
-	scripts/ci/test-operator
-	@echo "--------------------OPERATOR TESTING FINISHED--------------------"
+	@make operator.verify --no-print-directory
+	@if [ -f ~/.kube/config ]; then printf "Find kube config %s\t[ ${OK} LOCAL ${NC} ]\n"  | expand  -t 30; else printf "Find kube config %s\t[ ${WARN} NOT FOUND ${NC} ]\n"  | expand  -t 30; make minikube.start --no-print-directory; fi
+	@make operator.olm.install --no-print-directory
+	@make operator.registry.build --no-print-directory
+	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scoreboard"
 
 operator.verify: check_path ## Run only courier
-	operator-courier verify --ui_validate_io ${OP_PATH}
-	@echo "--------------------VERIFICATION END--------------------"
+	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator"

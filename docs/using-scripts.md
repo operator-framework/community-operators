@@ -49,6 +49,21 @@ Community operator check:
 make operator.verify
 ```
 
+
+## Build registry image
+Build registry with your local version of operators, it also will be pushed if you specify ` REG_IMAGE `
+
+```
+make operator.registry.build
+```
+
+## Install operator lifecycle manager
+Install OLM to your cluster it will be installed with `kubectl` with your local config
+
+```
+make operator.registry.build
+```
+
 ## Run scorecard operator
 You need run the minikube or have some kubernetes instance configured.
 If you want test it in minikube which will be automatically started if you don't have any kubeconfig in home directory or you can run it manually: 
@@ -60,7 +75,7 @@ make minikube.start
 If you want test your operator against scoreboard and operator courrier, which check the dependency and also run minikube if you don't have any kubeconfig available.
 
 ```
-make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VM_DRIVER=kvm2
+make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VM_DRIVER=kvm2 VERBOSE=1
 ``` 
 ### Options:
 
@@ -72,3 +87,4 @@ make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VM_DRI
 
 ` REG_IMAGE ` - registry image which will be use while testing operator and there will be pushed image with registry with your operator (it's required if you provide VM_DRIVER or when you start test in existing cluster)
 
+` VERBOSE ` - enable logging
