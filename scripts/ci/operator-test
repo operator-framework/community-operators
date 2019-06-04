@@ -6,9 +6,9 @@
 # into a CSV, creates CR's from CSV metadata, deploys the operator with the
 # OLM in a local cluster, and runs the SDK scorecard against the operator.
 
-set -e
-
 export $(grep -v '^MAKE' /tmp/env.conf | xargs -d '\n')
+KUBECONFIG=~/.kube/config
+set -e
 
 for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
   . "$f"
@@ -22,42 +22,8 @@ if [[ ! -d "$OP_PATH" ]]; then
   exit 1
 fi
 
-DISTRO_TYPE_UPSTREAM="upstream"
-DISTRO_TYPE_OPENSHIFT="openshift"
-DISTRO_TYPE="${3:-$DISTRO_TYPE_UPSTREAM}"
-if [[ "$DISTRO_TYPE" != "$DISTRO_TYPE_UPSTREAM" && "$DISTRO_TYPE" != "$DISTRO_TYPE_OPENSHIFT" ]]; then
-  >&2 echo "DISTRO_TYPE \"$DISTRO_TYPE\" is not valid. Must be one of: \"$DISTRO_TYPE_UPSTREAM\", \"$DISTRO_TYPE_OPENSHIFT\"."
-  exit 1
-fi
-if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
-  if [[ -z "$KUBECONFIG" || ! -e "$KUBECONFIG" ]]; then
-    >&2 echo "KUBECONFIG not available."
-    exit 1
-  fi
-fi
-
-PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
-TMP="$(mktemp -d --suffix "_test_pr")"
-trap_add_exit "rm -rf $TMP"
-# This script assumes versions are written as "v0.0.1" in file names and
-# fields, but OP_VER is expected to not include a "v" prefix, ex. "0.0.1".
-# Also support versions with tagged names, ex. "0.3.0-beta1"
-[[ -z "$OP_VER" ]] && OP_VER="$2"
-if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-  echo "Try detect operator version..."
-  OP_VER="$(cat $PKG_FILE | grep -Go '\.v.*$' -m 1 | grep -Go '[^\.v].*')"
-  echo "Operator version detected $OP_VER"
-  if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-    >&2 echo "Operator version not valid."
-    exit 1
-  fi
-fi
-
-
-TMP="$(mktemp -d --suffix "_test_pr")"
 trap_add_exit "rm -rf $TMP"
 set -u
-
 
 
 # Create a namespace if necessary.
@@ -84,7 +50,7 @@ wait_on_deployment "$DEP_NAME" "$NAMESPACE"
 # TODO: run against multiple CR's. Right now the scorecard only works with one
 # CR.
 for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
-  echo "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$cr_file""
+  echo -e "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$cr_file""
   operator-sdk scorecard \
     --cr-manifest "$cr_file" \
     --crds-dir "$ABS_BUNDLE_PATH" \
@@ -101,7 +67,7 @@ for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
     >&2 echo "\nFAIL: Scorecard test errored out. Printing operator state:"
     LOG_FILE="${TMP}/info.log"
     log_operator_state $LOG_FILE OBJECTS $NAMESPACE
-    cat $LOG_FILE
+     >&2 cat $LOG_FILE
   else
     echo "\nPASS: Scorecard test passed"
   fi
