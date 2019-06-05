@@ -70,10 +70,12 @@ operator.olm.install: ## Install OLM to your cluster
 	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
 
 operator.registry.build: check_path ## Build registry image
+	@scripts/ci/make-tmp
 	@scripts/ci/run-script "scripts/ci/build-registry-image" "Build registry image"
 
 
 operator.test: check_path ## Operator test which run courier and scoreboard
+	@scripts/ci/make-tmp
 	@make operator.verify
 	@if [ -f ~/.kube/config ]; then printf "Find kube config %s\t[ ${OK} LOCAL ${NC} ]\n"  | expand  -t 50; else printf "Find kube config %s\t[ ${WARN} NOT FOUND ${NC} ]\n"  | expand  -t 50; make minikube.start; fi
 	@make operator.olm.install

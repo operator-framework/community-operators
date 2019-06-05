@@ -9,74 +9,8 @@
 
 set -e
 
-for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
-  . "$f"
-done
-# Relative path to the dir containing operator manifests. Usually something
-# like "community-operators/automationbroker".
-[[ -z "$OP_PATH" ]] && OP_PATH="$1"
-if [[ ! -d "$OP_PATH" ]]; then
-  >&2 echo "Relative path to operator package '$OP_PATH' does not exist."
-  exit 1
-fi
-export PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
-# This script assumes versions are written as "v0.0.1" in file names and
-# fields, but OP_VER is expected to not include a "v" prefix, ex. "0.0.1".
-# Also support versions with tagged names, ex. "0.3.0-beta1"
+. ./scripts/ci/env
 
-if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-  echo "Try detect operator version..."
-  export OP_VER="$(cat $PKG_FILE | grep -Go '\.v.*$' -m 1 | grep -Go '[^\.v].*')"
-  echo "Operator version detected $OP_VER"
-  if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-    >&2 echo "Operator version not valid."
-    exit 1
-  fi
-fi
-
-export DISTRO_TYPE_UPSTREAM="upstream"
-export DISTRO_TYPE_OPENSHIFT="openshift"
-export DISTRO_TYPE="${3:-$DISTRO_TYPE_UPSTREAM}"
-if [[ "$DISTRO_TYPE" != "$DISTRO_TYPE_UPSTREAM" && "$DISTRO_TYPE" != "$DISTRO_TYPE_OPENSHIFT" ]]; then
-  >&2 echo "DISTRO_TYPE \"$DISTRO_TYPE\" is not valid. Must be one of: \"$DISTRO_TYPE_UPSTREAM\", \"$DISTRO_TYPE_OPENSHIFT\"."
-  exit 1
-fi
-if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
-  if [[ -z "$KUBECONFIG" || ! -e "$KUBECONFIG" ]]; then
-    >&2 echo "KUBECONFIG not available."
-    exit 1
-  fi
-fi
-
-set -u
-export TMP="$(mktemp -d --suffix "_test_pr")"
-export DEPLOY_DIR="${TMP}/deploy"
-export PKG_NAME="$(yq r "$PKG_FILE" "packageName")"
-export ABS_BUNDLE_PATH="${DEPLOY_DIR}/${PKG_NAME}/${OP_VER}"
-export CR_DIR="${DEPLOY_DIR}/crs"
-mkdir -p "$ABS_BUNDLE_PATH"
-mkdir -p "$CR_DIR"
-# Organize expected dir structure for the registry image build.
-operator-courier nest "${OP_PATH}" "${DEPLOY_DIR}/${PKG_NAME}"
-pushd "$DEPLOY_DIR"
-# Set PKG_FILE again with the nested path.
-export PKG_FILE="$(find "$DEPLOY_DIR" -name "*.package.yaml" -print -quit)"
-export CATALOGSOURCE_FILE="${PKG_NAME}.catalogsource.yaml"
-export SUBSCRIPTION_FILE="${PKG_NAME}.subscription.yaml"
-export OPERATOR_GROUP_FILE="${PKG_NAME}.operatorgroup.yaml"
-export SC_PROXY_IMAGE="quay.io/operator-framework/scorecard-proxy:master"
-# Make sure this registry is public before proceeding.
-export OP_REGISTRY_IMAGE="quay.io/operatorframework/${PKG_NAME}:${OP_VER}-registry"
-export SECRET_FILE="${DEPLOY_DIR}/scorecard.secret.yaml"
-
-export CSV_FILE="$(find "$ABS_BUNDLE_PATH" -name "*${OP_VER}.clusterserviceversion.yaml" -print -quit)"
-export CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
-export CHANNEL_NAME="$(get_channel_name "$PKG_FILE" "$CSV_NAME")"
-export NAMESPACE="$(get_op_namespace "$CSV_FILE" "$PKG_NAME")"
-set +u
-if [[ "$REG_IMAGE" ]]; then
-  export OP_REGISTRY_IMAGE="${REG_IMAGE}"
-fi
 # Create catalog manifests and Dockerfile to create a registry image.
 create_catalogsource_file "$CATALOGSOURCE_FILE" "$PKG_NAME" "$OP_REGISTRY_IMAGE" "$NAMESPACE"
 create_subscription_file "$SUBSCRIPTION_FILE" "$PKG_NAME" "$PKG_NAME" "$CHANNEL_NAME" "$CSV_NAME" "$NAMESPACE"
@@ -100,19 +34,3 @@ if [[ "$REG_IMAGE" ]]; then
 else
   docker build -t "$OP_REGISTRY_IMAGE" . > /dev/null
 fi
-
-# Define names for resource types.
-export DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
-declare -A OBJECTS
-export OBJECTS=(
-  ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
-  ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
-  ["csv"]="$CSV_NAME"
-  ["deployment"]="$DEP_NAME"
-)
-if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
-  export OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
-fi
-
-rm -rf /tmp/env.conf
-env > /tmp/env.conf

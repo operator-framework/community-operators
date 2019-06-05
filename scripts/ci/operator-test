@@ -5,26 +5,27 @@
 # scorecard proxy container, and proxy kubeconfig secret, volume, and mount
 # into a CSV, creates CR's from CSV metadata, deploys the operator with the
 # OLM in a local cluster, and runs the SDK scorecard against the operator.
-
-export $(grep -v '^MAKE' /tmp/env.conf | xargs -d '\n')
-KUBECONFIG=~/.kube/config
 set -e
 
-for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
-  . "$f"
-done
+. ./scripts/ci/env
+KUBECONFIG=~/.kube/config
 
-# Relative path to the dir containing operator manifests. Usually something
-# like "community-operators/automationbroker".
-[[ -z "$OP_PATH" ]] && OP_PATH="$1"
-if [[ ! -d "$OP_PATH" ]]; then
-  >&2 echo "Relative path to operator package '$OP_PATH' does not exist."
-  exit 1
-fi
 
 trap_add_exit "rm -rf $TMP"
 set -u
 
+# Define names for resource types.
+export DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
+declare -A OBJECTS
+export OBJECTS=(
+  ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
+  ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
+  ["csv"]="$CSV_NAME"
+  ["deployment"]="$DEP_NAME"
+)
+if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
+  export OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
+fi
 
 # Create a namespace if necessary.
 if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
