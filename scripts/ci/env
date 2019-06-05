@@ -19,8 +19,12 @@ export PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
 
 if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
   echo "Try detect operator version..."
-  export OP_VER="$(cat $PKG_FILE | grep -Go '\.v.*$' -m 1 | grep -Go '[^\.v].*')"
-  echo "Operator version detected $OP_VER"
+  {
+      export OP_VER="$(cat $PKG_FILE | grep -Go '\.v.*$' -m 1 | grep -Go '[^\.v].*')"
+      echo "Operator version detected $OP_VER"
+  } || {
+     >&2 echo "Operator version cannot be detected."
+  }
   if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
     >&2 echo "Operator version not valid."
     exit 1

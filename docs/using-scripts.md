@@ -33,6 +33,10 @@ it is option there to install all detected missing dependencies
 
 It will be also check if you run test command
 
+### Options:
+
+` INSTALL_DEPS ` - if you set it to `1` you automatically install the dependencies without prompt
+
 ## Manual installation missing dependencies
 If you miss something we prepare install script for needed dependencies:
 
@@ -49,6 +53,9 @@ Community operator check:
 make operator.verify
 ```
 
+### Options:
+
+` OP_PATH ` - relative path to your operator which is required
 
 ## Build registry image
 Build registry with your local version of operators, it also will be pushed if you specify ` REG_IMAGE `
@@ -57,11 +64,19 @@ Build registry with your local version of operators, it also will be pushed if y
 make operator.registry.build
 ```
 
+### Options:
+
+` OP_PATH ` - relative path to your operator which is required
+
+` OP_VER ` - version of operator if is not provided it will be parsed by operator package yaml
+
+` REG_IMAGE ` - registry image which will be use while testing operator and there will be pushed image with registry with your operator (it's required if you provide VM_DRIVER or when you start test in existing cluster)
+
 ## Install operator lifecycle manager
 Install OLM to your cluster it will be installed with `kubectl` with your local config
 
 ```
-make operator.registry.build
+make operator.olm.install
 ```
 
 ## Run scorecard operator
@@ -77,6 +92,7 @@ If you want test your operator against scoreboard and operator courrier, which c
 ```
 make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VM_DRIVER=kvm2 VERBOSE=1
 ``` 
+
 ### Options:
 
 ` OP_VER ` - version of operator if is not provided it will be parsed by operator package yaml
