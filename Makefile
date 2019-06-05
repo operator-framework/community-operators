@@ -27,7 +27,13 @@ dependencies.install.yq: ## Install yq
 	@sudo mv yq /usr/local/bin/
 	@echo "Installed"
 
-dependencies.install.jq: ## Install jq
+dependencies.install.pip3: ## Install pip3
+	@curl -sS https://bootstrap.pypa.io/get-pip.py  >> /tmp/setup.py
+	@python3 /tmp/setup.py
+	@rm -rf /tmp/setup.py
+	@echo "Installed"
+
+dependencies.install.pip3: ## Install jq
 	@curl -Lo jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
 	@chmod +x jq
 	@sudo mv jq /usr/local/bin/

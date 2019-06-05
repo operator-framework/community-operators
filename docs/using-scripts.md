@@ -104,3 +104,13 @@ make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VM_DRI
 ` REG_IMAGE ` - registry image which will be use while testing operator and there will be pushed image with registry with your operator (it's required if you provide VM_DRIVER or when you start test in existing cluster)
 
 ` VERBOSE ` - enable logging
+
+## Troubleshooting
+
+### operator-courier is not available after install 
+- check if you have in path added folder where pip install operator for linux you need add to path `~/.local/bin/` 
+
+### minikube.start permission denied
+- if you starting minikube without VM_DRIVER you need have proper setup for docker which can be run without sudo and
+now is not possible without sudo because [issue](https://github.com/kubernetes/minikube/issues/3718) you can run `sudo make minikube.start` or add VM_DRIVER
+
