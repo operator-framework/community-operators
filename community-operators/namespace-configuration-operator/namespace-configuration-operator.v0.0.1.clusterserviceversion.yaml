@@ -78,7 +78,30 @@ spec:
 
     The `NamespaceConfig` CR allows specifying one or more objects that will be created in the selected namespaces.
 
-    Dev teams may of may not be granted permissions to create these objects. In case they haven't been granted permission, the namespace configuration operator can be a way to enforce namespace configuration policies and govern the way namespaces are configured.   
+    For example using this operator an administrator can enforce a specific ResourceQuota or LimitRange on a set of namespaces. For example with the following snippet:
+
+    ```
+    apiVersion: redhatcop.redhat.io/v1alpha1
+    kind: NamespaceConfig
+    metadata:
+      name: small-size
+    spec:
+      selector:
+        matchLabels:
+          size: small  
+      resources:
+      - apiVersion: v1
+        kind: ResourceQuota
+        metadata:
+          name: small-size  
+        spec:
+          hard:
+            requests.cpu: "4"
+            requests.memory: "2Gi"
+    ```
+
+    we are enforcing that all the namespaces with label: `size=small` receive the specified resource quota.
+
   customresourcedefinitions:
     owned:
     - kind: NamespaceConfig
