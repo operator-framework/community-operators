@@ -15,7 +15,7 @@ This repository makes use of the [Operator Framework](https://github.com/operato
 
 To add your operator to any of the above platforms, you will need to submit your Operator packaged for use with [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager/). This mainly consists of a YAML file called `ClusterServiceVersion` which contains references to all of the `CustomResource Definitions` (CRDs), RBAC rules, `Deployment` and container image needed to install and securely run your Operator. It also contains user-visible info like a description of its features and supported Kubernetes versions (also see  further recommendations below).  Note that your Operator is not supposed to self-register it's CRDs.
 
-[Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md). You can also see an example [here](docs/required-fields#example-csv). An Operator's CSV must contain the fields and mentioned [here](./docs/required-fields#required-fields-for-operatorhub) for it to be displayed properly within the various platforms.
+[Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md). You can also see an example [here](./required-fields.md#example-csv). An Operator's CSV must contain the fields and mentioned [here](./required-fields.md#required-fields-for-operatorhub) for it to be displayed properly within the various platforms.
 
 ### Bundle format
 
