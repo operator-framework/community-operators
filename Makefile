@@ -83,7 +83,7 @@ operator.registry.build: check_path ## Build registry image
 operator.test: check_path ## Operator test which run courier and scoreboard
 	@scripts/ci/make-tmp
 	@make operator.verify
-	@if [ -f ~/.kube/config ]; then printf "Find kube config %s\t[ ${OK} LOCAL ${NC} ]\n"  | expand  -t 50; else printf "Find kube config %s\t[ ${WARN} NOT FOUND ${NC} ]\n"  | expand  -t 50; make minikube.start; fi
+	@scripts/ci/check-kubeconfig
 	@make operator.olm.install
 	@make operator.registry.build
 	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scoreboard"
