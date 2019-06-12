@@ -1,0 +1,63 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: atlasmaps.atlasmap.io
+spec:
+  group: atlasmap.io
+  names:
+    kind: AtlasMap
+    listKind: AtlasMapList
+    plural: atlasmaps
+    singular: atlasmap
+  scope: Namespaced
+  subresources:
+    status: {}
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+      labelSelectorPath: .status.labelSelector
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            replicas:
+              type: integer
+            image:
+              type: string
+            routeHostName:
+              type: string
+            requestCPU:
+              type: string
+              pattern: '[0-9]+m?$'
+            requestMemory:
+              type: string
+              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+            limitCPU:
+              type: string
+              pattern: '[0-9]+m?$'
+            limitMemory:
+              type: string
+              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+        status:
+          type: object
+          properties:
+            URL:
+              type: string
+            image:
+              type: string
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+  additionalPrinterColumns:
+    - name: URL
+      description: AtlasMap URL
+      type: string
+      JSONPath: .status.URL
+    - name: Image
+      description: AtlasMap image
+      type: string
+      JSONPath: .status.image
