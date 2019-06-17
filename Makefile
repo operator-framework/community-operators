@@ -18,7 +18,7 @@ check_path:
 	@if [ ! -d ${OP_PATH} ]; then echo "Operator path not found"; exit 1; fi
 
 dependencies.check: ## Check your local dependencies
-	@scripts/utils/check-deps.py
+	@python3 scripts/utils/check-deps.py
 	@echo "Cheking dependencies finished"
 
 dependencies.install.yq: ## Install yq
@@ -70,7 +70,7 @@ dependencies.install.minikube: ## Install the local minikube
 	@echo "Installed"
 
 minikube.start: ## Start local minikube
-	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operator" "Start minikube"
+	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operators" "Start minikube"
 
 operator.olm.install: ## Install OLM to your cluster
 	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
