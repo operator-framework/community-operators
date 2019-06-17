@@ -15,7 +15,7 @@ help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 check_path:
-	@if [ ! -d ${OP_PATH} ]; then echo "Operator path not found"; exit 1; fi
+	@if [ ! -d ${OP_PATH} ]; then echo "Operator path not found you need set it with OP_PATH=upstream-community-operators/your-operator"; exit 1; fi
 
 dependencies.check: ## Check your local dependencies
 	@python3 scripts/utils/check-deps.py
