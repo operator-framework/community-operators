@@ -25,7 +25,7 @@ def signal_handler():
 
 
 def main():
-    dependencies = ['jq', 'yq', 'operator-courier', 'operator-sdk', 'kubectl', 'pip3', 'minikube', 'crictl']
+    dependencies = ['jq', 'yq', 'operator-courier', 'operator-sdk', 'kubectl', 'pip3', 'crictl']
     missing = list(filter(lambda dep: shutil.which(dep) is None, dependencies))
     if len(missing) > 0:
         print('You missing these dependencies: %s' % missing)
