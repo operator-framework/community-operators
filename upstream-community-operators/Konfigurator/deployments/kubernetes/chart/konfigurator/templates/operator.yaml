@@ -1,0 +1,31 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+{{ include "konfigurator.labels.stakater" . | indent 4 }}
+{{ include "konfigurator.labels.chart" . | indent 4 }}
+  name: {{ template "konfigurator.name" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+{{ include "konfigurator.labels.selector" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "konfigurator.labels.selector" . | indent 8 }}
+    spec:
+      containers:
+        - name: {{ template "konfigurator.name" . }}
+          image: "{{ .Values.konfigurator.image.name }}:{{ .Values.konfigurator.image.tag }}"
+          imagePullPolicy: {{ .Values.konfigurator.image.pullPolicy }}
+          ports:
+          - containerPort: 60000
+            name: metrics
+          command:
+          - Konfigurator
+          env:
+            - name: OPERATOR_NAME
+              value: "{{ template "konfigurator.name" . }}"
+{{ toYaml .Values.konfigurator.env | indent 12 }}
+      serviceAccountName: {{ template "konfigurator.name" . }}

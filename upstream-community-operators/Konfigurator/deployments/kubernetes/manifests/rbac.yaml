@@ -1,0 +1,137 @@
+---
+# Source: konfigurator/templates/rbac.yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: konfigurator
+    group: com.stakater.platform
+    provider: stakater
+    version: v0.0.20
+    chart: "konfigurator-v0.0.20"
+    release: "RELEASE-NAME"
+    heritage: "Tiller"
+  name: konfigurator
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  labels:
+    app: konfigurator
+    group: com.stakater.platform
+    provider: stakater
+    version: v0.0.20
+    chart: "konfigurator-v0.0.20"
+    release: "RELEASE-NAME"
+    heritage: "Tiller"
+  name: konfigurator-role
+rules:
+- apiGroups:
+  - konfigurator.stakater.com
+  resources:
+  - "*"
+  verbs:
+  - "*"
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  labels:
+    app: konfigurator
+    group: com.stakater.platform
+    provider: stakater
+    version: v0.0.20
+    chart: "konfigurator-v0.0.20"
+    release: "RELEASE-NAME"
+    heritage: "Tiller"
+  name: konfigurator-role-binding
+subjects:
+- kind: ServiceAccount
+  name: konfigurator
+  namespace: default
+roleRef:
+  kind: Role
+  name: konfigurator-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  labels:
+    app: konfigurator
+    group: com.stakater.platform
+    provider: stakater
+    version: v0.0.20
+    chart: "konfigurator-v0.0.20"
+    release: "RELEASE-NAME"
+    heritage: "Tiller"
+  name: konfigurator-default-cluster-role
+rules:
+- apiGroups:
+  - ""
+  - "extensions"
+  resources:
+  - pods
+  - ingresses
+  verbs:
+  - list
+  - get
+  - watch
+- apiGroups:
+  - "extensions"
+  resources:
+  - daemonsets
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - configmaps
+  - secrets
+  verbs:
+  - "*"
+- apiGroups:
+  - "*"
+  resources:
+  - konfiguratortemplates
+  verbs:
+  - "*"
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  labels:
+    app: konfigurator
+    group: com.stakater.platform
+    provider: stakater
+    version: v0.0.20
+    chart: "konfigurator-v0.0.20"
+    release: "RELEASE-NAME"
+    heritage: "Tiller"
+  name: konfigurator-default-cluster-role-binding
+subjects:
+- kind: ServiceAccount
+  name: konfigurator
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: konfigurator-default-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+
