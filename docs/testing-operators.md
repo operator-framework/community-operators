@@ -127,9 +127,7 @@ TOKEN=$QUAY_TOKEN
 operator-courier push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
 ```
 
-Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab.
-
-> If the application has a lock icon, click through to the application and its Settings tab and select to make the application public.
+Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab. If the application has a lock icon, click through to the application and its Settings tab and select to make the application public.
 
 Your Operator bundle is now ready for testing. To upload subsequent versions, bump semver string in the `PACKAGE_VERSION` variable, as `operator-marketplace` always downloads the newest bundle according to [semantic versioning](https://semver.org/).
 
