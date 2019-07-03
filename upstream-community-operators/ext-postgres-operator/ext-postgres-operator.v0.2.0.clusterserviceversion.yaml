@@ -1,0 +1,183 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"db.movetokube.com/v1alpha1","kind":"Postgres","metadata":{"name":"my-db","namespace":"app"},"spec":{"database":"test-db","secretName":"my-secret"}}]'
+    capabilities: Basic Install
+    containerImage: movetokube/postgres-operator
+    description: Manage databases and roles in external PostgreSQL server or cluster
+    repository: https://github.com/movetokube/postgres-operator
+    categories: Database
+  name: ext-postgres-operator.v0.2.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Represents a resource for managing PostgreSQL database associated
+        role
+      displayName: postgres.db.movetokube.com
+      kind: Postgres
+      name: postgres.db.movetokube.com
+      version: v1alpha1
+  description: |-
+    ext-postgres-operator is an external PostgreSQL database operator. This is a very light-weight basic operator which
+    does not provide a PostgreSQL server, but rather manages databases inside an existing PostgreSQL database server (or cluster).
+    ### Features
+    This operator enables you to create roles and databases easily by defining simple Custom Resources. Operator's
+    features are as follows:
+
+    * Creates a database
+    * Creates a role which has admin access to the database
+    * Creates a secret role, password and postgres uri
+    * on CR deletion, reassigns all objects owned by role to **postgres** role, removes role and secret
+
+    ### Installation
+    This operator requires a Kubernetes Secret to be created in the **same namespace** as operator itself. Secret should
+    contain these keys: POSTGRES\_HOST, POSTGRES\_USER, POSTGRES\_PASS, POSTGRES\_URI\_ARGS.
+
+    Example
+    ```yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ext-postgres-operator
+      namespace: operators
+    type: Opaque
+    data:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASS: admin
+      POSTGRES_URI_ARGS:
+    ```
+
+    ### Custom Resources
+    Custom Resource is very simple for this operator, it only supports two keys in specification, which are defined below
+    * `spec.database` - name of PostgreSQL database that should be created (if it does not exist)
+    * `spec.secretName` - name of the secret that will contain `ROLE`, `PASSWORD` and `POSTGRES_URL`. The final secret
+    name will be format: **spec.secretName**-**CR.metadata.name**
+  displayName: Ext Postgres Operator
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - postgres-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - db.movetokube.com
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: ext-postgres-operator
+      deployments:
+      - name: ext-postgres-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: ext-postgres-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: ext-postgres-operator
+            spec:
+              containers:
+              - command:
+                - postgres-operator
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: ext-postgres-operator
+                - name: POSTGRES_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      key: POSTGRES_HOST
+                      name: ext-postgres-operator
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: POSTGRES_USER
+                      name: ext-postgres-operator
+                - name: POSTGRES_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      key: POSTGRES_PASS
+                      name: ext-postgres-operator
+                - name: POSTGRES_URI_ARGS
+                  valueFrom:
+                    secretKeyRef:
+                      key: POSTGRES_URI_ARGS
+                      name: ext-postgres-operator
+                image: movetokube/postgres-operator:0.2
+                imagePullPolicy: Always
+                name: ext-postgres-operator
+                resources: {}
+              serviceAccountName: ext-postgres-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - postgres-operator
+  - postgres
+  - postgresql
+  - kubernetes
+  - database
+  labels:
+    name: ext-postgres-operator
+  links:
+  - name: movetokube.com
+    url: https://movetokube.com
+  maintainers:
+  - email: tomas@movetokube.com
+    name: Tomas Adomavicius
+  maturity: alpha
+  provider:
+    name: movetokube.com
+  version: 0.2.0
