@@ -1,15 +1,6 @@
-.PHONY: help
-SDK_VER="v0.6.0"
-KUBE_VER="v1.13.0"
-VM_DRIVER=none
 MAKEFLAGS += --no-print-directory
 OP_PATH=''
-OK=\033[0;32m
-WARN=\033[0;33m
-ERR=\033[0;31m
-NC=\033[0m
-force_color_prompt=yes
-VERBOSE=0
+VM_DRIVER=none
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -17,76 +8,18 @@ help:
 check_path:
 	@if [ ! -d ${OP_PATH} ]; then echo "Operator path not found you need set it with OP_PATH=upstream-community-operators/your-operator"; exit 1; fi
 
-dependencies.check: ## Check your local dependencies
-	@python3 scripts/utils/check-deps.py
-	@echo "Cheking dependencies finished"
-
-dependencies.install.yq: ## Install yq
-	@curl -Lo yq https://github.com/mikefarah/yq/releases/download/2.2.1/yq_linux_amd64
-	@chmod +x yq
-	@sudo mv yq /usr/local/bin/
-	@echo "Installed"
-
-dependencies.install.pip3: ## Install pip3
-	@curl -sS https://bootstrap.pypa.io/get-pip.py  >> /tmp/setup.py
-	@python3 /tmp/setup.py
-	@rm -rf /tmp/setup.py
-	@echo "Installed"
-
-dependencies.install.jq: ## Install jq
-	@curl -Lo jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
-	@chmod +x jq
-	@sudo mv jq /usr/local/bin/
-	@echo "Installed"
-
-dependencies.install.operator-courier: ## Install operator-courier
-	@python3 -m pip install operator-courier
-	@echo "Installed"
-
-dependencies.install.operator-sdk: ## Install operator-sdk
-	@curl -Lo operator-sdk "https://github.com/operator-framework/operator-sdk/releases/download/${SDK_VER}/operator-sdk-${SDK_VER}-x86_64-linux-gnu"
-	@chmod +x operator-sdk
-	@sudo mv operator-sdk /usr/local/bin/
-	@echo "Installed"
-
-dependencies.install.kubectl: ## Install kubectl 
-	@curl -Lo kubectl "https://storage.googleapis.com/kubernetes-release/release/${KUBE_VER}/bin/linux/amd64/kubectl"
-	@chmod +x kubectl
-	@sudo mv kubectl /usr/local/bin/
-	@echo "Installed"
-
-dependencies.install.crictl: ## Install crictl
-	@curl -Lo crictl.tar.gz "https://github.com/kubernetes-sigs/cri-tools/releases/download/${KUBE_VER}/crictl-${KUBE_VER}-linux-amd64.tar.gz"
-	@tar -zxvf crictl.tar.gz
-	@chmod +x crictl
-	@sudo mv crictl /usr/local/bin/
-	@rm crictl.tar.gz
-	@echo "Installed"
-
-dependencies.install.minikube: ## Install the local minikube
-	@curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-	@chmod +x minikube
-	@sudo mv minikube /usr/local/bin/
+minikube.install: ## Install the local minikube
+	@./scripts/ci/install-minikube
 	@echo "Installed"
 
 minikube.start: ## Start local minikube
-	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operators" "Start minikube"
+	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operatorrs" "Start minikube"
 
-operator.olm.install: ## Install OLM to your cluster
-	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
-
-operator.registry.build: check_path ## Build registry image
-	@scripts/ci/make-tmp
-	@scripts/ci/run-script "scripts/ci/build-registry-image" "Build registry image"
-
+olm.install: ## Install OLM to your cluster
+	@docker run -v ~/.kube:/root/.kube -v ./community-operators:/community-operators -v ./upstream-community-operators:/upstream-community-operators sebastiansimko/operator-command operator.olm.install
 
 operator.test: check_path ## Operator test which run courier and scoreboard
-	@scripts/ci/make-tmp
-	@make operator.verify
-	@scripts/ci/check-kubeconfig
-	@make operator.olm.install
-	@make operator.registry.build
-	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scoreboard"
+	@docker run --network host -v ~/.kube:/root/.kube -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti sebastiansimko/operator-command operator.test -e OP_PATH=${OP_PATH} -e VERBOSE=${VERBOSE} -e REG_IMAGE=${REG_IMAGE} -e OP_VER=${OP_VER}
 
 operator.verify: check_path ## Run only courier
-	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator"
+	@docker run -v ./community-operators:/community-operators -v ./upstream-community-operators:/upstream-community-operators -ti sebastiansimko/operator-command operator.verify OP_PATH=${OP_PATH} VERBOSE=${VERBOSE}
