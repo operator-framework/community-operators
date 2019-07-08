@@ -109,8 +109,49 @@ spec:
   install:
     strategy: deployment
     spec:
+      clusterpermissions:
+      - serviceAccountName: seldon
+        rules:
+        - apiGroups:
+          - machinelearning.seldon.io
+          resources:
+          - seldondeployments
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - create
+          - list
+          - update
+          - watch
       permissions:
-      - serviceAccountName: default
+      - serviceAccountName: seldon
         rules:
         - apiGroups:
           - apps
@@ -187,6 +228,14 @@ spec:
         - apiGroups:
           - machinelearning.seldon.io
           resources:
+          - seldondeployments/finalizers
+          verbs:
+          - get
+          - update
+          - patch  
+        - apiGroups:
+          - machinelearning.seldon.io
+          resources:
           - seldondeployments/status
           verbs:
           - get
@@ -229,9 +278,26 @@ spec:
           - update
           - patch
           - delete
-
-
       deployments:
+      - name: seldon-init-secret
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: seldon-init-secret
+          template:
+            metadata:
+              labels:
+                name: seldon-init-secret
+            spec:
+              serviceAccountName: seldon
+              containers:
+              - name: seldon-init-secret
+                env:
+                - name: SECRET_NAME
+                  value: seldon-operator-webhook-server-secret
+                image: seldonio/operatorhub-create-secret:0.1
+                imagePullPolicy: IfNotPresent
       - name: seldon-operator-controller-manager
         spec:
           selector:
@@ -247,6 +313,7 @@ spec:
                 control-plane: controller-manager
                 controller-tools.k8s.io: "1.0"
             spec:
+              serviceAccountName: seldon
               containers:
               - command:
                 - /manager
@@ -255,6 +322,10 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
+                - name: WATCH_NAMESPACE 
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: SECRET_NAME
                   value: seldon-operator-webhook-server-secret
                 - name: AMBASSADOR_ENABLED
@@ -267,8 +338,6 @@ spec:
                   value: IfNotPresent
                 - name: ENGINE_CONTAINER_SERVICE_ACCOUNT_NAME
                   value: default
-                - name: ENGINE_CONTAINER_USER
-                  value: '8888'
                 - name: PREDICTIVE_UNIT_SERVICE_PORT
                   value: '9000'
                 - name: ENGINE_SERVER_GRPC_PORT
@@ -309,4 +378,5 @@ spec:
       version: v1alpha2
       displayName: Seldon Delpoyment
       description: A seldon engine deployment
+
 
