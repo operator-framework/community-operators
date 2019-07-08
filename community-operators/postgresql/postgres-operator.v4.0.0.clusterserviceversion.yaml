@@ -189,46 +189,54 @@ spec:
 
     Once the configuration changes have been updated and certificates are in place, we can save the information to the cluster.
 
+    Create the pgo namespace if it does not exist already.
+    
+    ```
+    oc create namespace pgo 
+    ```
+
+
     Create the `pgo-backrest-repo-config` Secret that is used by the operator.
 
     ```
-    kubectl create secret generic -n operators pgo-backrest-repo-config \
+    kubectl create secret generic -n pgo pgo-backrest-repo-config \
       --from-file=config=$PGOROOT/conf/pgo-backrest-repo/config \
-      --from-file=ssh_host_rsa_key=$PGOROOT/conf/pgo-backrest-repo/ssh_host_rsa_key \
-      --from-file=authorized_keys=$PGOROOT/conf/pgo-backrest-repo/authorized_keys \
-      --from-file=id_rsa=$PGOROOT/conf/pgo-backrest-repo/id_rsa \
-      --from-file=ssh_host_ecdsa_key=$PGOROOT/conf/pgo-backrest-repo/ssh_host_ecdsa_key \
-      --from-file=ssh_host_ed25519_key=$PGOROOT/conf/pgo-backrest-repo/ssh_host_ed25519_key \
-      --from-file=sshd_config=$PGOROOT/conf/pgo-backrest-repo/sshd_config
+    	--from-file=sshd_config=$PGOROOT/conf/pgo-backrest-repo/sshd_config \
+      --from-file=aws-s3-credentials.yaml=$PGOROOT/conf/pgo-backrest-repo/aws-s3-credentials.yaml \
+      --from-file=aws-s3-ca.crt=$PGOROOT/conf/pgo-backrest-repo/aws-s3-ca.crt
+
+
     ```
 
     Create the `pgo-auth-secret` Secret that is used by the operator.
 
     ```
-    kubectl create secret generic -n operators pgo-auth-secret \
+    kubectl create secret generic -n pgo pgo-auth-secret \
       --from-file=server.crt=$PGOROOT/conf/postgres-operator/server.crt \
       --from-file=server.key=$PGOROOT/conf/postgres-operator/server.key \
       --from-file=pgouser=$PGOROOT/conf/postgres-operator/pgouser \
       --from-file=pgorole=$PGOROOT/conf/postgres-operator/pgorole
     ```
 
+    Remove existing credentials for pgo-apiserver TLS REST API, if they exist.
+    
+    ```
+    kubectl delete secret -n pgo tls pgo.tls
+    ```
+
+    Create credentials for pgo-apiserver TLS REST API
+    ```
+    kubectl create secret -n pgo tls pgo.tls \
+      --key=$PGOROOT/conf/postgres-operator/server.key \
+      --cert=$PGOROOT/conf/postgres-operator/server.crt
+    ```
+
     Create the `pgo-config` ConfigMap that is used by the operator.
 
     ```
-    kubectl create configmap -n operators pgo-config \
-      --from-file=pgo.yaml=$PGOROOT/conf/postgres-operator/pgo.yaml \
-      --from-file=pgo.load-template.json=$PGOROOT/conf/postgres-operator/pgo.load-template.json \
-      --from-file=pgo.lspvc-template.json=$PGOROOT/conf/postgres-operator/pgo.lspvc-template.json \
-      --from-file=container-resources.json=$PGOROOT/conf/postgres-operator/container-resources.json \
-      --from-file=$PGOROOT/conf/postgres-operator/backup-job.json \
-      --from-file=$PGOROOT/conf/postgres-operator/rmdata-job.json \
-      --from-file=$PGOROOT/conf/postgres-operator/pvc.json \
-      --from-file=$PGOROOT/conf/postgres-operator/pvc-storageclass.json \
-      --from-file=$PGOROOT/conf/postgres-operator/pvc-matchlabels.json \
-      --from-file=$PGOROOT/conf/postgres-operator/backrest-job.json \
-      --from-file=$PGOROOT/conf/postgres-operator/backrest-restore-job.json \
-      --from-file=$PGOROOT/conf/postgres-operator/pgo.sqlrunner-template.json \
-      --from-file=$PGOROOT/conf/postgres-operator/cluster/1
+    kubectl create configmap -n pgo pgo-config \
+    --from-file=$PGOROOT/conf/postgres-operator
+
     ```
 
     Once these resources are in place, the operator can be installed into the cluster.
@@ -240,7 +248,7 @@ spec:
     ### Service
 
     ```
-    oc expose deployment -n operators postgres-operator
+    oc expose deployment -n pgo postgres-operator
     ```
 
     ### Client Certificates
