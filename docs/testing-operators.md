@@ -194,6 +194,7 @@ kubectl get operatorsource johndoe-operators -n marketplace
 NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME  PUBLISHER   STATUS      MESSAGE                                       AGE
 johndoe-operators   appregistry   https://quay.io/cnr   johndoe                 Succeeded   The object has been successfully reconciled   30s
 ```
+> If you see an error message, it's highly likely that the application in quay.io is private, so please visit quay.io and make your application public.
 
 ### 5. View Available Operators
 
