@@ -3,13 +3,13 @@
 function wait_on_deployment() {
   local dep="$1"
   local namespace="$2"
-  local retries=20 # 2 minute timeout
+  local retries=30 # 3 minute timeout
 
   while ! kubectl rollout status -w "deployment/${dep}" --namespace=${namespace}; do
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        echo "FAIL: Failed to rollout deployloyment \"$dep\""
+        >&2 echo "FAIL: Failed to rollout deployloyment \"$dep\""
         exit 1
       fi
       echo "retrying check rollout status for deployment \"$dep\"..."
@@ -21,7 +21,7 @@ function wait_on_deployment() {
 function check_subscription_passes() {
   local sub="$1"
   local namespace="$2"
-  local retries=20 # 1 minute timeout
+  local retries=30 # 3 minute timeout
 
   echo "Checking subscription \"$sub\" reaches \"AtLatestKnown\" state"
 
@@ -29,7 +29,7 @@ function check_subscription_passes() {
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        echo "FAIL: Failed to pick up subscription \"$sub\""
+        >&2 echo "FAIL: Failed to pick up subscription \"$sub\""
         kubectl get "subscription/${sub}" --namespace=${namespace} -o yaml
         exit 1
       fi
@@ -41,10 +41,10 @@ function check_subscription_passes() {
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        echo "FAIL: Failed to reach "AtLatestKnown" subscription status for \"$sub\""
+        >&2 echo "FAIL: Failed to reach "AtLatestKnown" subscription status for \"$sub\""
         kubectl get "subscription/${sub}" --namespace=${namespace} -o yaml
         installplan="`kubectl get subscription/${sub} --namespace=${namespace} -o json | jq .status.installplan.name`"
-        echo "installplan status for \"$installplan\":"
+        >&2 echo "installplan status for \"$installplan\":"
         kubectl get "installplan/${installplan}" --namespace=${namespace} -o yaml
         exit 1
       fi
@@ -57,14 +57,14 @@ function check_subscription_passes() {
 function check_csv_passes() {
   local csv="$1"
   local namespace="$2"
-  local retries=10 # 1 minute timeout
+  local retries=30 # 3 minute timeout
 
   echo "Check that clusterserviceversion \"$csv\" status is set to \"Succeeded\""
   while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase` == \"Succeeded\" ]]; do
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\""
+        >&2 echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\""
         # Print out CSV on error
         kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o yaml
         exit 1
@@ -156,7 +156,7 @@ function get_op_namespace() {
     echo "$op_name"
   else
     # Operators should have at least one of SingleNamespace, AllNamespaces true.
-    echo "Both SingleNamespace and AllNamespaces cannot be false"
+    >&2 echo "Both SingleNamespace and AllNamespaces cannot be false"
     exit 1
   fi
 }
@@ -173,7 +173,7 @@ function get_channel_name() {
   if [[ -n "${channels["$csv_name"]}" ]]; then
     echo ${channels["$csv_name"]}
   else
-    echo "No matching channel exists for this CSV in the package file"
+    >&2 echo "No matching channel exists for this CSV in the package file"
     exit 1
   fi
 }

@@ -1,7 +1,7 @@
 .PHONY: help
 SDK_VER="v0.6.0"
 KUBE_VER="v1.13.0"
-MAKEFLAGS += --no-print-directory
+MAKEFLAGS+=--no-print-directory
 OP_PATH=''
 OK=\033[0;32m
 WARN=\033[0;33m
@@ -62,7 +62,7 @@ dependencies.install.crictl: ## Install crictl
 	@rm crictl.tar.gz
 	@echo "Installed"
 
-operator.olm.install: ## Install OLM to your cluster
+olm.install: ## Install OLM to your cluster
 	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
 
 operator.registry.build: check_path ## Build registry image
@@ -73,9 +73,12 @@ operator.test: check_path ## Operator test which run courier and scoreboard
 	@scripts/ci/make-tmp
 	@make operator.verify
 	@scripts/ci/check-kubeconfig
-	@make operator.olm.install
+	@make olm.install
 	@make operator.registry.build
 	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scoreboard"
 
 operator.verify: check_path ## Run only courier
 	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator"
+
+tail:
+	tail -f /entrypoint.sh

@@ -1,7 +1,8 @@
 FROM sebastiansimko/operator-command-base:latest
 
-COPY scripts/utils/entrypoint.sh scripts/utils/entrypoint.sh
-COPY scripts/ci/check-kubeconfig scripts/ci/check-kubeconfig
-RUN chmod +x ./scripts/utils/entrypoint.sh
-ENTRYPOINT ["./scripts/utils/entrypoint.sh"]
+COPY scripts/utils/entrypoint.sh /entrypoint.sh
+COPY . /
+RUN mv /scripts/utils/Makefile /
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 CMD []
