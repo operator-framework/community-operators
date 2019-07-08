@@ -13,6 +13,9 @@ spec:
   - JSONPath: .status.conditions[?(@.type=='Ready')].status
     name: ready
     type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
   group: core.federation.k8s.io
   names:
     kind: FederatedCluster
@@ -41,6 +44,13 @@ spec:
               description: Name of the cluster registry Cluster resource from which
                 to source api endpoints. TODO(marun) should this go away in favor
                 of a 1:1 mapping?
+              properties:
+                name:
+                  description: Name of the cluster registry Cluster resource from
+                    which to source API endpoints.
+                  type: string
+              required:
+              - name
               type: object
             secretRef:
               description: Name of the secret containing kubeconfig to access the
@@ -50,6 +60,12 @@ spec:
                 "kubeconfig".  This will later be changed to a reference to secret
                 in federation control plane when the federation control plane supports
                 secrets.  This can be left empty if the cluster allows insecure access.
+              properties:
+                name:
+                  description: Name of a secret within the enclosing namespace
+                  type: string
+              required:
+              - name
               type: object
           type: object
         status:
@@ -89,10 +105,12 @@ spec:
               description: Region is the name of the region in which all of the nodes
                 in the cluster exist.  e.g. 'us-east1'.
               type: string
-            zone:
-              description: Zone is the name of availability zone in which the nodes
-                of the cluster exist, e.g. 'us-east1-a'.
-              type: string
+            zones:
+              description: Zones are the names of availability zones in which the
+                nodes of the cluster exist, e.g. 'us-east1-a'.
+              items:
+                type: string
+              type: array
           type: object
   version: v1alpha1
 status:

@@ -1,120 +1,407 @@
-# Testing Operators
+# Testing your Operator with Operator Framework
 
-This document describes how operators submitted to `community-operators` are expected to be tested. Operators should be tested by their authors before submission, and will undergo [Operator Lifecycle Manager][olm] (OLM) deployment, [scorecard][sdk-scorecard], and [`operator-courier`][courier] testing in our CI environments on submission.
+These instructions walk you through how to test if your Operator deploys correctly with Operator Framework. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
 
-## PR Continuous Integration
+The process below assume that you have an Kubernetes Operator in the Operator Framework *bundle* format, for example:
 
-Operators submitted to this repo are automatically tested on a Kubernetes cluster before being merged. The Kubernetes distribution used for testing depends on which directory the operator is submitted to. Ideally all tests should pass before merging.
+```
+$ ls my-operator/
+my-operator.v1.0.0.clusterserviceversion.yaml
+my-operator-crd1.crd.yaml
+my-operator-crd2.crd.yaml
+my-operator.package.yaml
+```
 
-### Tests
+where *my-operator* is the name of your Operator. If you don't have this format yet, refer to our [contribution documentation](./contributing.md). We will refer to this example of `my-operator` in the following instructions.
 
-Operators are tested using several scripts found in the [`scripts/ci/`][scripts-ci] directory. When a PR is updated or modified, the CI configuration calls `scripts/ci/test-pr`, which calls `scripts/ci/test-operator` and `scripts/ci/verify-operator` for each operator updated in a PR that meets directory requirements for that CI environment. `test-operator` has two main functions: deploy an operator on the cluster using the [OLM][olm], and test the operator using the [scorecard][sdk-scorecard]. `verify-operator` runs [`operator-courier verify`][courier-verify] on an operators' [bundle][registry-bundle].
+# Table of Contents
 
-**Note**: CI test results do not explicitly prevent your operator from being merged _yet_. Test results will be used by PR reviewers to suggest changes before submission.
+[Pre-Requisites](#pre-requisites)
+* [Kubernetes Cluster](#kubernetes-cluster)
+* [Repositories](#repositories)
+* [Tools](#tools)
+    * [operator-courier](#operator-courier)
+    * [Quay Login](#quay-login)
+* [Linting](#linting)
+* [Push to Quay.io](#push-to-quayio)
 
-#### OLM
+[Testing on Kubernetes](#testing-operator-deployment-on-kubernetes)
 
-Deployment with the OLM involves creating several required manifest files to create `CustomResourceDefinitions` (CRD's) and the operators' `Deployment` using its `ClusterServiceVersion` (CSV) in-cluster. `test-operator` will create a [`operator-registry`][registry] Docker image containing the operators' bundled manifests, and `CatalogSource` and `Subscription` manifests that allow the OLM to find the registry image and deploy a particular CSV from the registry, respectively.
+[Testing on OpenShift](#testing-operator-deployment-on-openshift)
 
-Failure to successfully deploy an operator using the OLM results in test failure, as all operators are expected to be deployable in this manner.
+[Testing with `scorecard`](#testing-with-scorecard)
 
-#### Scorecard
+[Additional Ressources](#additional-resources)
 
-The [Operator SDK scorecard][sdk-scorecard] suggests modifications applicable to an operator based on development best-practices. The scorecard runs static checks on operator manifests and runtime tests to ensure an operator is using cluster resources correctly. A Custom Resource (CR) is created by the scorecard for use in runtime tests, so [`alm-examples`][olm-alm-examples] must be populated.
+## Pre-Requisites
 
-The scorecard assigns points to each passing component of the scorecard. The total number of points is a function of several factors, ex. number of CRD's, but a weighted total percentage is calculated for the overall test run. It is possible to get a score of 100%, but operators are not expected to achieve this.
+### Kubernetes cluster
 
-`test-operator` injects a scorecard proxy container and volume into an operators' CSV manifest before deployment; this is necessary to get API server logs, from which the scorecard determines runtime test results. These modifications are not persistent, as they're only needed for testing.
+For "upstream-community" operators targeting Kubernetes and [OperatorHub.io](https://operatorhub.io):
+* A running Kubernetes cluster; [minikube](https://kubernetes.io/docs/setup/minikube/) is the simplest approach
 
-**Note**: no explicit number of points or percentage is necessary to achieve before merging _yet_. These are suggestions to improve your operator.
+For "community" operators targeting OCP/OKD and OperatorHub on OpenShift:
+* either a running Kubernetes cluster; [minikube](https://kubernetes.io/docs/setup/minikube/) is the simplest approach
+* or access to a running OpenShift 4 cluster, use [try.openshift.com](https://try.openshift.com/) to get a cluster on an AWS environment within ~30 mins
+
+### Repositories
+
+The following repositories are used throughout the process and should be cloned locally:
+
+* [operator-marketplace](https://github.com/operator-framework/operator-marketplace)
+* [operator-courier](https://github.com/operator-framework/operator-courier)
+* [operator-lifecycle-manager](https://github.com/operator-framework/operator-lifecycle-manager)
+
+For simplicity, the following commands will clone all of the repositories above:
+
+```
+git clone https://github.com/operator-framework/operator-marketplace.git
+git clone https://github.com/operator-framework/operator-courier.git
+git clone https://github.com/operator-framework/operator-lifecycle-manager.git
+```
+
+Before you begin your current working dir should look like the following, with `my-operator` as an example for the name of your bundle:
+
+```
+my-operator
+operator-marketplace
+operator-courier
+operator-lifecycle-manager
+```
+
+### Tools
 
 #### operator-courier
 
-The [`operator-courier verify`][courier] command verifies that a set of files is valid and can be bundled and pushed to [quay.io][quay]. Read the [docs][courier-docs] for more information.
+`operator-courier` is used for metadata syntax checking and validation. This can be installed directly from `pip`:
 
-### Upstream operators
-
-Operators submitted to the `upstream-community-operators/` directory are tested against a [`minikube`][minikube] instance deployed on a [Travis CI][travis-ci] environment. The OLM is installed locally in this case.
-
-### OpenShift operators
-
-Operators submitted to the `community-operators/` directory are tested against an OpenShift 4.0 cluster deployed on AWS using the [`ci-operator`][ci-operator].
-
-## Manual testing on Kubernetes
-
-This section is for operator authors who want their operators to be available on OperatorHub.io which implies the target platform for this Operator is plain Kubernetes. Follow the below steps to test your Operator using OLM:
-
-### Pre-Requisite
-
-OLM is the component that will lifecycle your Operator. It also provides a packaging concept for storing Operators in a catalog that you can make available on cluster. Operators are installed from catalogs.
-Follow these steps to deploy OLM: https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/install/install.md.
-
-**Tip**: you can get a local minikube-based OLM installation easily by running `make run-local` in your local copy of the [OLM repository][olm-repository].
-
-### Package your Operator in an OLM catalog
-
-Assuming you have Operator manifests (CSVs, CRDs, package.yaml) on-disk, you can follow these instructions to put them into a catalog: https://github.com/operator-framework/operator-registry#manifest-format
-
-The result is a docker container which you can push to registry of your choice. This is a catalog containing your Operator manifests.
-
-### Install your Operator using OLM and your catalog
-
-With the catalog created, you can follow these instructions to add your catalog to OLM: https://github.com/operator-framework/operator-registry#using-the-catalog-with-operator-lifecycle-manager
-
-In the last step you will create a `Subscription` that references your Operator from the catalog. Note that currently, in the same namespace where you create this, you also need to have an [`OperatorGroup`][operatorgroup] object defined. Its `spec.targetNamespaces` should at least contain the current namespace - or none at all to denote your Operator works cluster-wide.
-
-Once the `Subscription` is created with an `OperatorGroup` present, OLM will install your Operator. The result is `ClusterServiceVersion` object in the namespace representing your installed Operator. It should be in state `Succeeded`. Your Operator is now deployed and ready to be tested.
-
-## Manual testing on OpenShift
-
-This section is for operator authors who want their operators to be available on OpenShift 4.0 clusters through OperatorHub and want to manually test that end to end workflow. The OLM comes pre-installed in OpenShift 4.0 clusters.
-
-### Pre-Requisite
-
-You need to have an account with `quay.io`. If you don't have one you can sign up for it at [quay.io][quay].
-
-### Create your Quay app-registry repository
-
-OperatorHub uses Quay's application repositories for storing the operator bundle. Follow [these instructions][quay-create-repo] to create your own application repository. Please note that the name of the repository should match the `packageName` field in the operator's package. Example: for the following package, the Quay repository name will be `myoperator`:
 ```
-packageName: myoperator
-channels:
-- name: preview
-  currentCSV: myoperator.0.1.1
+pip3 install operator-courier
 ```
 
-### Pushing your operator bundle to Quay
+#### Quay Login
 
-Collect all CSV, CRD, and Package yamls into a directory. You can then use the [operator-courier][operator-courier] tool to verify and push your operator bundle to the Quay application repository you created.
+In order to test the Operator installation flow, store your Operator bundle on [quay.io](https://quay.io). You can easily create an account and use the free tier (public repositories only). To upload your Operator to quay.io a token is needed. This only needs to be done once and can be saved locally. The `operator-courier` repository has a script to retrieve the token:
 
-Please note that we only support CRDs, CSVs and Packages to be present in your bundle.
+```
+./operator-courier/scripts/get-quay-token
 
-### Linking the Quay application repository to your OpenShift 4.0 cluster
+Username: johndoe
+Password: 
+{"token": "basic abcdefghijkl=="}
+```
 
-For OpenShift to become aware of the Quay application repository, an [`OperatorSource` CR][operatorsource-cr] need to be added to the cluster. An example `OperatorSource` is provided [here][operatorsource-cr-example]. If your Quay repository is private, please follow [these][marketplace-private-repo] instructions.
+A token takes the following form and should be saved in an environment variable:
 
-### Testing your operator
+```
+export QUAY_TOKEN="basic abcdefghijkl=="
+```
 
-Once the `OperatorSource` CR has been added to the cluster, the new operator will show up on the OperatorHub UI. You can then either install it from the UI or follow the command line [instructions][marketplace-install].
+### Linting
 
-[olm]:https://github.com/operator-framework/operator-lifecycle-manager/
-[sdk-scorecard]:https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md
-[courier]:https://github.com/operator-framework/operator-courier/
-[minikube]:https://kubernetes.io/docs/setup/minikube/
-[travis-ci]:https://travis-ci.org/
-[ci-operator]: https://github.com/openshift/release/tree/master/ci-operator
-[scripts-ci]:../scripts/ci/
-[registry-bundle]:https://github.com/operator-framework/operator-registry#manifest-format
-[courier-verify]:https://github.com/operator-framework/operator-courier/#command-line-interface
-[registry]:https://github.com/operator-framework/operator-registry
-[olm-alm-examples]:https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md#crd-templates
-[courier-docs]:https://github.com/operator-framework/operator-courier/#operator-courier
-[quay]:https://quay.io
-[quay-create-repo]:https://docs.quay.io/guides/create-repo.html
-[operator-courier]:https://github.com/operator-framework/operator-courier/#usage
-[operatorsource-cr]:https://github.com/operator-framework/operator-marketplace#description
-[operatorsource-cr-example]:https://github.com/operator-framework/operator-marketplace/blob/master/deploy/examples/community.operatorsource.cr.yaml
-[marketplace-private-repo]:https://github.com/operator-framework/operator-marketplace/blob/master/docs/how-to-authenticate-private-repositories.md
-[marketplace-install]:https://github.com/operator-framework/operator-marketplace#installing-an-operator-using-marketplace
-[olm-repository]:https://github.com/operator-framework/operator-registry#using-the-catalog-with-operator-lifecycle-manager
-[operatorgroup]:https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/operatorgroups.md#target-namespace-selection
+`operator-courier` will verify the fields included in the Operator metadata (CSV). The fields can also be manually reviewed according to [the operator CSV documentation](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md).
+
+The following command will run `operator-courier` against the bundle directory `my-operator/` from the example above.
+
+```
+operator-courier verify --ui_validate_io my-operator/
+```
+
+If there is no output, the bundle passed `operator-courier` validation. If there are errors, your bundle will not work. If there are warnings we still encourage you to fix them before proceeding to the next step.
+
+### Push to quay.io
+
+The Operator metadata in its bundle format will be uploaded into your namespace in [quay.io](http://quay.io).
+
+The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/*.package.yaml`.
+
+The `PACKAGE_VERSION` is entirely up for you to decide. The version is independent of the Operator version since your bundle will contain all versions of your Operator metadata files. If you already uploaded your bundle to Quay.io at an earlier point, make sure to increment the version.
+
+```
+OPERATOR_DIR=my-operator/
+QUAY_NAMESPACE=johndoe
+PACKAGE_NAME=my-operator
+PACKAGE_VERSION=1.0.0
+TOKEN=$QUAY_TOKEN
+
+operator-courier push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
+```
+
+Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab.
+
+> If the application has a lock icon, click through to the application and its Settings tab and select to make the application public.
+
+Your Operator bundle is now ready for testing. To upload subsequent versions, bump semver string in the `PACKAGE_VERSION` variable, as `operator-marketplace` always downloads the newest bundle according to [semantic versioning](https://semver.org/).
+
+## Testing Operator Deployment on Kubernetes
+
+Please ensure you have fulfilled the [pre-requisites](#pre-requisites) before continuing with the instructions below.
+
+### 1. Get a Kubernetes cluster
+
+Start a Kubernetes `minikube` cluster:
+
+```
+minikube start
+```
+
+### 2. Install OLM
+
+Install OLM into the cluster in the `olm` namespace:
+
+```
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
+```
+
+### 3. Install the Operator Marketplace
+
+Install Operator Marketplace into the cluster in the `marketplace` namespace:
+
+```
+kubectl apply -f operator-marketplace/deploy/upstream/
+```
+
+### 4. Create the OperatorSource
+
+An `OperatorSource` object is used to define the external datastore we are using to store operator bundles. More information including example can be found in the documentation included in the `operator-marketplace` [repository](https://github.com/operator-framework/operator-marketplace#operatorsource).
+
+**Replace** `johndoe` in `metadata.name` and `spec.registryNamespace` with your quay.io username in the example below and save it to a file called `operator-source.yaml`.
+
+```
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata:
+  name: johndoe-operators
+  namespace: marketplace
+spec:
+  type: appregistry
+  endpoint: https://quay.io/cnr
+  registryNamespace: johndoe
+```
+
+Now add the source to the cluster:
+
+```
+kubectl apply -f operator-source.yaml
+```
+
+The `operator-marketplace` controller should successfully process this object:
+
+```
+kubectl get operatorsource johndoe-operators -n marketplace
+
+NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME  PUBLISHER   STATUS      MESSAGE                                       AGE
+johndoe-operators   appregistry   https://quay.io/cnr   johndoe                 Succeeded   The object has been successfully reconciled   30s
+```
+
+### 5. View Available Operators
+
+Once the `OperatorSource` is deployed, the following command can be used to list the available operators (until an operator is pushed into quay, this list will be empty):
+
+> The command below assumes `johndoe-operators` as the name of the `OperatorSource` object. Adjust accordingly.
+
+```
+kubectl get opsrc johndoe-operators -o=custom-columns=NAME:.metadata.name,PACKAGES:.status.packages -n marketplace
+
+NAME                PACKAGES
+johndoe-operators   my-operator
+```
+
+### 6. Create CatalogSourceConfig
+
+Once the OperatorSource has been added, a `CatalogSourceConfig` needs to be created in the `marketplace` namespace to make those Operators available on cluster.
+
+Create the following file as `catalog-source-config.yaml`:
+
+```
+apiVersion: operators.coreos.com/v1
+kind: CatalogSourceConfig
+metadata:
+  name: johndoe-operators
+  namespace: marketplace
+spec:
+  targetNamespace: olm
+  packages: my-operator
+```
+
+In the above example:
+
+* `olm` is a namespace that OLM is watching for `CatalogSource` objects
+* `packages` is a comma-separated list of operators that have been pushed to quay.io and should be deployable by this source.
+
+> The file above assumes `my-operator` as the name of the operator bundle. Adjust accordingly.
+
+Deploy the `CatalogSourceConfig` resource:
+
+```
+kubectl apply -f catalog-source-config.yaml
+```
+
+When this file is deployed, a `CatalogSourceConfig` resource is created in the `marketplace` namespace.
+
+```
+kubectl get catalogsourceconfig -n marketplace
+
+NAME                      STATUS      MESSAGE                                       AGE
+johndoe-operators         Succeeded   The object has been successfully reconciled   93s
+```
+
+Additionally, a `CatalogSource` is created in the namespace indicated in `spec.targetNamespace` (in the above example, `olm`):
+
+```
+kubectl get catalogsource -n olm
+
+NAME                           NAME        TYPE   PUBLISHER   AGE
+johndoe-operators              Custom      grpc   Custom      3m32s
+[...]
+```
+### 7. Create an OperatorGroup
+
+An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must in the namespace where your operator should be deployed, we'll use `default` in this example.
+
+Its configuration depends on your Operator supporting watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
+
+Create the following file as  `operator-group.yaml` if your Operator supports watching its own or a single namespace.
+
+If your Operator supports watching all namespaces you can omit the following step and place your `Subscription` (see next step) in the `operators` namespace instead.
+
+```
+apiVersion: operators.coreos.com/v1alpha2
+kind: OperatorGroup
+metadata:
+  name: my-operatorgroup
+  namespace: default
+spec:
+  targetNamespaces:
+  - default
+```
+
+Deploy the `OperatorGroup` resource:
+
+```
+kubectl apply -f operator-group.yaml
+```
+
+### 8. Create a Subscription
+
+The last piece ties together all of the previous steps. A `Subscription` is created to the operator. Save the following to a file named: `operator-subscription.yaml`:
+
+```
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: my-operator-subsription
+  namespace: default
+spec:
+  channel: <channel-name>
+  name: my-operator
+  source: johndoe-operators
+  sourceNamespace: olm
+```
+
+If your Operator supports watching all namespaces, change the namespace of the Subscription from `default` to `operators`.
+
+### 9. Verify Operator health
+
+Watch your Operator being deployed by OLM from the catalog source created by Operator Marketplace with the following command:
+
+```
+kubectl get clusterserviceversion -n default
+
+NAME                 DISPLAY       VERSION   REPLACES   PHASE
+my-operator.v1.0.0   My Operator   1.0.0                Succeeded
+```
+
+> The above command assumes you have created the `Subscription` in the `default` namespace. Adjust accordingly if you have selected a different namespace.
+
+
+If your Operator deployment (CSV) shows a `Succeeded` in the `InstallPhase` status, your Operator is deployed successfully. If that's not the case check the `ClusterServiceVersion` objects status for details.
+
+Optional also check your Operator's deployment:
+
+```
+kubectl get deployment -n default
+```
+
+## Testing Operator Deployment on OpenShift
+
+On OpenShift Container Platform and OKD 4.1 or newer `operator-marketplace` and `operator-lifeycle-manager` are already installed. You can start right away by creating an `OperatorSource` in the `openshift-marketplace` namespace as a user with the `cluster-admin` role. You will then use the UI to install your Operator. If you are interested what happens in the background, go through the [Testing on Kubernetes](#testing-operator-deployment-on-kubernetes) section above.
+
+### 1. Create the OperatorSource
+
+An `OperatorSource` object is used to define the external datastore we are using to store operator bundles. More information including example can be found in the documentation included in the `operator-marketplace` [repository](https://github.com/operator-framework/operator-marketplace#operatorsource).
+
+**Replace** `johndoe` in `metadata.name` and `spec.registryNamespace` with your quay.io username in the example below and save it to a file called `operator-source.yaml`.
+
+```
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata:
+  name: johndoe-operators
+  namespace: openshift-marketplace
+spec:
+  type: appregistry
+  endpoint: https://quay.io/cnr
+  registryNamespace: johndoe
+  displayName: "John Doe's Operators"
+  publisher: "John Doe"
+```
+
+Create the object:
+
+```
+oc apply -f operator-source.yaml
+```
+
+Check if the `OperatorSource` was processed correctly:
+
+```
+oc get operatorsource johndoe-operators -n openshift-marketplace
+
+NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME            PUBLISHER   STATUS      MESSAGE                                       AGE
+johndoe-operators   appregistry   https://quay.io/cnr   johndoe    John Doe's Operators   John Doe    Succeeded   The object has been successfully reconciled   30s
+```
+
+### 2. Find your Operator in the OperatorHub UI
+
+Go to your OpenShift UI and find your Operator by filtering for the *Custom* category:
+
+![Find your Operator in OperatorHub](images/my-operator-in-hub.png)
+
+### 3. Install your Operator from OperatorHub
+
+To install your Operator simply click its icon and in the proceeding dialog click *Install*.
+
+![Install your Operator from OperatorHub](images/my-operator-install.png)
+
+ You will be asked where to install your Operator. Select either of the desired installation modes, if your Operator supports it and then click *Subscribe*
+
+![Install your Operator from OperatorHub](images/my-operator-subscription.png)
+
+You will be forwarded to the *Subscription Management* section of the OLM UI and after a couple of moments your Operator will be transitioning to *Installed*.
+
+![Subscribe to your Operator from OperatorHub](images/my-operator-subscribed.png)
+
+### 4. Verify Operator health
+
+Change to the *Installed Operators* section in the left-hand navigation menu to verify your Operator's installation status:
+
+![See your installed Operator](images/my-operator-installed.png)
+
+It should have transitioned into the state *InstallationSucceeded*. You can now test it by starting to use its APIs.
+
+## Testing with scorecard
+
+If your Operator is up and running you can verify it is working as intended using its APIs. Additionally you can run [operator-sdk](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md)'s `scorecard` utility for validating against good practice and correctness of your Operator.
+
+Assuming you are still in your top-level directory where `my-operator/` is your bundle location and an environment variable called `KUBECONFIG` points to a running `minikube` or OpenShift cluster with OLM present:
+
+```
+operator-sdk scorecard --olm-deployed --crds-dir my-operator/ --csv-path my-operator/my-operator.v1.0.0.clusterserviceversion.yaml
+```
+
+## Additional Resources
+
+* [Cluster Service Version Spec](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md)
+* [Example Bundle](https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/etcd)
