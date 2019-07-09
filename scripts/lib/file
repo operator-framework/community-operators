@@ -10,7 +10,7 @@ SEMVER_REGEX="((0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(\-(0|[1-9A-Za-z
 function create_catalogsource_file() {
   local catalogsource_file="$1"
   local op_name="$2"
-  local op_config_name="$3"
+  local op_image="$3"
   local namespace="$4"
 
   cat <<EOF > "$catalogsource_file"
@@ -21,9 +21,9 @@ metadata:
   namespace: $namespace
 spec:
   displayName: $op_name Community Operator
-  configMap: $op_config_name
+  image: $op_image
   publisher: community-operators
-  sourceType: internal
+  sourceType: grpc
 EOF
 }
 
@@ -76,6 +76,20 @@ EOF
   done < <(yq r --tojson "$csv_file" "spec.installModes" | jq -c '.[]')
 }
 
+# create_registry_dockerfile creates a registry Dockerfile.
+function create_registry_dockerfile() {
+  local reg_dockerfile="$1"
+  local op_name="$2"
+
+  cat <<EOF > "$reg_dockerfile"
+FROM quay.io/openshift/origin-operator-registry:latest
+COPY $op_name manifests/${op_name}
+RUN /usr/bin/initializer -o bundles.db
+ENTRYPOINT ["/usr/bin/registry-server"]
+CMD ["-d", "bundles.db", "-t", "termination.log"]
+EOF
+}
+
 # create_cr_files_from_metadata takes a CSV's metadata bytes and transforms CR's
 # from the "alm-examples" annontation, if present, into YAML manifest files.
 function create_cr_files_from_metadata() {
@@ -88,8 +102,7 @@ function create_cr_files_from_metadata() {
 
   local tmp
   while read -r obj; do
-    tmp="$(mktemp -p "$cr_dir" "XXXXXXXXXX")"
-    tmp=$tmp".cr.yaml"
+    tmp="$(mktemp -p "$cr_dir" "XXXXXXXXXX.cr.yaml")"
     echo "$obj" | yq w - "metadata.namespace" "$namespace" > "$tmp"
   done < <(echo "$alm_examples" | jq -c '.[]')
 }
@@ -127,7 +140,7 @@ function create_kubeconfig_secret_file() {
   # Expected proxy url. The proxy is configured to listen on port 8889.
   local server="localhost:8889"
   # Username for scorecard namespaced owner reference.
-  local username="$(echo '{"apiVersion":"","kind":"","name":"scorecard","uid":"","Namespace":"'$namespace'"}' | base64 | tr -d \\n)"
+  local username="$(echo '{"apiVersion":"","kind":"","name":"scorecard","uid":"","Namespace":"'$namespace'"}' | base64 -w 0)"
   # Kubeconfig used to communicate with the proxy.
   local kubeconfig="apiVersion: v1
 kind: Config
@@ -148,7 +161,7 @@ users:
   user:
     username: $username
     password: unused"
-  local kubeconfig_base64="$(echo "$kubeconfig" | base64 | tr -d \\n)"
+  local kubeconfig_base64="$(echo "$kubeconfig" | base64 -w 0)"
 
   cat <<EOF > "$secret_file"
 apiVersion: v1
@@ -202,44 +215,4 @@ function insert_kubeconfig_secret_mount() {
 
   yq w -i "$csv_file" "$dep_tmpl" "$dep_yaml"
   sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
-}
-
-function indent() {
-  INDENT="      "
-  sed "s/^/$INDENT/" | sed "s/^${INDENT}\($1\)/${INDENT:0:-2}- \1/"
-}
-
-function create_configmap_based_registry() {
-    local name="$1"
-    local dir="$2"
-    local namespace="$3"
-    local op_ver="$4"
-    local catalogsource_file="$5"
-    CRD="$(cat $(find $dir/$op_ver -name '*.crd.yaml' | sort -n) | grep -v -- "---" | indent apiVersion)"
-    CSV="$(cat $(find $dir/$op_ver -name '*version.yaml' | sort -n) | indent apiVersion)"
-
-    cat <<EOF > "$catalogsource_file"
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: $name
-  namespace: $namespace
-data:
-  customResourceDefinitions: |-
-$CRD
-  clusterServiceVersions: |-
-$CSV
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: $name
-  namespace: $namespace
-spec:
-  configMap: $name
-  displayName: $name
-  publisher: Red Hat
-  sourceType: internal
-EOF
-    yq w -i "$catalogsource_file" data.packages "$(cat $dir/*package.yaml | indent packageName)"
 }
