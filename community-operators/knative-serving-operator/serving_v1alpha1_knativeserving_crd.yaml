@@ -3,6 +3,16 @@ kind: CustomResourceDefinition
 metadata:
   name: knativeservings.serving.knative.dev
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.version
+    name: Version
+    type: string
+  - JSONPath: .status.conditions[?(@.type=="Ready")].status
+    name: Ready
+    type: string
+  - JSONPath: ".status.conditions[?(@.type==\"Ready\")].reason"
+    name: Reason
+    type: string
   group: serving.knative.dev
   names:
     kind: KnativeServing
@@ -16,6 +26,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: Schema for the knativeservings API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -30,6 +41,7 @@ spec:
         metadata:
           type: object
         spec:
+          description: Spec defines the desired state of KnativeServing
           properties:
             config:
               additionalProperties:
@@ -41,10 +53,11 @@ spec:
               type: object
           type: object
         status:
+          description: Status defines the observed state of KnativeServing
           properties:
             conditions:
               description: The latest available observations of a resource's current
-                state. +patchMergeKey=type +patchStrategy=merge
+                state.
               items:
                 properties:
                   lastTransitionTime:
@@ -66,10 +79,9 @@ spec:
                     type: string
                   status:
                     description: Status of the condition, one of True, False, Unknown.
-                      +required
                     type: string
                   type:
-                    description: Type of condition. +required
+                    description: Type of condition.
                     type: string
                 required:
                 - type
