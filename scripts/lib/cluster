@@ -3,13 +3,13 @@
 function wait_on_deployment() {
   local dep="$1"
   local namespace="$2"
-  local retries=30 # 3 minute timeout
+  local retries=20 # 2 minute timeout
 
   while ! kubectl rollout status -w "deployment/${dep}" --namespace=${namespace}; do
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        >&2 echo "FAIL: Failed to rollout deployloyment \"$dep\""
+        echo "FAIL: Failed to rollout deployloyment \"$dep\""
         exit 1
       fi
       echo "retrying check rollout status for deployment \"$dep\"..."
@@ -21,16 +21,15 @@ function wait_on_deployment() {
 function check_subscription_passes() {
   local sub="$1"
   local namespace="$2"
-  local retries=30 # 3 minute timeout
   local packageName="$3"
+  local retries=10 # 1 minute timeout
 
   echo "Checking subscription \"$sub\" reaches \"AtLatestKnown\" state"
-
   while ! kubectl get "subscription/${sub}" --namespace=${namespace} -o json | jq .status -e &> /dev/null; do
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        >&2 echo "FAIL: Failed to pick up subscription \"$sub\""
+        echo "FAIL: Failed to pick up subscription \"$sub\""
         kubectl get "subscription/${sub}" --namespace=${namespace} -o yaml
         # Check if operator package is accessible on cluster, if not check the operator registry pod and exit
         if ! kubectl get packagemanifests --namespace=${namespace} | tail -n +2 | grep ${packageName} &> /dev/null; then
@@ -56,10 +55,10 @@ function check_subscription_passes() {
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        >&2 echo "FAIL: Failed to reach "AtLatestKnown" subscription status for \"$sub\""
+        echo "FAIL: Failed to reach "AtLatestKnown" subscription status for \"$sub\""
         kubectl get "subscription/${sub}" --namespace=${namespace} -o yaml
         installplan="`kubectl get subscription/${sub} --namespace=${namespace} -o json | jq .status.installplan.name`"
-        >&2 echo "installplan status for \"$installplan\":"
+        echo "installplan status for \"$installplan\":"
         kubectl get "installplan/${installplan}" --namespace=${namespace} -o yaml
         exit 1
       fi
@@ -72,14 +71,14 @@ function check_subscription_passes() {
 function check_csv_passes() {
   local csv="$1"
   local namespace="$2"
-  local retries=30 # 3 minute timeout
+  local retries=10 # 1 minute timeout
 
   echo "Check that clusterserviceversion \"$csv\" status is set to \"Succeeded\""
   while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase` == \"Succeeded\" ]]; do
       sleep 6
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
-        >&2 echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\""
+        echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\""
         # Print out CSV's 'status' section on error
         kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o jsonpath="{.status}"
         # Check operator pod(s) logs
@@ -140,24 +139,6 @@ function delete_objects_incluster() {
   done
 }
 
-function log_operator_state() {
-  local log_file="$1"
-  local var=$(declare -p "$2")
-  eval "declare -A objects="${var#*=}
-  local namespace="$3"
-
-  local obj_list obj
-  for k in "${!objects[@]}"; do
-    obj_list="${objects[$k]}"
-    for obj in $obj_list; do
-      >&2 echo -e "\n${k}: $(echo "$obj" | cut -d' ' -f1)\n" >> "$log_file"
-      kubectl describe "$k" $obj --namespace="$namespace" >> "$log_file" 2>&1 || true
-      >&2 echo -e "\n---\n" >> "$log_file"
-    done
-  done
-  kubectl describe pods --namespace="$namespace" >> "$log_file" 2>&1
-}
-
 function get_operator_logs() {
   local csv="$1"
   local namespace="$2"
@@ -213,7 +194,7 @@ function get_op_namespace() {
     echo "$op_name"
   else
     # Operators should have at least one of SingleNamespace, AllNamespaces true.
-    >&2 echo "Both SingleNamespace and AllNamespaces cannot be false"
+    echo "Both SingleNamespace and AllNamespaces cannot be false"
     exit 1
   fi
 }
@@ -230,7 +211,7 @@ function get_channel_name() {
   if [[ -n "${channels["$csv_name"]}" ]]; then
     echo ${channels["$csv_name"]}
   else
-    >&2 echo "No matching channel exists for this CSV in the package file"
+    echo "No matching channel exists for this CSV in the package file"
     exit 1
   fi
 }
