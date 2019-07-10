@@ -10,6 +10,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 ### Updates to existing Operators
 
 * [ ] Is your new CSV pointing to the previous version with the `replaces` property?
+* [ ] Is your new CSV referenced in the [appropriate channel](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#bundle-format) defined in the `package.yaml` ?
 * [ ] Have you tested an update to your Operator when deployed via OLM?
 
 ### Your submission should not
