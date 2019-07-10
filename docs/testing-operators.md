@@ -262,7 +262,13 @@ spec:
   sourceNamespace: marketplace
 ```
 
-If your Operator supports watching all namespaces, change the namespace of the Subscription from `default` to `operators`.
+If your Operator supports watching all namespaces, change the namespace of the Subscription from `default` to `operators`. In any case replace `<channel-name>` with the contents of `channel.name` in your `package.yaml` file.
+
+Then create the `Subscription`:
+
+```
+kubectl apply -f operator-subscription.yaml
+```
 
 ### 8. Verify Operator health
 
