@@ -3,7 +3,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: infinispan-operator.v0.2.1
+  name: infinispan-operator.v0.3.0
   namespace: placeholder
   annotations:
     tectonic-visibility: ocs
@@ -19,13 +19,13 @@ metadata:
             "name": "example-infinispan"
           },
           "spec": {
-            "size": 1
+            "replicas": 1
           }
         }
       ]
-    description: Operator that creates and manages Infinispan clusters.
-    containerImage: docker.io/jboss/infinispan-operator:0.2.1
-    createdAt: 2019-04-02T10:15:00Z
+    description: Create and manage Infinispan clusters.
+    containerImage: docker.io/jboss/infinispan-operator:0.3.0
+    createdAt: 2019-07-09T16:15:00Z
     support: Infinispan
     certified: "false"
 spec:
@@ -47,11 +47,13 @@ spec:
     * HotRod endpoint at `11222`.
     * Supports custom configuration for different use cases.
 
-    Default credentials are temporarily `infinispan/infinispan`. You will soon be able to configure the credentials for Infinispan.
+    The default user for accessing data is `developer`.
+    The Infinispan Operator generates a password for the default user and stores it in a Secret on startup.
 
-    Each Infinispan pod requests `0.5` cpu and 512MiB of memory.
+    Each Infinispan pod requests `0.5` CPUs and 512MiB of memory.
+    You can adjust resource allocation with the `.spec.container.cpu` and `.spec.container.memory` fields.
   keywords: ['infinispan', 'key value', 'database', 'datagrid', 'open source']
-  version: 0.2.1
+  version: 0.3.0
   minKubeVersion: 1.11.0
   maturity: alpha
   maintainers:
@@ -59,6 +61,7 @@ spec:
       email: infinispan-dev@lists.jboss.org
   provider:
     name: Infinispan
+  replaces: infinispan-operator.v0.2.1
   labels:
     operated-by: infinispan-operator
   selector:
@@ -93,46 +96,52 @@ spec:
       permissions:
         - serviceAccountName: infinispan-operator
           rules:
-          - apiGroups:
-              - ""
-            resources:
-              - pods
-              - services
-              - endpoints
-              - persistentvolumeclaims
-              - events
-              - configmaps
-              - secrets
-            verbs:
-              - '*'
-          - apiGroups:
-              - ""
-            resources:
-              - namespaces
-            verbs:
-              - get
-          - apiGroups:
-              - apps
-            resources:
-              - deployments
-              - daemonsets
-              - replicasets
-              - statefulsets
-            verbs:
-              - '*'
-          - apiGroups:
-              - monitoring.coreos.com
-            resources:
-              - servicemonitors
-            verbs:
-              - get
-              - create
-          - apiGroups:
-              - infinispan.org
-            resources:
-              - '*'
-            verbs:
-              - '*'
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - services
+                - endpoints
+                - persistentvolumeclaims
+                - events
+                - configmaps
+                - secrets
+              verbs:
+                - '*'
+            - apiGroups:
+                - ""
+              resources:
+                - pods/exec
+              verbs:
+                - create
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - '*'
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - infinispan.org
+              resources:
+                - '*'
+              verbs:
+                - '*'
       deployments:
         - name: infinispan-operator
           spec:
@@ -151,7 +160,7 @@ spec:
                   - name: infinispan-operator
                     command:
                       - infinispan-operator
-                    image: jboss/infinispan-operator:0.2.1
+                    image: jboss/infinispan-operator:0.3.0
                     ports:
                       - containerPort: 60000
                         name: metrics
@@ -180,8 +189,29 @@ spec:
             version: v1
         specDescriptors:
           - description: Sets the number of nodes in the cluster.
-            displayName: Size
-            path: size
-          - description: Sets an image to bootstrap the Infinispan server.
+            displayName: Replicas
+            path: replicas
+          - description: Sets an image to bootstrap the Infinispan nodes.
             displayName: Image
             path: image
+          - description: Sets the CPU limits for each Infinispan node.
+            displayName: CPU
+            path: container.cpu
+          - description: Sets the memory limits for each Infinispan node.
+            displayName: Memory
+            path: container.memory
+          - description: Appends JVM options to each Infinispan node.
+            displayName: Extra JVM Options
+            path: container.jvmOptionsAppend
+          - description: Specifies the Connector authentication method, either `Credentials` or `Keystore`.
+            displayName: Connector Authentication Type
+            path: connector.authentication.type
+          - description: Specifies the name of the Connector authentication secret.
+            displayName: Connector Authentication Secret Name
+            path: connector.authentication.secretName
+          - description: Specifies the Management authentication method, either `Credentials` or `Keystore`.
+            displayName: Management Authentication Type
+            path: management.authentication.type
+          - description: Specifies the name of the Management authentication secret.
+            displayName: Management Authentication Secret Name
+            path: management.authentication.secretName
