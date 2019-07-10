@@ -258,9 +258,9 @@ johndoe-operators              Custom      grpc   Custom      3m32s
 ```
 ### 7. Create an OperatorGroup
 
-An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must in the namespace where your operator should be deployed, we'll use `default` in this example.
+An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must exist in the namespace where your operator should be deployed, we'll use `default` in this example.
 
-Its configuration depends on your Operator supporting watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
+Its configuration depends on whether your Operator supports watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
 
 Create the following file as  `operator-group.yaml` if your Operator supports watching its own or a single namespace.
 
