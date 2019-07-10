@@ -195,9 +195,19 @@ NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME  
 johndoe-operators   appregistry   https://quay.io/cnr   johndoe                 Succeeded   The object has been successfully reconciled   30s
 ```
 
+Additionally, a `CatalogSource` is created in the `marketplace` namespace:
+
+```
+kubectl get catalogsource -n marketplace
+
+NAME                           NAME        TYPE   PUBLISHER   AGE
+johndoe-operators              Custom      grpc   Custom      3m32s
+[...]
+```
+
 ### 5. View Available Operators
 
-Once the `OperatorSource` is deployed, the following command can be used to list the available operators (until an operator is pushed into quay, this list will be empty):
+Once the `OperatorSource` and `CatalogSource` are deployed, the following command can be used to list the available operators (until an operator is pushed into quay, this list will be empty):
 
 > The command below assumes `johndoe-operators` as the name of the `OperatorSource` object. Adjust accordingly.
 
@@ -208,55 +218,7 @@ NAME                PACKAGES
 johndoe-operators   my-operator
 ```
 
-### 6. Create CatalogSourceConfig
-
-Once the OperatorSource has been added, a `CatalogSourceConfig` needs to be created in the `marketplace` namespace to make those Operators available on cluster.
-
-Create the following file as `catalog-source-config.yaml`:
-
-```
-apiVersion: operators.coreos.com/v1
-kind: CatalogSourceConfig
-metadata:
-  name: johndoe-operators
-  namespace: marketplace
-spec:
-  targetNamespace: olm
-  packages: my-operator
-```
-
-In the above example:
-
-* `olm` is a namespace that OLM is watching for `CatalogSource` objects
-* `packages` is a comma-separated list of operators that have been pushed to quay.io and should be deployable by this source.
-
-> The file above assumes `my-operator` as the name of the operator bundle. Adjust accordingly.
-
-Deploy the `CatalogSourceConfig` resource:
-
-```
-kubectl apply -f catalog-source-config.yaml
-```
-
-When this file is deployed, a `CatalogSourceConfig` resource is created in the `marketplace` namespace.
-
-```
-kubectl get catalogsourceconfig -n marketplace
-
-NAME                      STATUS      MESSAGE                                       AGE
-johndoe-operators         Succeeded   The object has been successfully reconciled   93s
-```
-
-Additionally, a `CatalogSource` is created in the namespace indicated in `spec.targetNamespace` (in the above example, `olm`):
-
-```
-kubectl get catalogsource -n olm
-
-NAME                           NAME        TYPE   PUBLISHER   AGE
-johndoe-operators              Custom      grpc   Custom      3m32s
-[...]
-```
-### 7. Create an OperatorGroup
+### 6. Create an OperatorGroup
 
 An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must exist in the namespace where your operator should be deployed, we'll use `default` in this example.
 
@@ -283,7 +245,7 @@ Deploy the `OperatorGroup` resource:
 kubectl apply -f operator-group.yaml
 ```
 
-### 8. Create a Subscription
+### 7. Create a Subscription
 
 The last piece ties together all of the previous steps. A `Subscription` is created to the operator. Save the following to a file named: `operator-subscription.yaml`:
 
@@ -297,12 +259,12 @@ spec:
   channel: <channel-name>
   name: my-operator
   source: johndoe-operators
-  sourceNamespace: olm
+  sourceNamespace: marketplace
 ```
 
 If your Operator supports watching all namespaces, change the namespace of the Subscription from `default` to `operators`.
 
-### 9. Verify Operator health
+### 8. Verify Operator health
 
 Watch your Operator being deployed by OLM from the catalog source created by Operator Marketplace with the following command:
 
