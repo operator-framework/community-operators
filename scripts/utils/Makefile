@@ -1,7 +1,7 @@
 .PHONY: help
 SDK_VER="v0.6.0"
 KUBE_VER="v1.13.0"
-MAKEFLAGS+=--no-print-directory
+MAKEFLAGS+=-no-print-directory
 OP_PATH=''
 OK=\033[0;32m
 WARN=\033[0;33m
@@ -67,7 +67,7 @@ olm.install: ## Install OLM to your cluster
 
 operator.registry.build: check_path ## Build registry image
 	@scripts/ci/make-tmp
-	@scripts/ci/run-script "scripts/ci/build-registry-image" "Build registry image"
+	@scripts/ci/run-script "scripts/ci/build-registry-image" "Make registry configmap"
 
 operator.test: check_path ## Operator test which run courier and scoreboard
 	@scripts/ci/make-tmp
