@@ -42,6 +42,10 @@ spec:
   - 'These are used when searching for operators in the UI'
 ```
 
+### Logo requirements
+
+The logo for your Operator is inlined into the CSV as a base64-encoded string. The height:width ratio should be 1:2. The maximum dimensions are 80px for width and 40px in height.
+
 ### Categories
 
 For the best user experience, choose from the following categories:
@@ -49,6 +53,7 @@ For the best user experience, choose from the following categories:
 | Category  |
 |-----------|
 | AI/Machine Learning |
+| Application Runtime |
 | Big Data |
 | Security |
 | Networking |

@@ -21,7 +21,7 @@ metadata:
             "name": "unready-deployment-replicas-hourly"
           },
           "spec": {
-            "generationQuery": "unready-deployment-replicas",
+            "query": "unready-deployment-replicas",
             "schedule": {
               "period": "hourly"
             }
@@ -29,7 +29,7 @@ metadata:
         },
         {
           "apiVersion": "metering.openshift.io/v1alpha1",
-          "kind": "ReportGenerationQuery",
+          "kind": "ReportQuery",
           "metadata": {
             "name": "unready-deployment-replicas"
           },
@@ -45,11 +45,11 @@ metadata:
               },
               {
                 "name": "namespace",
-                "type": "string"
+                "type": "varchar"
               },
               {
                 "name": "deployment",
-                "type": "string"
+                "type": "varchar"
               },
               {
                 "name": "total_replica_unready_seconds",
@@ -62,19 +62,20 @@ metadata:
             ],
             "inputs": [
               {
-                "name": "ReportingStart"
+                "name": "ReportingStart",
+                "type": "time"
               },
               {
-                "name": "ReportingEnd"
+                "name": "ReportingEnd",
+                "type": "time"
+              },
+              {
+                "default": "unready-deployment-replicas",
+                "name": "UnreadyDeploymentReplicasDataSourceName",
+                "type": "ReportDataSource"
               }
             ],
-            "query": "SELECT\n    timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}' AS period_start,\n    timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}' AS period_end,\n    labels['namespace'] AS namespace,\n    labels['deployment'] AS deployment,\n    sum(amount * \"timeprecision\") AS total_replica_unready_seconds,\n    avg(amount * \"timeprecision\") AS avg_replica_unready_seconds\nFROM {| dataSourceTableName \"unready-deployment-replicas\" |}\nWHERE \"timestamp\" >= timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}'\nAND \"timestamp\" < timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}'\nGROUP BY labels['namespace'], labels['deployment']\nORDER BY total_replica_unready_seconds DESC, avg_replica_unready_seconds DESC, namespace ASC, deployment ASC\n",
-            "reportDataSources": [
-              "unready-deployment-replicas"
-            ],
-            "view": {
-              "disabled": true
-            }
+            "query": "SELECT\n    timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}' AS period_start,\n    timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}' AS period_end,\n    labels['namespace'] AS namespace,\n    labels['deployment'] AS deployment,\n    sum(amount * \"timeprecision\") AS total_replica_unready_seconds,\n    avg(amount * \"timeprecision\") AS avg_replica_unready_seconds\nFROM {| dataSourceTableName .Report.Inputs.UnreadyDeploymentReplicasDataSourceName |}\nWHERE \"timestamp\" >= timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart | prestoTimestamp |}'\nAND \"timestamp\" < timestamp '{| default .Report.ReportingEnd .Report.Inputs.ReportingEnd | prestoTimestamp |}'\nGROUP BY labels['namespace'], labels['deployment']\nORDER BY total_replica_unready_seconds DESC, avg_replica_unready_seconds DESC, namespace ASC, deployment ASC\n"
           }
         },
         {
@@ -84,19 +85,9 @@ metadata:
             "name": "unready-deployment-replicas"
           },
           "spec": {
-            "promsum": {
-              "query": "unready-deployment-replicas"
+            "prometheusMetricsImporter": {
+              "query": "sum(kube_deployment_status_replicas_unavailable) by (namespace, deployment)\n"
             }
-          }
-        },
-        {
-          "apiVersion": "metering.openshift.io/v1alpha1",
-          "kind": "ReportPrometheusQuery",
-          "metadata": {
-            "name": "unready-deployment-replicas"
-          },
-          "spec": {
-            "query": "sum(kube_deployment_status_replicas_unavailable) by (namespace, deployment)\n"
           }
         },
         {
@@ -107,9 +98,9 @@ metadata:
           },
           "spec": {
             "hive": {
-              "tableProperties": {
-                "location": "s3a://bucketName/path/in/bucket"
-              }
+              "databaseName": "metering-s3",
+              "location": "s3a://bucketName/pathInBucket",
+              "unmanagedDatabase": true
             }
           }
         },
@@ -117,9 +108,85 @@ metadata:
           "apiVersion": "metering.openshift.io/v1alpha1",
           "kind": "PrestoTable",
           "metadata": {
-            "name": "sample-do-not-create-manually"
+            "name": "example-baremetal-cost"
           },
-          "spec": {}
+          "spec": {
+            "catalog": "hive",
+            "columns": [
+              {
+                "name": "cost_per_gigabyte_hour",
+                "type": "double"
+              },
+              {
+                "name": "cost_per_cpu_hour",
+                "type": "double"
+              },
+              {
+                "name": "currency",
+                "type": "varchar"
+              }
+            ],
+            "createTableAs": true,
+            "query": "SELECT * FROM (\n  VALUES (10.00, 50.00, 'USD')\n) AS t (cost_per_gigabyte_hour, cost_per_cpu_hour, currency)\n",
+            "schema": "default",
+            "tableName": "example_baremetal_cost"
+          }
+        },
+        {
+          "apiVersion": "metering.openshift.io/v1alpha1",
+          "kind": "HiveTable",
+          "metadata": {
+            "name": "apache-log",
+            "annotations": {
+              "reference": "based on the RegEx example from https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe"
+            }
+          },
+          "spec": {
+            "columns": [
+              {
+                "name": "host",
+                "type": "string"
+              },
+              {
+                "name": "identity",
+                "type": "string"
+              },
+              {
+                "name": "user",
+                "type": "string"
+              },
+              {
+                "name": "time",
+                "type": "string"
+              },
+              {
+                "name": "request",
+                "type": "string"
+              },
+              {
+                "name": "status",
+                "type": "string"
+              },
+              {
+                "name": "size",
+                "type": "string"
+              },
+              {
+                "name": "referer",
+                "type": "string"
+              },
+              {
+                "name": "agent",
+                "type": "string"
+              }
+            ],
+            "databaseName": "default",
+            "external": true,
+            "fileFormat": "TEXTFILE",
+            "location": "s3a://my-bucket/apache_logs",
+            "rowFormat": "SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'\nWITH SERDEPROPERTIES (\n  \"input.regex\" = \"([^ ]*) ([^ ]*) ([^ ]*) (-|\\\\[[^\\\\]]*\\\\]) ([^ \\\"]*|\\\"[^\\\"]*\\\") (-|[0-9]*) (-|[0-9]*)(?: ([^ \\\"]*|\\\"[^\\\"]*\\\") ([^ \\\"]*|\\\"[^\\\"]*\\\"))?\"\n)\n",
+            "tableName": "apache_log"
+          }
         }
       ]
     capabilities: Basic Install
@@ -204,7 +271,8 @@ spec:
     strategy: deployment
     spec:
       clusterPermissions:
-        - rules:
+        - serviceAccountName: metering-operator
+          rules:
           - apiGroups:
             - ""
             resources:
@@ -237,10 +305,10 @@ spec:
             - patch
             - update
             - watch
-          serviceAccountName: metering-operator
 
       permissions:
-        - rules:
+        - serviceAccountName: metering-operator
+          rules:
           - apiGroups:
             - metering.openshift.io
             resources:
@@ -397,38 +465,42 @@ spec:
             - watch
             - update
             - delete
-          serviceAccountName: metering-operator
 
       deployments:
         - name: metering-operator
           spec:
             replicas: 1
+            strategy:
+              type: Recreate
             selector:
               matchLabels:
                 app: metering-operator
-            strategy:
-              type: Recreate
             template:
               metadata:
                 labels:
                   app: metering-operator
               spec:
+                securityContext:
+                  runAsNonRoot: true
                 containers:
-                - args:
-                  - run-operator.sh
+                - name: metering-operator
+                  image: "quay.io/openshift/origin-metering-helm-operator:4.1"
+                  args: ["run-operator.sh"]
+                  imagePullPolicy: Always
                   env:
                   - name: HELM_RELEASE_CRD_NAME
-                    value: Metering
+                    value: "Metering"
                   - name: HELM_RELEASE_CRD_API_GROUP
-                    value: metering.openshift.io
+                    value: "metering.openshift.io"
                   - name: HELM_CHART_PATH
-                    value: /openshift-metering-0.1.0.tgz
+                    value: "/openshift-metering"
                   - name: ALL_NAMESPACES
                     value: "false"
                   - name: TARGET_NAMESPACES
                     valueFrom:
-                      fieldRef:
-                        fieldPath: metadata.annotations['olm.targetNamespaces']
+                        fieldRef:
+                          fieldPath: metadata.annotations['olm.targetNamespaces']
+
                   - name: MY_POD_NAME
                     valueFrom:
                       fieldRef:
@@ -438,16 +510,23 @@ spec:
                       fieldRef:
                         fieldPath: metadata.namespace
                   - name: HELM_HOST
-                    value: 127.0.0.1:44134
+                    value: "127.0.0.1:44134"
                   - name: HELM_WAIT
                     value: "false"
                   - name: HELM_RECONCILE_INTERVAL_SECONDS
                     value: "30"
                   - name: RELEASE_HISTORY_LIMIT
                     value: "3"
-                  image: quay.io/openshift/origin-metering-helm-operator:4.1
-                  imagePullPolicy: Always
-                  name: metering-operator
+                  - name: METERING_HELM_OPERATOR
+                    value: "quay.io/openshift/origin-metering-helm-operator:4.1"
+                  - name: METERING_REPORTING_OPERATOR
+                    value: "quay.io/openshift/origin-metering-reporting-operator:4.1"
+                  - name: METERING_PRESTO
+                    value: "quay.io/openshift/origin-metering-presto:4.1"
+                  - name: METERING_HIVE
+                    value: "quay.io/openshift/origin-metering-hive:4.1"
+                  - name: METERING_HADOOP
+                    value: "quay.io/openshift/origin-metering-hadoop:4.1"
                   resources:
                     limits:
                       cpu: 50m
@@ -455,8 +534,11 @@ spec:
                     requests:
                       cpu: 50m
                       memory: 100Mi
-                - args:
-                  - tiller
+
+                - name: tiller
+                  image: "quay.io/openshift/origin-metering-helm-operator:4.1"
+                  args: ["tiller"]
+                  imagePullPolicy: Always
                   env:
                   - name: TILLER_NAMESPACE
                     valueFrom:
@@ -464,8 +546,13 @@ spec:
                         fieldPath: metadata.namespace
                   - name: TILLER_HISTORY_MAX
                     value: "3"
-                  image: quay.io/openshift/origin-metering-helm-operator:4.1
-                  imagePullPolicy: Always
+                  resources:
+                    requests:
+                      memory: "50Mi"
+                      cpu: "50m"
+                    limits:
+                      memory: "100Mi"
+                      cpu: "50m"
                   livenessProbe:
                     failureThreshold: 3
                     httpGet:
@@ -476,7 +563,6 @@ spec:
                     periodSeconds: 10
                     successThreshold: 1
                     timeoutSeconds: 1
-                  name: tiller
                   readinessProbe:
                     failureThreshold: 3
                     httpGet:
@@ -487,26 +573,12 @@ spec:
                     periodSeconds: 10
                     successThreshold: 1
                     timeoutSeconds: 1
-                  resources:
-                    limits:
-                      cpu: 50m
-                      memory: 100Mi
-                    requests:
-                      cpu: 50m
-                      memory: 50Mi
                 restartPolicy: Always
-                securityContext:
-                  runAsNonRoot: true
-                serviceAccount: metering-operator
                 terminationGracePeriodSeconds: 30
+                serviceAccount: metering-operator
 
   customresourcedefinitions:
     owned:
-    - description: A SQL query used by Metering to generate reports.
-      displayName: Metering Generation Query
-      kind: ReportGenerationQuery
-      name: reportgenerationqueries.metering.openshift.io
-      version: v1alpha1
     - description: An instance of Metering with high-level configuration
       displayName: Metering
       kind: Metering
@@ -518,13 +590,14 @@ spec:
       kind: Report
       name: reports.metering.openshift.io
       version: v1alpha1
-    - description: A Prometheus query that Metering can use to collect metrics.
-      displayName: Metering Prometheus Query
-      kind: ReportPrometheusQuery
-      name: reportprometheusqueries.metering.openshift.io
+    - description: A SQL query used by Metering to generate reports.
+      displayName: Metering Report Query
+      kind: ReportQuery
+      name: reportqueries.metering.openshift.io
       version: v1alpha1
-    - description: A resource describing a source of data for usage by Report Generation
-        Queries.
+    - description: Used under-the-hood. A resource a database table in Presto. Use by
+        ReportQueries to determine what tables exist, and by the HTTP API to determine
+        how to query a table.
       displayName: Metering Data Source
       kind: ReportDataSource
       name: reportdatasources.metering.openshift.io
@@ -536,9 +609,14 @@ spec:
       name: storagelocations.metering.openshift.io
       version: v1alpha1
     - description: Used under-the-hood. A resource describing a source of data for usage
-        by Report Generation Queries.
+        by Report Queries.
       displayName: Metering Presto Table
       kind: PrestoTable
       name: prestotables.metering.openshift.io
+      version: v1alpha1
+    - description: Used under-the-hood. A resource a database table in Hive.
+      displayName: Metering Hive Table
+      kind: HiveTable
+      name: hivetables.metering.openshift.io
       version: v1alpha1
 

@@ -21,7 +21,8 @@ function wait_on_deployment() {
 function check_subscription_passes() {
   local sub="$1"
   local namespace="$2"
-  local retries=30 # 3 minute timeout
+  local retries=40 # 3 minute timeout
+  local packageName="$3"
 
   echo "Checking subscription \"$sub\" reaches \"AtLatestKnown\" state"
 
@@ -31,6 +32,20 @@ function check_subscription_passes() {
       if [[ $retries == 0 ]]; then
         >&2 echo "FAIL: Failed to pick up subscription \"$sub\""
         kubectl get "subscription/${sub}" --namespace=${namespace} -o yaml
+        # Check if operator package is accessible on cluster, if not check the operator registry pod and exit
+        if ! kubectl get packagemanifests --namespace=${namespace} | tail -n +2 | grep ${packageName} &> /dev/null; then
+          echo "Package ${packageName} could not be found. Checking operator-registry logs:"
+          kubectl logs $(get_first_matching_pod "$packageName-ocs" "$namespace") --namespace=${namespace}
+          exit 1
+        fi
+        echo "catalog-operator logs:"
+        if [[ "$DISTRO_TYPE" == "$DISTRO_TYPE_OPENSHIFT" ]]; then
+          kubectl logs $(get_first_matching_pod catalog-operator- openshift-operator-lifecycle-manager) --namespace="openshift-operator-lifecycle-manager"
+        else
+          kubectl logs $(get_first_matching_pod catalog-operator- olm) --namespace="olm"
+        fi
+        echo "operator-registry logs:"
+        kubectl logs $(get_first_matching_pod "$packageName-ocs" "$namespace") --namespace=${namespace}
         exit 1
       fi
       echo "retrying check of subscription status for \"$sub\"..."
@@ -65,8 +80,10 @@ function check_csv_passes() {
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
         >&2 echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\""
-        # Print out CSV on error
-        kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o yaml
+        # Print out CSV's 'status' section on error
+        kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o jsonpath="{.status}"
+        # Check operator pod(s) logs
+        get_operator_logs "$csv" "$namespace"
         exit 1
       fi
       echo "clusterserviceversion phase for \"$csv\": `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase`"
@@ -139,6 +156,46 @@ function log_operator_state() {
     done
   done
   kubectl describe pods --namespace="$namespace" >> "$log_file" 2>&1
+}
+
+function get_operator_logs() {
+  local csv="$1"
+  local namespace="$2"
+
+  # Get a list of pods and containers via the CSV
+  declare -a operator_pods
+  declare -A pods_containers
+  local pod_counter=0
+  while read -r deployment; do
+    operator_pods[${pod_counter}]="$(echo "$deployment" | jq -r ".name")"
+    pods_containers["${operator_pods[${pod_counter}]}"]="$(echo "$deployment" | jq '.spec.template.spec.containers' | jq -r '.[].name')"
+    ((++pod_counter))
+  done < <(kubectl get csv "$csv" --namespace="$namespace" -o json | jq -r ".spec.install.spec.deployments" | jq -c '.[]')
+
+  # Print out logs for all pods deployed by the CSV
+  local cluster_pods="$(kubectl get pods --namespace="$namespace" -o=name)"
+  for pod in "${operator_pods[@]}"; do
+    if ! echo "$cluster_pods" | grep "$pod" &> /dev/null; then
+      echo "Pod "$pod" listed in CSV was not found in namespace "$namespace""
+    else
+      for container in `echo ${pods_containers["$pod"]}`; do
+        # Skip scorecard-proxy container since it's not part of the operator
+        if [[ "$container" == "scorecard-proxy" ]]; then
+          continue
+        fi
+        echo "Logs for container "$container" in pod "$pod":"
+        kubectl logs $(get_first_matching_pod "$pod-" "$namespace") -c "$container" --namespace="$namespace"
+        echo ""
+      done
+    fi
+  done
+}
+
+function get_first_matching_pod() {
+  local prefix="$1"
+  local namespace="$2"
+
+  echo "$(kubectl get pods --namespace="$namespace" -o name | awk -v prefix="$prefix" '$1 ~ prefix' | head -n 1)"
 }
 
 function get_op_namespace() {

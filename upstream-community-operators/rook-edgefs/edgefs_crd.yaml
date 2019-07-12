@@ -1,0 +1,57 @@
+# TAG: BEGIN EDGEFS CRD
+# The CRD declarations
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: clusters.edgefs.rook.io
+spec:
+  group: edgefs.rook.io
+  names:
+    kind: Cluster
+    listKind: ClusterList
+    plural: clusters
+    singular: cluster
+  scope: Namespaced
+  version: v1beta1
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            edgefsImageName:
+              pattern: ^(\S+)
+              type: string
+            serviceAccount:
+              type: string
+            dataDirHostPath:
+              pattern: ^/(\S+)
+              type: string
+            storage:
+              properties:
+                nodes:
+                  items: {}
+                  type: array
+                useAllDevices: {}
+                useAllNodes:
+                  type: boolean
+                directories:
+                  items: {}
+                  type: array
+  additionalPrinterColumns:
+    - name: DataDirHostPath
+      type: string
+      description: Directory used on the K8s nodes
+      JSONPath: .spec.dataDirHostPath
+    - name: Age
+      type: date
+      JSONPath: .metadata.creationTimestamp
+    - name: State
+      type: string
+      description: Current State
+      JSONPath: .status.state
+    - name: Health
+      type: string
+      description: EdgeFS Health
+      JSONPath: .status.edgefs.health
+# TAG: END EDGEFS CRD
+
