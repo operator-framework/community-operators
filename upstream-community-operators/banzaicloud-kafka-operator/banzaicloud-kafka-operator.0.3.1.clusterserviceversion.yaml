@@ -143,6 +143,30 @@ spec:
     - encrypted communication using SSL
     - automatic reaction and self healing based on alerts (plugin system, with meaningful default alert plugins) using **Cruise Control**
 
+    ## Prerequisites
+
+    Kafka requires Zookeeper so you need to first have a Zookeeper cluster if you don't already have one.
+
+    #### Install Zookeeper
+
+    To install Zookeeper we recommend using the [Pravega's Zookeeper Operator](https://github.com/pravega/zookeeper-operator).
+    You can deploy Zookeeper by using the Helm chart.
+
+    ```bash
+    helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
+    helm install --name zookeeper-operator --namespace=zookeeper banzaicloud-stable/zookeeper-operator
+    kubectl create --namespace zookeeper -f - <<EOF
+    apiVersion: zookeeper.pravega.io/v1beta1
+    kind: ZookeeperCluster
+    metadata:
+      name: example-zookeepercluster
+      namespace: zookeeper
+    spec:
+      replicas: 3
+    EOF
+
+    ```
+
   keywords: ['kafka', 'cruise control', 'messaging', 'streaming', 'banzaicloud', 'open source']
   version: 0.3.1
   maturity: beta
@@ -360,9 +384,3 @@ spec:
       kind: KafkaCluster
       displayName: Kafka cluster
       description: Represents an Kafka cluster
-    required:
-    - name: zookeeperclusters.zookeeper.pravega.io
-      version: v1beta1
-      kind: ZookeeperCluster
-      displayName: Zookeeper Cluster
-      description: Represents a cluster of Zookeeper nodes
