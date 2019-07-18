@@ -234,7 +234,7 @@ metadata:
   namespace: default
 spec:
   targetNamespaces:
-  - default
+  - marketplace
 ```
 
 Deploy the `OperatorGroup` resource:
@@ -252,7 +252,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: my-operator-subsription
-  namespace: default
+  namespace: marketplace
 spec:
   channel: <channel-name>
   name: my-operator
@@ -273,7 +273,7 @@ kubectl apply -f operator-subscription.yaml
 Watch your Operator being deployed by OLM from the catalog source created by Operator Marketplace with the following command:
 
 ```
-kubectl get clusterserviceversion -n default
+kubectl get clusterserviceversion -n marketplace
 
 NAME                 DISPLAY       VERSION   REPLACES   PHASE
 my-operator.v1.0.0   My Operator   1.0.0                Succeeded
@@ -287,7 +287,7 @@ If your Operator deployment (CSV) shows a `Succeeded` in the `InstallPhase` stat
 Optional also check your Operator's deployment:
 
 ```
-kubectl get deployment -n default
+kubectl get deployment -n marketplace
 ```
 
 ## Testing Operator Deployment on OpenShift
