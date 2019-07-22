@@ -12,14 +12,19 @@ set -e
 . ./scripts/ci/env
 
 # Create catalog manifests and Dockerfile to create a registry image.
+>&2 echo "creating config map registry"
 create_configmap_based_registry "$PKG_NAME" "${DEPLOY_DIR}/${PKG_NAME}" "$NAMESPACE" "$OP_VER" "$CATALOGSOURCE_FILE"
+>&2 echo "creating subscription files"
 create_subscription_file "$SUBSCRIPTION_FILE" "$PKG_NAME" "$PKG_NAME" "$CHANNEL_NAME" "$CSV_NAME" "$NAMESPACE"
-if kubectl get operatorgroups --namespace="$NAMESPACE" | grep "No resources found."; then
-  create_operator_group_file "$OPERATOR_GROUP_FILE" "$PKG_NAME" "$CSV_FILE" "$NAMESPACE"
-fi
-
+>&2 echo "creating operator group file"
+create_operator_group_file "$OPERATOR_GROUP_FILE" "$PKG_NAME" "$CSV_FILE" "$NAMESPACE"
+>&2 echo "creating CR file"
 create_cr_files_from_metadata "$CSV_FILE" "$CR_DIR" "$NAMESPACE"
+>&2 echo "creating kubeconfig secret file"
 create_kubeconfig_secret_file "$SECRET_FILE" "$NAMESPACE"
+>&2 echo "creating kubeconfig volume file"
 insert_kubeconfig_volume "$CSV_FILE"
+>&2 echo "creating kubeconfig secret mount"
 insert_kubeconfig_secret_mount "$CSV_FILE"
+
 insert_proxy_container "$CSV_FILE" "$SC_PROXY_IMAGE"

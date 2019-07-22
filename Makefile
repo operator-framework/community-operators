@@ -13,7 +13,7 @@ minikube.install: ## Install the local minikube
 	@echo "Installed"
 
 minikube.start: ## Start local minikube
-	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operatorss" "Start minikube"
+	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operatorrs" "Start minikube"
 
 olm.install: ## Install OLM to your cluster
 	@docker run -v ~/.kube:/root/.kube -v ./community-operators:/community-operators -v ./upstream-community-operators:/upstream-community-operators sebastiansimko/operator-command operator.olm.install

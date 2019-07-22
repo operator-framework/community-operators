@@ -17,41 +17,52 @@ set -u
 # Define names for resource types.
 export DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
 declare -A OBJECTS
+
 export OBJECTS=(
   ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
   ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
   ["csv"]="$CSV_NAME"
   ["deployment"]="$DEP_NAME"
 )
-if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
-  export OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
-fi
 
+echo "Apply OPERATOR GROUP file"
+export OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
+
+
+echo "Create namespace"
 # Create a namespace if necessary.
 if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
   kubectl create namespace "$NAMESPACE"
 fi
 
+>&2 echo "Applying object to cluster"
+
 apply_objects_incluster "$DEPLOY_DIR"
 # Clean up all created resources, CSV, and CRD's.
+echo "Setup trap on exit"
 trap_add_exit "delete_objects_incluster $DEPLOY_DIR $NAMESPACE"
 trap_add_exit "delete_objects_incluster $ABS_BUNDLE_PATH $NAMESPACE"
 
+>&2 echo "Checking subscriptions if passes"
 # Check that subscription is picked up
 check_subscription_passes "${PKG_NAME}-sub" "$NAMESPACE" "$PKG_NAME"
 
 # Wait for csv, then check that clusterserviceversion has Succeeded
 sleep 6
+>&2 echo "Checking csv if passes"
 check_csv_passes "$CSV_NAME" "$NAMESPACE"
 
+>&2 echo "Waiting for deployment"
 # Wait for the deployment specified in the CSV to rollout successfully.
 wait_on_deployment "$DEP_NAME" "$NAMESPACE"
 
 # Run scorecard tests on the operator.
 # TODO: run against multiple CR's. Right now the scorecard only works with one
 # CR.
+>&2 echo "Running scorecard trough all CR"
+
 for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
-  echo -e "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$cr_file""
+  >&2 echo -e "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$cr_file""
   >&2 operator-sdk scorecard \
     --cr-manifest "$cr_file" \
     --crds-dir "$ABS_BUNDLE_PATH" \
