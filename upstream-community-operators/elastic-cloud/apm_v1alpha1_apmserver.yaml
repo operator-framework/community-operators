@@ -47,6 +47,63 @@ spec:
           type: object
         spec:
           properties:
+            config:
+              description: Config represents the APM configuration.
+              type: object
+            elasticsearch:
+              description: Elasticsearch configures how the APM server connects to
+                Elasticsearch
+              properties:
+                auth:
+                  description: Auth configures authentication for APM Server to use.
+                  properties:
+                    inline:
+                      description: Inline is auth provided as plaintext inline credentials.
+                      properties:
+                        password:
+                          description: Password is the password to use.
+                          type: string
+                        username:
+                          description: User is the username to use.
+                          type: string
+                      required:
+                      - username
+                      - password
+                      type: object
+                    secret:
+                      description: SecretKeyRef is a secret that contains the credentials
+                        to use.
+                      type: object
+                  type: object
+                hosts:
+                  description: Hosts are the URLs of the output Elasticsearch nodes.
+                  items:
+                    type: string
+                  type: array
+                ssl:
+                  description: SSL configures TLS-related configuration for Elasticsearch
+                  properties:
+                    certificateAuthorities:
+                      description: CertificateAuthorities is a secret that contains
+                        a `tls.crt` entry that contain certificates for server verifications.
+                      properties:
+                        secretName:
+                          type: string
+                      type: object
+                  type: object
+              type: object
+            elasticsearchRef:
+              description: ElasticsearchRef references an Elasticsearch resource in
+                the Kubernetes cluster. If the namespace is not specified, the current
+                resource namespace will be used.
+              properties:
+                name:
+                  type: string
+                namespace:
+                  type: string
+              required:
+              - name
+              type: object
             featureFlags:
               description: FeatureFlags are apm-specific flags that enable or disable
                 specific experimental features
@@ -58,43 +115,40 @@ spec:
                   description: Service is a template for the Kubernetes Service
                   properties:
                     metadata:
-                      description: Metadata is metadata for the HTTP Service.
-                      properties:
-                        annotations:
-                          description: 'Annotations is an unstructured key value map
-                            stored with a resource that may be set by external tools
-                            to store and retrieve arbitrary metadata. They are not
-                            queryable and should be preserved when modifying objects.
-                            More info: http://kubernetes.io/docs/user-guide/annotations'
-                          type: object
+                      description: ObjectMeta is metadata for the service. The name
+                        and namespace provided here is managed by ECK and will be
+                        ignored.
                       type: object
                     spec:
-                      description: Spec contains user-provided settings for the HTTP
-                        Service.
-                      properties:
-                        type:
-                          description: 'Type determines which service type to use
-                            for this workload. The options are: `ClusterIP|LoadBalancer|NodePort`.
-                            Defaults to ClusterIP.'
-                          enum:
-                          - ClusterIP
-                          - LoadBalancer
-                          - NodePort
-                          type: string
+                      description: Spec defines the behavior of the service.
                       type: object
                   type: object
                 tls:
                   description: TLS describe additional options to consider when generating
-                    nodes TLS certificates.
+                    HTTP TLS certificates.
                   properties:
+                    certificate:
+                      description: 'Certificate is a reference to a secret that contains
+                        the certificate and private key to be used.  The secret should
+                        have the following content:  - `tls.crt`: The certificate
+                        (or a chain). - `tls.key`: The private key to the first certificate
+                        in the certificate chain.'
+                      properties:
+                        secretName:
+                          type: string
+                      type: object
                     selfSignedCertificate:
                       description: SelfSignedCertificate define options to apply to
                         self-signed certificate managed by the operator.
                       properties:
+                        disabled:
+                          description: Disabled turns off the provisioning of self-signed
+                            HTTP TLS certificates.
+                          type: boolean
                         subjectAltNames:
                           description: 'SubjectAlternativeNames is a list of SANs
-                            to include in the nodes certificates. For example: a wildcard
-                            DNS to expose the cluster.'
+                            to include in the HTTP TLS certificates. For example:
+                            a wildcard DNS to expose the cluster.'
                           items:
                             properties:
                               dns:
@@ -114,54 +168,21 @@ spec:
                 must have.
               format: int32
               type: integer
-            output:
-              properties:
-                elasticsearch:
-                  description: Elasticsearch configures the Elasticsearch output
-                  properties:
-                    auth:
-                      description: Auth configures authentication for APM Server to
-                        use.
-                      properties:
-                        inline:
-                          description: Inline is auth provided as plaintext inline
-                            credentials.
-                          properties:
-                            password:
-                              description: Password is the password to use.
-                              type: string
-                            username:
-                              description: User is the username to use.
-                              type: string
-                          type: object
-                        secret:
-                          description: SecretKeyRef is a secret that contains the
-                            credentials to use.
-                          type: object
-                      type: object
-                    hosts:
-                      description: Hosts are the URLs of the output Elasticsearch
-                        nodes.
-                      items:
-                        type: string
-                      type: array
-                    ssl:
-                      description: SSL configures TLS-related configuration for Elasticsearch
-                      properties:
-                        certificateAuthoritiesSecret:
-                          description: CertificateAuthoritiesSecret names a secret
-                            that contains a CA file entry to use.
-                          type: string
-                      type: object
-                  type: object
+            podTemplate:
+              description: PodTemplate can be used to propagate configuration to APM
+                Server pods. This allows specifying custom annotations, labels, environment
+                variables, affinity, resources, etc. for the pods created from this
+                NodeSpec.
               type: object
-            resources:
-              description: Resources to be allocated for each Apm Server node
+            secureSettings:
+              description: SecureSettings reference a secret containing secure settings,
+                to be injected into the APM keystore on each node. Each individual
+                key/value entry in the referenced secret is considered as an individual
+                secure setting to be injected. The secret must exist in the same namespace
+                as the APM resource.
               properties:
-                limits:
-                  description: Limits represents the limits to considerate for these
-                    resources
-                  type: object
+                secretName:
+                  type: string
               type: object
             version:
               description: Version represents the version of the APM Server
@@ -187,3 +208,4 @@ status:
     plural: ""
   conditions: []
   storedVersions: []
+  
