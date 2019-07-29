@@ -63,7 +63,7 @@ make minikube.start VM_DRIVER=kvm2
 
 ` VM_DRIVER ` - it's driver for minikube if you need start one
 
-If you want test your operator against scoreboard and operator courrier, which check the dependency and also run minikube if you don't have any kubeconfig available.
+If you want test your operator against scorecard and operator courrier, which check the dependency and also run minikube if you don't have any kubeconfig available.
 
 ```
 make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VERBOSE=1

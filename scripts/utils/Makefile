@@ -69,12 +69,12 @@ operator.registry.build: check_path ## Build registry image
 	@scripts/ci/make-tmp
 	@scripts/ci/run-script "scripts/ci/build-registry-image" "Make registry configmap"
 
-operator.test: check_path ## Operator test which run courier and scoreboard
+operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/make-tmp
 	@make operator.verify
 	@make olm.install
 	@make operator.registry.build
-	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scoreboard"
+	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scorecard"
 
 operator.verify: check_path ## Run only courier
 	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator"
