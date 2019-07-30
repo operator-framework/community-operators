@@ -74,7 +74,8 @@ operator.test: check_path ## Operator test which run courier and scorecard
 	@make operator.verify
 	@make olm.install
 	@make operator.registry.build
-	@scripts/ci/run-script "scripts/ci/operator-test" "Test operator with scorecard"
+	@scripts/ci/run-script "scripts/ci/operator-test" "Operator deployment"
+	@scripts/ci/run-script "scripts/ci/scorecard" "Test operator with scorecard"
 
 operator.verify: check_path ## Run only courier
 	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator"
