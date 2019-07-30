@@ -49,6 +49,9 @@ spec:
           type: object
         spec:
           properties:
+            config:
+              description: Config represents Kibana configuration.
+              type: object
             elasticsearch:
               description: Elasticsearch configures how Kibana connects to Elasticsearch
               properties:
@@ -69,12 +72,17 @@ spec:
                       - password
                       type: object
                     secret:
+                      description: SecretKeyRef is a secret that contains the credentials
+                        to use.
                       type: object
                   type: object
-                caCertSecret:
-                  description: CaCertSecret names a secret that contains a CA file
-                    entry to use.
-                  type: string
+                certificateAuthorities:
+                  description: CertificateAuthorities names a secret that contains
+                    a CA file entry to use.
+                  properties:
+                    secretName:
+                      type: string
+                  type: object
                 url:
                   description: ElasticsearchURL is the URL to the target Elasticsearch
                   type: string
@@ -104,43 +112,40 @@ spec:
                   description: Service is a template for the Kubernetes Service
                   properties:
                     metadata:
-                      description: Metadata is metadata for the HTTP Service.
-                      properties:
-                        annotations:
-                          description: 'Annotations is an unstructured key value map
-                            stored with a resource that may be set by external tools
-                            to store and retrieve arbitrary metadata. They are not
-                            queryable and should be preserved when modifying objects.
-                            More info: http://kubernetes.io/docs/user-guide/annotations'
-                          type: object
+                      description: ObjectMeta is metadata for the service. The name
+                        and namespace provided here is managed by ECK and will be
+                        ignored.
                       type: object
                     spec:
-                      description: Spec contains user-provided settings for the HTTP
-                        Service.
-                      properties:
-                        type:
-                          description: 'Type determines which service type to use
-                            for this workload. The options are: `ClusterIP|LoadBalancer|NodePort`.
-                            Defaults to ClusterIP.'
-                          enum:
-                          - ClusterIP
-                          - LoadBalancer
-                          - NodePort
-                          type: string
+                      description: Spec defines the behavior of the service.
                       type: object
                   type: object
                 tls:
                   description: TLS describe additional options to consider when generating
-                    nodes TLS certificates.
+                    HTTP TLS certificates.
                   properties:
+                    certificate:
+                      description: 'Certificate is a reference to a secret that contains
+                        the certificate and private key to be used.  The secret should
+                        have the following content:  - `tls.crt`: The certificate
+                        (or a chain). - `tls.key`: The private key to the first certificate
+                        in the certificate chain.'
+                      properties:
+                        secretName:
+                          type: string
+                      type: object
                     selfSignedCertificate:
                       description: SelfSignedCertificate define options to apply to
                         self-signed certificate managed by the operator.
                       properties:
+                        disabled:
+                          description: Disabled turns off the provisioning of self-signed
+                            HTTP TLS certificates.
+                          type: boolean
                         subjectAltNames:
                           description: 'SubjectAlternativeNames is a list of SANs
-                            to include in the nodes certificates. For example: a wildcard
-                            DNS to expose the cluster.'
+                            to include in the HTTP TLS certificates. For example:
+                            a wildcard DNS to expose the cluster.'
                           items:
                             properties:
                               dns:
@@ -160,13 +165,21 @@ spec:
                 must have.
               format: int32
               type: integer
-            resources:
-              description: Resources to be allocated for this topology
+            podTemplate:
+              description: PodTemplate can be used to propagate configuration to Kibana
+                pods. This allows specifying custom annotations, labels, environment
+                variables, affinity, resources, etc. for the pods created from this
+                NodeSpec.
+              type: object
+            secureSettings:
+              description: SecureSettings reference a secret containing secure settings,
+                to be injected into Kibana keystore on each node. Each individual
+                key/value entry in the referenced secret is considered as an individual
+                secure setting to be injected. The secret must exist in the same namespace
+                as the Kibana resource.
               properties:
-                limits:
-                  description: Limits represents the limits to considerate for these
-                    resources
-                  type: object
+                secretName:
+                  type: string
               type: object
             version:
               description: Version represents the version of Kibana
@@ -186,3 +199,4 @@ status:
     plural: ""
   conditions: []
   storedVersions: []
+  
