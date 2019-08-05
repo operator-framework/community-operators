@@ -3,6 +3,7 @@ SDK_VER="v0.6.0"
 KUBE_VER="v1.13.0"
 MAKEFLAGS+ = --no-print-directory
 OP_PATH=''
+OP_CHANNEL=''
 OK=\033[0;32m
 WARN=\033[0;33m
 ERR=\033[0;31m

@@ -20,7 +20,7 @@ olm.install: ## Install OLM to your cluster
 
 operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/check-kubeconfig
-	@docker run --network host -v ~/.kube:/root/.kube -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti sebastiansimko/operator-command operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER}
+	@docker run --network host -v ~/.kube:/root/.kube -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti sebastiansimko/operator-command operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL}
 
 operator.verify: check_path ## Run only courier
 	@docker run -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti sebastiansimko/operator-command operator.verify --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE}

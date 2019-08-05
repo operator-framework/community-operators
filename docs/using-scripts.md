@@ -72,6 +72,8 @@ make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VERBOS
 ### Options:
 
 ` OP_VER ` - version of operator if is not provided it will be parsed by operator package yaml
+
+` OP_CHANNEL ` - channel of operator if is not provided it will be parsed by operator package yaml or use the default ones
  
 ` OP_PATH ` - relative path to your operator which is required
 
