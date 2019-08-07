@@ -218,13 +218,13 @@ johndoe-operators   my-operator
 
 ### 6. Create an OperatorGroup
 
-An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must exist in the namespace where your operator should be deployed, we'll use `default` in this example.
+An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must exist in the namespace where your operator should be deployed, we'll use `marketplace` in this example.
 
 Its configuration depends on whether your Operator supports watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
 
 Create the following file as  `operator-group.yaml` if your Operator supports watching its own or a single namespace.
 
-If your Operator supports watching all namespaces you can omit the following step and place your `Subscription` (see next step) in the `operators` namespace instead.
+If your Operator supports watching all namespaces you can leave the property `spec.targetNamespace` present but empty. This will create an `OperatorGroup` that instructs the Operator to watch all namespaces.
 
 ```
 apiVersion: operators.coreos.com/v1alpha2
@@ -260,7 +260,7 @@ spec:
   sourceNamespace: marketplace
 ```
 
-If your Operator supports watching all namespaces, change the namespace of the Subscription from `default` to `operators`. In any case replace `<channel-name>` with the contents of `channel.name` in your `package.yaml` file.
+If your Operator supports watching all namespaces, change the namespace of the Subscription from `marketplace` to `operators`. In any case replace `<channel-name>` with the contents of `channel.name` in your `package.yaml` file.
 
 Then create the `Subscription`:
 
@@ -279,7 +279,7 @@ NAME                 DISPLAY       VERSION   REPLACES   PHASE
 my-operator.v1.0.0   My Operator   1.0.0                Succeeded
 ```
 
-> The above command assumes you have created the `Subscription` in the `default` namespace. Adjust accordingly if you have selected a different namespace.
+> The above command assumes you have created the `Subscription` in the `marketplace` namespace.
 
 
 If your Operator deployment (CSV) shows a `Succeeded` in the `InstallPhase` status, your Operator is deployed successfully. If that's not the case check the `ClusterServiceVersion` objects status for details.
