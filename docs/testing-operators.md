@@ -127,9 +127,7 @@ TOKEN=$QUAY_TOKEN
 operator-courier push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
 ```
 
-Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab.
-
-> If the application has a lock icon, click through to the application and its Settings tab and select to make the application public.
+Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab. If the application has a lock icon, click through to the application and its Settings tab and select to make the application public.
 
 Your Operator bundle is now ready for testing. To upload subsequent versions, bump semver string in the `PACKAGE_VERSION` variable, as `operator-marketplace` always downloads the newest bundle according to [semantic versioning](https://semver.org/).
 
@@ -195,9 +193,19 @@ NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME  
 johndoe-operators   appregistry   https://quay.io/cnr   johndoe                 Succeeded   The object has been successfully reconciled   30s
 ```
 
+Additionally, a `CatalogSource` is created in the `marketplace` namespace:
+
+```
+kubectl get catalogsource -n marketplace
+
+NAME                           NAME        TYPE   PUBLISHER   AGE
+johndoe-operators              Custom      grpc   Custom      3m32s
+[...]
+```
+
 ### 5. View Available Operators
 
-Once the `OperatorSource` is deployed, the following command can be used to list the available operators (until an operator is pushed into quay, this list will be empty):
+Once the `OperatorSource` and `CatalogSource` are deployed, the following command can be used to list the available operators (until an operator is pushed into quay, this list will be empty):
 
 > The command below assumes `johndoe-operators` as the name of the `OperatorSource` object. Adjust accordingly.
 
@@ -208,73 +216,25 @@ NAME                PACKAGES
 johndoe-operators   my-operator
 ```
 
-### 6. Create CatalogSourceConfig
+### 6. Create an OperatorGroup
 
-Once the OperatorSource has been added, a `CatalogSourceConfig` needs to be created in the `marketplace` namespace to make those Operators available on cluster.
+An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must exist in the namespace where your operator should be deployed, we'll use `marketplace` in this example.
 
-Create the following file as `catalog-source-config.yaml`:
-
-```
-apiVersion: operators.coreos.com/v1
-kind: CatalogSourceConfig
-metadata:
-  name: johndoe-operators
-  namespace: marketplace
-spec:
-  targetNamespace: olm
-  packages: my-operator
-```
-
-In the above example:
-
-* `olm` is a namespace that OLM is watching for `CatalogSource` objects
-* `packages` is a comma-separated list of operators that have been pushed to quay.io and should be deployable by this source.
-
-> The file above assumes `my-operator` as the name of the operator bundle. Adjust accordingly.
-
-Deploy the `CatalogSourceConfig` resource:
-
-```
-kubectl apply -f catalog-source-config.yaml
-```
-
-When this file is deployed, a `CatalogSourceConfig` resource is created in the `marketplace` namespace.
-
-```
-kubectl get catalogsourceconfig -n marketplace
-
-NAME                      STATUS      MESSAGE                                       AGE
-johndoe-operators         Succeeded   The object has been successfully reconciled   93s
-```
-
-Additionally, a `CatalogSource` is created in the namespace indicated in `spec.targetNamespace` (in the above example, `olm`):
-
-```
-kubectl get catalogsource -n olm
-
-NAME                           NAME        TYPE   PUBLISHER   AGE
-johndoe-operators              Custom      grpc   Custom      3m32s
-[...]
-```
-### 7. Create an OperatorGroup
-
-An `OperatorGroup` is used to denote which namespaces your Operator should be watching. It must in the namespace where your operator should be deployed, we'll use `default` in this example.
-
-Its configuration depends on your Operator supporting watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
+Its configuration depends on whether your Operator supports watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
 
 Create the following file as  `operator-group.yaml` if your Operator supports watching its own or a single namespace.
 
-If your Operator supports watching all namespaces you can omit the following step and place your `Subscription` (see next step) in the `operators` namespace instead.
+If your Operator supports watching all namespaces you can leave the property `spec.targetNamespace` present but empty. This will create an `OperatorGroup` that instructs the Operator to watch all namespaces.
 
 ```
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
 metadata:
   name: my-operatorgroup
-  namespace: default
+  namespace: marketplace
 spec:
   targetNamespaces:
-  - default
+  - marketplace
 ```
 
 Deploy the `OperatorGroup` resource:
@@ -283,7 +243,7 @@ Deploy the `OperatorGroup` resource:
 kubectl apply -f operator-group.yaml
 ```
 
-### 8. Create a Subscription
+### 7. Create a Subscription
 
 The last piece ties together all of the previous steps. A `Subscription` is created to the operator. Save the following to a file named: `operator-subscription.yaml`:
 
@@ -292,28 +252,34 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: my-operator-subsription
-  namespace: default
+  namespace: marketplace
 spec:
   channel: <channel-name>
   name: my-operator
   source: johndoe-operators
-  sourceNamespace: olm
+  sourceNamespace: marketplace
 ```
 
-If your Operator supports watching all namespaces, change the namespace of the Subscription from `default` to `operators`.
+If your Operator supports watching all namespaces, change the namespace of the Subscription from `marketplace` to `operators`. In any case replace `<channel-name>` with the contents of `channel.name` in your `package.yaml` file.
 
-### 9. Verify Operator health
+Then create the `Subscription`:
+
+```
+kubectl apply -f operator-subscription.yaml
+```
+
+### 8. Verify Operator health
 
 Watch your Operator being deployed by OLM from the catalog source created by Operator Marketplace with the following command:
 
 ```
-kubectl get clusterserviceversion -n default
+kubectl get clusterserviceversion -n marketplace
 
 NAME                 DISPLAY       VERSION   REPLACES   PHASE
 my-operator.v1.0.0   My Operator   1.0.0                Succeeded
 ```
 
-> The above command assumes you have created the `Subscription` in the `default` namespace. Adjust accordingly if you have selected a different namespace.
+> The above command assumes you have created the `Subscription` in the `marketplace` namespace.
 
 
 If your Operator deployment (CSV) shows a `Succeeded` in the `InstallPhase` status, your Operator is deployed successfully. If that's not the case check the `ClusterServiceVersion` objects status for details.
@@ -321,7 +287,7 @@ If your Operator deployment (CSV) shows a `Succeeded` in the `InstallPhase` stat
 Optional also check your Operator's deployment:
 
 ```
-kubectl get deployment -n default
+kubectl get deployment -n marketplace
 ```
 
 ## Testing Operator Deployment on OpenShift

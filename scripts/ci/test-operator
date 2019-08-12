@@ -19,21 +19,14 @@ if [[ ! -d "$OP_PATH" ]]; then
   echo "Relative path to operator package '$OP_PATH' does not exist."
   exit 1
 fi
-PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
 # This script assumes versions are written as "v0.0.1" in file names and
 # fields, but OP_VER is expected to not include a "v" prefix, ex. "0.0.1".
 # Also support versions with tagged names, ex. "0.3.0-beta1"
 [[ -z "$OP_VER" ]] && OP_VER="$2"
 if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-  echo "Try detect operator version..."
-  OP_VER="$(cat $PKG_FILE | grep -Go '\.v.*$' -m 1 | grep -Go '[^\.v].*')"
-  echo "Operator version detected $OP_VER"
-  if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-    echo "Operator version not valid."
-    exit 1
-  fi
+  echo "Operator version '$OP_VER' not valid."
+  exit 1
 fi
-
 DISTRO_TYPE_UPSTREAM="upstream"
 DISTRO_TYPE_OPENSHIFT="openshift"
 DISTRO_TYPE="${3:-$DISTRO_TYPE_UPSTREAM}"
@@ -52,6 +45,7 @@ TMP="$(mktemp -d --suffix "_test_pr")"
 trap_add_exit "rm -rf $TMP"
 set -u
 DEPLOY_DIR="${TMP}/deploy"
+PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
 PKG_NAME="$(yq r "$PKG_FILE" "packageName")"
 ABS_BUNDLE_PATH="${DEPLOY_DIR}/${PKG_NAME}/${OP_VER}"
 CR_DIR="${DEPLOY_DIR}/crs"
@@ -92,13 +86,7 @@ insert_kubeconfig_secret_mount "$CSV_FILE"
 insert_proxy_container "$CSV_FILE" "$SC_PROXY_IMAGE"
 
 # Build a registry container containing operator manifests.
-
-if [[ "$REG_IMAGE" ]]; then
-  docker build -t "$REG_IMAGE" . > /dev/null
-  docker push "$REG_IMAGE" > /dev/null
-else 
-  docker build -t "$OP_REGISTRY_IMAGE" . > /dev/null
-fi
+docker build -t "$OP_REGISTRY_IMAGE" . > /dev/null
 
 # Define names for resource types.
 DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"

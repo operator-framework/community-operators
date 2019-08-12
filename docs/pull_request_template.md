@@ -2,6 +2,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 
 ### New Submissions
 
+* [ ] Have you selected the Project *Community Operator Submissions* in your PR on the right-hand menu bar?
 * [ ] Are you familiar with our [contribution guidelines](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md)?
 * [ ] Have you [packaged and deployed](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md) your Operator for Operator Framework?
 * [ ] Have you tested your Operator with all Custom Resource Definitions?
@@ -10,6 +11,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 ### Updates to existing Operators
 
 * [ ] Is your new CSV pointing to the previous version with the `replaces` property?
+* [ ] Is your new CSV referenced in the [appropriate channel](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#bundle-format) defined in the `package.yaml` ?
 * [ ] Have you tested an update to your Operator when deployed via OLM?
 
 ### Your submission should not

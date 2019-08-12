@@ -3,7 +3,7 @@
 function wait_on_deployment() {
   local dep="$1"
   local namespace="$2"
-  local retries=30 # 3 minute timeout
+  local retries=20 # 2 minute timeout
 
   while ! kubectl rollout status -w "deployment/${dep}" --namespace=${namespace}; do
       sleep 6
@@ -21,11 +21,10 @@ function wait_on_deployment() {
 function check_subscription_passes() {
   local sub="$1"
   local namespace="$2"
-  local retries=40 # 3 minute timeout
   local packageName="$3"
+  local retries=10 # 1 minute timeout
 
   echo "Checking subscription \"$sub\" reaches \"AtLatestKnown\" state"
-
   while ! kubectl get "subscription/${sub}" --namespace=${namespace} -o json | jq .status -e &> /dev/null; do
       sleep 6
       retries=$((retries - 1))
@@ -72,7 +71,7 @@ function check_subscription_passes() {
 function check_csv_passes() {
   local csv="$1"
   local namespace="$2"
-  local retries=30 # 3 minute timeout
+  local retries=10 # 1 minute timeout
 
   echo "Check that clusterserviceversion \"$csv\" status is set to \"Succeeded\""
   while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase` == \"Succeeded\" ]]; do
@@ -211,9 +210,11 @@ function get_op_namespace() {
     echo "operators"
   elif [[ ${modes["SingleNamespace"]} == "true" ]]; then
     echo "$op_name"
+  elif [[ ${modes["OwnNamespace"]} == "true" ]]; then
+    echo "$op_name"
   else
-    # Operators should have at least one of SingleNamespace, AllNamespaces true.
-    >&2 echo "Both SingleNamespace and AllNamespaces cannot be false"
+    # Operators should have at least one of SingleNamespace, AllNamespaces, OwnNamespaces true.
+    echo "Operators should have at least one of OwnNamespace, SingleNamespace or  AllNamespaces set to true" 1>&2
     exit 1
   fi
 }
@@ -230,7 +231,7 @@ function get_channel_name() {
   if [[ -n "${channels["$csv_name"]}" ]]; then
     echo ${channels["$csv_name"]}
   else
-    >&2 echo "No matching channel exists for this CSV in the package file"
+    echo "No matching channel exists for this CSV in the package file" 1>&2
     exit 1
   fi
 }

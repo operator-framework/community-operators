@@ -76,6 +76,20 @@ EOF
   done < <(yq r --tojson "$csv_file" "spec.installModes" | jq -c '.[]')
 }
 
+# create_registry_dockerfile creates a registry Dockerfile.
+function create_registry_dockerfile() {
+  local reg_dockerfile="$1"
+  local op_name="$2"
+
+  cat <<EOF > "$reg_dockerfile"
+FROM quay.io/openshift/origin-operator-registry:latest
+COPY $op_name manifests/${op_name}
+RUN /usr/bin/initializer -o bundles.db
+ENTRYPOINT ["/usr/bin/registry-server"]
+CMD ["-d", "bundles.db", "-t", "termination.log"]
+EOF
+}
+
 # create_cr_files_from_metadata takes a CSV's metadata bytes and transforms CR's
 # from the "alm-examples" annontation, if present, into YAML manifest files.
 function create_cr_files_from_metadata() {
