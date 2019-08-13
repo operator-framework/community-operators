@@ -1,18 +1,15 @@
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    "helm.sh/hook": crd-install
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: dnsendpoints.multiclusterdns.kubefed.k8s.io
+  name: ingressdnsrecords.multiclusterdns.kubefed.io
 spec:
-  group: multiclusterdns.kubefed.k8s.io
+  group: multiclusterdns.kubefed.io
   names:
-    kind: DNSEndpoint
-    plural: dnsendpoints
+    kind: IngressDNSRecord
+    plural: ingressdnsrecords
   scope: Namespaced
   subresources:
     status: {}
@@ -33,38 +30,31 @@ spec:
           type: object
         spec:
           properties:
-            endpoints:
+            hosts:
+              description: Host from the IngressRule in Cluster Ingress Spec
               items:
-                properties:
-                  dnsName:
-                    description: The FQDN of the DNS record.
-                    type: string
-                  labels:
-                    description: Labels stores labels defined for the Endpoint.
-                    type: object
-                  recordTTL:
-                    description: TTL for the record in seconds.
-                    format: int64
-                    type: integer
-                  recordType:
-                    description: RecordType type of record, e.g. CNAME, A, SRV, TXT
-                      etc.
-                    type: string
-                  targets:
-                    description: The targets that the DNS record points to.
-                    items:
-                      type: string
-                    type: array
-                type: object
+                type: string
               type: array
+            recordTTL:
+              description: RecordTTL is the TTL in seconds for DNS records created
+                for the Ingress, if omitted a default would be used
+              format: int64
+              type: integer
           type: object
         status:
           properties:
-            observedGeneration:
-              description: ObservedGeneration is the generation as observed by the
-                controller consuming the DNSEndpoint.
-              format: int64
-              type: integer
+            dns:
+              description: Array of Ingress Controller LoadBalancers
+              items:
+                properties:
+                  cluster:
+                    description: Cluster name
+                    type: string
+                  loadBalancer:
+                    description: LoadBalancer for the corresponding ingress controller
+                    type: object
+                type: object
+              type: array
           type: object
   version: v1alpha1
 status:
