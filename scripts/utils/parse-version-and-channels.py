@@ -26,9 +26,11 @@ def main(argv):
         with open(packagefile, 'r') as stream:
             try:
                 package = yaml.safe_load(stream)
-                if package['channels']:
-                    if channel == '' and package['defaultChannel']:
+                if package.get('channels', False):
+                    if channel == '' and package.get('defaultChannel', False):
                         channel = package['defaultChannel']
+                    elif len(package['channels']) == 1:
+                        channel = package['channels'][0].get('name', '')
 
                     for package_channel in package['channels']:
                         if (package_channel['name'] == channel and package_channel != '') or channel == '':
