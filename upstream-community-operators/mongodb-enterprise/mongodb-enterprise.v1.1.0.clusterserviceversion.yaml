@@ -1,28 +1,92 @@
-#! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
-#! parse-kind: ClusterServiceVersion
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: mongodboperator.v0.9.0
+  name: mongodb-enterprise.v1.1.0
   namespace: placeholder
   annotations:
     repository: https://github.com/mongodb/mongodb-enterprise-kubernetes
-    containerImage: quay.io/mongodb/mongodb-enterprise-operator:0.9
+    containerImage: quay.io/mongodb/mongodb-enterprise-operator:1.1
     support: MongoDB Community Support
-    createdAt: 2019-03-21T10:30:00Z
+    createdAt: 2019-07-23T10:30:00Z
     capabilities: Full Lifecycle
     categories: "Database"
     certified: "true"
     description: The MongoDB Enterprise Kubernetes Operator enables easy deploys of MongoDB into Kubernetes clusters, using our management, monitoring and backup platforms, Ops Manager and Cloud Manager.
-    alm-examples: >-
-      [{"apiVersion":"mongodb.com/v1","kind":"MongoDbStandalone","metadata":{"name":"my-standalone","namespace":"mongodb"},"spec":{"version":"4.0.2","persistent":false,"project":"my-project","credentials":"my-credentials"}},{"apiVersion":"mongodb.com/v1","kind":"MongoDbReplicaSet","metadata":{"name":"my-replica-set","namespace":"mongodb"},"spec":{"members":3,"version":"4.0.2","persistent":false,"project":"my-project","credentials":"my-credentials"}},{"apiVersion":"mongodb.com/v1","kind":"MongoDbShardedCluster","metadata":{"name":"my-sharded-cluster","namespace":"mongodb"},"spec":{"shardCount": 2, "mongodsPerShardCount": 3, "mongosCount": 2, "configServerCount": 3,"version":"4.0.2","persistent":false,"project":"my-project","credentials":"my-credentials"}}]
+    alm-examples: |
+      [
+        {
+          "kind": "MongoDB",
+          "apiVersion": "mongodb.com/v1",
+          "metadata": {
+              "name": "sample-replica-set"
+          },
+          "spec": {
+            "version": "4.0.10",
+            "type": "ReplicaSet",
+            "project": "my-project",
+            "persistent": false,
+            "members": 3,
+            "credentials": "my-credentials"
+          },
+          "status": {
+            "version": "4.0.10",
+            "type": "ReplicaSet",
+            "phase": "Running",
+            "members": 3,
+            "link": "https://cloud.mongodb.com/v2/5d35f7cdbf994268c3",
+            "lastTransition": "2019-07-23T09:00:00Z"
+          }
+        },
+        {
+          "apiVersion": "mongodb.com/v1",
+          "kind": "MongoDB",
+          "metadata": {
+              "name": "sample-sharded-cluster"
+          },
+          "spec": {
+              "configServerCount": 3,
+              "credentials": "my-credentials",
+              "mongodsPerShardCount": 3,
+              "mongosCount": 2,
+              "persistent": false,
+              "project": "my-project",
+              "shardCount": 1,
+              "type": "ShardedCluster",
+              "version": "3.6.8"
+          },
+          "status": {
+              "lastTransition": "2019-07-23T09:00:00Z",
+              "phase": "Running"
+          }
+        },
+        {
+          "apiVersion": "mongodb.com/v1",
+          "kind": "MongoDBUser",
+          "metadata": {
+              "name": "sample-user"
+          },
+          "spec": {
+              "db": "$external",
+              "project": "my-project",
+              "roles": [
+                  {
+                      "db": "admin",
+                      "name": "clusterAdmin"
+                  }
+              ],
+              "username": "CN=mms-user-1,OU=cloud,O=MongoDB,L=New York,ST=New York,C=US"
+          }
+        }
+      ]
+
 spec:
   displayName: MongoDB
   provider:
     name: 'MongoDB, Inc'
   maturity: stable
-  version: 0.9.0
-  replaces: mongodboperator.v0.3.2
+  minKubeVersion: 1.11.0
+  version: 1.1.0
+  replaces: mongodb-enterprise.v0.9.0
   keywords: ["mongodb", "database", "nosql"]
   maintainers:
   - email: support@mongodb.com
@@ -75,6 +139,16 @@ spec:
     routing processes. Sharding is a A database architecture that partitions
     data by key ranges and distributes the data among two or more database
     instances. Sharding enables horizontal scaling.
+
+    ## Security ##
+
+    The operator can enable TLS for all traffic between servers and also between
+    clients and servers. Before enabling `security.tls.enabled` to `true` you should
+    create your certificates or you can leave the operator to create all the
+    certificates for you. For more information, please read the official MongoDB
+    Kubernetes Operator [docs](https://docs.mongodb.com/kubernetes-operator/stable/).
+
+
   links:
   - name: Documentation
     url: 'https://docs.opsmanager.mongodb.com/current/tutorial/install-k8s-operator/index.html'
@@ -84,152 +158,184 @@ spec:
     mediatype: image/png
   customresourcedefinitions:
     owned:
-    - name: mongodbstandalones.mongodb.com
-      version: v1
-      kind: MongoDbStandalone
+    - name: mongodb.mongodb.com
       group: mongodb.com
-      displayName: MongoDB Standalone
-      description: MongoDB Deployment consisting of only one host. No replication of data.
-      resources:
-      # FIXME(alecmerdler): These are probably supposed to be different resources for the different CRD configurations
-      - kind: Service
-        name: ''
-        version: v1
-      - kind: StatefulSet
-        name: ''
-        version: v1beta2
-      - kind: Pod
-        name: ''
-        version: v1
-      specDescriptors:
-      - description: Credentials for Ops Manager or Cloud Manager.
-        displayName: Credentials
-        path: credentials
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:core:v1:Secret'
-      - description: Project this deployment belongs to.
-        displayName: Project
-        path: project
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:core:v1:ConfigMap'
-      - description: MongoDB version to be installed.
-        displayName: Version
-        path: version
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:text'
-      - description: The service where the MongoDB deployment will be listening.
-        displayName: Service
-        path: service
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:Service'
-    - name: mongodbreplicasets.mongodb.com
       version: v1
-      kind: MongoDbReplicaSet
+      kind: MongoDB
+      displayName: MongoDB Deployment
+      description: MongoDB Deployment
+      validation: # there are 3 possible schemas, ReplicaSet, ShardedCluster and Standalone
+        openAPIV3Schema:
+          oneOf:
+          - properties: # Standalone schema
+              spec:
+                properties:
+                  credentials:
+                    type: string
+                  project:
+                    type: string
+                  version:
+                    type: string
+                    pattern: "^[0-9]+.[0-9]+.[0-9]+(-ent)?$"
+                  logLevel:
+                    type: string
+                    enum: ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+                  type:
+                    type: string
+                    pattern: "^Standalone$"
+                  security:
+                    type: object
+                    properties:
+                      tls:
+                        type: object
+                        properties:
+                          enabled:
+                            type: boolean
+                          ca:
+                            type: string
+                  exposedExternally:
+                    type: boolean
+                required:
+                - credentials
+                - project
+                - version
+                - type
+          - properties: # ReplicaSet schema
+              spec:
+                properties:
+                  members:
+                    maximum: 50
+                    minimum: 1
+                    type: integer
+                  credentials:
+                    type: string
+                  project:
+                    type: string
+                  version:
+                    type: string
+                    pattern: "^[0-9]+.[0-9]+.[0-9]+(-ent)?$"
+                  logLevel:
+                    type: string
+                    enum: ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+                  type:
+                    type: string
+                    pattern: "^ReplicaSet$"
+                  security:
+                    type: object
+                    properties:
+                      tls:
+                        type: object
+                        properties:
+                          enabled:
+                            type: boolean
+                          ca:
+                            type: string
+                      clusterAuthenticationMode:
+                        type: string
+                        enum: ["x509"]
+                  exposedExternally:
+                    type: boolean
+                required:
+                - credentials
+                - project
+                - version
+                - type
+                - members
+          - properties:
+              spec:
+                properties: # ShardedCluster schema
+                  configServerCount:
+                    maximum: 50
+                    minimum: 1
+                    type: integer
+                  mongodsPerShardCount:
+                    maximum: 50
+                    minimum: 1
+                    type: integer
+                  mongosCount:
+                    minimum: 1
+                    type: integer
+                  shardCount:
+                    minimum: 1
+                    type: integer
+                  credentials:
+                    type: string
+                  project:
+                    type: string
+                  version:
+                    type: string
+                    pattern: "^[0-9]+.[0-9]+.[0-9]+(-ent)?$"
+                  logLevel:
+                    type: string
+                    enum: ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+                  type:
+                    type: string
+                    pattern: "^ShardedCluster$"
+                  security:
+                    type: object
+                    properties:
+                      tls:
+                        type: object
+                        properties:
+                          enabled:
+                            type: boolean
+                          ca:
+                            type: string
+                      clusterAuthenticationMode:
+                        type: string
+                        enum: ["x509"]
+                  exposedExternally:
+                    type: boolean
+                required:
+                - credentials
+                - project
+                - version
+                - type
+                - shardCount
+                - mongodsPerShardCount
+                - mongosCount
+                - configServerCount
+
+    - name: mongodbusers.mongodb.com
       group: mongodb.com
-      displayName: MongoDB Replica Set
-      description: MongoDB Replica Set Deployment
-      resources:
-      # FIXME(alecmerdler): These are probably supposed to be different resources for the different CRD configurations
-      - kind: Service
-        name: ''
-        version: v1
-      - kind: StatefulSet
-        name: ''
-        version: v1beta2
-      - kind: Pod
-        name: ''
-        version: v1
-      specDescriptors:
-      - description: Number of members in this Replica Set.
-        displayName: Members
-        path: members
-        x-descriptors:
-        - 'urn:alm:descriptor:text'
-      - description: Credentials for Ops Manager or Cloud Manager.
-        displayName: Credentials
-        path: credentials
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:core:v1:Secret'
-      - description: Project this deployment belongs to.
-        displayName: Project
-        path: project
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:core:v1:ConfigMap'
-      - description: MongoDB version to be installed.
-        displayName: Version
-        path: version
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:label'
-      - description: The service where this MongoDB deployment will be listening.
-        displayName: Service
-        path: service
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:Service'
-    - name: mongodbshardedclusters.mongodb.com
-      description: MongoDB Sharded Cluster Deployment
-      displayName: MongoDB Sharded Cluster
-      group: mongodb.com
-      kind: MongoDbShardedCluster
       version: v1
-      resources:
-      # FIXME(alecmerdler): These are probably supposed to be different resources for the different CRD configurations
-      - kind: Service
-        name: ''
-        version: v1
-      - kind: StatefulSet
-        name: ''
-        version: v1beta2
-      - kind: Pod
-        name: ''
-        version: v1
-      specDescriptors:
-      - description: Credentials for Ops Manager or Cloud Manager.
-        displayName: Credentials
-        path: credentials
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:core:v1:Secret'
+      kind: MongoDBUser
+      displayName: MongoDB User
+      description: MongoDB x509 User
+      validation:
+          openAPIV3Schema:
+            properties:
+              spec:
+                properties:
+                  username:
+                    type: string
+                    description: "The username of the user"
+                  db:
+                    type: string
+                    enum: ["$external"]
+                    description: "The database the user is stored in"
+                  project:
+                    type: string
+                    description: "The project the user belongs to"
+                  roles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: "The name of the role"
+                        db:
+                          type: string
+                          description: "The db the role can act on"
+                      required:
+                        - name
+                        - db
+                required:
+                  - username
+                  - db
+                  - project
 
-      - description: Project this deployment belongs to.
-        displayName: Project
-        path: project
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:core:v1:ConfigMap'
-
-      - description: MongoDB version to be installed.
-        displayName: Version
-        path: version
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:label'
-
-      - description: How many Config Servers will be deployed
-        displayName: Config Server Count
-        path: configServerCount
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:label'
-
-      - description: How many MongoDB Servers per Shard will be deployed
-        displayName: MongoDB Servers per Shard
-        path: mongodsPerShardCount
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:label'
-
-      - description: How many mongos will be deployed
-        displayName: Mongos (MongoDB Shard) to be deployed
-        path: mongosCount
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:label'
-
-      - description: Amount of Shards to be deployed
-        displayName: Shards
-        path: shardCount
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:label'
-
-      - description: The service where this MongoDB deployment will be listening.
-        displayName: Service
-        path: service
-        x-descriptors:
-        - 'urn:alm:descriptor:io.kubernetes:Service'
   installModes:
   - type: OwnNamespace
     supported: true
@@ -255,12 +361,10 @@ spec:
                 k8s-app: mongodb-enterprise-operator
             spec:
               serviceAccountName: mongodb-enterprise-operator
-              imagePullSecrets:
-                - name: ''
 
               containers:
               - name: mongodb-enterprise-operator
-                image: quay.io/mongodb/mongodb-enterprise-operator:0.9
+                image: quay.io/mongodb/mongodb-enterprise-operator:1.1
                 imagePullPolicy: Always
                 resources:
                   limits:
@@ -280,11 +384,9 @@ spec:
                 - name: OPERATOR_ENV
                   value: prod
                 - name: MONGODB_ENTERPRISE_DATABASE_IMAGE
-                  value: quay.io/mongodb/mongodb-enterprise-database:0.9
+                  value: quay.io/mongodb/mongodb-enterprise-database:1.1
                 - name: IMAGE_PULL_POLICY
                   value: Always
-                - name: IMAGE_PULL_SECRETS
-                  value: ''
 
       permissions:
       - serviceAccountName: mongodb-enterprise-operator
@@ -301,12 +403,18 @@ spec:
           - create
           - update
           - delete
+          - watch
         - apiGroups:
           - apps
           resources:
           - statefulsets
           verbs:
-          - '*'
+          - create
+          - get
+          - list
+          - watch
+          - delete
+          - update
         - apiGroups:
           - apiextensions.k8s.io
           resources:
@@ -320,6 +428,25 @@ spec:
         - apiGroups:
           - mongodb.com
           resources:
-          - '*'
+          - mongodb
+          - mongodb/finalizers
+          - mongodbusers
           verbs:
-          - '*'
+          - get
+          - list
+          - watch
+          - delete
+          - update
+
+      clusterPermissions:
+      - serviceAccountName: mongodb-enterprise-operator
+        rules:
+        - apiGroups:
+          - certificates.k8s.io  # this apiGroup requires cluster-wide permissions
+          resources:
+          - certificatesigningrequests
+          verbs:
+          - get
+          - create
+          - list
+          - watch
