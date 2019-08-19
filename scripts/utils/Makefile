@@ -79,4 +79,4 @@ operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/run-script "scripts/ci/scorecard" "Test operator with scorecard"
 
 operator.verify: check_path ## Run only courier
-	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator"
+	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator" "false"
