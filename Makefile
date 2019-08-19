@@ -19,6 +19,7 @@ olm.install: ## Install OLM to your cluster
 	@docker run -v ~/.kube:/root/.kube -v ./community-operators:/community-operators -v ./upstream-community-operators:/upstream-community-operators sebastiansimko/operator-command operator.olm.install
 
 operator.test: check_path ## Operator test which run courier and scorecard
+	@scripts/ci/run-script "docker pull sebastiansimko/operator-command -q" "Pulling command image"
 	@scripts/ci/check-kubeconfig
 	@docker run --network host -v ~/.kube:/root/.kube -v ~/tmp:/tmp -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti sebastiansimko/operator-command operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL}
 

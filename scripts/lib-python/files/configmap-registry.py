@@ -19,7 +19,7 @@ def main(argv):
     output = None
 
     try:
-        opts, args = getopt.getopt(argv, "o:d:n:v:c", ["operator=", "dir=", "namespace=", "opversion=", "catalogfilename="])
+        opts, args = getopt.getopt(argv, "o:d:n:v:c:", ["operator=", "dir=", "namespace=", "opversion=", "catalogfilename="])
     except getopt.GetoptError:
         sys.exit(2)
     for opt, arg in opts:
@@ -82,7 +82,9 @@ spec:
   sourceType: internal
     """.format(operator, namespace, crdfiles, csvfiles, packagefile, operator, namespace, operator, operator)
 
-    print(catalogsource)
+    print(catalogfilename)
+    with open(catalogfilename, 'w') as writer:
+        writer.write(catalogsource)
 
 
 def indent(file, add_dashes=True):
