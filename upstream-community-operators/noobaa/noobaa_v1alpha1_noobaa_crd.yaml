@@ -28,6 +28,8 @@ spec:
     kind: NooBaa
     listKind: NooBaaList
     plural: noobaas
+    shortNames:
+    - nb
     singular: noobaa
   scope: Namespaced
   subresources:
@@ -51,9 +53,31 @@ spec:
         spec:
           description: Specification of the desired behavior of the noobaa system.
           properties:
+            coreResources:
+              description: CoreResources (optional) overrides the default resource
+                requirements for the server container
+              type: object
             image:
-              description: Image (optional) overrides the default image for server
-                pods
+              description: Image (optional) overrides the default image for the server
+                container
+              type: string
+            imagePullSecret:
+              description: ImagePullSecret (optional) sets a pull secret for the system
+                image
+              type: object
+            mongoImage:
+              description: MongoImage (optional) overrides the default image for the
+                mongodb container
+              type: string
+            mongoResources:
+              description: MongoResources (optional) overrides the default resource
+                requirements for the mongodb container
+              type: object
+            storageClassName:
+              description: StorageClassName (optional) overrides the default StorageClass
+                for the PVC that the operator creates, this affects where the system
+                stores its database which contains system config, buckets, objects
+                meta-data and mapping file parts to storage locations.
               type: string
           type: object
         status:
@@ -75,6 +99,32 @@ spec:
               description: ActualImage is set to report which image the operator is
                 using
               type: string
+            conditions:
+              description: Conditions is a list of conditions related to operator
+                reconciliation +patchMergeKey=type +patchStrategy=merge
+              items:
+                properties:
+                  lastHeartbeatTime:
+                    format: date-time
+                    type: string
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - type
+                - status
+                - lastHeartbeatTime
+                - lastTransitionTime
+                type: object
+              type: array
             observedGeneration:
               description: ObservedGeneration is the most recent generation observed
                 for this noobaa system. It corresponds to the CR generation, which
@@ -89,6 +139,12 @@ spec:
               description: Readme is a user readable string with explanations on the
                 system
               type: string
+            relatedObjects:
+              description: RelatedObjects is a list of objects that are "interesting"
+                or related to this operator.
+              items:
+                type: object
+              type: array
             services:
               properties:
                 serviceMgmt:
