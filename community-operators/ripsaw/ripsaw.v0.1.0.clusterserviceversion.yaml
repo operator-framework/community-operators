@@ -92,7 +92,7 @@ spec:
         * Which distribution to use
         * Which platform to deploy the k8s cluster on
         * Which storage class to provision storage volumes
-    
+
     Steps to follow to install ripsaw:
     * Create a project/namespace called `my-ripsaw`
     * Install ripsaw into the `my-ripsaw` project/namespace
@@ -126,8 +126,18 @@ spec:
             spec:
               serviceAccountName: benchmark-operator
               containers:
+                - name: ansible
+                  command:
+                  - /usr/local/bin/ao-logs
+                  - /tmp/ansible-operator/runner
+                  - stdout
+                  image: quay.io/benchmark-operator/benchmark-operator:master
+                  imagePullPolicy: "Always"
+                  volumeMounts:
+                  - mountPath: /tmp/ansible-operator/runner
+                    name: runner
+                    readOnly: true
                 - name: benchmark-operator
-                  # Replace this with the built image name
                   image: quay.io/benchmark-operator/benchmark-operator:master
                   imagePullPolicy: Always
                   env:
@@ -139,10 +149,15 @@ spec:
                       valueFrom:
                         fieldRef:
                           fieldPath: metadata.name
-                    - name: ANSIBLE_VERBOSITY
-                      value: "4"
                     - name: OPERATOR_NAME
                       value: "benchmark-operator"
+                    - name: WORKER_BENCHMARK_RIPSAW_CLOUDBULLDOZER_IO
+                      value: "1"
+                    - name: ANSIBLE_VERBOSITY
+                      value: "4"
+                  volumeMounts:
+                  - mountPath: /tmp/ansible-operator/runner
+                    name: runner
                 - name: redis-master
                   image: k8s.gcr.io/redis:v1
                   env:
@@ -158,6 +173,8 @@ spec:
                       name: data
               volumes:
                 - name: data
+                  emptyDir: {}
+                - name: runner
                   emptyDir: {}
       permissions:
       - serviceAccountName: benchmark-operator
