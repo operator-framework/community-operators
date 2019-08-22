@@ -13,23 +13,6 @@ if [[ ! -d "$OP_PATH" ]]; then
   exit 1
 fi
 export PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
-# This script assumes versions are written as "v0.0.1" in file names and
-# fields, but OP_VER is expected to not include a "v" prefix, ex. "0.0.1".
-# Also support versions with tagged names, ex. "0.3.0-beta1"
-
-if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-  echo "Try detect operator version..."
-  {
-      export OP_VER="$(python3 /scripts/utils/parse-version-and-channels.py -p "$PKG_FILE" -c "$OP_CHANNEL")"
-      >&2 echo "Operator version detected $OP_VER"
-  } || {
-     >&2 echo "Operator version cannot be detected."perator version detected
-  }
-  if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
-    >&2 echo "Operator version not valid."
-    exit 1
-  fi
-fi
 
 export DISTRO_TYPE_UPSTREAM="upstream"
 export DISTRO_TYPE_OPENSHIFT="openshift"
@@ -69,7 +52,7 @@ export SECRET_FILE="${DEPLOY_DIR}/scorecard.secret.yaml"
 export CSV_FILE="$(find "$ABS_BUNDLE_PATH" -name "*${OP_VER}.clusterserviceversion.yaml" -print -quit)"
 export CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
 export CHANNEL_NAME="$(get_channel_name "$PKG_FILE" "$CSV_NAME")"
-export NAMESPACE="$(get_op_namespace "$CSV_FILE" "$PKG_NAME")"
+
 set +u
 if [[ "$REG_IMAGE" ]]; then
   export OP_REGISTRY_IMAGE="${REG_IMAGE}"

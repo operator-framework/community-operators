@@ -1,3 +1,30 @@
 #!/usr/bin/env bash
 rm -rf /tmp/env.conf
-echo "TMP=$(mktemp -d 2>/dev/null || mktemp -d)" > /tmp/env.conf
+
+export PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
+export PKG_NAME="$(yq r "$PKG_FILE" "packageName")"
+
+if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
+  echo "Try detect operator version..."
+  {
+      export OP_VER="$(python3 /scripts/utils/parse-version-and-channels.py -p "$PKG_FILE" -c "$OP_CHANNEL")"
+      >&2 echo "Operator version detected $OP_VER"
+  } || {
+     >&2 echo "Operator version cannot be detected."perator version detected
+  }
+  if [[ -z "$OP_VER" || ! "$OP_VER" =~ $SEMVER_REGEX ]]; then
+    >&2 echo "Operator version not valid."
+    exit 1
+  fi
+fi
+
+export CSV_FILE="$(find "$OP_PATH" -name "*${OP_VER}.clusterserviceversion.yaml" -print -quit)"
+export NAMESPACE=$(python3 /scripts/lib-python/cluster/get-op-namespace.py -o "$PKG_NAME" -c "$CSV_FILE")
+
+# Create a namespace if necessary.
+if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
+  >&2 echo "Creating namespace"
+  kubectl create namespace "$NAMESPACE"
+fi
+
+echo -e "TMP=$(mktemp -d 2>/dev/null || mktemp -d)\nNAMESPACE=$NAMESPACE\nOP_VER=$OP_VER" > /tmp/env.conf
