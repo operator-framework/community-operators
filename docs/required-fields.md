@@ -55,17 +55,17 @@ For the best user experience, choose from the following categories:
 | AI/Machine Learning |
 | Application Runtime |
 | Big Data |
-| Security |
-| Networking |
-| Storage |
-| Integration & Delivery |
-| Database |
 | Cloud Provider |
+| Database |
 | Developer Tools |
+| Integration & Delivery |
 | Logging & Tracing |
-| Streaming & Messaging |
 | Monitoring |
+| Networking |
 | OpenShift Optional |
+| Security |
+| Storage |
+| Streaming & Messaging |
 
 If none of these categories fit your operator, please open a PR against this repo to edit this doc and we will work with you to propagate this change to [operator-courier](https://github.com/operator-framework/operator-courier) so that your operator can get through CI tests.
 
