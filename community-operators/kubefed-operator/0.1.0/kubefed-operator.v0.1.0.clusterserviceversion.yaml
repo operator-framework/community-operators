@@ -5,202 +5,28 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "core.kubefed.k8s.io/v1beta1",
-          "kind": "KubeFedCluster",
-          "metadata": {
-            "name": "cluster-name",
-            "namespace": "<namespace>"
-          },
-          "spec": {
-            "apiEndpoint": "https://172.17.0.2:6443",
-            "secretRef": {
-              "name": "<name-of-secret>"
-            }
-          }
-        },
-        {
-          "apiVersion": "core.kubefed.k8s.io/v1alpha1",
-          "kind": "ClusterPropagatedVersion",
-          "metadata": {
-            "name": "test-propagation"
-            },
-          "spec": {
-            "clusterVersions": {
-               "clusterName": "test-cluster",
-               "version": "0.1.0"  
-                } 
-            }
-        },
-        {
-          "apiVersion": "core.kubefed.k8s.io/v1beta1",
-          "kind": "FederatedTypeConfig",
-          "metadata": {
-            "name": "deployments.extensions"
-          },
-          "spec": {
-            "federatedType": {
-              "group": "types.kubefed.k8s.io",
-              "kind": "FederatedDeployment",
-              "pluralName": "federateddeployments",
-              "version": "v1alpha1"
-            },
-            "namespaced": true,
-            "propagationEnabled": true,
-            "target": {
-              "group": "extensions",
-              "kind": "Deployment",
-              "pluralName": "deployments",
-              "version": "v1beta1"
-            }
-          }
-        },
-        {
-          "apiVersion": "multiclusterdns.kubefed.k8s.io/v1alpha1",
-          "kind": "Domain",
-          "metadata": {
-            "name": "test-domain"
-            },
-          "spec": {
-            "domain": "your.domain.name"
-            }
-        },
-        {
-          "apiVersion": "multiclusterdns.kubefed.k8s.io/v1alpha1",
-          "kind": "ServiceDNSRecord",
-          "metadata": {
-            "name": "test-service"
-            },
-          "spec": {
-            "domainRef": "test-domain",
-            "recordTTL": 300
-            }
-        },
-        {
-          "apiVersion": "federatedservicestatuses.core.kubefed.k8s.io/v1alpha1",
-          "kind": "FederatedServiceStatus",
-          "metadata": {
-            "name": "test-federatedservice-status"
-            },
-          "spec": {
-            "clusterStatus": {
-               "clusterName": "test-cluster", 
-               "status": "cluster-status"
-                }
-            }
-        },
-        {
-          "apiVersion": "multiclusterdns.kubefed.k8s.io/v1alpha1",
-          "kind": "DNSEndpoint",
-          "metadata": {
-            "name": "service-test-service"
-            },
-          "spec": {
-            "endpoints": [
-              {
-                "dnsName": "test-service.test-namespace.test-domain.svc.your.domain.name",
-                "recordTTL": 300,
-                "recordType": "A",
-                "targets": [
-                  "test-cluster"
-                  ]
-              }
-              ]
-            }
-          },
-        {
-          "apiVersion": "multiclusterdns.kubefed.k8s.io/v1alpha1",
-          "kind": "IngressDNSRecord",
-          "metadata": {
-            "name": "test-ingress"
-            },
-          "spec": {
-            "hosts": [
-              "ingress.example.com"
-              ],
-              "recordTTL": 300
-            }
-        },
-        {
-          "apiVersion": "scheduling.kubefed.k8s.io/v1alpha1",
-          "kind": "ReplicaSchedulingPreference",
-          "metadata": {
-            "name": "test-deployment"
-            },
-          "spec": {
-            "targetKind": "FederatedDeployment",
-            "totalReplicas": 10,
-            "rebalance": true,
-            "clusters": {
-              "cluster1": {
-                "weight": 2
-                },
-              "cluster2": {
-                "weight": 3
-                }
-              }
-            }
-        },
-        {
-          "apiVersion": "core.kubefed.k8s.io/v1alpha1",
-          "kind": "PropagatedVersion",
-          "metadata": {
-            "name": "test-propagation"
-            },
-          "spec": {
-            "clusterVersions": {
-               "clusterName": "test-cluster",
-               "version": "0.1.0"  
-                } 
-            }
-        },
-        {
-          "apiVersion": "core.kubefed.k8s.io/v1beta1",
-          "kind": "KubeFedConfig",
-          "metadata": {
-            "name": "test-kubefedconfig"
-            },
-          "spec": {
-            "scope": "Cluster",
-            "leaderElect": {
-              "leaseDuration": "15s",
-              "renewDeadline": "10s",
-              "retryPeriod": "5s"
-              },
-            "featureGates": [
-              {
-                "name": "PushReconciler",
-                "configuration": "Enabled"
-                },
-              {
-                "name": "SchedulerPreferences",
-                "configuration": "Enabled"
-              },
-             {
-               "name": "CrossClusterServiceDiscovery",
-               "configuration": "Enabled"
-              },
-              {
-               "name": "FederatedIngress",
-               "configuration": "Enabled"
-              }
-            ]
-          }
-        },
-        {
           "apiVersion": "operator.kubefed.io/v1alpha1",
           "kind": "KubeFed",
           "metadata": {
-            "name": "kubefed"
+            "name": "kubefed-resource"
             },
           "spec": {
-            "scope": "Namespaced"
+            "scope": "Cluster"
             }
+        },
+        {
+          "apiVersion": "operator.kubefed.io/v1alpha1",
+          "kind": "KubeFedWebHook",
+          "metadata": {
+            "name": "kubefedwebhook-resource"
+            },
+          "spec": {}
         }
       ]
     capabilities: Basic Install
     categories: OpenShift Optional, Integration & Delivery
     certified: "false"
-    containerImage: quay.io/openshift/kubefed-operator:v0.1.0-rc3
+    containerImage: quay.io/openshift/kubefed-operator:v0.1.0-rc6
     createdAt: "2019-06-14T00:00:00Z"
     description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes
       Federation.
@@ -215,62 +41,75 @@ spec:
     - description: ClusterPropagatedVersion holds version information about the state propagated from kubefed APIs
       displayName: ClusterPropagatedVersion
       kind: ClusterPropagatedVersion
-      name: clusterpropagatedversions.core.kubefed.k8s.io
+      name: clusterpropagatedversions.core.kubefed.io
       version: v1alpha1
     - description: DNSEndpoint is the CRD wrapper for Endpoint which is designed to act as a source of truth for external-dns.
       displayName: DNSEndpoint
       kind: DNSEndpoint
-      name: dnsendpoints.multiclusterdns.kubefed.k8s.io
+      name: dnsendpoints.multiclusterdns.kubefed.io
       version: v1alpha1
     - description: Domain is the DNS zone associated with the kubefed control plane
       displayName: Domain
       kind: Domain
-      name: domains.multiclusterdns.kubefed.k8s.io
+      name: domains.multiclusterdns.kubefed.io
       version: v1alpha1
     - description: KubeFedCluster configures kubefed to be aware of a Kubernetes cluster and encapsulates the details necessary to communicate with the cluster.
       displayName: KubeFedCluster
       kind: KubeFedCluster
-      name: kubefedclusters.core.kubefed.k8s.io
+      name: kubefedclusters.core.kubefed.io
       version: v1beta1
     - description: FederatedServiceStatus is the observed status of the resource for a named cluster.
       displayName: FederatedServiceStatus
       kind: FederatedServiceStatus
-      name: federatedservicestatuses.core.kubefed.k8s.io
+      name: federatedservicestatuses.core.kubefed.io
       version: v1alpha1
     - description: FederatedTypeConfig programs kubefed to know about a single API type - the "target type" - that a user wants to federate.
       displayName: FederatedTypeConfig 
       kind: FederatedTypeConfig
-      name: federatedtypeconfigs.core.kubefed.k8s.io
+      name: federatedtypeconfigs.core.kubefed.io
       version: v1beta1
     - description: KubeFedConfig
       displayName: KubeFedConfig 
       kind: KubeFedConfig
-      name: kubefedconfigs.core.kubefed.k8s.io
+      name: kubefedconfigs.core.kubefed.io
       version: v1beta1
-    - description: IngressDNSRecord
+    - description: IngressDNSRecord associates one or more Kubernetes Ingress and how to access the Kubernetes Ingress resources, with a scheme for constructing Domain Name System (DNS) resource records for the Ingress.
       displayName: IngressDNSRecord 
       kind: IngressDNSRecord
-      name: ingressdnsrecords.multiclusterdns.kubefed.k8s.io
+      name: ingressdnsrecords.multiclusterdns.kubefed.io
       version: v1alpha1
     - description: PropagatedVersion
       displayName: PropagatedVersion
       kind: PropagatedVersion
-      name: propagatedversions.core.kubefed.k8s.io
+      name: propagatedversions.core.kubefed.io
       version: v1alpha1
-    - description: ReplicaSchedulingPreference
+    - description: ReplicaSchedulingPreference provides an automated mechanism of distributing and maintaining total number of replicas for deployment or replicaset based federated workloads into federated clusters.
       displayName: ReplicaSchedulingPreference
       kind: ReplicaSchedulingPreference
-      name: replicaschedulingpreferences.scheduling.kubefed.k8s.io
+      name: replicaschedulingpreferences.scheduling.kubefed.io
       version: v1alpha1
-    - description: ServiceDNSRecord
+    - description: ServiceDNSRecord associates one or more Kubernetes Service resources and how to access the Service, with a scheme for constructing Domain Name System (DNS) resource records for the Service.
       displayName: ServiceDNSRecord
       kind: ServiceDNSRecord
-      name: servicednsrecords.multiclusterdns.kubefed.k8s.io
+      name: servicednsrecords.multiclusterdns.kubefed.io
       version: v1alpha1
-    - description: KubeFed
+    - description: KubeFed represents an installation of a particular version of KubeFed
       displayName: KubeFed
       kind: KubeFed
       name: kubefeds.operator.kubefed.io
+      statusDescriptors:
+      - description: The version of KubeFed installed
+        displayName: Version
+        path: version
+      version: v1alpha1
+    - description: KubeFedWebHook represents an installation of a particular version of KubeFed Webhook
+      displayName: KubeFedWebHook
+      kind: KubeFedWebHook
+      name: kubefedwebhooks.operator.kubefed.io
+      statusDescriptors:
+      - description: The version of KubeFed WebHook installed
+        displayName: Version
+        path: version
       version: v1alpha1
   description: |
     Kubernetes Federation is a tool to sync (aka "federate") a set of Kubernetes
@@ -281,74 +120,145 @@ spec:
     quickly get up and running with this powerful concept. Federation is a key
     part of any Hybrid Cloud capability.
 
-    **Important Note**: This operator is purely for prototyping purposes and not
-    supported by any upstream community at this time.
+    **Support**: 
+    
+    The KubeFed operator is purely for prototyping purposes and not
+    supported by any upstream community at this time. Note that at the moment uninstalling the operator doesn't delete the custom resources it reconciles. Users may optionally want to delete the custom resources and the associated CRDs before reinstalling the upgraded version of the operator.
 
 
-    **Important Note**: Currently, while in preview, this operator does not
-    support automatic upgrades. You must remove the old version of the operator
-    manually before installing a new version.
+    ## Start using the operator
 
+    The KubeFed operator supports deploying a KubeFed control plane in both
+    namespace-scoped and cluster-scoped modes. For example, if you subscribe to
+    this package in a namespace `my-namespace`, KubeFed will be deployed to
+    manage objects _only_ in `my-namespace` in the host cluster and target
+    clusters.
+    
+    You must create the `KubeFedWebHook` and `KubeFed` custom resources (CRs) for KubeFed deployment. 
+    The operator will create the following CRDs automatically for deploying components of a `KubeFed` control plane in a given cluster:
+    * KubeFedWebHook
+    * KubeFed  
 
-    ## Using Federation
+    ### KubeFed deployment
+    Follow these steps to deploy a KubeFed control plane:
 
-    This deploys Federation in a namespace-scoped configuration which handles
-    the resources only in the namespace where federation is deployed. For
-    example, if you subscribe to this package in namespace `my-namespace`,
-    federation will be deployed to manage objects _only_ in `my-namespace` in
-    the host cluster and target clusters.
+    * Install the operator by following the instructions in the
+    OpenShift Container Platform 4.1 documentation on [Installing operator](https://docs.openshift.com/container-platform/4.1/applications/operators/olm-adding-operators-to-cluster.html#olm-installing-operators-from-operatorhub_olm-adding-operators-to-a-cluster).
+    The KubeFed operator only needs to be installed in the host cluster for the
+    deployment. It does not need to be installed in each individual target cluster.
 
-    After installing Federation instance, you will use the `kubefedctl` command
-    line tool to do two types of configuration:
-      
-    - Configure federation to connect to your target clusters with `kubefedctl join`
-    - Create new federation APIs for the API types you want to federate with `kubefedctl enable`
+    **Important Notes**: 
 
+    * It's recommended to deploy KubeFed in either a namespace-scoped or
+    cluster-scoped mode but not both ways as deploying a cluster-scoped and
+    namespace-scoped KubeFed control plane to the same cluster will result in
+    both control planes try to manage resources in the namespace of the
+    namespace-scoped control plane and the managed resources will never converge
+    on the desired state. For more information, visit
+    [link](https://github.com/openshift/federation-dev/blob/master/docs/kubefed-scope.md)
+    
+    * A KubeFed control plane does not need to be installed on each cluster that
+    it will manage. Clusters whose resources are intended to be managed by
+    KubeFed need to be registered with the managing control plane, and the
+    control plane will interact with those clusters directly via their API.
 
-    **Important Note**: To add federation capability to your namespace, you are
-    only required to install kubefed in the hosting cluster; there is no need
-    to install kubefed in the target clusters (and no effect gained from
-    doing so).
+    * The instructions in this guide refer to the namespace where KubeFed is
+    installed as `<namespace>` in command examples. The upstream user guide uses
+    `kube-federation-system` as the name of this namespace.
 
+    ```
+    $ kubectl get po -n <namespace>
+      NAME                               READY   STATUS    RESTARTS   AGE
+      kubefed-operator-db58d9b89-8694x   1/1     Running   0          15s
 
-    **Important Note**: The instructions in this guide refer to the namespace
-    where federation is installed as `<namespace>` in command examples. The
-    upstream user guide uses `federation-system` as the name of this namespace.
+    ```
+    * Create a `KubeFedWebHook` resource to instantiate an admission webhook
+    controller for KubeFed.
+    ```
+    $ cat <<-EOF | kubectl apply -n <namespace> -f -
+    ---
+    apiVersion: operator.kubefed.io/v1alpha1
+    kind: KubeFedWebHook
+    metadata:
+      name: kubefed-webhook-resource
+    spec: 
+    ---
+    ```
+    * Create a `KubeFed` resource to drive the installation of a KubeFed control
+    plane setting the scope to be either `Namespaced` or `Cluster`. If you're
+    planning to federate a cluster-scoped resource type like, for example
+    `StorageClass`, create this CR with `scope:Cluster`.
+    
+    ```
+    $ cat <<-EOF | kubectl apply -n <namespace> -f -
+    ---
+    apiVersion: operator.kubefed.io/v1alpha1
+    kind: KubeFed
+    metadata:
+      name: kubefed-resource
+    spec: 
+      scope: Cluster 
+    ---
+    ```
+    ```
+    $ kubectl get po -n <namespace> 
+    NAME                                          READY   STATUS    RESTARTS   AGE
+    kubefed-admission-webhook-77f7bd89dd-92kzj    1/1     Running   0          25s
+    kubefed-controller-manager-67d5d5cc99-5t2fk   1/1     Running   0          25s
+    kubefed-controller-manager-67d5d5cc99-b865z   1/1     Running   0          25s
+    kubefed-operator-db58d9b89-8694x              1/1     Running   0          61s
+    
+    ```
+    ### Installing the KubeFed CLI tool
 
-    ### Get the kubefedctl CLI tool
+    Once the KubeFed control plane is up and running, a user can download the
+    `kubefedctl` command-line tool to communicate with it. You can get the
+    latest release on
+    [GitHub](https://github.com/kubernetes-sigs/kubefed/releases).
 
-    Before you use kubefed, you should ensure that you're using the binary
-    for this version. You can get it from the releases on GitHub.
-
-        curl -Ls https://github.com/kubernetes-sigs/kubefed/releases/download/v0.1.0-rc3/kubefedctl-0.1.0-rc3-linux-amd64.tgz | tar xz
-
+    ```
+     $ curl -Ls https://github.com/kubernetes-sigs/kubefed/releases/download/v0.1.0-rc6/kubefedctl-0.1.0-rc6-linux-amd64.tgz
+     $ tar -xvzf kubefedctl-0.1.0-rc6-linux-amd64.tgz
+     $ chmod u+x kubefedctl
+     $ sudo mv kubefedctl /usr/local/bin/ # make sure the location is in the PATH
+    ```
     ### Joining Clusters
 
-    Use the `kubefedctl join` command to connect clusters you want federation to
-    spread resources to. `kubefedctl join` reads information about how to connect
-    to the joining cluster and the cluster hosting federation from your
-    KUBECONFIG.
+    Use the `kubefedctl join` command to connect clusters you want KubeFed to manage resources in. The `join` operation reads information 
+    about how to connect to the joining cluster and the cluster hosting federation from your local KUBECONFIG.
 
-        kubefedctl join cluster-name \
-          --cluster-context mycluster \            # name of a KUBECONFIG context for the cluster to join
-          --host-cluster-context mycluster \       # name of a KUBECONFIG context for the hosting cluster
-          --kubefed-namespace=<namespace> \        # namespace where federation is deployed
-          -v 2
-    
-    `kubefedctl join` creates `KubeFedCluster` and `Cluster` resources named
-    `cluster-name` to represent the joined cluster.
+    ```
+    $ kubefedctl join <cluster-name> \
+        --cluster-context mycluster \            # name of a KUBECONFIG context for the cluster to join (required when the context name differs from the cluster name)
+        --host-cluster-context mycluster \       # name of a KUBECONFIG context for the hosting cluster (required when the current-context isn't set correctly.)
+        --kubefed-namespace=<namespace> \        # namespace where KubeFed is deployed (required when the kubefed-namespace isn't `kube-federation-system`)
+        -v 2
+    ``` 
+    **Note**:     
+    * If you're using an openshift cluster for deploying the KubeFed operator then
+     use the following command to rename the context to a consumable format.
+     
+     ```
+     $ kubectl config rename-context $(kubectl config current-context) <cluster-name>
+     
+     ```
 
-    `KubeFedCluster` resources pair `Cluster` resources to secrets holding
-    `KUBECONFIG` information that kubefed uses to connect to `Clusters`.
+     `kubefedctl join` creates `KubeFedCluster` resource named `<cluster-name>` to represent the joined cluster.
 
-        kubectl get kubefedclusters -n <namespace>
+     KubeFedCluster resources configure the API endpoint of a registered cluster and reference a local secret containing 
+     the authentication token used to connect to that cluster.
+
+      ```
+      $ kubectl get kubefedclusters -n <namespace>
         NAME            READY     AGE
-        cluster-name    True      7s
-        
-        kubectl get kubefedclusters cluster-name -o yaml                                                                                                                                                                     
+      <cluster-name>    True      7s
+
+      ```
+      ``` 
+      $ kubectl get kubefedclusters cluster-name -o yaml                                                                                                                                                                     
         apiVersion: v1
         items:
-        - apiVersion: core.kubefed.k8s.io/v1beta1
+        - apiVersion: core.kubefed.io/v1beta1
           kind: KubeFedCluster
           metadata:
             creationTimestamp: "2019-06-07T19:42:16Z"
@@ -356,7 +266,7 @@ spec:
             name: cluster1
             namespace: <namespace>
             resourceVersion: "1055"
-            selfLink: /apis/core.kubefed.k8s.io/v1beta1/namespaces/federation-test/kubefedclusters/cluster1
+            selfLink: /apis/core.kubefed.io/v1beta1/namespaces/federation-test/kubefedclusters/cluster1
             uid: 5ac7125d-895c-11e9-b736-0242ac110002
           spec:
             apiEndpoint: https://172.17.0.2:6443
@@ -375,128 +285,21 @@ spec:
         metadata:
           resourceVersion: ""
           selfLink: ""
-    See also the upstream [user guide](https://github.com/kubernetes-sigs/kubefed/blob/master/docs/cluster-registration.md#joining-clusters) for more information.
+      ```
+    For more detailed information on how to use KubeFed, see [KubeFed project documentation](https://github.com/kubernetes-sigs/kubefed/blob/master/docs/userguide.md#user-guide).
 
-    ### Unjoining Clusters
+    ### Useful links
+    * [Kubecon EU-2019](https://www.youtube.com/watch?v=GOiN1R2vQos&t=2461s)
+    * [Blog](https://blog.openshift.com/federation-v2-is-now-kubefed/)
 
-    Use the `kubefedctl unjoin` command to remove a previously joined cluster.
 
-        kubefedctl unjoin mycluster \
-          --host-cluster-context mycluster \       # name of a KUBECONFIG context for the hosting cluster
-          --cluster-context mycluster \            # name of a KUBECONFIG context for the cluster to unjoin
-          --kubefed-namespace=<namespace> \        # namespace where kubefed is deployed
-          -v 2
-
-    This command deletes the `KubeFedCluster` and `Cluster` for the unjoining
-    cluster.
-
-        kubectl get kubefedclusters -n <namespace>
-        No resources found.
+    ### Contribution 
+    If you've got some ideas or use cases for KubeFed operator, we would love to hear them!
+    * Raise issues on [GitHub](https://github.com/openshift/kubefed-operator/issues).
+    * [Join our community](https://github.com/kubernetes/community/tree/master/sig-multicluster#contact)
     
-    ### Enabling federation for new API types
-
-    kubefed allows you to spread any API type to target clusters. Use
-    `kubefedctl enable <API type>` for the API types you want to add federation
-    capability for. Enabling federation for an API type does two things:
-
-    1. Creates a new API type to represent the federation API surface for that type
-
-
-    2. Creates a `FederatedTypeConfig` resource that tells the federation
-      controller to handle the new federation API
-
-
-        kubefedctl enable deployments.extensions \
-          --kubefed-namespace=<namespace>
-    
-    Running this command produces a new CRD in the hosting cluster to be the
-    kubefed API surface for the deployments resource.
-
-        kubectl get crd/federateddeployments.types.kubefed.k8s.io
-        NAME                                           CREATED AT
-        federateddeployments.types.kubefed.k8s.io   2019-05-16T14:18:27Z
-
-    `FederatedTypeConfig` resources configure kubefed to watch the new
-    kubefed API surface created by `kubefedctl enable`.
-
-        kubectl get federatedtypeconfigs -n <namespace>
-        NAME                     AGE
-        deployments.extensions   74s
-
-
-    **Important Note**: Federation of a CRD requires that the CRD be installed
-    on host cluster and all member clusters. If the CRD is not installed on a member cluster,
-    propagation to that cluster will fail.
-
-
-    **Important Note**: You must enable Federation support for Namespaces in
-    this configuration before other types will work. Use `kubefedctl enable
-    namespaces`.
-
-
-    **Important Note**: KubeFed is currently installed **without** any
-    `FederatedTypeConfig` resources created. You must run `kubefedctl enable`
-    operation for each API type you want to add federation capability for.
-
-    See also the upstream [user guide](https://github.com/kubernetes-sigs/kubefed/blob/master/docs/userguide.md#enabling-federation-of-an-api-type) for more information.
-
-    ### Example: federating deployments
-
-    Let's do an example using the `deployments` resource.
-
-        kubectl create -f - <<END
-        apiVersion: types.kubefed.k8s.io/v1alpha1
-        kind: FederatedDeployment
-        metadata:
-          name: hello
-          namespace: <namespace>
-        spec:
-          placement:
-            clusters:
-            - name: cluster-name
-          template:
-            apiVersion: extensions/v1beta1
-            kind: Deployment
-            metadata:
-              name: hello
-            spec:
-              replicas: 1
-              template:
-                metadata:
-                  labels:
-                    app: hello
-                spec:
-                  containers:
-                  - name: hello
-                    image: openshift/hello-openshift:latest
-                    ports:
-                    - containerPort: 80
-        END
-
-    You should be able to see the deployment in the target cluster!
-
-        kubectl get deployments hello -n <namespace> --context=<mycluster>
-        NAME    READY   UP-TO-DATE   AVAILABLE   AGE
-        hello   1/1     1            1           33s
-
-    ### Disabling federation for an API type
-
-    Use the `kubefedctl disable` command to disable federation for an API type.
-
-        kubefedctl disable deployments.extensions --kubefed-namespace=<namespace>
-
-    This will disable the propagation of federated deployments and delete the corresponding  
-    Federated API resource.
-
-      To fully remove the API surface, use the `--delete-crd` flag:
-
-        kubefedctl disable deployments.extensions --kubefed-namespace=<namespace> --delete-crd
-
-        Disabled propagation for FederatedTypeConfig "<namespace>/deployments.extensions"
-        Verifying propagation controller is stopped for FederatedTypeConfig "federation-test/deployments.extensions"
-        Propagation controller for FederatedTypeConfig "<namespace>/deployments.extensions" is stopped
-        customresourcedefinition "federateddeployments.types.kubefed.k8s.io" deleted
-        federatedtypeconfig "<namespace>/deployments.extensions" deleted
+    ### License
+    KubeFed is licensed under the [Apache License, Version 2.0](https://github.com/kubernetes-sigs/kubefed/blob/master/LICENSE) license.
   displayName: Kubefed Operator
   icon:
   - base64data: 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
@@ -526,7 +329,7 @@ spec:
           - list
           - update
         - apiGroups:
-          - scheduling.kubefed.k8s.io
+          - scheduling.kubefed.io
           resources:
           - '*'
           verbs:
@@ -535,7 +338,7 @@ spec:
           - list
           - update
         - apiGroups:
-          - multiclusterdns.kubefed.k8s.io
+          - multiclusterdns.kubefed.io
           resources:
           - '*'
           verbs:
@@ -546,7 +349,7 @@ spec:
           - update
           - delete
         - apiGroups:
-          - core.kubefed.k8s.io
+          - core.kubefed.io
           resources:
           - '*'
           verbs:
@@ -556,7 +359,7 @@ spec:
           - create
           - update
         - apiGroups:
-          - types.kubefed.k8s.io
+          - types.kubefed.io
           resources:
           - '*'
           verbs:
@@ -581,6 +384,83 @@ spec:
           - create
           - update
           - patch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - watch
+          - list
+          - update
+          - create
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - get
+          - watch
+          - list
+        - apiGroups:
+          - admission.core.kubefed.io
+          resources:
+          - "*"
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - "*"
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - "*"
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - create
+          - update
+        - apiGroups:
+          - "mutation.core.kubefed.io"
+          resources:
+          - kubefedconfigs
+          verbs:
+          - get
+          - list
+          - create
+          - update
+        - apiGroups:
+          - "validation.core.kubefed.io"
+          resources:
+          - kubefedconfigs
+          - federatedtypeconfigs
+          - kubefedclusters
+          verbs:
+          - get
+          - list
+          - create
+          - update
         serviceAccountName: kubefed-operator
       deployments:
       - name: kubefed-operator
@@ -599,22 +479,25 @@ spec:
               - args:
                 - --filename=$(FILE_NAME)
                 - --recursive=true
+                - --webhookfilename=$(WEBHOOK_FILE_NAME)
                 command:
                 - kubefed-operator
                 env:
                 - name: FILE_NAME
-                  value: "deploy/resources"
+                  value: "deploy/resources/controller"
+                - name: WEBHOOK_FILE_NAME
+                  value: "deploy/resources/webhook"
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
-                      fieldPath: metadata.namespace
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: kubefed-operator
-                image: quay.io/openshift/kubefed-operator:v0.1.0-rc3
+                image: quay.io/openshift/kubefed-operator:v0.1.0-rc6
                 imagePullPolicy: Always
                 name: kubefed-operator
                 resources: {}
@@ -661,9 +544,62 @@ spec:
         - apiGroups:
           - operator.kubefed.io
           resources:
-          - '*'
+          - kubefedwebhooks/finalizers
+          - kubefedwebhooks/status
+          - kubefeds/status
+          - kubefeds/finalizers
+          - kubefeds
+          - kubefedwebhooks
           verbs:
           - '*'
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - watch
+          - list
+          - update
+          - create
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - get
+          - watch
+          - list
+        - apiGroups:
+          - admission.core.kubefed.io
+          resources:
+          - "*"
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - "*"
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - "*"
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
         serviceAccountName: kubefed-operator
     strategy: deployment
   installModes:
