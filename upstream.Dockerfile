@@ -15,4 +15,4 @@ COPY --from=builder /build/bin/registry-server /registry-server
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
 EXPOSE 50051
 ENTRYPOINT ["/registry-server"]
-CMD ["--database", "bundles.db"]
+CMD ["--database", "/bundles.db"]
