@@ -1,0 +1,166 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: prestotables.metering.openshift.io
+spec:
+  group: metering.openshift.io
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+  scope: Namespaced
+  names:
+    plural: prestotables
+    singular: prestotable
+    kind: PrestoTable
+  additionalPrinterColumns:
+  - name: Table Name
+    type: string
+    JSONPath: .status.tableName
+  validation:
+    openAPIV3Schema:
+      description: |
+        PrestoTable is a custom resource that represents a database table accessible from within Presto.
+        When a PrestoTable resource is created, the reporting-operator creates a table within Presto according
+        to the configuration provided, or exposes an existing table.
+        More info: https://prestosql.io/docs/current/index.html
+      required:
+      - spec
+      properties:
+        spec:
+          type: object
+          description: |
+            PrestoTableSpec is the desired specification of a PrestoTable custom resource.
+            Required fields: unmanaged, catalog, schema, tableName, and columns.
+            Optional fields: query, view, createTableAs, properties, and comment.
+            More info: https://github.com/operator-framework/operator-metering/blob/master/Documentation/prestotables.md
+          required:
+          - unmanaged
+          - catalog
+          - schema
+          - tableName
+          - columns
+          properties:
+            unmanaged:
+              type: boolean
+              description: |
+                Unmanaged indicates whether a PrestoTable resource is referencing an existing table,
+                and if set to true, the operator should not attempt to create or manage that table within Presto.
+            catalog:
+              type: string
+              description: |
+                Catalog specifies which catalog the Presto table is to be created within.
+                In many cases, the catalog will be set to "hive".
+                More info: https://prestosql.io/docs/current/overview/concepts.html#catalog
+              minLength: 1
+            schema:
+              type: string
+              description: |
+                The schema within the Presto catalog for the table to created in,
+                or the schema the table should exist in if unmanaged.
+                If the catalog is `hive` then there will always be at least the `default` schema.
+                More info: https://prestosql.io/docs/current/overview/concepts.html#schema
+              minLength: 1
+            tableName:
+              type: string
+              description: |
+                TableName is the desired name of the table to be created in Presto,
+                or in the case where "unmanaged" is set to false, the name of an existing table within Presto.
+                More info: https://prestosql.io/docs/current/overview/concepts.html#table
+              minLength: 1
+            columns:
+              type: array
+              description: |
+                A list of columns that match the schema of the PrestoTable.
+                For each list item, you must specify a `name` field, which is the name of an individual column for the Presto table,
+                and a `type` field, which corresponds to a valid type in Presto.
+                More info: https://prestosql.io/docs/current/language/types.html
+              items:
+                type: object
+                required:
+                - name
+                - type
+                properties:
+                  name:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+            properties:
+              type: array
+              description: |
+                Properties is a map containing string key and value pairs. Each key-value pair is a table property for
+                configuring the table. The available properties depend on the "catalog" being used.
+                Note: this is an optional field.
+            comment:
+              type: string
+              description: |
+                Sets a comment on the Presto table. Comments are just arbitrary strings that have no meaning to Presto,
+                but can be used to store arbitrary information about a table.
+                Note: this is an optional field.
+              minLength: 1
+            view:
+              type: boolean
+              description: |
+                View controls whether the reporting-operator needs to create a view within Presto.
+                If true, the reporting-operator uses the "query" field as the SELECT statement for creating the view.
+                Note: this is an optional field.
+            createTableAs:
+              type: boolean
+              description: |
+                CreateTableAs controls whether the reporting-operator needs to create a table within Presto.
+                If true, the reporting-operator uses the "query" field as the SELECT statemtnt for creating the table.
+                Note: this is an optional field.
+            query:
+              type: string
+              description: |
+                Query is a string containing a SQL SELECT query used for creating a table or view.
+                Note: this is an optional field.
+                More info: https://prestosql.io/docs/current/overview/concepts.html#query
+              minLength: 1
+          oneOf:
+          - required:
+            - createTableAs
+            - query
+            properties:
+              createTableAs:
+                enum:
+                - true
+              unmanaged:
+                enum:
+                - false
+            allOf:
+            - not:
+                required:
+                - view
+          - required:
+            - view
+            - query
+            properties:
+              view:
+                enum:
+                - true
+              unmanaged:
+                enum:
+                - false
+            allOf:
+            - not:
+                required:
+                - createTableAs
+          - properties:
+              unmanaged:
+                enum:
+                - true
+            allOf:
+            - not:
+                required:
+                - view
+            - not:
+                required:
+                - createTableAs
+
