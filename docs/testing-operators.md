@@ -111,23 +111,30 @@ If there is no output, the bundle passed `operator-courier` validation. If there
 
 ### Push to quay.io
 
-The Operator metadata in its bundle format will be uploaded into your namespace in [quay.io](http://quay.io).
+**NOTE:** This step is not required if the image used in the CSV is published in the [quay.io](http://quay.io) already. 
 
-The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/*.package.yaml`.
+The Operator metadata in its bundle format will be uploaded into your namespace in [quay.io](http://quay.io). Following the steps to build the operator image and push it to the [quay.io](http://quay.io) registry.
 
-The `PACKAGE_VERSION` is entirely up for you to decide. The version is independent of the Operator version since your bundle will contain all versions of your Operator metadata files. If you already uploaded your bundle to Quay.io at an earlier point, make sure to increment the version.
+1. Export the following local environment variables
+```
+$export OPERATOR_DIR=my-operator/
+$export QUAY_NAMESPACE=johndoe
+$export PACKAGE_NAME=my-operator
+$export PACKAGE_VERSION=1.0.0
+$export TOKEN=$QUAY_TOKEN
+```
+
+**NOTES**
+* The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/olm-catalog/postgresql-operator/*.package.yaml`.
+* The `PACKAGE_VERSION` is entirely up for you to decide. The version is independent of the Operator version since your bundle will contain all versions of your Operator metadata files. If you already uploaded your bundle to Quay.io at an earlier point, make sure to increment the version.
+
+2. Run the following command
 
 ```
-OPERATOR_DIR=my-operator/
-QUAY_NAMESPACE=johndoe
-PACKAGE_NAME=my-operator
-PACKAGE_VERSION=1.0.0
-TOKEN=$QUAY_TOKEN
-
 operator-courier push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
 ```
 
-Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab. If the application has a lock icon, click through to the application and its Settings tab and select to make the application public.
+Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab in the [quay.io](http://quay.io) registry. If the application has a lock icon, click through to the application and its Settings tab and select to make the application public. 
 
 Your Operator bundle is now ready for testing. To upload subsequent versions, bump semver string in the `PACKAGE_VERSION` variable, as `operator-marketplace` always downloads the newest bundle according to [semantic versioning](https://semver.org/).
 
