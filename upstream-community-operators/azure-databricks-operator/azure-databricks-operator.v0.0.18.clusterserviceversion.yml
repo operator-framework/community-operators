@@ -1,0 +1,452 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: azure-databricks-operator.v0.0.18
+  namespace: placeholder
+  annotations:
+    categories: "AI/Machine Learning"
+    capabilities: Basic Install
+    repository: https://github.com/microsoft/azure-databricks-operator
+    certified: "false"
+    description: Communicate with databricks
+    containerImage: mcr.microsoft.com/k8s/azure-databricks/operator:0f722a710fea06b86ecdccd9455336ca712bf775
+    createdAt: 2019-09-16T12:00:00Z
+    support: Microsoft
+    alm-examples: |-
+      [
+        {
+        "apiVersion": "databricks.microsoft.com/v1",
+        "kind": "DbfsBlock",
+        "metadata": {
+          "name": "dbfsblock-sample"
+        },
+        "spec": {
+          "path": "/dbfsblock-sample",
+          "data": "ZGF0YWJyaWNrcwo="
+        }},
+       {
+        "apiVersion": "databricks.microsoft.com/v1",
+        "kind": "Dcluster",
+        "metadata": {
+          "name": "dcluster-sample"
+        },
+          "spec": {
+            "spark_version": "5.3.x-scala2.11",
+            "node_type_id": "Standard_D3_v2",
+            "autoscale": {
+              "min_workers": 2,
+              "max_workers": 5
+              }}
+        },
+        {
+        "apiVersion": "databricks.microsoft.com/v1",
+        "kind": "Djob",
+        "metadata": {
+          "name": "djob-sample"
+        },
+        "spec": {
+          "new_cluster": {
+            "spark_version": "5.3.x-scala2.11",
+            "node_type_id": "Standard_D3_v2",
+            "num_workers": 10
+          },
+          "libraries": [
+            {
+              "jar": "dbfs:/my-jar.jar"
+            },
+            {
+              "maven": {
+                "coordinates": "org.jsoup:jsoup:1.7.2"
+              }
+            }
+          ],
+          "timeout_seconds": 3600,
+          "max_retries": 1,
+          "schedule": {
+            "quartz_cron_expression": "0 15 22 ? * *",
+            "timezone_id": "America/Los_Angeles"
+          },
+          "spark_jar_task": {
+            "main_class_name": "com.databricks.ComputeModels"
+          }}
+        },
+        {
+          "apiVersion": "databricks.microsoft.com/v1",
+          "kind": "Run",
+          "metadata": {
+            "name": "run-sample"
+          },
+          "spec": {
+            "new_cluster": {
+              "spark_version": "5.3.x-scala2.11",
+              "node_type_id": "Standard_D3_v2",
+              "num_workers": 10
+            },
+            "libraries": [
+              {
+                "jar": "dbfs:/my-jar.jar"
+              },
+              {
+                "maven": {
+                  "coordinates": "org.jsoup:jsoup:1.7.2"
+                }
+              }
+            ],
+            "spark_jar_task": {
+              "main_class_name": "com.databricks.ComputeModels"
+            }}
+        },
+        {
+          "apiVersion": "databricks.microsoft.com/v1",
+          "kind": "SecretScope",
+          "metadata": {
+            "name": "secretscope-sample"
+          },
+          "spec": {
+            "initial_manage_principal": "users",
+            "secrets": [
+              {
+                "key": "string-secret",
+                "string_value": "helloworld"
+              },
+              {
+                "key": "byte-secret",
+                "byte_value": "aGVsbG93b3JsZA=="
+              },
+              {
+                "key": "secret-key2",
+                "value_from": {
+                  "secret_key_ref": {
+                    "name": "mysecret",
+                    "key": "username"
+                  }
+                }
+              }
+            ],
+            "acls": [
+              {
+                "principal": "azkhojan@microsoft.com",
+                "permission": "READ"
+              }]}
+        },
+        {
+          "apiVersion": "databricks.microsoft.com/v1",
+          "kind": "WorkspaceItem",
+          "metadata": {
+            "name": "workspaceitem-sample"
+          },
+          "spec": {
+            "content": "MSsx\n",
+            "path": "/ScalaExampleNotebook",
+            "language": "SCALA",
+            "overwrite": true,
+            "format": "SOURCE"
+          }}
+      ]
+    
+spec:
+  displayName: Azure Databricks operator
+  description: >
+    
+    Before running this operator, you will need to create a Secret that contains
+    your `DatabricksHost` and `DatabricksToken`.
+    
+    kubectl --namespace <NAMESPACE> \
+    create secret generic dbrickssettings \
+    --from-literal=DatabricksHost="https://xxxx.azuredatabricks.net" \
+    --from-literal=DatabricksToken="xxxxx"
+
+    If you add the secret after installing the operator you need to delete the manager pod.
+
+    Azure Databricks operator uses the Databricks REST API 2.0 supports of a variety of services.
+    
+  keywords: ['azure', 'databricks', 'spark', 'microsoft']
+  version: 0.0.18
+  maturity: alpha
+  maintainers:
+  - name: azadeh khojandi
+    email: azkhojan@microsoft.com
+  - name: Austrlia Dev Crews (CSE)
+    email: csedevcrewsaust@microsoft.com
+  - name: Xinyun Zhou
+    email: Jacob.Zhou@team.telstra.com
+  provider:
+    name: Microsoft
+  labels:
+    name: azure-databricks-operator
+  selector:
+    matchLabels:
+      name: azure-databricks-operator
+  links:
+  - name: dbricks Operator Source Code
+    url: https://github.com/microsoft/azure-databricks-operator
+  - name: Azure Databricks Quickstart
+    url: https://docs.azuredatabricks.net/getting-started/quick-start.html
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAIAAAC1nk4lAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjEuNv1OCegAAAieSURBVGhD7Zj7WxTXGcf7ZyQmugvGitqmUaOChvDEqnhNEA0qkkgu2rSJikpUlEQreazSeCFWE8FLo9JGvEQSK9oYrZjGaoE1IkIUURR29sbsdXZ2di70O3uGZfewXEyfXZ88D9/n+8Pu7JlzPufMe973zP6i/WeofuhYqR86Vno0aMVhbZcl7cvjU1+hgesv28a/9axQ+IZ8v65dUbQfHof6AC36xQtf8O887104WPPrQ/371ikOi9Yg5uoRWhIlw0V+dWonbqiXjBJP7Va8Lq1xDNUdtCI31fo+yvRmDaFZw80vS5YqT2B62n0xUQRoxdoqfJqLGKD4uvczvg/S5Jvfa/dHX2HQipsVv9zFLxnZBasPfm2IsGu53Fyv9RVNdUALvHTpOP9uEo3yqM4e5j9UoLAmrdvoSIUW7zXwa2fgKdMEP9X84uf854+SAaIhFdryt0N1o/VtafHeTHr4n2DPvHjbxKctmZPJANFQALr0UNVQXXWC7nai3jE3noLou7kF8WzqQOb5J40jn7AsiAk0cfUw3b0UvXs+DdSrHTN1prEqLnFMoYl/+LWuZXKcZwFNFtGuNL15woAgboyg2TNfV48YTHHDtc/pzDPiuO4D3T03zpryFIVL3LYimwwQDanQOP14DNX1GWlVCXqKG64fo2dn04GO3dY2aaBxFM0Kmyb+ynOkWPH7A/1HRQHogBRRbPv6VO2k5K7o2KONE/TOV1V07Db7tEHMmM7wDZp54RlnYb7sYLUeo6ZOaCKxqa4lI9EwIgyauGa47n6yzjQuAi6W3PrSIN9XB2Jz2g5ZaY/Df3CDN3s4ltOVEd/0or4qgeauHT6Qxh35hHn8ANdsvRo2WUN8BQvkphtaj1FTAJrnxDP7+T8kkngNmk2P/zExDJ2CNo0bYJ+po0vSogR/SZ5ieRjoPypSodkTpa2p3SY4y6x41EsKGjHNTh2E+KYaE2Ph2SUzyQC9ShCVypveDUfYT8rtd42CdrVHqdAkTyPBWV+ODIGsh1kheavQavg+jexBtSH2ZMThV8yqL3lalJRLN7xZheaxy4xjlqpOXG7ceJhtNPaSeTqhiRvG6e3p3QDNH8xM0SM3U9eJufnx7OSBzGgtcnqG5nzy2SrPnI/MYwOslJNyjLn72uofCJKstadEQ8Oo5Ehw2IsUVnfGc7BPp5Ngd9AeXj7xnfvlDWYKdNJaZvwKJvQKVv13n1gNjbwk0y/REaCJkeCaJ8ZxvVVy5yuRk2BXaK9P3nvGOWWdKZQs6O/qvLnFVuoijMjJ2mpBFIW+/qvQAmNs/jCv5tlfUtzwjd/ojFMjV3JXut6SHKmGj3rS+voM37XLZACiRqOQuj5sISmfvsq9sd1CXQz1sk9t2AOkNxWaiLtVd2dxdtWwOIobRvawzuqMFs+rcTbstkg13DwrkTv1dxRXrdMO/bGUpSCCTnmfWfSxtfaesLfCNafAPG453SDo63d9pLdOaFWK7Lh4vm5WKgWtOkGHnG2fHTgxd+y2UJtSElx7ChXeq3UVIr+kzCnQVjFtk/mDQyxJFxPXMPvPudy8HHz0CN/brUJuiY00/u0aZtsJNjiNkrPa3xXh0AEpgmA+fPBGSiLNPVR3M1JFZJLi7PlLJZNRu7+LbE4peZUWG/P/ZGky+YvPOBf92WxsExHoZ6u51ftZj08+b/AWHrPXP/DJslJxzTNvs/n6Xf4bAxeE/v0uG+kwAjSR5Ha17vzYMGpEKDRdxkc/ZXsnQ2y63fO/ZNV3eDIq8Qsrjd8aOCyqwyMt3Ko+gfE5DMcjCXL4jHy3q9yB/gRRzjvQFkzh8LR8E+9Xs2C30EQC09qUu7y6I9BDoS1zU3xX/tUud5NLQ7TvrCs4MPF5A6coCla09IILlIgTn1+prFXnhrCuve8DNGaFzRd61/gVxmaLWnd6gSZy11Tdzs6sSogj0OapI7ljnyOKtJ970+KdYbksvcCMPLCr3F5+xQ24umbfjpN25OJWm1h0yuHkZLdXXv9XtbiAPnSl4dPXOHTYJ2hIkST7N+eaMtNce7bKLqd2tQ9C8Ut5Pyw3byplcREJG0AIbqy31jQgi0Mik9x81I5jyeS8sHvXf64e1vsKrakPwUCprlkIHRU+/K2bYcWkFfjcOj2fMdtFBydnFVq3n3Sg/bHLbrJr395pQQi9VhiWvF/ZaELYPCL0o+v4ZXfoqPAXFz2sWyoqd9Tc8fpFdZmxujM+NK/Z34bP+O7i5HPV3L5zLqVdeXN7WGhhA1gcYtSh1x7QNlNijnFlsa2o3GlzqpsJEdJiE6828Nd+5PHVKygIdGSMiirPD00CpkHmc7XBu6XMnr2tE73yJh9daJQVFAgy2MwNJsNdvvC4AzGNON5SplWN3BJ1gZH+0BgzSV6lXkzKYWoa+Rab/73d1sMXXF/9xx3ckZ/9wxVdaMTfvM30iQLDX6nnsZZT8hh8xlGJF+T0AlNRuR23YEpos3KvDfduPBKh+B+95Il6eKDCvZhLH5WAiDMqklrOZzYscFmlmsixxi1WP2JjVXEb55NQkhDBoXfBb223YIZRh4Yq/uvpegx6b7fN5cVqIo6VN7dZknOZl1YzSCwIZARPw0Nf10Ps9HwTdiE6jAU0EvGOLx0UAYz8JUoyaiEaYNthyVFr8AFrjFJPNcbjqmmMeMqLmpAZlu4Jq8nwkiLr97e4afkMXq52n3ZiYm/vsOI0cuuBEDxgEeMt5uS/3VpfMYOGPLyUvqnzLQvxet/kX3cwwlZDkj7wT2folcIye+iRLHbQEHYeApdwIG8gRUzoEgYwwiZra+f03v2L1Rc43AUVU2gIh9Ie3k26GhNActRu7lCsofGQSyrCHn0PxuarfxjhLBlraEiSFLyhzC0w4+jcgxdusVy4HuHlDXoM0ESipKaUHtzdPzXQY4P+f9QPHSv1Q8dK/dCx0s8Qur39f0O7iGMbAhr6AAAAAElFTkSuQmCC
+    mediatype: image/png
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: azure-databricks-operator
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - "*"
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - dbfsblocks
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - dbfsblocks/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - dclusters
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - dclusters/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - djobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - djobs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - runs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - runs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - secretscopes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - secretscopes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - workspaceitems
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - databricks.microsoft.com
+          resources:
+          - workspaceitems/status
+          verbs:
+          - get
+          - patch
+          - update
+      deployments:
+      - name: azure-databricks-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              serviceAccountName: azure-databricks-operator
+              containers:
+              - args:
+                - --enable-leader-election
+                command:
+                - /manager
+                image: mcr.microsoft.com/k8s/azure-databricks/operator:0f722a710fea06b86ecdccd9455336ca712bf775
+                env:
+                - name: DATABRICKS_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabricksHost
+                      name: dbrickssettings
+                - name: DATABRICKS_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabricksToken
+                      name: dbrickssettings
+                name: manager
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 30Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+              terminationGracePeriodSeconds: 10
+  customresourcedefinitions:
+    owned:
+    - name: dbfsblocks.databricks.microsoft.com
+      version: v1
+      kind: DbfsBlock
+      displayName: DbfsBlock
+      description: DbfsBlock
+    - name: dclusters.databricks.microsoft.com
+      version: v1
+      kind: Dcluster
+      displayName: Azure Databricks cluster
+      description: Manage clusters, a cluster is a collection of Azure Databricks computation resources
+    - name: djobs.databricks.microsoft.com
+      version: v1
+      kind: Djob
+      displayName: Azure Databricks job
+      description: Manage jobs, a job is a way of running a notebook or JAR either immediately or on a scheduled basis
+    - name: runs.databricks.microsoft.com
+      version: v1
+      kind: Run
+      displayName: Azure Databricks run
+      description: Manage runs, Submit a one-time run and directly submit your workload. This doesn’t require a Databricks job to be created. 
+    - name: secretscopes.databricks.microsoft.com
+      version: v1
+      kind: SecretScope
+      displayName: Azure Databricks SecretScope
+      description: Manage secrets, secret scopes, and access permissions.
+    - name: workspaceitems.databricks.microsoft.com
+      version: v1
+      kind: WorkspaceItem
+      displayName: Azure Databricks Workspace
+      description: Manage Workspaces,a Workspace is an environment for accessing all of your Azure Databricks assets. A Workspace organizes notebooks, libraries, dashboards, and experiments into folders and provides access to data objects and computational resources
