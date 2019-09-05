@@ -77,6 +77,8 @@ make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VERBOS
  
 ` OP_PATH ` - relative path to your operator which is required
 
+` CLEAN_MODE ` - define how tooling clear your operators and pods, `FORCE` - clear whole namespace no matter what, `NONE` - don't clear anything, `NORMAL` - clear it if your test passed, if something failed namespace with all pods and configs will be stay for debugging
+ 
 ` VERBOSE ` - enable logging
 
 ## Troubleshooting

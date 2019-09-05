@@ -7,9 +7,10 @@
 # OLM in a local cluster, and runs the SDK scorecard against the operator.
 set -e
 
-. ./scripts/ci/env
+cd /
+. /scripts/ci/env
 KUBECONFIG=~/.kube/config
-
+export_color
 
 #trap_add_exit "rm -rf $TMP"
 set -u
@@ -18,34 +19,37 @@ set -u
 export DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
 declare -A OBJECTS
 
-export OBJECTS=(
+OBJECTS=(
   ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
   ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
   ["csv"]="$CSV_NAME"
   ["deployment"]="$DEP_NAME"
 )
 
-echo "Apply OPERATOR GROUP file"
 if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
-    export OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
+    printf "    Apply OPERATOR GROUP file %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+    OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
 fi
 
->&2 echo "Applying object to cluster"
+printf "    Applying object to cluster %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
 
 apply_objects_incluster "$DEPLOY_DIR"
-# Clean up all created resources, CSV, and CRD's.
-echo "Setup trap on exit"
+printf "    Applying object to cluster %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
 
->&2 echo "Checking subscriptions if passes"
+printf "    Checking subscriptions if passes %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
 # Check that subscription is picked up
 check_subscription_passes "${PKG_NAME}-sub" "$NAMESPACE" "$PKG_NAME"
 
 # Wait for csv, then check that clusterserviceversion has Succeeded
 sleep 6
->&2 echo "Checking csv if passes"
-check_csv_passes "$CSV_NAME" "$NAMESPACE"
+printf "    Checking subscriptions if passes %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
 
->&2 echo "Waiting for deployment"
+printf "    Checking csv if passes %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+check_csv_passes "$CSV_NAME" "$NAMESPACE" "$INSTALL_MODE"
+printf "    Checking csv if passes %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+
+printf "    Waiting for deployment %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
 # Wait for the deployment specified in the CSV to rollout successfully.
 wait_on_deployment "$DEP_NAME" "$NAMESPACE"
 
+printf "    Waiting for deployment %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2

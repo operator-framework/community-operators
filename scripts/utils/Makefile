@@ -1,10 +1,11 @@
 .PHONY: help
-SDK_VER="v0.6.0"
+SDK_VER="v0.10.0"
 KUBE_VER="v1.13.0"
 MAKEFLAGS+ = --no-print-directory
 OP_PATH=''
 OP_CHANNEL=''
 NAMESPACE=''
+INSTALL_MODE=''
 OK=\033[0;32m
 WARN=\033[0;33m
 ERR=\033[0;31m
@@ -74,10 +75,7 @@ operator.registry.build: check_path ## Build registry image
 operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/make-tmp
 	@make operator.verify
-	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
-	@scripts/ci/run-script "scripts/ci/build-registry-image" "Make registry configmap"
-	@scripts/ci/run-script "scripts/ci/operator-test" "Operator deployment"
-	@scripts/ci/run-script "scripts/ci/scorecard" "Test operator with scorecard"
+	@scripts/ci/testscript-wrapper
 
 operator.verify: check_path ## Run only courier
 	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator" "false"

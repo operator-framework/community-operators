@@ -12,6 +12,7 @@ def randomString(stringLength=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
+
 def main(argv):
     csv_file = None
     operator = None
@@ -34,14 +35,8 @@ def main(argv):
     namespace = ''
     if len(install_modes) > 0:
         for mode in install_modes:
-            if mode.get('supported') and mode.get('type') in ['OwnNamespace', 'SingleNamespace']:
+            if mode.get('supported') and mode.get('type') in ['OwnNamespace', 'SingleNamespace', 'AllNamespaces']:
                 namespace = '{}-{}'.format(operator, randomString(5))
-                break
-            elif mode.get('supported') and mode.get('type') in ['MultiNamespace']:
-                namespace = 'operators'
-                break
-            elif mode.get('supported') and mode.get('type') in ['AllNamespaces']:
-                namespace = 'operators'
                 break
     else:
         print('Problem with parsing installModes')

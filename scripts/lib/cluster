@@ -71,6 +71,7 @@ function check_subscription_passes() {
 function check_csv_passes() {
   local csv="$1"
   local namespace="$2"
+  local installmode="$3"
   local retries=30 # 1 minute timeout
 
   echo "Check that clusterserviceversion \"$csv\" status is set to \"Succeeded\""
@@ -87,6 +88,25 @@ function check_csv_passes() {
       fi
       echo "clusterserviceversion phase for \"$csv\": `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase`"
   done
+
+  if [[ "$installmode" == "AllNamespaces" ]]; then
+      echo "Check that clusterserviceversion \"$csv\" in second namespace status is set to \"Succeeded\""
+      local retries=30
+
+      while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=operators -o json | jq .status.phase` == \"Succeeded\" ]]; do
+          sleep 6
+          retries=$((retries - 1))
+          if [[ $retries == 0 ]]; then
+            >&2 echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\" in operators namespace"
+            # Print out CSV's 'status' section on error
+            kubectl get "clusterserviceversion/${csv}" --namespace=operators -o jsonpath="{.status}"
+            # Check operator pod(s) logs
+            get_operator_logs "$csv" "operators"
+            exit 1
+          fi
+          echo "clusterserviceversion phase for \"$csv\": `kubectl get "clusterserviceversion/${csv}" --namespace=operators -o json | jq .status.phase`"
+      done
+  fi
 
   echo "Successfully installed clusterserviceversion \"$csv\" in namespace \"$namespace\""
 }
@@ -141,7 +161,17 @@ function delete_objects_incluster() {
 
 function delete_namespace() {
     local namespace="$1"
-    kubectl delete namespace "$namespace"
+    local cleanmode="$2"
+    local OK="\033[0;32m"
+    local WARN="\033[0;33m"
+
+    if [[ "$cleanmode" == "FORCE" ]]; then
+      printf "Deleting namespace %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2;
+    fi
+    kubectl delete namespace "$namespace" >/dev/null
+    if [[ "$cleanmode" == "FORCE" ]]; then
+      printf "Deleting namespace %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+    fi
 }
 
 function log_operator_state() {
