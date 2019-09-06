@@ -1,11 +1,45 @@
 # Testing your Operator with Operator Framework
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*-->
+
+- [Overview](#overview)
+- [Pre-Requisites](#pre-requisites)
+  - [Kubernetes cluster](#kubernetes-cluster)
+  - [Repositories](#repositories)
+  - [Tools](#tools)
+    - [operator-courier](#operator-courier)
+    - [Quay Login](#quay-login)
+  - [Linting](#linting)
+  - [Push to quay.io](#push-to-quayio)
+- [Testing Operator Deployment on Kubernetes](#testing-operator-deployment-on-kubernetes)
+  - [1. Get a Kubernetes cluster](#1-get-a-kubernetes-cluster)
+  - [2. Install OLM](#2-install-olm)
+  - [3. Install the Operator Marketplace](#3-install-the-operator-marketplace)
+  - [4. Create the OperatorSource](#4-create-the-operatorsource)
+  - [5. View Available Operators](#5-view-available-operators)
+  - [6. Create an OperatorGroup](#6-create-an-operatorgroup)
+  - [7. Create a Subscription](#7-create-a-subscription)
+  - [8. Verify Operator health](#8-verify-operator-health)
+- [Testing Operator Deployment on OpenShift](#testing-operator-deployment-on-openshift)
+  - [1. Create the OperatorSource](#1-create-the-operatorsource)
+  - [2. Find your Operator in the OperatorHub UI](#2-find-your-operator-in-the-operatorhub-ui)
+  - [3. Install your Operator from OperatorHub](#3-install-your-operator-from-operatorhub)
+  - [4. Verify Operator health](#4-verify-operator-health)
+- [Testing with scorecard](#testing-with-scorecard)
+- [Additional Resources](#additional-resources)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Overview
+
 These instructions walk you through how to test if your Operator deploys correctly with Operator Framework. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
 
 The process below assume that you have an Kubernetes Operator in the Operator Framework *bundle* format, for example:
 
-```
-$ ls my-operator/
+```sh
+$ ls my-operator-bundle/
 my-operator.v1.0.0.clusterserviceversion.yaml
 my-operator-crd1.crd.yaml
 my-operator-crd2.crd.yaml
@@ -13,25 +47,6 @@ my-operator.package.yaml
 ```
 
 where *my-operator* is the name of your Operator. If you don't have this format yet, refer to our [contribution documentation](./contributing.md). We will refer to this example of `my-operator` in the following instructions.
-
-# Table of Contents
-
-[Pre-Requisites](#pre-requisites)
-* [Kubernetes Cluster](#kubernetes-cluster)
-* [Repositories](#repositories)
-* [Tools](#tools)
-    * [operator-courier](#operator-courier)
-    * [Quay Login](#quay-login)
-* [Linting](#linting)
-* [Push to Quay.io](#push-to-quayio)
-
-[Testing on Kubernetes](#testing-operator-deployment-on-kubernetes)
-
-[Testing on OpenShift](#testing-operator-deployment-on-openshift)
-
-[Testing with `scorecard`](#testing-with-scorecard)
-
-[Additional Ressources](#additional-resources)
 
 ## Pre-Requisites
 
@@ -60,13 +75,13 @@ git clone https://github.com/operator-framework/operator-courier.git
 git clone https://github.com/operator-framework/operator-lifecycle-manager.git
 ```
 
-Before you begin your current working dir should look like the following, with `my-operator` as an example for the name of your bundle:
+Before you begin your current working dir should look like the following, with `my-operator/` as an example for the name of your bundle:
 
 ```
-my-operator
-operator-marketplace
-operator-courier
-operator-lifecycle-manager
+my-operator/
+operator-marketplace/
+operator-courier/
+operator-lifecycle-manager/
 ```
 
 ### Tools
@@ -101,38 +116,51 @@ export QUAY_TOKEN="basic abcdefghijkl=="
 
 `operator-courier` will verify the fields included in the Operator metadata (CSV). The fields can also be manually reviewed according to [the operator CSV documentation](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md).
 
-The following command will run `operator-courier` against the bundle directory `my-operator/` from the example above.
+The following command will run `operator-courier` against the bundle directory `my-operator-bundle/` from the example above.
+
+**NOTE**: If you are using [Operator-SDK](https://github.com/operator-framework/operator-sdk) to generate the files the bundle directory `my-operator-bundle/` will be like `my-operator/deploy/olm-catalog/my-operator/`
 
 ```
-operator-courier verify --ui_validate_io my-operator/
+$ operator-courier verify --ui_validate_io my-operator-bundle/
 ```
 
 If there is no output, the bundle passed `operator-courier` validation. If there are errors, your bundle will not work. If there are warnings we still encourage you to fix them before proceeding to the next step.
 
 ### Push to quay.io
 
-**NOTE:** This step is not required if the image used in the CSV is published in the [quay.io](http://quay.io) already. 
+The Operator metadata in its bundle format will be uploaded into your namespace in [quay.io](http://quay.io). This bundle will be available in the `Application` tab and is generated by using the OLM files of your operator project. (E.g `https://quay.io/application/organization/$PACKAGE_NAME`) 
 
-The Operator metadata in its bundle format will be uploaded into your namespace in [quay.io](http://quay.io). Following the steps to build the operator image and push it to the [quay.io](http://quay.io) registry.
+**NOTE:** This command will NOT build the image of the operator project as it is done by `operator-sdk build` command. 
 
-1. Export the following local environment variables
+Following the steps to build the bundle application and push it to the [quay.io](http://quay.io) registry.
+
+1. Export the following local environment variables:
+
+| EnvVar     | Description   | Example |
+| --------   | -------- | -------- | 
+| OPERATOR_DIR   | Project path where the OLM files are | `my-operator-bundle/` | 
+| QUAY_NAMESPACE   | Registry namespace | `https://quay.io/my-registry-namespace` | 
+| PACKAGE_NAME   | The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/olm-catalog/my-registry-namespace/my-operator`. | `https://quay.io/application/dev4devs-com/postgresql-operator-operatorhub` | 
+| PACKAGE_VERSION   | The `PACKAGE_VERSION` is entirely up for you to decide. The version is independent of the Operator version since your bundle will contain all versions of your Operator metadata files. If you already uploaded your bundle to Quay.io at an earlier point, make sure to increment the version.`. | `1.0.0` | 
+| TOKEN   | Quay.io token which will be used to create the application and sent the bundle| `"basic abcdefghijkl=="`  | 
+
+Following an example. 
+
 ```
-$export OPERATOR_DIR=my-operator/
+$export OPERATOR_DIR=my-operator-bundle/
 $export QUAY_NAMESPACE=johndoe
 $export PACKAGE_NAME=my-operator
 $export PACKAGE_VERSION=1.0.0
 $export TOKEN=$QUAY_TOKEN
 ```
 
-**NOTES**
-* The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/olm-catalog/postgresql-operator/*.package.yaml`.
-* The `PACKAGE_VERSION` is entirely up for you to decide. The version is independent of the Operator version since your bundle will contain all versions of your Operator metadata files. If you already uploaded your bundle to Quay.io at an earlier point, make sure to increment the version.
-
-2. Run the following command
+2. Run the following command to push the bundle. 
 
 ```
 operator-courier push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
 ```
+
+3. Check if the bundle was pushed successfully. 
 
 Once that has completed, you should see it listed in your account's [Applications](https://quay.io/application/) tab in the [quay.io](http://quay.io) registry. If the application has a lock icon, click through to the application and its Settings tab and select to make the application public. 
 
