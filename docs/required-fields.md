@@ -2,7 +2,7 @@
 
 ## Preparing your CSV for use with OLM
 
-Before you begin, we strongly advise that you follow Operator-Lifecycle-Manager's docs on [building a CSV for the Operator Framework](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md). These outline the functional purpose of the CSV and which fields are required for installing your Operator CSV through OLM.
+Before you begin, we strongly advise that you follow Operator-Lifecycle-Manager's docs on [building a CSV for the Operator Framework](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md). These outline the functional purpose of the CSV and which fields are required for installing your Operator CSV through OLM.
 
 ## Required fields for OperatorHub
 
