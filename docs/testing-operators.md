@@ -376,5 +376,5 @@ operator-sdk scorecard --olm-deployed --crds-dir my-operator/ --csv-path my-oper
 
 ## Additional Resources
 
-* [Cluster Service Version Spec](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md)
+* [Cluster Service Version Spec](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md)
 * [Example Bundle](https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/etcd)
