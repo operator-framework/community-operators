@@ -1,4 +1,20 @@
-# About this repository
+[![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)* -->
+
+- [About this repository](#about-this-repository)
+- [Add your Operator](#add-your-operator)
+- [Submitting your PR](#submitting-your-pr)
+- [Update your Operator](#update-your-operator)
+- [Test your Operator](#test-your-operator)
+- [Preview your Operator on OperatorHub.io](#preview-your-operator-on-operatorhubio)
+- [Reporting Bugs](#reporting-bugs)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## About this repository
 
 This repo is the canonical source for Kubernetes Operators that appear on [OperatorHub.io](https://operatorhub.io), [OpenShift Container Platform](https://openshift.com) and [OKD](https://okd.io).
 
