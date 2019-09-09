@@ -10,7 +10,7 @@ RUN apk add --update \
     bash \
   && rm -rf /var/cache/apk/*
 
-COPY . .
+COPY . /scripts
 RUN rm -rf /Makefile && mv /scripts/utils/Makefile /
 ENV INSTALL_DEPS=1
 RUN python3 /scripts/utils/check-deps.py
