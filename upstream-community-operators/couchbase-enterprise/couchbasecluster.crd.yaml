@@ -1,17 +1,8 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
   name: couchbaseclusters.couchbase.com
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .metadata.creationTimestamp
-    description: |-
-      CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-
-      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
-    name: Age
-    type: date
   group: couchbase.com
   names:
     kind: CouchbaseCluster
@@ -27,6 +18,11 @@ spec:
       properties:
         spec:
           properties:
+            adminConsoleServiceType:
+              enum:
+              - NodePort
+              - LoadBalancer
+              type: string
             adminConsoleServices:
               items:
                 enum:
@@ -48,6 +44,12 @@ spec:
             buckets:
               items:
                 properties:
+                  compressionMode:
+                    enum:
+                    - "off"
+                    - passive
+                    - active
+                    type: string
                   conflictResolution:
                     enum:
                     - seqno
@@ -143,8 +145,20 @@ spec:
               type: object
             disableBucketManagement:
               type: boolean
+            dns:
+              properties:
+                domain:
+                  type: string
+              required:
+              - domain
+              type: object
             exposeAdminConsole:
               type: boolean
+            exposedFeatureServiceType:
+              enum:
+              - NodePort
+              - LoadBalancer
+              type: string
             exposedFeatures:
               items:
                 enum:
@@ -153,8 +167,20 @@ spec:
                 - client
                 type: string
               type: array
+            logRetentionCount:
+              minimum: 0
+              type: integer
+            logRetentionTime:
+              pattern: ^\d+(ns|us|ms|s|m|h)$
+              type: string
             paused:
               type: boolean
+            platform:
+              enum:
+              - aws
+              - gce
+              - azure
+              type: string
             serverGroups:
               items:
                 type: string
@@ -236,8 +262,8 @@ spec:
                             type: string
                           index:
                             type: string
-                        required:
-                        - default
+                          logs:
+                            type: string
                         type: object
                     type: object
                   serverGroups:
@@ -276,10 +302,17 @@ spec:
                       properties:
                         serverSecret:
                           type: string
+                      required:
+                      - serverSecret
                       type: object
                     operatorSecret:
                       type: string
+                  required:
+                  - member
+                  - operatorSecret
                   type: object
+              required:
+              - static
               type: object
             version:
               pattern: ^([\w\d]+-)?\d+\.\d+.\d+(-[\w\d]+)?$
@@ -317,7 +350,6 @@ spec:
                         type: string
                     required:
                     - resources
-                    - storageClassName
                     type: object
                 required:
                 - metadata
@@ -330,6 +362,7 @@ spec:
           - authSecret
           - cluster
           - servers
+          type: object
   version: v1
   versions:
   - name: v1
@@ -341,4 +374,3 @@ status:
     plural: ""
   conditions: null
   storedVersions: null
-  
