@@ -1,0 +1,168 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: appsodyapplications.appsody.dev
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.applicationImage
+    description: Absolute name of the deployed image containing registry and tag
+    name: Image
+    type: string
+  - JSONPath: .spec.expose
+    description: Specifies whether deployment is exposed externally via default Route
+    name: Exposed
+    type: boolean
+  - JSONPath: .status.conditions[?(@.type=='Reconciled')].status
+    description: Status of the reconcile condition
+    name: Reconciled
+    type: string
+  - JSONPath: .status.conditions[?(@.type=='Reconciled')].reason
+    description: Reason for the failure of reconcile condition
+    name: Reason
+    priority: 1
+    type: string
+  - JSONPath: .status.conditions[?(@.type=='Reconciled')].message
+    description: Failure message from reconcile condition
+    name: Message
+    priority: 1
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    description: Age of the resource
+    name: Age
+    type: date
+  group: appsody.dev
+  names:
+    kind: AppsodyApplication
+    listKind: AppsodyApplicationList
+    plural: appsodyapplications
+    singular: appsodyapplication
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            applicationImage:
+              type: string
+            architecture:
+              items:
+                type: string
+              type: array
+            autoscaling:
+              properties:
+                maxReplicas:
+                  format: int32
+                  minimum: 1
+                  type: integer
+                minReplicas:
+                  format: int32
+                  type: integer
+                targetCPUUtilizationPercentage:
+                  format: int32
+                  type: integer
+              type: object
+            createKnativeService:
+              type: boolean
+            env:
+              items:
+                type: object
+              type: array
+            envFrom:
+              items:
+                type: object
+              type: array
+            expose:
+              type: boolean
+            livenessProbe:
+              type: object
+            pullPolicy:
+              type: string
+            pullSecret:
+              type: string
+            readinessProbe:
+              type: object
+            replicas:
+              format: int32
+              type: integer
+            resourceConstraints:
+              type: object
+            service:
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  type: object
+                port:
+                  format: int32
+                  maximum: 65536
+                  minimum: 1
+                  type: integer
+                type:
+                  type: string
+              type: object
+            serviceAccountName:
+              type: string
+            stack:
+              type: string
+            storage:
+              properties:
+                mountPath:
+                  type: string
+                size:
+                  type: string
+                volumeClaimTemplate:
+                  type: object
+              type: object
+            volumeMounts:
+              items:
+                type: object
+              type: array
+            volumes:
+              items:
+                type: object
+              type: array
+          required:
+          - applicationImage
+          - stack
+          type: object
+        status:
+          properties:
+            conditions:
+              items:
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                type: object
+              type: array
+          type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true

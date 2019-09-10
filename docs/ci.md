@@ -46,7 +46,7 @@ Operators submitted to the `community-operators/` directory are tested against a
 [registry-bundle]:https://github.com/operator-framework/operator-registry#manifest-format
 [courier-verify]:https://github.com/operator-framework/operator-courier/#command-line-interface
 [registry]:https://github.com/operator-framework/operator-registry
-[olm-alm-examples]:https://github.com/operator-framework/operator-lifecycle-manager/blob/master/Documentation/design/building-your-csv.md#crd-templates
+[olm-alm-examples]:https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md#crd-templates
 [courier-docs]:https://github.com/operator-framework/operator-courier/#operator-courier
 [quay]:https://quay.io
 [quay-create-repo]:https://docs.quay.io/guides/create-repo.html

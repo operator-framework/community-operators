@@ -1,0 +1,292 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: reports.metering.openshift.io
+spec:
+  group: metering.openshift.io
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+  scope: Namespaced
+  names:
+    plural: reports
+    kind: Report
+  additionalPrinterColumns:
+  - name: Query
+    type: string
+    JSONPath: .spec.query
+  - name: Schedule
+    type: string
+    JSONPath: .spec.schedule.period
+  - name: Running
+    type: string
+    JSONPath: .status.conditions[?(@.type=="Running")].reason
+  - name: Failed
+    type: string
+    JSONPath: .status.conditions[?(@.type=="Failure")].reason
+  - name: Last Report Time
+    type: string
+    JSONPath: .status.lastReportTime
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  validation:
+    openAPIV3Schema:
+      type: object
+      required:
+      - spec
+      properties:
+        # note: see https://github.com/operator-framework/operator-metering/blob/master/Documentation/reports.md for more information
+        # note: apiVersion, kind, metadata is implicitly validated by API server
+        spec:
+          type: object
+          required:
+          - query
+          properties:
+            query:
+              type: string
+              minLength: 1
+
+            reportingStart:
+              type: string
+              format: date-time
+
+            reportingEnd:
+              type: string
+              format: date-time
+
+            runImmediately:
+              type: boolean
+
+            inputs:
+              type: array
+              minItems: 1
+              items:
+                type: object
+                required:
+                - name
+                - value
+                properties:
+                  name:
+                    type: string
+                    minLength: 1
+                  value: {}
+
+            schedule:
+              type: object
+              required:
+              - period
+              properties:
+                period:
+                  type: string
+                  minLength: 1
+                  enum:
+                  - hourly
+                  - daily
+                  - weekly
+                  - monthly
+                  - cron
+
+                hourly:
+                  type: object
+                  properties:
+                    minute:
+                      type: integer
+                      minimum: 0
+                      maximum: 59
+                    hour:
+                      type: integer
+                      minimum: 0
+                      maximum: 23
+
+                daily:
+                  type: object
+                  properties:
+                    second:
+                      type: integer
+                      minimum: 0
+                      maximum: 60
+                    minute:
+                      type: integer
+                      minimum: 0
+                      maximum: 59
+                    hour:
+                      type: integer
+                      minimum: 0
+                      maximum: 23
+
+                weekly:
+                  type: object
+                  properties:
+                    dayofWeek:
+                      type: string
+                      enum:
+                      - sun
+                      - sunday
+                      - mon
+                      - monday
+                      - tue
+                      - tues
+                      - tuesday
+                      - wed
+                      - weds
+                      - wednesday
+                      - thur
+                      - thurs
+                      - thursday
+                      - fri
+                      - friday
+                      - sat
+                      - saturday
+                    second:
+                      type: integer
+                      minimum: 0
+                      maximum: 60
+                    minute:
+                      type: integer
+                      minimum: 0
+                      maximum: 59
+                    hour:
+                      type: integer
+                      minimum: 0
+                      maximum: 23
+
+                monthly:
+                  type: object
+                  properties:
+                    dayOfMonth:
+                      type: integer
+                      minimum: 1
+                      maximum: 31
+                    second:
+                      type: integer
+                      minimum: 0
+                      maximum: 60
+                    minute:
+                      type: integer
+                      minimum: 0
+                      maximum: 59
+                    hour:
+                      type: integer
+                      minimum: 0
+                      maximum: 23
+
+                cron:
+                  type: object
+                  required:
+                  - expression
+                  properties:
+                    expression:
+                      type: string
+                      pattern: '^(\d+|\*)(/\d+)?(\s+(\d+|\*)(/\d+)?){4}$'
+              oneOf:
+              - properties:
+                  period:
+                    enum:
+                    - hourly
+                allOf:
+                - not:
+                    required:
+                    - daily
+                - not:
+                    required:
+                    - weekly
+                - not:
+                    required:
+                    - monthly
+                - not:
+                    required:
+                    - cron
+              - properties:
+                  period:
+                    enum:
+                    - daily
+                allOf:
+                - not:
+                    required:
+                    - hourly
+                - not:
+                    required:
+                    - weekly
+                - not:
+                    required:
+                    - monthly
+                - not:
+                    required:
+                    - cron
+              - properties:
+                  period:
+                    enum:
+                    - weekly
+                allOf:
+                - not:
+                    required:
+                    - hourly
+                - not:
+                    required:
+                    - daily
+                - not:
+                    required:
+                    - monthly
+                - not:
+                    required:
+                    - cron
+              - properties:
+                  period:
+                    enum:
+                    - monthly
+                allOf:
+                - not:
+                    required:
+                    - hourly
+                - not:
+                    required:
+                    - daily
+                - not:
+                    required:
+                    - weekly
+                - not:
+                    required:
+                    - cron
+              - properties:
+                  period:
+                    enum:
+                    - cron
+                allOf:
+                - not:
+                    required:
+                    - hourly
+                - not:
+                    required:
+                    - daily
+                - not:
+                    required:
+                    - weekly
+                - not:
+                    required:
+                    - monthly
+
+          anyOf:
+          # runOnce report
+          - type: object
+            required:
+            - query
+            - reportingStart
+            - reportingEnd
+          # runImmediately report
+          - type: object
+            required:
+            - query
+            - runImmediately
+            - reportingEnd
+          # scheduled report
+          - type: object
+            required:
+            - query
+            - schedule
+

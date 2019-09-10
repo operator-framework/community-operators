@@ -1,0 +1,2676 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: meteringconfigs.metering.openshift.io
+spec:
+  group: metering.openshift.io
+  names:
+    kind: MeteringConfig
+    listKind: MeteringConfigList
+    plural: meteringconfigs
+    singular: meteringconfig
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+  validation:
+    openAPIV3Schema:
+      required:
+      - spec
+      properties:
+        spec:
+          type: object
+          required:
+          - storage
+          properties:
+            logHelmTemplate:
+              type: boolean
+
+            unsupportedFeatures:
+              type: object
+              properties:
+                enableHDFS:
+                  type: boolean
+
+            disableOCPFeatures:
+              type: boolean
+
+            storage:
+              type: object
+              required:
+              - type
+              - hive
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - hive
+                hive:
+                  type: object
+                  required:
+                  - type
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - hdfs
+                      - sharedPVC
+                      - s3
+                      - azure
+                      - gcs
+                      - s3Compatible
+                    hdfs:
+                      type: object
+                      required:
+                      - namenode
+                      properties:
+                        namenode:
+                          type: string
+                          format: uri
+                          minLength: 1
+                    s3:
+                      type: object
+                      required:
+                      - bucket
+                      - secretName
+                      properties:
+                        bucket:
+                          type: string
+                          minLength: 1
+                        region:
+                          type: string
+                          minLength: 1
+                        secretName:
+                          type: string
+                          minLength: 1
+                        createBucket:
+                          type: boolean
+                    azure:
+                      type: object
+                      required:
+                      - container
+                      oneOf:
+                      - required:
+                        - secretName
+                        allOf:
+                        - not:
+                            required:
+                            - storageAccountName
+                        - not:
+                            required:
+                            - secretAccessKey
+                      - required:
+                        - storageAccountName
+                        - secretAccessKey
+                        allOf:
+                        - not:
+                            required:
+                            - secretName
+                      properties:
+                        createSecret:
+                          type: boolean
+                        container:
+                          type: string
+                          minLength: 1
+                        secretName:
+                          type: string
+                          minLength: 1
+                        storageAccountName:
+                          type: string
+                          minLength: 1
+                        secretAccessKey:
+                          type: string
+                          minLength: 1
+                        rootDirectory:
+                          type: string
+                          minLength: 1
+                    gcs:
+                      type: object
+                      required:
+                        - bucket
+                      oneOf:
+                      - required:
+                        - serviceAccountKeyJSON
+                        allOf:
+                        - not:
+                            required:
+                            - secretName
+                      - required:
+                        - secretName
+                        allOf:
+                        - not:
+                            required:
+                            - serviceAccountKeyJSON
+                      properties:
+                        bucket:
+                          type: string
+                          minLength: 1
+                        secretName:
+                          type: string
+                          minLength: 1
+                        createSecret:
+                          type: boolean
+                        serviceAccountKeyJSON:
+                          type: string
+                          minLength: 1
+                    s3Compatible:
+                      type: object
+                      required:
+                        - bucket
+                        - endpoint
+                      properties:
+                        bucket:
+                          type: string
+                          minLength: 1
+                        secretName:
+                          type: string
+                          minLength: 1
+                        createSecret:
+                          type: boolean
+                        accessKeyID:
+                          type: string
+                          minLength: 1
+                        secretAccessKey:
+                          type: string
+                          minLength: 1
+                        endpoint:
+                          type: string
+                          format: uri
+                          minLength: 1
+                      oneOf:
+                      - required:
+                        - accessKeyID
+                        - secretAccessKey
+                        properties:
+                          createSecret:
+                            enum:
+                            - true
+                        allOf:
+                        - not:
+                            required:
+                            - secretName
+                      - required:
+                        - secretName
+                        properties:
+                          createSecret:
+                            enum:
+                            - false
+                        allOf:
+                        - not:
+                            required:
+                            - accessKeyID
+                            - secretAccessKey
+                    sharedPVC:
+                      type: object
+                      properties:
+                        createPVC:
+                          type: boolean
+                        claimName:
+                          type: string
+                          minLength: 1
+                        storageClass:
+                          type: string
+                          minLength: 1
+                        size:
+                          type: string
+                          minLength: 1
+                        mountPath:
+                          type: string
+                          minLength: 1
+                      oneOf:
+                      - required:
+                        - claimName
+                      - required:
+                        - storageClass
+                        - createPVC
+                        properties:
+                          createPVC:
+                            enum:
+                            - true
+                  oneOf:
+                  # note: this is for spec.storage.hive
+                  - required:
+                    - hdfs
+                    properties:
+                      type:
+                        enum:
+                        - hdfs
+                    allOf:
+                    - not:
+                        required:
+                        - s3
+                    - not:
+                        required:
+                        - azure
+                    - not:
+                        required:
+                        - gcs
+                    - not:
+                        required:
+                        - s3Compatible
+                    - not:
+                        required:
+                        - sharedPVC
+                  - required:
+                    - s3
+                    properties:
+                      type:
+                        enum:
+                        - s3
+                    allOf:
+                    - not:
+                        required:
+                        - hdfs
+                    - not:
+                        required:
+                        - azure
+                    - not:
+                        required:
+                        - gcs
+                    - not:
+                        required:
+                        - s3Compatible
+                    - not:
+                        required:
+                        - sharedPVC
+                  - required:
+                    - azure
+                    properties:
+                      type:
+                        enum:
+                        - azure
+                    allOf:
+                    - not:
+                        required:
+                        - hdfs
+                    - not:
+                        required:
+                        - s3
+                    - not:
+                        required:
+                        - gcs
+                    - not:
+                        required:
+                        - s3Compatible
+                    - not:
+                        required:
+                        - sharedPVC
+                  - required:
+                    - gcs
+                    properties:
+                      type:
+                        enum:
+                        - gcs
+                    allOf:
+                    - not:
+                        required:
+                        - hdfs
+                    - not:
+                        required:
+                        - s3
+                    - not:
+                        required:
+                        - azure
+                    - not:
+                        required:
+                        - sharedPVC
+                    - not:
+                        required:
+                        - s3Compatible
+                  - required:
+                    - s3Compatible
+                    properties:
+                      type:
+                        enum:
+                        - s3Compatible
+                    allOf:
+                    - not:
+                        required:
+                        - hdfs
+                    - not:
+                        required:
+                        - azure
+                    - not:
+                        required:
+                        - gcs
+                    - not:
+                        required:
+                        - s3
+                    - not:
+                        required:
+                        - sharedPVC
+                  - required:
+                    - sharedPVC
+                    properties:
+                      type:
+                        enum:
+                        - sharedPVC
+                    allOf:
+                    - not:
+                        required:
+                        - hdfs
+                    - not:
+                        required:
+                        - s3
+                    - not:
+                        required:
+                        - gcs
+                    - not:
+                        required:
+                        - s3Compatible
+                    - not:
+                        required:
+                        - azure
+
+            tls:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                certificate:
+                  type: string
+                key:
+                  type: string
+                secretName:
+                  type: string
+              oneOf:
+              - required:
+                - enabled
+                allOf:
+                - not:
+                    required:
+                    - certificate
+                - not:
+                    required:
+                    - key
+              - required:
+                - enabled
+                - certificate
+                - key
+                properties:
+                  enabled:
+                    enum:
+                    - false
+                  certificate:
+                    minLength: 1
+                  key:
+                    minLength: 1
+
+            permissions:
+              type: object
+              properties:
+                meteringAdmins:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - kind
+                    - name
+                    properties:
+                      kind:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      namespace:
+                        type: string
+                        minLength: 1
+                      apiGroup:
+                        type: string
+                        minLength: 1
+                meteringViewers:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - kind
+                    - name
+                    properties:
+                      kind:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      namespace:
+                        type: string
+                        minLength: 1
+                      apiGroup:
+                        type: string
+                        minLength: 1
+                reportExporters:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - kind
+                    - name
+                    properties:
+                      kind:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      namespace:
+                        type: string
+                        minLength: 1
+                      apiGroup:
+                        type: string
+                        minLength: 1
+                reportingAdmins:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - kind
+                    - name
+                    properties:
+                      kind:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      namespace:
+                        type: string
+                        minLength: 1
+                      apiGroup:
+                        type: string
+                        minLength: 1
+                reportingViewers:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - kind
+                    - name
+                    properties:
+                      kind:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      namespace:
+                        type: string
+                        minLength: 1
+
+            monitoring:
+              type: object
+              properties:
+                createRBAC:
+                  type: boolean
+                enabled:
+                  type: boolean
+                namespace:
+                  type: string
+
+            openshift-reporting:
+              type: object
+              properties:
+                spec:
+                  type: object
+                  properties:
+                    defaultStorageLocation:
+                      type: object
+                      required:
+                      - enabled
+                      - isDefault
+                      - name
+                      - type
+                      - hive
+                      properties:
+                        enabled:
+                          type: boolean
+                        isDefault:
+                          type: boolean
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        hive:
+                          type: object
+                          required:
+                          - databaseName
+                          - unmanagedDatabase
+                          properties:
+                            databaseName:
+                              type: string
+                            unmanagedDatabase:
+                              type: boolean
+                            location:
+                              type: string
+                    awsBillingReportDataSource:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                        bucket:
+                          type: string
+                        prefix:
+                          type: string
+                        region:
+                          type: string
+                    defaultReportDataSources:
+                      type: object
+                      properties:
+                        base:
+                          type: object
+                          properties:
+                            enabled:
+                              type: boolean
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                - name
+                                - spec
+                                properties:
+                                  name:
+                                    type: string
+                                  spec:
+                                    type: object
+                                    required:
+                                    - reportQueryView
+                                    properties:
+                                      reportQueryView:
+                                        type: object
+                                        required:
+                                        - queryName
+                                        properties:
+                                          queryName:
+                                            type: string
+                        postKube_1_14:
+                          type: object
+                          properties:
+                            enabled:
+                              type: boolean
+
+            reporting-operator:
+              type: object
+              required:
+              - spec
+              properties:
+                spec:
+                  type: object
+                  properties:
+                    affinity:
+                      type: object
+                    annotations:
+                      type: object
+                    apiService:
+                      type: object
+                      properties:
+                        nodePort:
+                          type: integer
+                        type:
+                          type: string
+                    authProxy:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                        authenticatedEmails:
+                          type: object
+                          properties:
+                            enabled:
+                              type: boolean
+                            createSecret:
+                              type: boolean
+                            data:
+                              type: string
+                              minLength: 1
+                            secretName:
+                              type: string
+                              minLength: 1
+                          oneOf:
+                          - required:
+                            - enabled
+                            properties:
+                              enabled:
+                                enum:
+                                - false
+                            allOf:
+                            - not:
+                                required:
+                                - createSecret
+                            - not:
+                                required:
+                                - data
+                            - not:
+                                required:
+                                - secretName
+                          - required:
+                            - enabled
+                            - createSecret
+                            - secretName
+                            properties:
+                              enabled:
+                                enum:
+                                - true
+                              createSecret:
+                                enum:
+                                - false
+                            allOf:
+                            - not:
+                                required:
+                                - seed
+                          - required:
+                            - enabled
+                            - createSecret
+                            - data
+                            properties:
+                              enabled:
+                                enum:
+                                - true
+                              createSecret:
+                                enum:
+                                - true
+                        cookie:
+                          type: object
+                          properties:
+                            createSecret:
+                              type: boolean
+                            secretName:
+                              type: string
+                              minLength: 1
+                            seed:
+                              type: string
+                              minLength: 32
+                          oneOf:
+                          - required:
+                            - createSecret
+                            - seed
+                            properties:
+                              createSecret:
+                                enum:
+                                - true
+                          - required:
+                            - createSecret
+                            - secretName
+                            properties:
+                              createSecret:
+                                enum:
+                                - false
+                            allOf:
+                            - not:
+                                required:
+                                - seed
+                        delegateURLs:
+                          type: object
+                          properties:
+                            enabled:
+                              type: boolean
+                            policy:
+                              type: string
+                              minLength: 1
+                        htpasswd:
+                          type: object
+                          properties:
+                            createSecret:
+                              type: boolean
+                            data:
+                              type: string
+                              minLength: 1
+                            secretName:
+                              type: string
+                              minLength: 1
+                          oneOf:
+                          - required:
+                            - createSecret
+                            - data
+                            properties:
+                              createSecret:
+                                enum:
+                                - true
+                          - required:
+                            - createSecret
+                            - secretName
+                            properties:
+                              createSecret:
+                                enum:
+                                - false
+                            allOf:
+                            - not:
+                                required:
+                                - data
+                        image:
+                          type: object
+                          properties:
+                            pullPolicy:
+                              type: string
+                              minLength: 1
+                            pullSecrets:
+                              type: array
+                            repository:
+                              type: string
+                              minLength: 1
+                            tag:
+                              type: string
+                              minLength: 1
+                        rbac:
+                          type: object
+                          required:
+                          - createAuthProxyClusterRole
+                          properties:
+                            createAuthProxyClusterRole:
+                              type: boolean
+                        resources:
+                          type: object
+                          properties:
+                            limits:
+                              type: object
+                            requests:
+                              type: object
+                        subjectAccessReview:
+                          type: object
+                          required:
+                          - enabled
+                          properties:
+                            enabled:
+                              type: boolean
+                            policy:
+                              type: string
+                              minLength: 1
+                    config:
+                      type: object
+                      properties:
+                        allNamespaces:
+                          type: boolean
+                        aws:
+                          type: object
+                          properties:
+                            accessKeyID:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            secretAccessKey:
+                              type: string
+                            secretName:
+                              type: string
+                        enableFinalizers:
+                          type: boolean
+                        hive:
+                          type: object
+                          properties:
+                            auth:
+                              type: object
+                              properties:
+                                certificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                              - required:
+                                - certificate
+                                - key
+                                - createSecret
+                                - secretName
+                                properties:
+                                  certificate:
+                                    minLength: 1
+                                  key:
+                                    minLength: 1
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  enabled:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                            host:
+                              type: string
+                            tls:
+                              type: object
+                              properties:
+                                caCertificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                              - required:
+                                - caCertificate
+                                - createSecret
+                                - secretName
+                                properties:
+                                  caCertificate:
+                                    minLength: 1
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  enabled:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                        leaderLeaseDuration:
+                          type: string
+                        logDDLQueries:
+                          type: boolean
+                        logDMLQueries:
+                          type: boolean
+                        logLevel:
+                          type: string
+                        logReports:
+                          type: boolean
+                        presto:
+                          type: object
+                          properties:
+                            auth:
+                              type: object
+                              properties:
+                                certificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                              - required:
+                                - certificate
+                                - key
+                                - createSecret
+                                - secretName
+                                properties:
+                                  certificate:
+                                    minLength: 1
+                                  key:
+                                    minLength: 1
+                                  enabled:
+                                    enum:
+                                    - true
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                            host:
+                              type: string
+                            maxQueryLength:
+                              type: integer
+                            tls:
+                              type: object
+                              properties:
+                                caCertificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                              - required:
+                                - caCertificate
+                                - createSecret
+                                - secretName
+                                properties:
+                                  certificate:
+                                    minLength: 1
+                                  enabled:
+                                    enum:
+                                    - true
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                        prometheus:
+                          type: object
+                          properties:
+                            certificateAuthority:
+                              type: object
+                              properties:
+                                configMap:
+                                  type: object
+                                  properties:
+                                    create:
+                                      type: boolean
+                                    enabled:
+                                      type: boolean
+                                    filename:
+                                      type: string
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                                useServiceAccountCA:
+                                  type: boolean
+                            metricsImporter:
+                              type: object
+                              properties:
+                                auth:
+                                  type: object
+                                  properties:
+                                    tokenSecret:
+                                      type: object
+                                      properties:
+                                        create:
+                                          type: boolean
+                                        enabled:
+                                          type: boolean
+                                        name:
+                                          type: string
+                                        value:
+                                          type: string
+                                    useServiceAccountToken:
+                                      type: boolean
+                                config:
+                                  type: object
+                                  properties:
+                                    chunkSize:
+                                      type: string
+                                    importFrom:
+                                      type: string
+                                    maxImportBackfillDuration:
+                                      type: string
+                                    maxQueryRangeDuration:
+                                      type: string
+                                    pollInterval:
+                                      type: string
+                                    stepSize:
+                                      type: string
+                                enabled:
+                                  type: boolean
+                            url:
+                              type: string
+                        tls:
+                          type: object
+                          properties:
+                            api:
+                              type: object
+                              properties:
+                                caCertificate:
+                                  type: string
+                                certificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                              - required:
+                                - caCertificate
+                                - certificate
+                                - key
+                                - createSecret
+                                - secretName
+                                properties:
+                                  caCertificate:
+                                    minLength: 1
+                                  certificate:
+                                    minLength: 1
+                                  key:
+                                    minLength: 1
+                                  enabled:
+                                    enum:
+                                    - true
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                    image:
+                      type: object
+                      properties:
+                        pullPolicy:
+                          type: string
+                        pullSecrets:
+                          type: array
+                        repository:
+                          type: string
+                        tag:
+                          type: string
+                    labels:
+                      type: object
+                    nodeSelector:
+                      type: object
+                    rbac:
+                      type: object
+                      required:
+                      - createClusterMonitoringViewRBAC
+                      properties:
+                        createClusterMonitoringViewRBAC:
+                          type: boolean
+                    replicas:
+                      type: integer
+                      format: int32
+                    resources:
+                      type: object
+                      properties:
+                        limits:
+                          type: object
+                        requests:
+                          type: object
+                    route:
+                      type: object
+                      required:
+                      - enabled
+                      properties:
+                        enabled:
+                          type: boolean
+                        name:
+                          type: string
+                    tolerations:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          effect:
+                            type: string
+                          key:
+                            type: string
+                          operator:
+                            type: string
+                          tolerationSeconds:
+                            format: int64
+                            type: integer
+                          value:
+                            type: string
+                    updateStrategy:
+                      type: object
+                      required:
+                      - type
+                      properties:
+                        type:
+                          type: string
+
+            presto:
+              type: object
+              required:
+              - spec
+              properties:
+                spec:
+                  type: object
+                  properties:
+                    annotations:
+                      type: object
+                    terminationGracePeriodSeconds:
+                      type: integer
+                    config:
+                      type: object
+                      properties:
+                        auth:
+                          type: object
+                          properties:
+                            caCertificate:
+                              type: string
+                            certificate:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            enabled:
+                              type: boolean
+                            key:
+                              type: string
+                            secretName:
+                              type: string
+                          oneOf:
+                          - required:
+                            - enabled
+                            properties:
+                              enabled:
+                                enum:
+                                - false
+                            allOf:
+                            - not:
+                                required:
+                                - caCertificate
+                            - not:
+                                required:
+                                - certificate
+                            - not:
+                                required:
+                                - key
+                            - not:
+                                required:
+                                - createSecret
+                            - not:
+                                required:
+                                - secretName
+                          - required:
+                            - createSecret
+                            - secretName
+                            properties:
+                              createSecret:
+                                enum:
+                                - false
+                              secretName:
+                                minLength: 1
+                            allOf:
+                            - not:
+                                required:
+                                - caCertificate
+                            - not:
+                                required:
+                                - certificate
+                            - not:
+                                required:
+                                - key
+                          - required:
+                            - caCertificate
+                            - certificate
+                            - key
+                            - createSecret
+                            - secretName
+                            properties:
+                              caCertificate:
+                                minLength: 1
+                              certificate:
+                                minLength: 1
+                              key:
+                                minLength: 1
+                              enabled:
+                                enum:
+                                - true
+                              createSecret:
+                                enum:
+                                - true
+                              secretName:
+                                minLength: 1
+                        aws:
+                          type: object
+                          properties:
+                            accessKeyID:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            secretAccessKey:
+                              type: string
+                            secretName:
+                              type: string
+                        azure:
+                          type: object
+                          properties:
+                            createSecret:
+                              type: boolean
+                            secretAccessKey:
+                              type: string
+                            secretName:
+                              type: string
+                            storageAccountName:
+                              type: string
+                        gcs:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            serviceAccountKeyJSON:
+                              type: string
+
+                        s3Compatible:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            accessKeyID:
+                              type: string
+                            secretAccessKey:
+                              type: string
+                            endpoint:
+                              type: string
+                              format: uri
+
+                        connectors:
+                          type: object
+                          properties:
+                            extraConnectorFiles:
+                              type: array
+                            hive:
+                              type: object
+                              properties:
+                                hadoopConfigSecretName:
+                                  type: string
+                                metastoreTimeout:
+                                  type: string
+                                metastoreURI:
+                                  type: string
+                                tls:
+                                  type: object
+                                  properties:
+                                    caCertificate:
+                                      type: string
+                                    certificate:
+                                      type: string
+                                    createSecret:
+                                      type: boolean
+                                    enabled:
+                                      type: boolean
+                                    key:
+                                      type: string
+                                    secretName:
+                                      type: string
+                                  oneOf:
+                                  - required:
+                                    - enabled
+                                    properties:
+                                      enabled:
+                                        enum:
+                                        - false
+                                    allOf:
+                                    - not:
+                                        required:
+                                        - caCertificate
+                                    - not:
+                                        required:
+                                        - certificate
+                                    - not:
+                                        required:
+                                        - key
+                                    - not:
+                                        required:
+                                        - createSecret
+                                    - not:
+                                        required:
+                                        - secretName
+                                  - required:
+                                    - createSecret
+                                    - secretName
+                                    properties:
+                                      createSecret:
+                                        enum:
+                                        - false
+                                      secretName:
+                                        minLength: 1
+                                    allOf:
+                                    - not:
+                                        required:
+                                        - caCertificate
+                                    - not:
+                                        required:
+                                        - certificate
+                                    - not:
+                                        required:
+                                        - key
+                                  - required:
+                                    - caCertificate
+                                    - certificate
+                                    - key
+                                    - createSecret
+                                    - secretName
+                                    properties:
+                                      caCertificate:
+                                        minLength: 1
+                                      certificate:
+                                        minLength: 1
+                                      key:
+                                        minLength: 1
+                                      enabled:
+                                        enum:
+                                        - true
+                                      createSecret:
+                                        enum:
+                                        - true
+                                      secretName:
+                                        minLength: 1
+                                useHadoopConfig:
+                                  type: boolean
+                        environment:
+                          type: string
+                        maxQueryLength:
+                          type: integer
+                        nodeSchedulerIncludeCoordinator:
+                          type: boolean
+                        tls:
+                          type: object
+                          properties:
+                            caCertificate:
+                              type: string
+                            certificate:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            enabled:
+                              type: boolean
+                            key:
+                              type: string
+                            secretName:
+                              type: string
+                          oneOf:
+                          - required:
+                            - enabled
+                            properties:
+                              enabled:
+                                enum:
+                                - false
+                            allOf:
+                            - not:
+                                required:
+                                - caCertificate
+                            - not:
+                                required:
+                                - certificate
+                            - not:
+                                required:
+                                - key
+                            - not:
+                                required:
+                                - createSecret
+                            - not:
+                                required:
+                                - secretName
+                          - required:
+                            - createSecret
+                            - secretName
+                            properties:
+                              createSecret:
+                                enum:
+                                - false
+                              secretName:
+                                minLength: 1
+                            allOf:
+                            - not:
+                                required:
+                                - caCertificate
+                          - required:
+                            - caCertificate
+                            - createSecret
+                            - secretName
+                            properties:
+                              certificate:
+                                minLength: 1
+                              enabled:
+                                enum:
+                                - true
+                              createSecret:
+                                enum:
+                                - true
+                              secretName:
+                                minLength: 1
+                    coordinator:
+                      type: object
+                      properties:
+                        affinity:
+                          type: object
+                          properties:
+                            podAntiAffinity:
+                              type: object
+                              properties:
+                                requiredDuringSchedulingIgnoredDuringExecution:
+                                  type: array
+                                  items:
+                                    type: object
+                                    required:
+                                    - topologyKey
+                                    properties:
+                                      labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              required:
+                                              - key
+                                              - operator
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                      topologyKey:
+                                        type: string
+                        config:
+                          type: object
+                          properties:
+                            jvm:
+                              type: object
+                              properties:
+                                G1HeapRegionSize:
+                                  anyOf:
+                                  - type: integer
+                                    minimum: 0
+                                  - type: string
+                                    minLength: 3
+                                concGCThreads:
+                                  type: integer
+                                  minimum: 0
+                                extraFlags:
+                                  type: array
+                                initialRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                initiatingHeapOccupancyPercent:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                maxCachedBufferSize:
+                                  type: integer
+                                  minimum: 0
+                                maxDirectMemorySize:
+                                  anyOf:
+                                  - type: integer
+                                    minimum: 0
+                                  - type: string
+                                    minLength: 2
+                                maxGcPauseMillis:
+                                  type: integer
+                                  minimum: 0
+                                maxRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                minRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                parallelGCThreads:
+                                  type: integer
+                                  minimum: 0
+                                permSize:
+                                  type: string
+                                  minLength: 2
+                                reservedCodeCacheSize:
+                                  type: string
+                                  minLength: 2
+                            logLevel:
+                              type: string
+                            taskMaxWorkerThreads:
+                              type: integer
+                            taskMinDrivers:
+                              type: integer
+                        nodeSelector:
+                          type: object
+                        resources:
+                          type: object
+                          properties:
+                            limits:
+                              type: object
+                            requests:
+                              type: object
+                        terminationGracePeriodSeconds:
+                          type: integer
+                        tolerations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                              tolerationSeconds:
+                                format: int64
+                                type: integer
+                              value:
+                                type: string
+                    image:
+                      type: object
+                      properties:
+                        pullPolicy:
+                          type: string
+                        repository:
+                          type: string
+                        tag:
+                          type: string
+                    labels:
+                      type: object
+                    securityContext:
+                      type: object
+                      properties:
+                        fsGroup:
+                          type: integer
+                          format: int64
+                        runAsGroup:
+                          type: integer
+                          format: int64
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                          format: int64
+                    worker:
+                      type: object
+                      properties:
+                        affinity:
+                          type: object
+                          properties:
+                            podAntiAffinity:
+                              type: object
+                              properties:
+                                requiredDuringSchedulingIgnoredDuringExecution:
+                                  type: array
+                                  items:
+                                    type: object
+                                    required:
+                                    - topologyKey
+                                    properties:
+                                      labelSelector:
+                                        type: object
+                                        required:
+                                        - matchExpressions
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              required:
+                                              - key
+                                              - operator
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                      topologyKey:
+                                        type: string
+                        config:
+                          type: object
+                          properties:
+                            jvm:
+                              type: object
+                              properties:
+                                G1HeapRegionSize:
+                                  anyOf:
+                                  - type: integer
+                                    minimum: 0
+                                  - type: string
+                                    minLength: 3
+                                concGCThreads:
+                                  type: integer
+                                  minimum: 0
+                                extraFlags:
+                                  type: array
+                                initialRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                initiatingHeapOccupancyPercent:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                maxCachedBufferSize:
+                                  type: integer
+                                  minimum: 0
+                                maxDirectMemorySize:
+                                  anyOf:
+                                  - type: integer
+                                    minimum: 0
+                                  - type: string
+                                    minLength: 2
+                                maxGcPauseMillis:
+                                  type: integer
+                                  minimum: 0
+                                maxRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                minRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                parallelGCThreads:
+                                  type: integer
+                                  minimum: 0
+                                permSize:
+                                  type: string
+                                  minLength: 2
+                                reservedCodeCacheSize:
+                                  type: string
+                                  minLength: 2
+                            logLevel:
+                              type: string
+                            taskMaxWorkerThreads:
+                              type: integer
+                            taskMinDrivers:
+                              type: integer
+                        nodeSelector:
+                          type: object
+                        replicas:
+                          type: integer
+                          format: int32
+                        resources:
+                          type: object
+                          properties:
+                            limits:
+                              type: object
+                            requests:
+                              type: object
+                        terminationGracePeriodSeconds:
+                          type: integer
+                        tolerations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                              tolerationSeconds:
+                                format: int64
+                                type: integer
+                              value:
+                                type: string
+
+            hive:
+              type: object
+              required:
+              - spec
+              properties:
+                spec:
+                  type: object
+                  properties:
+                    annotations:
+                      type: object
+                    config:
+                      type: object
+                      properties:
+                        aws:
+                          type: object
+                          properties:
+                            accessKeyID:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            secretAccessKey:
+                              type: string
+                            secretName:
+                              type: string
+                        azure:
+                          type: object
+                          properties:
+                            createSecret:
+                              type: boolean
+                            secretAccessKey:
+                              type: string
+                            secretName:
+                              type: string
+                            storageAccountName:
+                              type: string
+                        gcs:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            serviceAccountKeyJSON:
+                              type: string
+                        s3Compatible:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            accessKeyID:
+                              type: string
+                            secretAccessKey:
+                              type: string
+                            endpoint:
+                              type: string
+                              format: uri
+                        db:
+                          type: object
+                          properties:
+                            autoCreateMetastoreSchema:
+                              type: boolean
+                            driver:
+                              type: string
+                            enableMetastoreSchemaVerification:
+                              type: boolean
+                            password:
+                              type: string
+                            url:
+                              type: string
+                            username:
+                              type: string
+                        defaultCompression:
+                          type: string
+                        defaultFileFormat:
+                          type: string
+                        hadoopConfigSecretName:
+                          type: string
+                        metastoreClientSocketTimeout:
+                          type: string
+                        metastoreWarehouseDir:
+                          type: string
+                        sharedVolume:
+                          type: object
+                          properties:
+                            claimName:
+                              type: string
+                            createPVC:
+                              type: boolean
+                            enabled:
+                              type: boolean
+                            mountPath:
+                              type: string
+                            size:
+                              type: string
+                            storageClass:
+                              type: string
+                        useHadoopConfig:
+                          type: boolean
+                    image:
+                      type: object
+                      properties:
+                        pullPolicy:
+                          type: string
+                        pullSecrets:
+                          type: array
+                        repository:
+                          type: string
+                        tag:
+                          type: string
+                    labels:
+                      type: object
+                    metastore:
+                      type: object
+                      properties:
+                        affinity:
+                          type: object
+                        config:
+                          type: object
+                          properties:
+                            auth:
+                              type: object
+                              properties:
+                                enabled:
+                                  type: boolean
+                            jvm:
+                              type: object
+                              properties:
+                                initialRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                maxRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                minRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                            logLevel:
+                              type: string
+                            tls:
+                              type: object
+                              properties:
+                                caCertificate:
+                                  type: string
+                                certificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                              - required:
+                                - caCertificate
+                                - certificate
+                                - key
+                                - createSecret
+                                - secretName
+                                properties:
+                                  caCertificate:
+                                    minLength: 1
+                                  certificate:
+                                    minLength: 1
+                                  key:
+                                    minLength: 1
+                                  enabled:
+                                    enum:
+                                    - true
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                        livenessProbe:
+                          type: object
+                          properties:
+                            failureThreshold:
+                              type: integer
+                            initialDelaySeconds:
+                              type: integer
+                            periodSeconds:
+                              type: integer
+                            successThreshold:
+                              type: integer
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: integer
+                            timeoutSeconds:
+                              type: integer
+                        nodeSelector:
+                          type: object
+                        resources:
+                          type: object
+                          properties:
+                            limits:
+                              type: object
+                            requests:
+                              type: object
+                        storage:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                            create:
+                              type: boolean
+                            size:
+                              type: string
+                        tolerations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                              tolerationSeconds:
+                                format: int64
+                                type: integer
+                              value:
+                                type: string
+                    securityContext:
+                      type: object
+                      properties:
+                        fsGroup:
+                          type: integer
+                          format: int64
+                        runAsGroup:
+                          type: integer
+                          format: int64
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                          format: int64
+                    server:
+                      type: object
+                      properties:
+                        affinity:
+                          type: object
+                        config:
+                          type: object
+                          properties:
+                            auth:
+                              type: object
+                              properties:
+                                enabled:
+                                  type: boolean
+                            jvm:
+                              type: object
+                              properties:
+                                initialRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                maxRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                                minRAMPercentage:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 100
+                            logLevel:
+                              type: string
+                            metastoreTLS:
+                              type: object
+                              properties:
+                                caCertificate:
+                                  type: string
+                                certificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                              - required:
+                                - caCertificate
+                                - certificate
+                                - key
+                                - createSecret
+                                - secretName
+                                properties:
+                                  caCertificate:
+                                    minLength: 1
+                                  certificate:
+                                    minLength: 1
+                                  key:
+                                    minLength: 1
+                                  enabled:
+                                    enum:
+                                    - true
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                            tls:
+                              type: object
+                              properties:
+                                caCertificate:
+                                  type: string
+                                certificate:
+                                  type: string
+                                createSecret:
+                                  type: boolean
+                                enabled:
+                                  type: boolean
+                                key:
+                                  type: string
+                                secretName:
+                                  type: string
+                              oneOf:
+                              - required:
+                                - enabled
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - false
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                                - not:
+                                    required:
+                                    - createSecret
+                                - not:
+                                    required:
+                                    - secretName
+                              - required:
+                                - createSecret
+                                - secretName
+                                properties:
+                                  enabled:
+                                    enum:
+                                    - true
+                                  createSecret:
+                                    enum:
+                                    - false
+                                  secretName:
+                                    minLength: 1
+                                allOf:
+                                - not:
+                                    required:
+                                    - caCertificate
+                                - not:
+                                    required:
+                                    - certificate
+                                - not:
+                                    required:
+                                    - key
+                              - required:
+                                - caCertificate
+                                - certificate
+                                - key
+                                - createSecret
+                                - secretName
+                                properties:
+                                  caCertificate:
+                                    minLength: 1
+                                  certificate:
+                                    minLength: 1
+                                  key:
+                                    minLength: 1
+                                  enabled:
+                                    enum:
+                                    - true
+                                  createSecret:
+                                    enum:
+                                    - true
+                                  secretName:
+                                    minLength: 1
+                        livenessProbe:
+                          type: object
+                          properties:
+                            failureThreshold:
+                              type: integer
+                            initialDelaySeconds:
+                              type: integer
+                            periodSeconds:
+                              type: integer
+                            successThreshold:
+                              type: integer
+                            tcpSocket:
+                              type: object
+                              properties:
+                                port:
+                                  type: integer
+                            timeoutSeconds:
+                              type: integer
+                        nodeSelector:
+                          type: object
+                        resources:
+                          type: object
+                          properties:
+                            limits:
+                              type: object
+                            requests:
+                              type: object
+                        tolerations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                              tolerationSeconds:
+                                format: int64
+                                type: integer
+                              value:
+                                type: string
+                    terminationGracePeriodSeconds:
+                      type: integer
+
+            __ghostunnel:
+              type: object
+              properties:
+                image:
+                  type: object
+                  properties:
+                    pullPolicy:
+                      type: string
+                    repository:
+                      type: string
+                    tag:
+                      type: string
+
+            hadoop:
+              type: object
+              required:
+              - spec
+              properties:
+                spec:
+                  type: object
+                  properties:
+                    config:
+                      type: object
+                      properties:
+                        aws:
+                          type: object
+                          properties:
+                            accessKeyID:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            secretAccessKey:
+                              type: string
+                            secretName:
+                              type: string
+                        azure:
+                          type: object
+                          properties:
+                            createSecret:
+                              type: boolean
+                            secretAccessKey:
+                              type: string
+                            secretName:
+                              type: string
+                            storageAccountName:
+                              type: string
+                        gcs:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            serviceAccountKeyJSON:
+                              type: string
+                        s3Compatible:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            createSecret:
+                              type: boolean
+                            accessKeyID:
+                              type: string
+                            secretAccessKey:
+                              type: string
+                            endpoint:
+                              type: string
+                              format: uri
+                        defaultFS:
+                          type: string
+                    configSecretName:
+                      type: string
+                    hdfs:
+                      type: object
+                      properties:
+                        enabled:
+                          type: boolean
+                        config:
+                          type: object
+                          properties:
+                            datanodeDataDirPerms:
+                              type: string
+                            logLevel:
+                              type: string
+                            replicationFactor:
+                              type: integer
+                        datanode:
+                          type: object
+                          properties:
+                            affinity:
+                              type: object
+                              properties:
+                                podAntiAffinity:
+                                  type: object
+                                  properties:
+                                    requiredDuringSchedulingIgnoredDuringExecution:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                          topologyKey:
+                                            type: string
+                            annotations:
+                              type: object
+                            config:
+                              type: object
+                              properties:
+                                jvm:
+                                  type: object
+                                  properties:
+                                    initialRAMPercentage:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 100
+                                    maxRAMPercentage:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 100
+                                    minRAMPercentage:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 100
+                            labels:
+                              type: object
+                            nodeSelector:
+                              type: object
+                            replicas:
+                              type: integer
+                              format: int32
+                            resources:
+                              type: object
+                              properties:
+                                limits:
+                                  type: object
+                                requests:
+                                  type: object
+                            storage:
+                              type: object
+                              properties:
+                                class:
+                                  type: string
+                                size:
+                                  type: string
+                            terminationGracePeriodSeconds:
+                              type: integer
+                            tolerations:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  effect:
+                                    type: string
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                  tolerationSeconds:
+                                    format: int64
+                                    type: integer
+                                  value:
+                                    type: string
+                                enabled:
+                                  type: boolean
+                        namenode:
+                          type: object
+                          properties:
+                            affinity:
+                              type: object
+                              properties:
+                                podAntiAffinity:
+                                  type: object
+                                  properties:
+                                    requiredDuringSchedulingIgnoredDuringExecution:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                          topologyKey:
+                                            type: string
+                            annotations:
+                              type: object
+                            config:
+                              type: object
+                              properties:
+                                jvm:
+                                  type: object
+                                  properties:
+                                    initialRAMPercentage:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 100
+                                    maxRAMPercentage:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 100
+                                    minRAMPercentage:
+                                      type: integer
+                                      minimum: 0
+                                      maximum: 100
+                            labels:
+                              type: object
+                            nodeSelector:
+                              type: object
+                            resources:
+                              type: object
+                              properties:
+                                limits:
+                                  type: object
+                                requests:
+                                  type: object
+                            storage:
+                              type: object
+                              properties:
+                                class:
+                                  type: string
+                                size:
+                                  type: string
+                            terminationGracePeriodSeconds:
+                              type: integer
+                            tolerations:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  effect:
+                                    type: string
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                  tolerationSeconds:
+                                    format: int64
+                                    type: integer
+                                  value:
+                                    type: string
+                        securityContext:
+                          type: object
+                          properties:
+                            fsGroup:
+                              type: integer
+                              format: int64
+                            runAsGroup:
+                              type: integer
+                              format: int64
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                              format: int64
+                    image:
+                      type: object
+                      properties:
+                        pullPolicy:
+                          type: string
+                        pullSecrets:
+                          type: string
+                        repository:
+                          type: string
+                        tag:
+                          type: string
+
