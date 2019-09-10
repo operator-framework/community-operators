@@ -60,6 +60,8 @@ function create_operator_group_file() {
   local namespace="$4"
 
   while read -r mode; do
+    if [[ "$(echo "$mode" | jq -r ".type")" == "AllNamespaces" && \
+      "$(echo "$mode" | jq -r ".supported")" == "false" ]]; then
         cat <<EOF > "$op_group_file"
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
@@ -70,6 +72,7 @@ spec:
   targetNamespaces:
   - $namespace
 EOF
+    fi
   done < <(yq r --tojson "$csv_file" "spec.installModes" | jq -c '.[]')
 }
 
