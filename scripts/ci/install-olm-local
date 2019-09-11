@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 
-
-if [[ ! "$(kubectl api-resources | grep -o operatorgroup)" == "operatorgroup" ]]; then
-  operator-sdk alpha olm install > /dev/null
-
-  # Delete "operatorhubio-catalog"
-  kubectl delete catalogsource operatorhubio-catalog -n olm > /dev/null
+if kubectl cluster-info | grep -q 'running'; then
+  echo 'cluster is running and ready for installing olm'
+else
+  >&2 echo 'cluster probably not running'
+  exit 1
 fi
+
+curl -L https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/install.sh --silent -o ./install.sh
+chmod +x ./install.sh
+./install.sh 0.10.0
+operator-sdk alpha olm install
+
+# Delete "operatorhubio-catalog"
+kubectl delete catalogsource operatorhubio-catalog -n olm
+
