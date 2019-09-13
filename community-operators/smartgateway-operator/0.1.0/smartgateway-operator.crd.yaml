@@ -1,0 +1,81 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: smartgateways.smartgateway.infra.watch
+spec:
+  group: smartgateway.infra.watch
+  names:
+    kind: SmartGateway
+    listKind: SmartGatewayList
+    plural: smartgateways
+    singular: smartgateway
+  scope: Namespaced
+  version: v1alpha1
+  subresources:
+    status: {}
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        spec:
+          description: 'SmartGatewaySpec is a specification of the desired behavior
+            of the Smartgateway deployment. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
+          properties:
+            size:
+              description: Size sets the number of replicas to create. Defaults to 1.
+              type: integer
+            AMQPUrl:
+              description: AMQP1.x listener example 127.0.0.1:5672/collectd/telemetry. Defaults to using
+                'messaging-internal-<name>.<namespace>.src:5672/collectd/telemetry'.
+              type: string
+            elasticUrl:
+              description: URL for ElasticSearch endpoing to connect when the Smart Gateway is operating as an 'events' service type.
+                Defaults to 'elasticsearch.<namespace>.svc:9200'.
+              type: string
+            resetIndex:
+              description: Reset the ElasticSearch index on load. Defaults to 'false'.
+            serviceType:
+              description: The service type for this smart gateway. One of 'metrics' or 'events'. Defaults to 'metrics'.
+              type: string
+            exporterHost:
+              description: Metrics URL for Prometheus to export. Defaults to "0.0.0.0".
+              type: string
+            exporterPort:
+              description: Metrics port for Prometheus to export. Defaults to 8081.
+              type: integer
+            cpuStats:
+              description: Include CPU usage info in http requests (degrades performance). Defaults to 'false'.
+              type: string
+            dataCount:
+              description: Stop after receiving this many messages in total (-1 forever). Defaults to '-1'.
+              type: string
+            useSample:
+              description: Use sample data instead of AMQP .This will not fetch any data from AMQP. Defaults to 'false'.
+              type: string
+            debug:
+              description: Enable verbose debugging statements. Defaults to 'false'.
+              type: string
+            prefetch:
+              description: Number of messages that we can prefetch from AMQP 1.x. By enabling prefetching, the smart gateway won't need to
+                request every message individually from the AMQP bus, resulting in a round trip for every request between sender and receiver.
+                To avoid the round trip for every message, the use of prefetch can be used to allow the receiver to request messages be sent
+                in anticipation of them being sent to us.
+              type: integer
+            containerImagePath:
+              description: Path to the container image this Operator will deploy. Value is defined as the standard registry/image_name:tag
+                format. Defaults to 'quay.io/redhat-service-assurance/smart-gateway:latest'
+              type: string
+
