@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+
+# This script transforms an operator dir structured in the style of
+# community-operators into one expected by operator-registry, inserts the
+# scorecard proxy container, and proxy kubeconfig secret, volume, and mount
+# into a CSV, creates CR's from CSV metadata, deploys the operator with the
+# OLM in a local cluster, and runs the SDK scorecard against the operator.
+
+set -e
+cd /
+. /scripts/ci/env
+export_color
+
+# Create catalog manifests and Dockerfile to create a registry image.
+printf "    creating subscription files %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+create_subscription_file "$SUBSCRIPTION_FILE" "$PKG_NAME" "$PKG_NAME" "$CHANNEL_NAME" "$CSV_NAME" "$NAMESPACE"
+
+printf "    creating operator group file %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+python3 /scripts/lib-python/files/create_operator_group_file.py -g "$OPERATOR_GROUP_FILE" -o "$PKG_NAME" -v "$CSV_FILE" -n "$NAMESPACE" -i "$INSTALL_MODE"
+
+printf "    creating CR file %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+create_cr_files_from_metadata "$CSV_FILE" "$CR_DIR" "$NAMESPACE"
+
+printf "    creating kubeconfig secret file %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+create_kubeconfig_secret_file "$SECRET_FILE" "$NAMESPACE"
+
+printf "    creating kubeconfig volume file %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+insert_kubeconfig_volume "$CSV_FILE"
+
+printf "    creating kubeconfig secret mount %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+insert_kubeconfig_secret_mount "$CSV_FILE"
+
+insert_proxy_container "$CSV_FILE" "$SC_PROXY_IMAGE"
+
+printf "    creating config map registry %s\t[ ${OK} OK ${NC} ]\n"  | expand  -t 50 >&2
+python3 /scripts/lib-python/files/configmap-registry.py  -o "$PKG_NAME" -d "${DEPLOY_DIR}/${PKG_NAME}" -n "$NAMESPACE" -v "$OP_VER" -c "$CATALOGSOURCE_FILE"

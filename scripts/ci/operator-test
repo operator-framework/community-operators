@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+# This script transforms an operator dir structured in the style of
+# community-operators into one expected by operator-registry, inserts the
+# scorecard proxy container, and proxy kubeconfig secret, volume, and mount
+# into a CSV, creates CR's from CSV metadata, deploys the operator with the
+# OLM in a local cluster, and runs the SDK scorecard against the operator.
+set -e
+
+cd /
+. /scripts/ci/env
+KUBECONFIG=~/.kube/config
+export_color
+
+#trap_add_exit "rm -rf $TMP"
+set -u
+
+# Define names for resource types.
+export DEP_NAME="$(yq r "$CSV_FILE" "spec.install.spec.deployments[0].name")"
+declare -A OBJECTS
+
+OBJECTS=(
+  ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
+  ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
+  ["csv"]="$CSV_NAME"
+  ["deployment"]="$DEP_NAME"
+)
+
+if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
+    printf "    Apply OPERATOR GROUP file %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+    OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
+fi
+
+printf "    Applying object to cluster %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+
+apply_objects_incluster "$DEPLOY_DIR"
+printf "    Applying object to cluster %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+
+printf "    Checking subscriptions if passes %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+# Check that subscription is picked up
+check_subscription_passes "${PKG_NAME}-sub" "$NAMESPACE" "$PKG_NAME"
+
+# Wait for csv, then check that clusterserviceversion has Succeeded
+sleep 6
+printf "    Checking subscriptions if passes %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+
+printf "    Checking csv if passes %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+check_csv_passes "$CSV_NAME" "$NAMESPACE" "$INSTALL_MODE"
+printf "    Checking csv if passes %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+
+printf "    Waiting for deployment %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+# Wait for the deployment specified in the CSV to rollout successfully.
+wait_on_deployment "$DEP_NAME" "$NAMESPACE"
+
+printf "    Waiting for deployment %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2

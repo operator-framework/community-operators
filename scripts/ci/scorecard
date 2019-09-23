@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+cd /
+. /scripts/ci/env
+KUBECONFIG=~/.kube/config
+declare -A OBJECTS
+
+OBJECTS=(
+  ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
+  ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
+  ["csv"]="$CSV_NAME"
+  ["deployment"]="$DEP_NAME"
+)
+
+if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
+    OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
+fi
+
+
+# Run scorecard tests on the operator.
+# TODO: run against multiple CR's. Right now the scorecard only works with one
+# CR.
+>&2 echo "Running scorecard trough all CR"
+
+for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
+  >&2 echo -e "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$cr_file""
+  >&2 operator-sdk scorecard \
+    --cr-manifest "$cr_file" \
+    --crds-dir "$ABS_BUNDLE_PATH" \
+    --olm-deployed \
+    --csv-path "$CSV_FILE" \
+    --namespace "$NAMESPACE" \
+    --init-timeout 60 \
+    --proxy-image "$SC_PROXY_IMAGE" \
+    --kubeconfig "$KUBECONFIG" \
+    --verbose
+
+  # If scorecard errors out, print out operator logs
+  if [[ $? != 0 ]]; then
+    >&2 echo "\nFAIL: Scorecard test errored out. Printing operator state:"
+    LOG_FILE="${TMP}/info.log"
+    log_operator_state $LOG_FILE OBJECTS $NAMESPACE
+     >&2 cat $LOG_FILE
+  else
+    echo "PASS: Scorecard test passed"
+  fi
+done
+echo "$CLEAN_MODE"
+
+if [[ "$CLEAN_MODE" == "NORMAL" || "$CLEAN_MODE" == "FORCE" ]]; then
+  echo "Printing operator logs"; get_operator_logs "$CSV_NAME" "$NAMESPACE"
+
+  delete_objects_incluster "$DEPLOY_DIR" "$NAMESPACE"
+  delete_objects_incluster "$ABS_BUNDLE_PATH" "$NAMESPACE"
+fi
+
+if [[ "$CLEAN_MODE" == "NORMAL" ]]; then
+  delete_namespace "$NAMESPACE $CLEAN_MODE"
+fi

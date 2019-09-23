@@ -102,7 +102,8 @@ function create_cr_files_from_metadata() {
 
   local tmp
   while read -r obj; do
-    tmp="$(mktemp -p "$cr_dir" "XXXXXXXXXX.cr.yaml")"
+    tmp="$(mktemp -p "$cr_dir" "XXXXXXXXXX")"
+    tmp=$tmp".cr.yaml"
     echo "$obj" | yq w - "metadata.namespace" "$namespace" > "$tmp"
   done < <(echo "$alm_examples" | jq -c '.[]')
 }
@@ -140,7 +141,7 @@ function create_kubeconfig_secret_file() {
   # Expected proxy url. The proxy is configured to listen on port 8889.
   local server="localhost:8889"
   # Username for scorecard namespaced owner reference.
-  local username="$(echo '{"apiVersion":"","kind":"","name":"scorecard","uid":"","Namespace":"'$namespace'"}' | base64 -w 0)"
+  local username="$(echo '{"apiVersion":"","kind":"","name":"scorecard","uid":"","Namespace":"'$namespace'"}' | base64 | tr -d \\n)"
   # Kubeconfig used to communicate with the proxy.
   local kubeconfig="apiVersion: v1
 kind: Config
@@ -161,7 +162,7 @@ users:
   user:
     username: $username
     password: unused"
-  local kubeconfig_base64="$(echo "$kubeconfig" | base64 -w 0)"
+  local kubeconfig_base64="$(echo "$kubeconfig" | base64 | tr -d \\n)"
 
   cat <<EOF > "$secret_file"
 apiVersion: v1
@@ -215,4 +216,51 @@ function insert_kubeconfig_secret_mount() {
 
   yq w -i "$csv_file" "$dep_tmpl" "$dep_yaml"
   sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
+}
+
+function indent() {
+  INDENT="      "
+  sed "s/^/$INDENT/" | sed "s/^${INDENT}\($1\)/${INDENT:0:-2}- \1/"
+}
+
+function create_configmap_based_registry() {
+    local name="$1"
+    local dir="$2"
+    local namespace="$3"
+    local op_ver="$4"
+    local catalogsource_file="$5"
+    CRD="$(cat $(find $dir/$op_ver -name '*.crd.yaml' | sort -n) | grep -v -- "---" | indent apiVersion)"
+    CSV="$(cat $(find $dir/** -name '*version.yaml' | sort -n) | indent apiVersion)"
+
+    cat <<EOF > "$catalogsource_file"
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: $name
+  namespace: $namespace
+data:
+  customResourceDefinitions: |-
+$CRD
+  clusterServiceVersions: |-
+$CSV
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: $name-ocs
+  namespace: $namespace
+spec:
+  configMap: $name
+  displayName: $name-ocs
+  publisher: Red Hat
+  sourceType: internal
+EOF
+    yq w -i "$catalogsource_file" data.packages "$(cat $dir/*package.yaml)"
+    cat "$catalogsource_file" |  sed  -e 's/  channels:/- channels:/g'|sed  -e 's/  - channels:/    - channels:/g'|sed  -e 's/    - currentCSV: /      - currentCSV: /g'|sed  -e 's/      name: alpha/        name: alpha/g'|sed  -e 's/    packageName: /      packageName: /g' > "$catalogsource_file"
+    if [[ -s "$catalogsource_file" ]]
+    then
+        echo "creating configmap finished"
+    else
+        create_configmap_based_registry "$name" "$dir" "$namespace" "$op_ver" "$catalogsource_file"
+    fi
 }
