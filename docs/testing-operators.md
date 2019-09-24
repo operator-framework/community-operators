@@ -78,7 +78,7 @@ git clone https://github.com/operator-framework/operator-lifecycle-manager.git
 Before you begin your current working dir should look like the following, with `my-operator/` as an example for the name of your bundle:
 
 ```
-my-operator/
+my-operator-bundle/
 operator-marketplace/
 operator-courier/
 operator-lifecycle-manager/
