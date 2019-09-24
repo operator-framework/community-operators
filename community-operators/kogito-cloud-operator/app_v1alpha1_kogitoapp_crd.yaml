@@ -1,0 +1,273 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kogitoapps.app.kiegroup.org
+spec:
+  group: app.kiegroup.org
+  names:
+    kind: KogitoApp
+    listKind: KogitoAppList
+    plural: kogitoapps
+    singular: kogitoapp
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            build:
+              description: S2I Build configuration
+              properties:
+                env:
+                  items:
+                    properties:
+                      name:
+                        description: Name of an environment variable
+                        type: string
+                      value:
+                        description: Value for that environment variable
+                        type: string
+                    type: object
+                  type: array
+                gitSource:
+                  properties:
+                    contextDir:
+                      description: Context/subdirectory where the code is located,
+                        relatively to repo root
+                      type: string
+                    reference:
+                      description: Branch to use in the git repository
+                      type: string
+                    uri:
+                      description: Git URI for the s2i source
+                      type: string
+                  required:
+                  - uri
+                  type: object
+                imageRuntime:
+                  description: ImageRuntime is used build configurations to build
+                    a final runtime image based on a s2i configuration
+                  properties:
+                    imageStreamName:
+                      type: string
+                    imageStreamNamespace:
+                      type: string
+                    imageStreamTag:
+                      type: string
+                  type: object
+                imageS2I:
+                  description: ImageS2I is used by build configurations to build the
+                    image from source
+                  properties:
+                    imageStreamName:
+                      type: string
+                    imageStreamNamespace:
+                      type: string
+                    imageStreamTag:
+                      type: string
+                  type: object
+                incremental:
+                  type: boolean
+                native:
+                  description: 'Native indicates if the Kogito Service built should
+                    be compiled to run on native mode when Runtime is quarkus. See:
+                    https://www.graalvm.org/docs/reference-manual/aot-compilation/'
+                  type: boolean
+                resources:
+                  description: Resources for build pods. Default limits are 1GB RAM/0.5
+                    cpu on jvm and 4GB RAM/1 cpu for native builds.
+                  properties:
+                    limits:
+                      items:
+                        properties:
+                          resource:
+                            description: Resource type like cpu and memory
+                            enum:
+                            - cpu
+                            - memory
+                            type: string
+                          value:
+                            description: Value of this resource in Kubernetes format
+                            type: string
+                        required:
+                        - resource
+                        - value
+                        type: object
+                      type: array
+                    requests:
+                      items:
+                        properties:
+                          resource:
+                            description: Resource type like cpu and memory
+                            enum:
+                            - cpu
+                            - memory
+                            type: string
+                          value:
+                            description: Value of this resource in Kubernetes format
+                            type: string
+                        required:
+                        - resource
+                        - value
+                        type: object
+                      type: array
+                  type: object
+                webhooks:
+                  description: WebHook secrets for build configs
+                  items:
+                    properties:
+                      secret:
+                        description: Secret value for webhook
+                        type: string
+                      type:
+                        description: WebHook type, either GitHub or Generic
+                        enum:
+                        - GitHub
+                        - Generic
+                        type: string
+                    type: object
+                  type: array
+              required:
+              - gitSource
+              type: object
+            env:
+              items:
+                properties:
+                  name:
+                    description: Name of an environment variable
+                    type: string
+                  value:
+                    description: Value for that environment variable
+                    type: string
+                type: object
+              type: array
+            replicas:
+              format: int32
+              maximum: 100
+              minimum: 0
+              type: integer
+            resources:
+              description: The resources for the deployed pods, like memory and cpu
+              properties:
+                limits:
+                  items:
+                    properties:
+                      resource:
+                        description: Resource type like cpu and memory
+                        enum:
+                        - cpu
+                        - memory
+                        type: string
+                      value:
+                        description: Value of this resource in Kubernetes format
+                        type: string
+                    required:
+                    - resource
+                    - value
+                    type: object
+                  type: array
+                requests:
+                  items:
+                    properties:
+                      resource:
+                        description: Resource type like cpu and memory
+                        enum:
+                        - cpu
+                        - memory
+                        type: string
+                      value:
+                        description: Value of this resource in Kubernetes format
+                        type: string
+                    required:
+                    - resource
+                    - value
+                    type: object
+                  type: array
+              type: object
+            runtime:
+              description: The name of the runtime used, either quarkus or springboot,
+                defaults to quarkus
+              enum:
+              - quarkus
+              - springboot
+              type: string
+            service:
+              description: Service configuration
+              properties:
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: Labels for the application service
+                  type: object
+              type: object
+          required:
+          - build
+          type: object
+        status:
+          properties:
+            conditions:
+              items:
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - type
+                - status
+                type: object
+              type: array
+            deployments:
+              properties:
+                failed:
+                  description: Deployments failed
+                  items:
+                    type: string
+                  type: array
+                ready:
+                  description: Deployments are ready to serve requests
+                  items:
+                    type: string
+                  type: array
+                starting:
+                  description: Deployments are starting, may or may not succeed
+                  items:
+                    type: string
+                  type: array
+                stopped:
+                  description: Deployments are not starting, unclear what next step
+                    will be
+                  items:
+                    type: string
+                  type: array
+              type: object
+            route:
+              type: string
+          required:
+          - conditions
+          - deployments
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
