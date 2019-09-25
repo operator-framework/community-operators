@@ -112,6 +112,8 @@ A token takes the following form and should be saved in an environment variable:
 export QUAY_TOKEN="basic abcdefghijkl=="
 ```
 
+> Note: Do not share your quay token.
+
 ### Linting
 
 `operator-courier` will verify the fields included in the Operator metadata (CSV). The fields can also be manually reviewed according to [the operator CSV documentation](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md).
