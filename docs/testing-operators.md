@@ -34,7 +34,8 @@
 
 ## Overview
 
-These instructions walk you through how to test if your Operator deploys correctly with Operator Framework. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
+These instructions walk you through how to manually test if your Operator deploys correctly with Operator Framework. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
+These tests and all pre-requisite can also be executed automatically in a single step using a [Makefile](./using-scripts.md).
 
 The process below assume that you have an Kubernetes Operator in the Operator Framework *bundle* format, for example:
 
