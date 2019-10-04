@@ -75,6 +75,8 @@ spec:
                   format: int32
                   type: integer
               type: object
+            createAppDefinition:
+              type: boolean
             createKnativeService:
               type: boolean
             env:
@@ -88,6 +90,174 @@ spec:
             expose:
               type: boolean
             livenessProbe:
+              type: object
+            monitoring:
+              properties:
+                endpoints:
+                  items:
+                    properties:
+                      basicAuth:
+                        description: 'BasicAuth allow an endpoint to authenticate
+                          over basic authentication More info: https://prometheus.io/docs/operating/configuration/#endpoints'
+                        properties:
+                          password:
+                            description: The secret that contains the password for
+                              authenticate
+                            type: object
+                          username:
+                            description: The secret that contains the username for
+                              authenticate
+                            type: object
+                        type: object
+                      bearerTokenFile:
+                        description: File to read bearer token for scraping targets.
+                        type: string
+                      honorLabels:
+                        description: HonorLabels chooses the metric's labels on collisions
+                          with target labels.
+                        type: boolean
+                      interval:
+                        description: Interval at which metrics should be scraped
+                        type: string
+                      metricRelabelings:
+                        description: MetricRelabelConfigs to apply to samples before
+                          ingestion.
+                        items:
+                          properties:
+                            action:
+                              description: Action to perform based on regex matching.
+                                Default is 'replace'
+                              type: string
+                            modulus:
+                              description: Modulus to take of the hash of the source
+                                label values.
+                              format: int64
+                              type: integer
+                            regex:
+                              description: Regular expression against which the extracted
+                                value is matched. defailt is '(.*)'
+                              type: string
+                            replacement:
+                              description: Replacement value against which a regex
+                                replace is performed if the regular expression matches.
+                                Regex capture groups are available. Default is '$1'
+                              type: string
+                            separator:
+                              description: Separator placed between concatenated source
+                                label values. default is ';'.
+                              type: string
+                            sourceLabels:
+                              description: The source labels select values from existing
+                                labels. Their content is concatenated using the configured
+                                separator and matched against the configured regular
+                                expression for the replace, keep, and drop actions.
+                              items:
+                                type: string
+                              type: array
+                            targetLabel:
+                              description: Label to which the resulting value is written
+                                in a replace action. It is mandatory for replace actions.
+                                Regex capture groups are available.
+                              type: string
+                          type: object
+                        type: array
+                      params:
+                        additionalProperties:
+                          items:
+                            type: string
+                          type: array
+                        description: Optional HTTP URL parameters
+                        type: object
+                      path:
+                        description: HTTP path to scrape for metrics.
+                        type: string
+                      port:
+                        description: Name of the service port this endpoint refers
+                          to. Mutually exclusive with targetPort.
+                        type: string
+                      proxyUrl:
+                        description: ProxyURL eg http://proxyserver:2195 Directs scrapes
+                          to proxy through this endpoint.
+                        type: string
+                      relabelings:
+                        description: 'RelabelConfigs to apply to samples before ingestion.
+                          More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config'
+                        items:
+                          properties:
+                            action:
+                              description: Action to perform based on regex matching.
+                                Default is 'replace'
+                              type: string
+                            modulus:
+                              description: Modulus to take of the hash of the source
+                                label values.
+                              format: int64
+                              type: integer
+                            regex:
+                              description: Regular expression against which the extracted
+                                value is matched. defailt is '(.*)'
+                              type: string
+                            replacement:
+                              description: Replacement value against which a regex
+                                replace is performed if the regular expression matches.
+                                Regex capture groups are available. Default is '$1'
+                              type: string
+                            separator:
+                              description: Separator placed between concatenated source
+                                label values. default is ';'.
+                              type: string
+                            sourceLabels:
+                              description: The source labels select values from existing
+                                labels. Their content is concatenated using the configured
+                                separator and matched against the configured regular
+                                expression for the replace, keep, and drop actions.
+                              items:
+                                type: string
+                              type: array
+                            targetLabel:
+                              description: Label to which the resulting value is written
+                                in a replace action. It is mandatory for replace actions.
+                                Regex capture groups are available.
+                              type: string
+                          type: object
+                        type: array
+                      scheme:
+                        description: HTTP scheme to use for scraping.
+                        type: string
+                      scrapeTimeout:
+                        description: Timeout after which the scrape is ended
+                        type: string
+                      targetPort:
+                        anyOf:
+                        - type: string
+                        - type: integer
+                        description: Name or number of the target port of the endpoint.
+                          Mutually exclusive with port.
+                      tlsConfig:
+                        description: TLS configuration to use when scraping the endpoint
+                        properties:
+                          caFile:
+                            description: The CA cert to use for the targets.
+                            type: string
+                          certFile:
+                            description: The client cert file for the targets.
+                            type: string
+                          insecureSkipVerify:
+                            description: Disable target certificate validation.
+                            type: boolean
+                          keyFile:
+                            description: The client key file for the targets.
+                            type: string
+                          serverName:
+                            description: Used to verify the hostname for the targets.
+                            type: string
+                        type: object
+                    type: object
+                  type: array
+                labels:
+                  additionalProperties:
+                    type: string
+                  type: object
               type: object
             pullPolicy:
               type: string
@@ -123,10 +293,13 @@ spec:
                 mountPath:
                   type: string
                 size:
+                  pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
                   type: string
                 volumeClaimTemplate:
                   type: object
               type: object
+            version:
+              type: string
             volumeMounts:
               items:
                 type: object
@@ -137,7 +310,6 @@ spec:
               type: array
           required:
           - applicationImage
-          - stack
           type: object
         status:
           properties:
