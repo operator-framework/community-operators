@@ -162,14 +162,6 @@ Install OLM to an existing cluster (determined via `KUBECONFIG` or `~/.kube/conf
 make operator.olm.install
 ```
 
-## Run scorecard operator
-You need run the minikube or have some kubernetes instance configured.
-If you want test it in minikube which will be automatically started if you don't have any kubeconfig in home directory or you can run it manually: 
-
-```
-make minikube.start VM_DRIVER=kvm2
-```
-
 ## Troubleshooting
 
 
