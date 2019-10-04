@@ -1,4 +1,4 @@
-# Testing operator locally
+# Automate testing your Operator locally
 
 For convenience, in addition to the [manual test instructions](./testing-operators.md) we provide a `Makefile` based test automation. This will automate all the manual steps referred to in [Testing Operator Deployment on Kubernetes](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md#testing-operator-deployment-on-kubernetes). In addition the [`scorecard`](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md) test from the Operator-SDK will be executed.
 This is currently tested on `minikube` but should work on other Kubernetes systems as well.
