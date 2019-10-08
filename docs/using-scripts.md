@@ -150,10 +150,21 @@ Test operator with scorecard                      [  OK  ]
 ## Additional shortcuts
 
 ### Install a minikube cluster
-Install a `minikube` cluster as a testbed for the Operator deployment.
+Install a `minikube` cluster as a testbed for the Operator deployment. Supply `VM_DRIVER` to amend which of the supported hypervisors is used.
 
 ```
 make minikube.install VM_DRIVER=hyperkit
+```
+
+This command will create a minikube cluster under the profile `operators`:
+
+```
+$ minikube status --profile operators
+
+host: Running
+kubelet: Running
+apiserver: Running
+kubectl: Correctly Configured: pointing to minikube-vm at 192.168.64.101
 ```
 
 ### Install operator lifecycle manager
