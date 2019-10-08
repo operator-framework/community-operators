@@ -17,6 +17,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 ### Your submission should not
 
 * [ ] Modify more than one operator
+* [ ] Rename an operator - please remove and add with a different name instead
 * [ ] Submit operators to both `upstream-community-operators` and `community-operators` at once
 * [ ] Modify any files outside the above mentioned folders
 * [ ] Contain more than one commit. **Please squash your commits.**

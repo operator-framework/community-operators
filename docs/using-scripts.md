@@ -1,87 +1,180 @@
-# Pulling from quay.io
+# Automate testing your Operator locally
 
-## Prerequisites
-The following prequistis are required run to the quay.io scripts:
-
-* [jq](https://stedolan.github.io/jq/) must be installed
-* A quay.io account
-
-To pull your operator from quay.io, simply run the following command:
-```bash
-$ scripts/pull-from-quay $NAMESPACE $REPOSITORY
-```
-
-In the command above, `$NAMESPACE` is the [quay.io](https://quay.io) namespace. Possible values include:
-
-* [community-operators](https://quay.io/organization/community-operators)
-* [upstream-community-operators](https://quay.io/organization/upstream-community-operators)
-* your personal quay.io namespace.
-
-The `$REPOSITORY` is the name of the folder you created under the `$NAMESPACE` directory.
-
-For example, for `community-operators/etcd` the `$NAMESPACE` would be `community-operators` and the `$REPOSITORY` would be `etcd`.
-
-# Testing operator locally
+For convenience, in addition to the [manual test instructions](./testing-operators.md) we provide a `Makefile` based test automation. This will automate all the manual steps referred to in [Testing Operator Deployment on Kubernetes](./testing-operators.md#testing-operator-deployment-on-kubernetes). In addition the [`scorecard`](https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md) test from the Operator-SDK will be executed.
+This is currently tested on `minikube` but should work on other Kubernetes systems as well.
 
 ## Prerequisites
 
-You need have installed docker and make 
+You need the following installed on your local machine:
 
-## Check operator with courrier only
-operator currier verify your CSV more detail in [docs](https://github.com/operator-framework/operator-courier)
+* Docker
+* make
+* minikube (if no existing Kubernetes cluster is available via `KUBECONFIG` or in `~/.kube/config`)
 
-Community operator check:
+All further dependencies are encapsulated in a container image that this `Makefile` will execute as a test driver.
 
-```
-make operator.verify
-```
+## Available test modes
+
+The `Makefile` supports two test modes. Both have these supported options:
 
 ### Options:
 
-` OP_PATH ` - relative path to your operator which is required
+` OP_PATH ` - relative path to your operator (required)
 
-` OP_VER ` - version of operator if is not provided it will be parsed by operator package yaml
+` OP_VER ` - version of operator (if not provided the latest will be determined from your `package.yaml`)
 
-` VERBOSE ` - enable logging
+` OP_CHANNEL ` - channel of operator if is not provided it will be parsed by operator package yaml or use the default ones
 
-## Install operator lifecycle manager
-Install OLM to your cluster it will be installed with `kubectl` with your local config
+` VERBOSE ` - enable verbose output of executed subcommands
 
+### Linting metadata only
+Using `operator-courier` this test verify your CSV and the package definitionmore detail in the [docs](https://github.com/operator-framework/operator-courier). As part of this test nothing will be changed on your system.
+
+Example, run from the top-level directory of this repository:
+
+```
+make operator.verify OP_PATH=upstream-community-operators/cockroachdb
+
+Verify operator                                   [  Processing  ]
+WARNING: csv metadata.annotations.certified not defined. [cockroachdb/cockroachdb.v2.1.1.clusterserviceversion.yaml]
+WARNING: csv metadata.annotations.certified not defined. [cockroachdb/cockroachdb.v2.0.9.clusterserviceversion.yaml]
+Verify operator                                   [  OK  ]
+```
+
+### Testing Operator deployment
+Using the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager)(OLM) your Operator will be packaged into a temporary catalog and installation will be attempted. OLM will be installed for you if not present.
+You can either provide an Kubernetes cluster as a testbed via `KUBECONFIG` or `~/.kube/confg` or the Makefile will install a `minikube` cluster for you. 
+Once successfully deployed this test will run the `scorecard` test of the Operator-SDK for you.
+
+For this type of test, additionally the following Options exist:
+
+` VM_DRIVER ` - VM_DRIVER flag passed to `minikube` in case no existing cluster was supplied. Default is determined by your `minikube` install.
+
+` CLEAN_MODE ` - selection of `NORMAL`, `NONE` and `FORCE`. As the test installs OLM components in your Kubernetes cluster this controls the clean up of those. In `NORMAL` clean up will happen if no errors occured. When set to `NONE` clean up is ommitted, when set to `FORCE` clean up will always be done. Default is `NORMAL`.
+
+Example, run from the top-level directory of this repository:
+
+```
+minikube start
+[...]
+
+make operator.test OP_PATH=upstream-community-operators/cockroachdb
+
+Pulling docker image                              [  Processing  ]
+Pulling docker image                              [  OK  ]
+cluster is running and ready for installing olm   [  OK  ]
+Find kube config                                  [  CONTEXT: minikube  ]
+Operator version detected                         [  2.1.11  ]
+Creating namespace                                [  Processing  ]
+Creating namespace                                [  OK  ]
+Verify operator                                   [  Processing  ]
+WARNING: csv metadata.annotations.certified not defined. [cockroachdb/cockroachdb.v2.1.1.clusterserviceversion.yaml]
+WARNING: csv metadata.annotations.certified not defined. [cockroachdb/cockroachdb.v2.0.9.clusterserviceversion.yaml]
+Verify operator                                   [  OK  ]
+Install OLM                                       [  Processing  ]
+Install OLM                                       [  OK  ]
+Make registry configmap                           [  Processing  ]
+    creating subscription files                   [  OK  ]
+    creating operator group file                  [  OK  ]
+    creating CR file                              [  OK  ]
+    creating kubeconfig secret file               [  OK  ]
+    creating kubeconfig volume file               [  OK  ]
+    creating kubeconfig secret mount              [  OK  ]
+    creating config map registry                  [  OK  ]
+Make registry configmap                           [  OK  ]
+Operator deployment                               [  Processing  ]
+    Apply OPERATOR GROUP file                     [  OK  ]
+    Applying object to cluster                    [  Processing  ]
+    Applying object to cluster                    [  OK  ]
+    Checking subscriptions if passes              [  Processing  ]
+    Checking subscriptions if passes              [  OK  ]
+    Checking csv if passes                        [  Processing  ]
+    Checking csv if passes                        [  OK  ]
+    Waiting for deployment                        [  Processing  ]
+    Waiting for deployment                        [  OK  ]
+Operator deployment                               [  OK  ]
+Test operator with scorecard                      [  Processing  ]
+Running scorecard trough all CR
+
+
+Running operator-sdk scorecard against /tmp/tmp.DnJhFA/deploy/cockroachdb/2.1.11/cockroachdb.v2.1.11.clusterserviceversion.yaml with /tmp/tmp.DnJhFA/deploy/crs/XXXXNcblLd.cr.yaml
+DEBU[0000] Debug logging is set
+WARN[0000] Could not load config file; using flags
+WARN[0000] Plugin directory not found; skipping external plugins: stat scorecard: no such file or directory
+Basic Tests:
+	Spec Block Exists: 1/1
+	Status Block Exists: 1/1
+	Writing into CRs has an effect: 1/1
+OLM Tests:
+	Owned CRDs have resources listed: 1/1
+	CRs have at least 1 example: 1/1
+	Spec fields with descriptors: 0/28
+	Status fields with descriptors: 0/2
+	Provided APIs have validation: 0/0
+
+Total Score: 69%
+SUGGESTION: If it would be helpful to an end-user to understand or troubleshoot your CR, consider adding resources [namespaces/v1 poddisruptionbudgets/v1beta1 statefulsets/v1beta1 jobs/v1 cockroachdbs/v1alpha1] to the resources section for owned CRD Cockroachdb
+SUGGESTION: Add a spec descriptor for ExternalHttpPort
+SUGGESTION: Add a spec descriptor for Image
+SUGGESTION: Add a spec descriptor for PodManagementPolicy
+SUGGESTION: Add a spec descriptor for Replicas
+SUGGESTION: Add a spec descriptor for ExternalGrpcName
+SUGGESTION: Add a spec descriptor for ImageTag
+SUGGESTION: Add a spec descriptor for NetworkPolicy
+SUGGESTION: Add a spec descriptor for Tolerations
+SUGGESTION: Add a spec descriptor for UpdateStrategy
+SUGGESTION: Add a spec descriptor for ImagePullPolicy
+SUGGESTION: Add a spec descriptor for NodeSelector
+SUGGESTION: Add a spec descriptor for Resources
+SUGGESTION: Add a spec descriptor for Secure
+SUGGESTION: Add a spec descriptor for StorageClass
+SUGGESTION: Add a spec descriptor for Component
+SUGGESTION: Add a spec descriptor for HttpName
+SUGGESTION: Add a spec descriptor for InternalHttpPort
+SUGGESTION: Add a spec descriptor for Service
+SUGGESTION: Add a spec descriptor for InitPodResources
+SUGGESTION: Add a spec descriptor for Storage
+SUGGESTION: Add a spec descriptor for ClusterDomain
+SUGGESTION: Add a spec descriptor for InternalGrpcName
+SUGGESTION: Add a spec descriptor for MaxSQLMemory
+SUGGESTION: Add a spec descriptor for Name
+SUGGESTION: Add a spec descriptor for CacheSize
+SUGGESTION: Add a spec descriptor for ExternalGrpcPort
+SUGGESTION: Add a spec descriptor for InternalGrpcPort
+SUGGESTION: Add a spec descriptor for MaxUnavailable
+SUGGESTION: Add a status descriptor for conditions
+SUGGESTION: Add a status descriptor for deployedRelease
+Test operator with scorecard                      [  OK  ]
+```
+
+## Additional shortcuts
+
+### Install a minikube cluster
+Install a `minikube` cluster as a testbed for the Operator deployment. Supply `VM_DRIVER` to amend which of the supported hypervisors is used.
+
+```
+make minikube.install VM_DRIVER=hyperkit
+```
+
+This command will create a minikube cluster under the profile `operators`:
+
+```
+$ minikube status --profile operators
+
+host: Running
+kubelet: Running
+apiserver: Running
+kubectl: Correctly Configured: pointing to minikube-vm at 192.168.64.101
+```
+
+### Install operator lifecycle manager
+Install OLM to an existing cluster (determined via `KUBECONFIG` or `~/.kube/config`).
 ```
 make operator.olm.install
 ```
 
-## Run scorecard operator
-You need run the minikube or have some kubernetes instance configured.
-If you want test it in minikube which will be automatically started if you don't have any kubeconfig in home directory or you can run it manually: 
-
-```
-make minikube.start VM_DRIVER=kvm2
-```
-
-### Options:
-
-` VM_DRIVER ` - it's driver for minikube if you need start one
-
-If you want test your operator against scorecard and operator courrier, which check the dependency and also run minikube if you don't have any kubeconfig available.
-
-```
-make operator.test OP_PATH=community-operators/your-operator OP_VER=0.0.1 VERBOSE=1
-``` 
-
-### Options:
-
-` OP_VER ` - version of operator if is not provided it will be parsed by operator package yaml
-
-` OP_CHANNEL ` - channel of operator if is not provided it will be parsed by operator package yaml or use the default ones
- 
-` OP_PATH ` - relative path to your operator which is required
-
-` CLEAN_MODE ` - define how tooling clear your operators and pods, `FORCE` - clear whole namespace no matter what, `NONE` - don't clear anything, `NORMAL` - clear it if your test passed, if something failed namespace with all pods and configs will be stay for debugging
- 
-` VERBOSE ` - enable logging
-
 ## Troubleshooting
+
 
 ### minikube.start permission denied
 - if you starting minikube without VM_DRIVER you need have proper setup for docker which can be run without sudo and

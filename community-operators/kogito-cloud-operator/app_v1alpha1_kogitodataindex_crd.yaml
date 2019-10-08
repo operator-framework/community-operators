@@ -1,0 +1,157 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kogitodataindices.app.kiegroup.org
+spec:
+  group: app.kiegroup.org
+  names:
+    kind: KogitoDataIndex
+    listKind: KogitoDataIndexList
+    plural: kogitodataindices
+    singular: kogitodataindex
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            cpuLimit:
+              description: CPULimit is the limit of CPU which will be available for
+                the container
+              type: string
+            cpuRequest:
+              description: CPURequest is the request of CPU which will be available
+                for the container
+              type: string
+            env:
+              additionalProperties:
+                type: string
+              description: Env is a collection of additional environment variables
+                to add to the Data Index container
+              type: object
+            image:
+              description: Image to use for this service
+              type: string
+            infinispan:
+              description: Infinispan has the data used by the Kogito Data Index to
+                connect to the Infinispan cluster
+              properties:
+                authRealm:
+                  description: Name of the Infinispan authentication realm. Will set
+                    the property infinispan.client.hotrod.auth_realm
+                  type: string
+                credentials:
+                  properties:
+                    passwordKey:
+                      description: PasswordKey is the password info for the Infinispan
+                        user. Will set the propery infinispan.client.hotrod.auth_password
+                      type: string
+                    secretName:
+                      description: SecretName is the name of the secret where the
+                        credentials are set
+                      type: string
+                    usernameKey:
+                      description: UsernameKey is the username info for the user which
+                        will be authenticated in the cluster. Will set the property
+                        infinispan.client.hotrod.auth_username
+                      type: string
+                  type: object
+                saslMechanism:
+                  description: SaslMechanism defined for the authentication. Will
+                    set the property infinispan.client.hotrod.sasl_mechanism
+                  enum:
+                  - PLAIN
+                  - DIGEST-MD5
+                  type: string
+                serviceURI:
+                  description: ServiceURI is the service URI to connect to the Infinispan
+                    cluster, e.g. myinifisan-cluster:11222
+                  type: string
+                useAuth:
+                  description: UseAuth will be set to true if the credentials are
+                    set. Will set the property infinispan.client.hotrod.use_auth
+                  type: boolean
+              type: object
+            kafka:
+              description: Kafka has the data used by the Kogito Data Index to connecto
+                to a Kafka cluster
+              properties:
+                serviceURI:
+                  description: ServiceURI is the service URI to connect to the Infinispan
+                    cluster, e.g. myinifisan-cluster:11222
+                  type: string
+              type: object
+            memoryLimit:
+              description: MemoryLimit is the limit of Memory which will be available
+                for the container
+              type: string
+            memoryRequest:
+              description: MemoryRequest is the request of Memory which will be available
+                for the container
+              type: string
+            replicas:
+              description: Replicas is the number of pod replicas that the Data Index
+                Service will spin
+              format: int32
+              maximum: 100
+              minimum: 0
+              type: integer
+          type: object
+        status:
+          properties:
+            conditions:
+              description: OK when all resources are created successfully
+              items:
+                properties:
+                  condition:
+                    type: string
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                required:
+                - condition
+                type: object
+              type: array
+            dependenciesStatus:
+              description: All dependencies OK means that everything was found within
+                the namespace
+              items:
+                type: string
+              type: array
+            deploymentStatus:
+              description: Status of the Data Index Service Deployment created and
+                managed by it
+              type: object
+            route:
+              description: Route is where the service is exposed
+              type: string
+            serviceStatus:
+              description: Status of the Database Service created and managed by it
+              type: object
+          required:
+          - deploymentStatus
+          - serviceStatus
+          - conditions
+          - dependenciesStatus
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
