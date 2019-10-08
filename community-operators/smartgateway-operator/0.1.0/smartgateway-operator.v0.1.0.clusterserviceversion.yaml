@@ -1,0 +1,237 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: smartgateway-operator.v0.1.0
+  namespace: placeholder
+  annotations:
+    alm-examples: |- 
+      [
+        {
+          "apiVersion": "smartgateway.infra.watch/v1alpha1",
+          "kind": "SmartGateway",
+          "metadata": {
+            "name": "metrics"
+            },
+            "spec":{
+              "amqp_url": "qdr-white.sa-telemetry.svc.cluster.local:5672/collectd/telemetry",
+              "container_image_path": "quay.io/redhat-service-assurance/smart-gateway:latest",
+              "debug": "false",
+              "size": 1
+              }
+        },
+        {
+          "apiVersion": "smartgateway.infra.watch/v1alpha1",
+          "kind": "SmartGateway",
+          "metadata": {
+            "name": "events"
+            },
+            "spec": {
+              "amqp_url": "qdr-white.sa-telemetry.svc.cluster.local:5672/collectd/telemetry",
+              "container_image_path": "quay.io/redhat-service-assurance/smart-gateway:latest",
+              "debug": "false",
+              "elastic_url": "https://elasticsearch.sa-telemetry.svc:9200",
+              "service_type": "events",
+              "size": 1
+              }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Monitoring
+    description: Smart gateway for service assurance. Includes applications for both metrics and events gathering. Provides middleware that connects to an AMQP 1.0 message bus, pulling data off the bus and exposing it as a scrape target for Prometheus. Metrics are provided via the OPNFV Barometer project (collectd). Events are provided by the various event plugins for collectd, including connectivity, procevent and sysevent.
+    certified: "false"
+    containerImage: quay.io/redhat-service-assurance/smart-gateway-operator.0.1.0
+    createdAt: 2019-09-09T08:00:00Z
+    support: Red Hat, Inc.
+    repository: https://github.com/redhat-service-assurance/smart-gateway-operator
+spec:
+  displayName: Smart Gateway Operator
+  minKubeVersion: 1.13.0
+  description:  |- 
+    The Smart Gateway is middleware for OpenShift that takes metrics and events
+    data streams from an AMQP 1.x message bus, and provides a method to having
+    that data stream stored within Prometheus or ElasticSearch.
+
+    ### Core capabilities
+
+    The Smart Gateway provides two modes:
+
+    * metrics: provides an HTTP scrape endpoint for Prometheus
+    * events: writes events directly to an ElasticSearch endpoint
+
+    ### Operator features
+
+    * **Two Service Types** - Supports the `metrics` and `events` service types which defines the type of Smart Gateway to be deployed
+
+    * **Configuration** - Configuration of the Smart Gateway to allow for it to be connected to an AMQP 1.x bus and pointed at the appropriate storage mechanism based on service type.
+
+    ### Before getting started
+
+    1. Ensure an AMQP 1.x bus has been setup (such as AMQ Interconnect)
+    2. If the Smart Gateway is running in events mode, be sure the ElasticSearch Operator and ElasticSearch instance have been pre-deployed.
+
+    ### Example configuration
+
+    **Events (ElasticSearch storage)**
+
+        apiVersion: smartgateway.infra.watch/v1alpha1
+        kind: SmartGateway
+        metadata:
+          name: cloud1-notify
+          namespace: sa-telemetry
+        spec:
+          amqp_url: qdr-white.sa-telemetry.svc.cluster.local:5672/collectd/notify
+          container_image_path: 172.30.1.1:5000/sa-telemetry/smart-gateway:latest
+          debug: "false"
+          elastic_url: https://elasticsearch.sa-telemetry.svc:9200
+          reset_index: "true"
+          service_type: events
+          size: 1
+          tls_ca_cert: /config/certs/admin-ca
+          tls_client_cert: /config/certs/admin-cert
+          tls_client_key: /config/certs/admin-key
+          use_tls: "true"
+
+    **Metrics (Prometheus storage)**
+
+        apiVersion: smartgateway.infra.watch/v1alpha1
+        kind: SmartGateway
+        metadata:
+          name: cloud1-telemetry
+          namespace: sa-telemetry
+        spec:
+          amqp_url: qdr-white.sa-telemetry.svc.cluster.local:5672/collectd/telemetry
+          container_image_path: 172.30.1.1:5000/sa-telemetry/smart-gateway:latest
+          debug: "false"
+          service_type: metrics
+          size: 1
+  keywords: ['smartgateway','serviceassurance']
+  maturity: alpha
+  version: 0.1.0
+  maintainers:
+  - email: email@redhat.com
+    name: Red Hat, Inc
+  provider:
+    name: Red Hat, Inc.
+  links:
+  - name: Source Code
+    url: https://github.com/redhat-service-assurance/smart-gateway-operator
+  
+  labels:
+    name: smart-gateway-operator
+  selector:
+    matchLabels:
+      name: smart-gateway-operator
+
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  
+  install:
+    strategy: deployment
+    spec:
+      deployments:
+      - name: smart-gateway-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: smart-gateway-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: smart-gateway-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: smart-gateway-operator
+                image: quay.io/redhat-service-assurance/smart-gateway-operator:latest
+                imagePullPolicy: Always
+                name: smart-gateway-operator
+                resources: {}
+              serviceAccountName: smart-gateway-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - apps
+          resourceNames:
+          - smart-gateway-operator
+          resources:
+          - deployments/finalizers
+          - deploymentconfigs/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - smartgateway.infra.watch
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: smart-gateway-operator
+    strategy: deployment
+  
+  customresourcedefinitions:
+      owned:
+      - kind: SmartGateway
+        name: smartgateways.smartgateway.infra.watch
+        version: v1alpha1
+        displayName: SmartGateway
+        description: SmartGateway Events/Metrics Deployment with the Operator  
