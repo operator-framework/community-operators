@@ -17,7 +17,7 @@ minikube.start: ## Start local minikube
 	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operators" "Start minikube"
 
 olm.install: ## Install OLM to your cluster
-	@docker run --network host -v ~/.kube:/root/.kube -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -it quay.io/operator-framework/operator-testing olm.install --no-print-directory
+	@scripts/ci/check-kubeconfig && docker run --network host -v ${KUBECONFIG}:/root/.kube -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -it quay.io/operator-framework/operator-testing olm.install --no-print-directory
 
 operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/run-script "docker pull quay.io/operator-framework/operator-testing -q" "Pulling docker image"
