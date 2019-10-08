@@ -175,6 +175,17 @@ make operator.olm.install
 
 ## Troubleshooting
 
+### minikube.start Mac os 
+```
+make minikube.start
+Start minikube                                    [  Processing  ]
+💣  The driver 'none' is not supported on darwin
+Start minikube                                    [  FAILED  ]
+```
+if you using mac os with minikube you need use `VM_DRIVER` option or start local kubernetes cluster trough docker engine, by run `make minikube.start VM_DRIVER=hyperkit`
+
+or enable docker kubernetes here: 
+ <img width="499" alt="Screenshot 2019-10-08 at 15 07 30" src="https://user-images.githubusercontent.com/44171355/66398091-73b81980-e9dd-11e9-875b-5682ddf71631.png">
 
 ### minikube.start permission denied
 - if you starting minikube without VM_DRIVER you need have proper setup for docker which can be run without sudo and
