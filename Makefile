@@ -17,11 +17,12 @@ minikube.start: ## Start local minikube
 	@scripts/ci/run-script "minikube start --vm-driver=${VM_DRIVER} --kubernetes-version="v1.12.0" --extra-config=apiserver.v=4 -p operators" "Start minikube"
 
 olm.install: ## Install OLM to your cluster
-	@scripts/ci/check-kubeconfig && docker run --network host -v ${KUBECONFIG}:/root/.kube/config -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -it quay.io/operator-framework/operator-testing olm.install --no-print-directory
+	@docker run --network host -v ~/.kube:/root/.kube -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -it quay.io/operator-framework/operator-testing olm.install --no-print-directory
 
 operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/run-script "docker pull quay.io/operator-framework/operator-testing" "Pulling docker image"
-	@scripts/ci/check-kubeconfig && docker run --network host -v ${KUBECONFIG}:/root/.kube/config -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti quay.io/operator-framework/operator-testing operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE}
+	@scripts/ci/check-kubeconfig
+	@docker run --network host -v ~/.kube:/root/.kube -v ~/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti quay.io/operator-framework/operator-testing operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE}
 
 operator.verify: check_path ## Run only courier
 	@scripts/ci/run-script "docker pull quay.io/operator-framework/operator-testing" "Pulling docker image"

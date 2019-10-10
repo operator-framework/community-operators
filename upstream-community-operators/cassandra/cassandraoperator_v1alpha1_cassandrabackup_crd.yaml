@@ -1,0 +1,95 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: cassandrabackups.cassandraoperator.instaclustr.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .globalStatus
+    description: Backup operation status
+    name: Status
+    type: string
+  - JSONPath: .globalProgress
+    description: Backup operation progress
+    name: Progress
+    type: string
+  group: cassandraoperator.instaclustr.com
+  names:
+    kind: CassandraBackup
+    listKind: CassandraBackupList
+    plural: cassandrabackups
+    singular: cassandrabackup
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        globalProgress:
+          type: string
+        globalStatus:
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            bandwidth:
+              type: string
+            cdc:
+              description: Cassandra DC name to back up. Used to find the pods in
+                the CDC
+              type: string
+            concurrentConnections:
+              format: int64
+              type: integer
+            duration:
+              type: string
+            keyspaces:
+              description: The list of keyspaces to back up
+              items:
+                type: string
+              type: array
+            snapshotTag:
+              description: The snapshot tag for the backup
+              type: string
+            storageLocation:
+              description: The uri for the backup target location e.g. s3 bucket,
+                filepath
+              type: string
+            table:
+              type: string
+          required:
+          - cdc
+          - storageLocation
+          - snapshotTag
+          type: object
+        status:
+          items:
+            properties:
+              node:
+                description: name of pod / node
+                type: string
+              progress:
+                description: Progress shows the percentage of the operation done
+                type: string
+              state:
+                description: State shows the status of the operation
+                type: string
+            required:
+            - node
+            - state
+            - progress
+            type: object
+          type: array
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
