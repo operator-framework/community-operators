@@ -5,75 +5,84 @@ metadata:
     alm-examples: |
       [
         {
-        	"apiVersion": "elasticsearch.k8s.elastic.co\/v1alpha1",
-        	"kind": "Elasticsearch",
-        	"metadata": {
-        		"name": "elasticsearch-sample"
-        	},
-        	"spec": {
-        		"version": "7.2.0",
-        		"nodes": [{
-        			"config": {
-        				"node.master": true,
-        				"node.data": true,
-        				"node.attr.attr_name": "attr_value"
-        			},
-        			"podTemplate": {
-        				"metadata": {
-        					"labels": {
-        						"foo": "bar"
-        					}
-        				},
-        				"spec": {
-        					"containers": [{
-        						"name": "elasticsearch",
-        						"resources": {
-        							"limits": {
-        								"memory": "2Gi",
-        								"cpu": 1
-        							}
-        						}
-        					}]
-        				}
-        			},
-        			"nodeCount": 3
-        		}]
-        	}
+          "apiVersion": "elasticsearch.k8s.elastic.co\/v1beta1",
+          "kind": "Elasticsearch",
+          "metadata": {
+            "name": "elasticsearch-sample"
+          },
+          "spec": {
+            "version": "7.4.0",
+            "nodeSets": [{
+              "name": "default",
+              "config": {
+                "node.master": true,
+                "node.data": true,
+                "node.attr.attr_name": "attr_value"
+              },
+              "podTemplate": {
+                "metadata": {
+                  "labels": {
+                    "foo": "bar"
+                  }
+                },
+                "spec": {
+                  "containers": [{
+                    "name": "elasticsearch",
+                    "resources": {
+                      "requests": {
+                        "memory": "4Gi",
+                        "cpu": 1
+                      },
+                      "limits": {
+                        "memory": "4Gi",
+                        "cpu": 2
+                      }
+                    }
+                  }]
+                }
+              },
+              "count": 3
+            }]
+          }
         },
         {
-        	"apiVersion": "kibana.k8s.elastic.co\/v1alpha1",
-        	"kind": "Kibana",
-        	"metadata": {
-        		"name": "kibana-sample"
-        	},
-        	"spec": {
-        		"version": "7.2.0",
-        		"nodeCount": 1,
-        		"elasticsearchRef": {
-        			"name": "elasticsearch-sample"
-        		},
-        		"podTemplate": {
-        			"metadata": {
-        				"labels": {
-        					"foo": "bar"
-        				}
-        			},
-        			"spec": {
-        				"containers": [{
-        					"name": "kibana",
-        					"resources": {
-        						"limits": {
-        							"memory": "1Gi",
-        							"cpu": 1
-        						}
-        					}
-        				}]
-        			}
-        		}
-        	}
+          "apiVersion": "kibana.k8s.elastic.co\/v1beta1",
+          "kind": "Kibana",
+          "metadata": {
+            "name": "kibana-sample"
+          },
+          "spec": {
+            "version": "7.4.0",
+            "count": 1,
+            "elasticsearchRef": {
+              "name": "elasticsearch-sample"
+            },
+            "podTemplate": {
+              "metadata": {
+                "labels": {
+                  "foo": "bar"
+                }
+              },
+              "spec": {
+                "containers": [{
+                  "name": "kibana",
+                  "resources": {
+                    "requests": {
+                      "memory": "1Gi",
+                      "cpu": 0.5
+                    },
+                    "limits": {
+                      "memory": "2Gi",
+                      "cpu": 2
+                    }
+                  }
+                }]
+              }
+            }
+          }
         },
         {
-          "apiVersion": "apm.k8s.elastic.co\/v1alpha1",
+          "apiVersion": "apm.k8s.elastic.co\/v1beta1",
           "kind": "ApmServer",
           "metadata": {
             "labels": {
@@ -82,23 +91,23 @@ metadata:
             "name": "apmserver-sample"
           },
           "spec": {
-            "version": "7.2.0",
-            "nodeCount": 1,
+            "version": "7.4.0",
+            "count": 1,
             "elasticsearchRef": {
-        			"name": "elasticsearch-sample"
-        		}
+              "name": "elasticsearch-sample"
+            }
           }
         }
       ]
     capabilities: Full Lifecycle
     categories: Database
     certified: 'false'
-    containerImage: docker.elastic.co/eck/eck-operator:0.9.0
-    createdAt: 2019-04-30 18:35:59
+    containerImage: docker.elastic.co/eck/eck-operator:1.0.0-beta1
+    createdAt: 2019-10-11 12:13:14
     description: Run Elasticsearch, Kibana and the APM Server on Kubernetes and OpenShift
     support: elastic.co
     repository: https://github.com/elastic/cloud-on-k8s
-  name: elastic-cloud-eck.v0.9.0
+  name: elastic-cloud-eck.v1.0.0-beta1
   namespace: placeholder
 spec:
   customresourcedefinitions:
@@ -122,7 +131,8 @@ spec:
   description: 'Elastic Cloud on Kubernetes automates the deployment, provisioning,
     management, and orchestration of Elasticsearch, Kibana and the APM Server on Kubernetes.
 
-    This is an alpha version.
+
+    This is a beta version.
 
 
     Current features:
@@ -144,10 +154,14 @@ spec:
     Supported versions:
 
 
-    *  Kubernetes: 1.11+
+    * kubectl 1.11+
+
+    * Kubernetes: 1.11+
+
+    * Elasticsearch: 6.8+, 7.1+
 
 
-    See the [Quickstart](https://www.elastic.co/guide/en/cloud-on-k8s/0.9/index.html)
+    See the [Quickstart](https://www.elastic.co/guide/en/cloud-on-k8s/1.0/k8s-quickstart.html)
     to get started with ECK.'
   displayName: Elastic Cloud on Kubernetes
   icon:
@@ -183,17 +197,17 @@ spec:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.operatorNamespace']
                 - name: OPERATOR_IMAGE
-                  value: docker.elastic.co/eck/eck-operator:0.9.0
-                image: docker.elastic.co/eck/eck-operator:0.9.0
+                  value: docker.elastic.co/eck/eck-operator:1.0.0-beta1
+                image: docker.elastic.co/eck/eck-operator:1.0.0-beta1
                 imagePullPolicy: Always
                 name: manager
                 resources:
                   limits:
                     cpu: 1
-                    memory: 100Mi
+                    memory: 150Mi
                   requests:
                     cpu: 100m
-                    memory: 20Mi
+                    memory: 50Mi
               serviceAccount: elastic-operator
               terminationGracePeriodSeconds: 10
       permissions:
@@ -220,6 +234,7 @@ spec:
           - apps
           resources:
           - deployments
+          - statefulsets
           verbs:
           - get
           - list
@@ -342,11 +357,13 @@ spec:
   - apm
   links:
   - name: Documentation
-    url: https://www.elastic.co/guide/en/cloud-on-k8s/0.9/index.html
+    url: https://www.elastic.co/guide/en/cloud-on-k8s/1.0/index.html
   maintainers:
   - email: anurag.gupta@elastic.co
     name: Elastic
-  maturity: alpha
+  maturity: beta
+  replaces: elastic-cloud-eck.v0.9.0
   provider:
     name: Elastic
-  version: 0.9.0
+  version: 1.0.0-beta1
+  minKubeVersion: 1.11.0
