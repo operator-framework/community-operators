@@ -72,6 +72,11 @@ operator.registry.build: check_path ## Build registry image
 	@scripts/ci/make-tmp
 	@scripts/ci/run-script "scripts/ci/build-registry-image" "Make registry configmap"
 
+operator.install: check_path
+	@scripts/ci/make-tmp
+	@make operator.verify
+	@scripts/ci/testscript-wrapper "false"
+
 operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/make-tmp
 	@make operator.verify

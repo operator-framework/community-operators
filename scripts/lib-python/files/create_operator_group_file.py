@@ -51,6 +51,9 @@ def main(argv):
                 'kind': 'OperatorGroup',
                 'metadata': {
                     'name': "{}-og".format(op_name),
+                    'labels': {
+                       'operator': 'test'
+                    },
                     'namespace': namespace,
                 }
             }
@@ -63,6 +66,9 @@ def main(argv):
                 'metadata': {
                     'name': "{}-og".format(op_name),
                     'namespace': namespace,
+                    'labels': {
+                        'operator': 'test'
+                    }
                 },
                 'spec': {
                     'targetNamespaces': [namespace]
