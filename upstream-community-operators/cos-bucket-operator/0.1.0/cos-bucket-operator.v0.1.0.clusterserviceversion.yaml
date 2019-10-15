@@ -1,0 +1,393 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion": "ibmcloud.ibm.com/v1alpha1", "kind": "Bucket",
+      "metadata": {"name": "cos4seed-bucket-m2c711"}, "spec": {"apiKey": {"secretKeyRef":
+      {"name": "cos4seed-hmac", "key": "apikey"}}, "resourceInstanceID": {"secretKeyRef":
+      {"name": "cos4seed-hmac", "key": "resource_instance_id"}}, "endpoints": {"configMapKeyRef":
+      {"name": "cos4seed-hmac", "key": "endpoints"}}}}]'
+    capabilities: Basic Install
+    categories: Cloud Provider
+    certified: 'false'
+    containerImage: cloudoperators/cosbucket-operator:0.1.0
+    createdAt: '2019-08-23T12:38:36Z'
+    description: The IBM Bucket Operator provides a Kubernetes CRD-Based API to manage
+      the lifecycle of IBM Cloud Object Storage Bucket.
+    repository: https://github.com/IBM/cos-bucket-operator
+    support: IBM
+  name: cos-bucket-operator.v0.1.0
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a bucket of a Cloud Object Storage bucket resource  on
+        IBM Cloud.
+      displayName: Bucket
+      kind: Bucket
+      name: buckets.ibmcloud.ibm.com
+      resources:
+      - kind: Secret
+        version: v1
+      - kind: ConfigMap
+        version: v1
+      - kind: Bucket
+        version: v1alpha1
+      specDescriptors:
+      - description: API Key
+        displayName: API Key
+        path: apiKey
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: API KEY in Secret
+        displayName: secretKeyRef
+        path: apiKey/secretKeyRef
+        x-descriptor:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret
+      - description: Bind to existing bucket, can be used to control Retention rule
+          and CORS policy
+        displayName: Bind Only
+        path: bindOnly
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Use bindingFrom if using IBM Cloud Operators to control service
+          and binding
+        displayName: Binding From
+        path: bindingFrom
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Type of Bucket - Public or Private. Default to public
+        displayName: Bucket Type
+        path: bucketType
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Context of the operator
+        displayName: Context
+        path: context
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: CORS rule - allowedOrigin, allowedHeader and allowedMethod
+        displayName: CORS rule
+        path: corsRules
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Endpoints - can be found in the instance service crentials
+        displayName: Endpoints
+        path: endpoints
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Do not remove the bucket if it is not empty
+        displayName: Keep If Not Empty
+        path: keepIfNotEmpty
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Location of the bucket
+        displayName: Location
+        path: location
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Region of the bucket
+        displayName: Region
+        path: region
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Bucket Resiliency - Cross Region, Regional, Single Site
+        displayName: Resiliency
+        path: resiliency
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Retention policy - Only available for the standard plan Cloud
+          Object Storage instance
+        displayName: Retention policy
+        path: retentionPolicy
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Resource Instance ID of the COS Instance, can be fonud in the
+          Service Credentials
+        displayName: Resource Instance ID
+        path: resourceInstanceID
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Bucket Storage Class - Standard, Vault, Cold Vault, and Flex
+        displayName: Storage Class
+        path: storageClass
+        x-descriptors:
+        - urn:alm:descriptor:text
+      statusDescriptors:
+      - description: Detailed message on current status
+        displayName: Message
+        path: message
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Current state for the service
+        displayName: State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1alpha1
+  description: "The IBM COS Bucket Operator provides a simple Kubernetes CRD-Based\
+    \ API to provision and manage lifecycle of IBM COS Bucket on your Kubernetes cluster.\
+    \ With this operator,  you can simply manage cos bucket as part of your Kubernetes\
+    \  application templates and let the operator reconciliation logic ensure that\
+    \ the required COS bucket is automatically created and available for your application.\n\
+    The IBM Bucket Operator is currently in preview. It will get updated as we release\
+    \ new versions of the [upstream repository](https://github.com/IBM/cos-bucket-operator).\n\
+    ## Features\n* **Bucket Provisioning** - supports provisioning for bucket for\
+    \ existing IBM Cloud Object Storage service.\n* **Bucket Configuration** - supports\
+    \ Retention and CORS policy for existing bucket.\n* **Bucket Encryption** - supports\
+    \ using Key Protect key for bucket encryption, also support automatic key rotation.\
+    \ Please reference the [Key Protect Setup](https://github.com/ibm/cos-bucket-operator#keyprotectSetup)\
+    \ for detail.\n## Requirements\nThe operator can be installed on any OLM-enabled\
+    \ Kubernetes cluster with version >= 1.11.  It requires [IBM Cloud Operators](https://operatorhub.io/operator/ibmcloud-operator)\
+    \ if using the `bindingFrom` option in the definition spec. Otherwise, please\
+    \ input your service credentials in either Kubernetes Secret or Configmap and\
+    \ specify `apiKey`, `resourceInstanceID` and `endpoints` in spec.\n### Using IBM\
+    \ COS Bucket Operators in stand-alone mode\nAfter the installation steps, you\
+    \ need to manually create the service credentail in  your IBM Cloud COS instance.\
+    \ and then create either Kubernetes Secret or ConfigMap to store these credentials.\n\
+    * Login to IBM Cloud using ibmcloud login.\n* Create Credential in Cloud Object\
+    \ Storage instance:\n\n    `ibmcloud resource service-key-create <credential_name>\
+    \ Manager --instance-name <cos_instance_name>`\n\n    for example: `ibmcloud resource\
+    \ service-key-create cos4operator Manager --instance-name mycos`\n\n  * Option\
+    \ 1 - Stored in Secret.\n\n      1. Retrieve the Credential, and generate the\
+    \ base64 encoded file (Note - credential_name is from step 1). After the command,\
+    \ you can check if the file `/tmp/mySecret.secrets` is created:\n          \n\
+    \        ```\n        ibmcloud resource service-key cos4operator | \n        awk\
+    \ '/apikey/ {seen = 1} seen {print}' |  \n        awk '{system(\"bash -c '\\''echo\
+    \ -n  \"$1\" | tr : = '\\''\"); printf(\"%s \\n\",$2)}' > /tmp/myCOSSecret.secrets\n\
+    \        ```\n          \n      2. Create Secret:\n\n        ```  \n        kubectl\
+    \ create secret generic <kubebete_secret_name> --type=Secret --from-env-file=/tmp/myCOSSecret.secrets\n\
+    \        ```\n\n  * Option 2 - Stored in ConfigMap.\n\n      1. Create the data\
+    \ file (Note - the attached command create base64 decoded values as ConfigMap\
+    \ will not decode the value automatically):\n   \n          ```\n          ibmcloud\
+    \ resource service-key cos4operator  | \n          awk '/apikey/ {seen = 1} seen\
+    \ {print}' |  \n          awk '{system(\"bash -c '\\''echo -n  \"$1\" | tr  :\
+    \ = '\\''\"); system(\"bash -c '\\''echo -n  \"$2\" |    base64 -i -'\\''\");\
+    \ printf(\"\\n\")}' >    /tmp/myCOSSecret.secrets\n          ```\n\n      2. Create\
+    \ ConfigMap:\n\n          ```\n          kubectl create configmap  <kubernete_configmap_name>\
+    \  --from-env-file=/tmp/myCOSSecret.secrets\n          ```\n\n* Verify the required\
+    \ info is in the Secret or ConfigMap:\n\n    ```\n    kubectl get secret <kubernete_secret_name>\
+    \ -o yaml\n    ```\n    \n  For Example, the data field should look like the following\
+    \ (should contains at least apiKey, endpoints and resource_instance_id)\n    \n\
+    \   ```\n   data:\n       apiKey: c29tZSByYW5kb20gYXBpa2V5IGdlbmVyYXRlZCBieSB5b3UK\n\
+    \       endpoints: aHR0cHM6Ly9jb250cm9sLmNsb3VkLW9iamVjdC1zdG9yYWdlLmNsb3VkLmlibS5jb20vdjIvZW5kcG9pbnRz\n\
+    \       ...\n       resource_instance_id: Y3JuOnYxOmJsdWVtaXg6cHVibGljOmNsb3VkLW9iamVjdC1zdG9yYWdlOmdsb2JhbDphLzg5YjdiOWU3OWJmNjFhMDc5MzE3OWYxMzIzMGZkMmJkOjQ5OTQ2M2QxLWUwZTYtNGMxYy04YmQzLTIzOTNhZTRjZTRkZTo6\n\
+    \   ```           \n### Using IBM Cloud Operators\nAfter follow the installation\
+    \ steps in the [IBM Cloud Operator](https://operatorhub.io/operator/ibmcloud-operator),\
+    \  You can create an instance of an IBM public cloud service using the following\
+    \ custom resource (change plan:standard to plan:lite if using lite plan):\n\n\
+    \     \n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: Service\n    metadata:\n\
+    \      name: cos4me\n    spec:\n      externalName: cos4me\n      serviceClass:\
+    \ cloud-object-storage\n      plan: standard\n    \nAfter creating a service,\
+    \ you can find its status with:\n\n    kubectl get services.ibmcloud \n    NAME\
+    \           STATUS   AGE\n    cos4me         Online   12s\n\nYou can bind to a\
+    \ service with name `cos4me` using the following custom resource:\n\n    \n  \
+    \  apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: Binding\n    metadata:\n \
+    \     name: cos4me\n    spec:\n      serviceName: cos4me\n      role: Manager\n\
+    \    \n\nTo find the status of your binding, you can run the command:\n\n    kubectl\
+    \ get bindings.ibmcloud \n    NAME        STATUS   AGE\n    cos4me      Online\
+    \   25s\n   \nThe `Binding` operator generates a secret with the same name as\
+    \ the binding resource and \n    contains service credentials that can be consumed\
+    \ by your application.\n\n    kubectl get secrets\n    NAME      TYPE     DATA\
+    \   AGE                         \n    cos4me    Opaque   6      102s         \
+    \                 \n"
+  displayName: IBM COS Bucket Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ibmcloud.ibm.com
+          resources:
+          - buckets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ibmcloud.ibm.com
+          resources:
+          - buckets/status
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ibmcloud.ibm.com
+          resources:
+          - buckets/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ibmcloud.ibm.com
+          resources:
+          - bindings
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ibmcloud.ibm.com
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        serviceAccountName: cos-bucket-operator
+      deployments:
+      - name: cos-bucket-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: cos-bucket-operator
+          strategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                app: cos-bucket-operator
+            spec:
+              containers:
+              - args: null
+                command:
+                - ./manager
+                image: cloudoperators/cosbucket-operator:0.1.0
+                imagePullPolicy: Always
+                name: cos-bucket-controller
+              serviceAccountName: cos-bucket-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - IBM
+  - Cloud
+  labels:
+    name: cos-bucket-operator
+  links:
+  - name: IBM Cloud Object Storage Bucket Operator Project
+    url: https://github.com/ibm/cos-bucket-operator
+  maintainers:
+  - email: dettori@us.ibm.com
+    name: Paolo Dettori
+  - email: yhliu@us.ibm.com
+    name: Yew Huey Liu
+  - email: luan@us.ibm.com
+    name: Laura Zaihua Luan
+  - email: mvaziri@us.ibm.com
+    name: Mandana Vaziri
+  - email: villard@us.ibm.com
+    name: Lionel Villard
+  maturity: alpha
+  provider:
+    name: IBM
+  selector:
+    matchLabels:
+      name: cos-bucket-operator
+  version: 0.1.0

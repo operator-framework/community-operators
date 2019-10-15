@@ -1,0 +1,362 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: hivetables.metering.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.tableName
+    name: Table Name
+    type: string
+  group: metering.openshift.io
+  names:
+    kind: HiveTable
+    plural: hivetables
+    singular: hivetable
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: 'HiveTable is a custom resource that represents a database table
+        within Hive.
+
+        When created, a HiveTable resource causes the reporting-operator to create
+        a
+
+        table witin Hive according to the configuration provided.
+
+        '
+      properties:
+        spec:
+          anyOf:
+          - properties:
+              external:
+                enum:
+                - true
+              managePartitions:
+                enum:
+                - true
+              partitions:
+                type: array
+            required:
+            - numBuckets
+            - clusteredBy
+          - properties:
+              external:
+                enum:
+                - true
+              managePartitions:
+                enum:
+                - true
+              partitions:
+                type: array
+            required:
+            - external
+            - location
+          - properties:
+              external:
+                enum:
+                - true
+              managePartitions:
+                enum:
+                - true
+              partitions:
+                type: array
+            required:
+            - managePartitions
+            - partitions
+          - allOf:
+            - not:
+                required:
+                - numBuckets
+            - not:
+                required:
+                - clusteredBy
+            - not:
+                required:
+                - sortedBy
+            - not:
+                required:
+                - location
+            properties:
+              external:
+                enum:
+                - false
+              managePartitions:
+                enum:
+                - false
+          description: 'HiveTableSpec is the desired specification of a HiveTable
+            custom resource.
+
+            Required fields: database, tableName, and columns.
+
+            More info: https://github.com/operator-framework/operator-metering/blob/master/Documentation/hivetables.md
+
+            '
+          properties:
+            clusteredBy:
+              description: 'A list of columns from "columns" to use for bucketed tables.
+
+                This field must be set if "numBuckets" is specified.
+
+                Note: this is an optional field.
+
+                More info: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL+BucketedTables
+
+                '
+              items:
+                type: string
+              minItems: 1
+              type: array
+            columns:
+              description: 'A list of columns that match the schema of the HiveTable.
+
+                For each list item, you must specify a `name` field, which is the
+                name of an individual column for the Hive table,
+
+                and a `type` field, which corresponds to a valid type in Hive.
+
+                Note: the only complex types supported are map''s of primitive types.
+
+                More info: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types
+
+                '
+              items:
+                properties:
+                  name:
+                    description: 'The name of the column.
+
+                      '
+                    minLength: 1
+                    type: string
+                  type:
+                    description: 'The column data type.
+
+                      '
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                - type
+                type: object
+              type: array
+            databaseName:
+              description: 'DatabaseName is the name of the Hive database to use.
+
+                Generally, this field should be set to "default", or the value of
+                the "databaseName" in a Hive StorageLocation.
+
+                More info: https://github.com/operator-framework/operator-metering/blob/master/Documentation/storagelocations.md
+
+                '
+              minLength: 1
+              type: string
+            external:
+              description: 'External controls whether an external table is created,
+                instead of a managed table.
+
+                If external is set to true, this causes Hive to point to an existing
+                location,
+
+                as specified by the "location" field.
+
+                Note: this is an optional field.
+
+                '
+              type: boolean
+            fileFormat:
+              description: 'FileFormat controls the file format used for storing files
+                in the filesystem.
+
+                Note: this is an optional field.
+
+                More info: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-StorageFormatsStorageFormatsRowFormat,StorageFormat,andSerDe
+
+                '
+              minLength: 1
+              type: string
+            location:
+              description: 'Location specifies the HDFS path to store this Hive table.
+
+                This field can be set to any URI supported by Hive.
+
+                Currently, `sda://`, `hdfs://`, and `/local/path` are supported based
+                URIs.
+
+                Note: this is an optional field.
+
+                '
+              format: uri
+              minLength: 1
+              type: string
+            managePartitions:
+              description: 'ManagePartitions controls whether the reporting-operator
+                needs to check
+
+                if the table partitions match the partitions listed in the "partitions"
+                field.
+
+                Note: this is an optional field.
+
+                '
+              type: boolean
+            numBuckets:
+              description: 'The number of buckets to create for a bucketed table.
+
+                If this field is set, then "clusteredBy" also needs to be set.
+
+                Note: this is an optional field.
+
+                More info: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL+BucketedTables
+
+                '
+              format: int32
+              minimum: 0
+              type: integer
+            partitionedBy:
+              description: 'A list of columns that are used as partition columns.
+
+                Columns in "partitionedBy" and "columns" must not overlap.
+
+                For each list item, you must specify both a `name` and `type` field.
+
+                Note: this is an optional field.
+
+                '
+              items:
+                properties:
+                  name:
+                    description: 'The name of the column.
+
+                      '
+                    minLength: 1
+                    type: string
+                  type:
+                    description: 'The column data type.
+
+                      '
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                - type
+                type: object
+              minItems: 1
+              type: array
+            partitions:
+              description: 'A list of partitions that this Hive table should contain.
+
+                Note: this is an optional field.
+
+                '
+              items:
+                properties:
+                  location:
+                    description: 'Location specifies where the data for this partition
+                      is stored.
+
+                      This should be a sub-directory of the "location" field.
+
+                      '
+                    format: uri
+                    minLength: 1
+                    type: string
+                  partitionSpec:
+                    description: 'PartitionSpec is a map containing string keys and
+                      values, where each key
+
+                      is expected to be the name of a partition column, and the value
+                      is the
+
+                      value of the partition column.
+
+                      '
+                    type: array
+                required:
+                - partitionSpec
+                - location
+                type: object
+              type: array
+            rowFormat:
+              description: 'RowFormat controls how Hive serializes and deserializes
+                rows.
+
+                Note: this is an optional field.
+
+                More info: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe
+
+                '
+              minLength: 1
+              type: string
+            sortedBy:
+              description: 'A list of column names from "columns" to use for bucketed
+                tables.
+
+                This field must be set if "clusteredBy" and "numBuckets" are specified.
+
+                Note: this is an optional field.
+
+                More info: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL+BucketedTables
+
+                '
+              items:
+                properties:
+                  descending:
+                    description: 'Descending controls whether the column is descending
+                      or ascending.
+
+                      If "descending" is true, then the column is descending, else
+                      ascending.
+
+                      If this field is unspecified, then it defaults to Hive''s default
+                      behavior.
+
+                      Note: this is an optional field.
+
+                      '
+                    type: boolean
+                  name:
+                    description: 'The name of the column from "columns".
+
+                      '
+                    minLength: 1
+                    type: string
+                type: object
+              required:
+              - name
+              type: array
+            tableName:
+              description: 'TableName is the desired name of the table to be created
+                in Hive.
+
+                '
+              minLength: 1
+              type: string
+            tableProperties:
+              description: 'TableProperties is an array and allows you to tag the
+                table definition with your
+
+                own metadata key/value pairs. Some predefined properties exist to
+                control
+
+                behavior of the table as well.
+
+                Note: this is an optional field.
+
+                More info: https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-listTableProperties
+
+                '
+              type: array
+          required:
+          - databaseName
+          - tableName
+          - columns
+          type: object
+      required:
+      - spec
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false

@@ -1,0 +1,275 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"objectbucket.io/v1alpha1","kind":"ObjectBucketClaim","metadata":{"name":"myobc","namespace":"app-namespace"},"spec":{"generateBucketName":"mybucket-","bucketName":"my-awesome-bucket","storageClassName":"mystorageclass"}},{"apiVersion":"objectbucket.io/v1alpha1","kind":"ObjectBucket","metadata":{"name":"myobc-app-namespace-my-awesome-bucket","namespace":""},"spec":{"Connection":{"additionalState":{"ARN":"","UserName":""},"endpoint":{"additionalConfig":null,"bucketHost":"theendpoint.com","bucketName":"my-awesome-bucket","bucketPort":443,"region":"myregion","ssl":true,"subRegion":""}},"claimRef":"47ac88b7-7d6e-11e9-b8cf-42010af00007","reclaimPolicy":"Delete","storageClassName":"my-storageclass"}}]'
+    capabilities: Basic Install
+    categories: Storage
+    certified: 'false'
+    containerImage: quay.io/screeley44/aws-s3-provisioner:v1.0.0
+    createdAt: 2019-05-02 16:12:00
+    description: Manage the full lifecycle of installing, configuring and managing
+      AWS S3 Provisioner.
+    repository: https://github.com/yard-turkey/aws-s3-operator
+    support: OCTO
+  name: awss3operator.v1.0.0
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: instance of an AWS S3 Bucket
+      displayName: Object Bucket
+      kind: ObjectBucket
+      name: objectbuckets.objectbucket.io
+      version: v1alpha1
+    - description: Request for an AWS S3 Bucket
+      displayName: Object Bucket Claim
+      kind: ObjectBucketClaim
+      name: objectbucketclaims.objectbucket.io
+      version: v1alpha1
+  description: "AWS S3 Operator will deploy the AWS S3 Provisioner which will dynamically\
+    \ or statically\nprovision AWS S3 Bucket storage and access. The operator deploys\
+    \ the ObjectBucket (OB) and ObjectBucketClaim (OBC)\nCustomResourceDefinitions.\
+    \ The OB/OBC model follows the traditional Kubernetes PV/PVC pattern, when an\
+    \ OBC is detected\nthe operator will act on the OBC to either provision a brand\
+    \ new S3 Bucket in AWS or gain access to an existing\nS3 Bucket in AWS. The operator\
+    \ produces an OB and ConfigMap and Secret which can then be consumed by application\
+    \ pods.\n**Important Note**: Currently, while in preview, this operator does not\n\
+    support automatic upgrades. You must remove the old version of the operator\n\
+    manually before installing a new version.\n## Using AWS S3 Operator\n### Administrator\
+    \ Creates Secret\nThis secret will contain the elevated/admin privileges needed\
+    \ by the provisioner\nto properly access and create S3 Buckets and IAM users and\
+    \ policies. The AWS Access ID\nand AWS Secret Key will be needed for this.\n1.\
+    \ Create the Kubernetes Secret for the Provisioner's Owner Access.\n```yaml\n\
+    apiVersion: v1\nkind: Secret\nmetadata:\n  name: s3-bucket-owner [1]\n  namespace:\
+    \ s3-provisioner [2]\ntype: Opaque\ndata:\n  AWS_ACCESS_KEY_ID: *base64 encoded\
+    \ value* [3]\n  AWS_SECRET_ACCESS_KEY: *base64 encoded value* [4]\n```\n1. Name\
+    \ of the secret, this will be referenced in StorageClass.\n1. Namespace where\
+    \ the Secret will exist.\n1. Your AWS_ACCESS_KEY_ID base64 encoded.\n1. Your AWS_SECRET_ACCESS_KEY\
+    \ base64 encoded.\n```\n # kubectl create -f creds.yaml\nsecret/s3-bucket-owner\
+    \ created\n```\n### Administrator Creates StorageClass\nThe StorageClass defines\
+    \ the name of the provisioner and holds other properties that are needed to provision\
+    \ a new bucket, including\nthe Owner Secret and Namespace, and the AWS Region.\n\
+    #### Greenfield Example:\nFor Greenfield, a new, dynamic bucket will be generated.\n\
+    1. Create the Kubernetes StorageClass for the Provisioner.\n```yaml\nkind: StorageClass\n\
+    apiVersion: storage.k8s.io/v1\nmetadata:\n  name: s3-buckets [1]\nprovisioner:\
+    \ aws-s3.io/bucket [2]\nparameters:\n  region: us-west-1 [3]\n  secretName: s3-bucket-owner\
+    \ [4]\n  secretNamespace: s3-provisioner [5]\nreclaimPolicy: Delete [6]\n```\n\
+    1. Name of the StorageClass, this will be referenced in the User ObjectBucketClaim.\n\
+    1. Provisioner name\n1. AWS Region that the StorageClass will serve\n1. Name of\
+    \ the bucket owner Secret created above\n1. Namespace where the Secret will exist\n\
+    1. reclaimPolicy (Delete or Retain) indicates if the bucket can be deleted when\
+    \ the OBC is deleted.\n**NOTE:** the absence of the `bucketName` Parameter key\
+    \ in the storage class indicates this is a new bucket and its name is based on\
+    \ the bucket name fields in the OBC.\n```\n # kubectl create -f storageclass-greenfield.yaml\n\
+    storageclass.storage.k8s.io/s3-buckets created\n```\n#### Brownfield Example:\n\
+    For brownfield, the StorageClass defines the name of the provisioner and the name\
+    \ of the existing bucket. It also includes other properties needed by the target\n\
+    provisioner, including: the Owner Secret and Namespace, and the AWS Region\n1.\
+    \ Create the Kubernetes StorageClass for the Provisioner.\n```yaml\nkind: StorageClass\n\
+    apiVersion: storage.k8s.io/v1\nmetadata:\n  name: s3-existing-buckets [1]\nprovisioner:\
+    \ aws-s3.io/bucket [2]\nparameters:\n  bucketName: my-existing-bucket [3]\n  region:\
+    \ us-west-1 [4]\n  secretName: s3-bucket-owner [5]\n  secretNamespace: s3-provisioner\
+    \ [6]\n```\n1. Name of the StorageClass, this will be referenced in the User ObjectBucketClaim.\n\
+    1. Provisioner name\n1. Name of the existing bucket\n1. AWS Region that the StorageClass\
+    \ will serve\n1. Name of the bucket owner Secret created above\n1. Namespace for\
+    \ that bucket owner secret\n**NOTE:** the storage class's `reclaimPolicy` is ignored\
+    \ for existing buckets.\n```\n # kubectl create -f storageclass-brownfield.yaml\n\
+    storageclass.storage.k8s.io/s3-buckets created\n```\n### User Creates ObjectBucketClaim\n\
+    An ObjectBucketClaim follows the same concept as a PVC, in that\nit is a request\
+    \ for Object Storage, the user doesn't need to\nconcern him/herself with the underlying\
+    \ storage, just that\nthey need access to it. The user will work with the cluster/storage\n\
+    administrator to get the proper StorageClass needed and will\nthen request access\
+    \ via the OBC.\n#### Greenfield Request Example:\n1. Create the ObjectBucketClaim.\n\
+    ```yaml\napiVersion: objectbucket.io/v1alpha1\nkind: ObjectBucketClaim\nmetadata:\n\
+    \  name: myobc [1]\n  namespace: s3-provisioner [2]\nspec:\n  generateBucketName:\
+    \ mybucket [3]\n  bucketName: my-awesome-bucket [4]\n  storageClassName: s3-buckets\
+    \ [5]\n```\n1. Name of the OBC\n1. Namespace of the OBC\n1. Name prepended to\
+    \ a random string used to generate a bucket name. It is ignored if bucketName\
+    \ is defined\n1. Name of new bucket which must be unique across all AWS regions,\
+    \ otherwise an error occurs when creating the bucket. If present, this name overrides\
+    \ `generateName`\n1. StorageClass name\n**NOTE:** if both `generateBucketName`\
+    \ and `bucketName` are omitted, and the storage class does _not_ define a bucket\
+    \ name, then a new, random bucket name is generated with no prefix.\n```\n # kubectl\
+    \ create -f obc-brownfield.yaml\nobjectbucketclaim.objectbucket.io/myobc created\n\
+    ```\n#### Brownfield Request Example:\n1. Create the ObjectBucketClaim.\n```yaml\n\
+    apiVersion: objectbucket.io/v1alpha1\nkind: ObjectBucketClaim\nmetadata:\n  name:\
+    \ myobc [1]\n  namespace: s3-provisioner [2]\nspec:\n  storageClassName: s3-existing-buckets\
+    \ [3]\n```\n1. Name of the OBC\n1. Namespace of the OBC\n1. StorageClass name\n\
+    **NOTE:** in the OBC here there is no reference to the bucket's name. This is\
+    \ defined in the storage class and is not a concern of the user creating the claim\
+    \ to this bucket.  An OBC does have fields for defining a bucket name for greenfield\
+    \ use only.\n```\n # kubectl create -f obc-brownfield.yaml\nobjectbucketclaim.objectbucket.io/myobc\
+    \ created\n```\n### Results and Recap\nLet's pause for a moment and digest what\
+    \ just happened.\nAfter creating the OBC, and assuming the S3 provisioner is running,\
+    \ we now have\nthe following Kubernetes resources:\n.  a global ObjectBucket (OB)\
+    \ which contains: bucket endpoint info (including region and bucket name), a reference\
+    \ to the OBC, and a reference to the storage class. Unique to S3, the OB also\
+    \ contains the bucket Amazon Resource Name (ARN).Note: there is always a 1:1 relationship\
+    \ between an OBC and an OB.\n.  a ConfigMap in the same namespace as the OBC,\
+    \ which contains the same endpoint data found in the OB.\n.  a Secret in the same\
+    \ namespace as the OBC, which contains the AWS key-pairs needed to access the\
+    \ bucket.\nAnd of course, we have a *new* AWS S3 Bucket which you should be able\
+    \ to see via the AWS Console.\n*ObjectBucket*\n```yaml\n # kubectl get ob obc-s3-provisioner-my-awesome-bucket\
+    \ -o yaml\napiVersion: objectbucket.io/v1alpha1\nkind: ObjectBucket\nmetadata:\n\
+    \  creationTimestamp: \"2019-04-03T15:42:22Z\"\n  generation: 1\n  name: obc-s3-provisioner-my-awesome-bucket\n\
+    \  resourceVersion: \"15057\"\n  selfLink: /apis/objectbucket.io/v1alpha1/objectbuckets/obc-s3-provisioner-my-awesome-bucket\n\
+    \  uid: 0bfe8e84-576d-4c4e-984b-f73c4460f736\nspec:\n  Connection:\n    additionalState:\n\
+    \      ARN: arn:aws:iam::<accountid>:policy/my-awesome-bucket-vSgD5 [1]\n    \
+    \  UserName: my-awesome-bucket-vSgD5 [2]\n    endpoint:\n      additionalConfig:\
+    \ null\n      bucketHost: s3-us-west-1.amazonaws.com\n      bucketName: my-awesome-bucket\
+    \ [3]\n      bucketPort: 443\n      region: us-west-1\n      ssl: true\n     \
+    \ subRegion: \"\"\n  claimRef: null [4]\n  reclaimPolicy: null\n  storageClassName:\
+    \ s3-buckets [5]\n```\n1. The AWS Policy created for this user and bucket.\n1.\
+    \ The new user generated by the Provisioner to access this existing bucket.\n\
+    1. The bucket name.\n1. The reference to the OBC (not filled in yet).\n1. The\
+    \ reference to the StorageClass used.\n*ConfigMap*\n```yaml\n # kubectl get cm\
+    \ myobc -n s3-provisioner -o yaml\napiVersion: v1\ndata:\n  BUCKET_HOST: s3-us-west-1.amazonaws.com\
+    \ [1]\n  BUCKET_NAME: my-awesome-bucket [2]\n  BUCKET_PORT: \"443\"\n  BUCKET_REGION:\
+    \ us-west-1\n  BUCKET_SSL: \"true\"\n  BUCKET_SUBREGION: \"\"\nkind: ConfigMap\n\
+    metadata:\n  creationTimestamp: \"2019-04-01T19:11:38Z\"\n  finalizers:\n  - objectbucket.io/finalizer\n\
+    \  name: my-awesome-bucket\n  namespace: s3-provisioner\n  resourceVersion: \"\
+    892\"\n  selfLink: /api/v1/namespaces/s3-provisioner/configmaps/my-awesome-bucket\n\
+    \  uid: 2edcc58a-aff8-4a29-814a-ffbb6439a9cd\n```\n1. The AWS S3 host.\n1. The\
+    \ name of the new bucket we are gaining access to.\n*Secret*\n```yaml\n # kubectl\
+    \ get secret my-awesome-bucket -n s3-provisioner -o yaml\napiVersion: v1\ndata:\n\
+    \  AWS_ACCESS_KEY_ID: *the_new_access_id* [1]\n  AWS_SECRET_ACCESS_KEY: *the_new_access_key_value*\
+    \ [2]\nkind: Secret\nmetadata:\n  creationTimestamp: \"2019-04-03T15:42:22Z\"\n\
+    \  finalizers:\n  - objectbucket.io/finalizer\n  name: my-awesome-bucket\n  namespace:\
+    \ s3-provisioner\n  resourceVersion: \"15058\"\n  selfLink: /api/v1/namespaces/s3-provisioner/secrets/screeley-provb-5\n\
+    \  uid: 225c71a5-9d75-4ccc-b41f-bfe91b272a13\ntype: Opaque\n```\n1. The new generated\
+    \ AWS Access Key ID.\n1. The new generated AWS Secret Access Key.\nWhat happened\
+    \ in AWS? The first thing we do on any OBC request is\ncreate a new IAM user and\
+    \ generate Access ID and Secret Keys.\nThis allows us to also better control ACLs.\
+    \ We also create a policy\nin IAM which we then attach to the user and bucket.\
+    \ We also created a new bucket, called *my-awesome-bucket*.\nWhen the OBC is deleted\
+    \ all of its Kubernetes and AWS resources will also be deleted, which includes:\n\
+    the generated OB, Secret, ConfigMap, IAM user, and policy.\nIf the _retainPolicy_\
+    \ on the StorageClass for this bucket is *\"Delete\"*, then, in addition to the\
+    \ above cleanup, the physical bucket is also deleted.\n**NOTE:** The actual bucket\
+    \ is only deleted if the Storage Class's _reclaimPolicy_ is \"Delete\".\n### User\
+    \ Creates Pod\nNow that we have our bucket and connection/access information,\
+    \ a pod\ncan be used to access the bucket. This can be done in several different\n\
+    ways, but the key here is that the provisioner has provided the proper\nendpoints\
+    \ and keys to access the bucket. The user then simply references\nthe keys.\n\
+    1. Create a Sample Pod to Access the Bucket.\n```yaml\napiVersion: v1\nkind: Pod\n\
+    metadata:\n  name: photo1\n  labels:\n    name: photo1\nspec:\n  containers:\n\
+    \  - name: photo1\n    image: docker.io/screeley44/photo-gallery:latest\n    imagePullPolicy:\
+    \ Always\n    envFrom:\n    - configMapRef:\n        name: my-awesome-bucket <1>\n\
+    \    - secretRef:\n        name: my-awesome-bucket <2>\n    ports:\n    - containerPort:\
+    \ 3000\n      protocol: TCP\n```\n1. Name of the generated configmap from the\
+    \ provisioning process\n1. Name of the generated secret from the provisioning\
+    \ process\n*[Note]* Generated ConfigMap and Secret are same name as the OBC!\n\
+    Lastly, expose the pod as a service so you can access the url from a browser.\
+    \ In this example,\nI exposed as a LoadBalancer\n```\n  # kubectl expose pod photo1\
+    \ --type=LoadBalancer --name=photo1 -n your-namespace\n```\nTo access via a url\
+    \ use the EXTERNAL-IP\n```\n  # kubectl get svc photo1\n  NAME               \
+    \          TYPE           CLUSTER-IP       EXTERNAL-IP                       \
+    \                                        PORT(S)          AGE\n  photo1      \
+    \                 LoadBalancer   100.66.124.105   a00c53ccb3c5411e9b6550a7c0e50a2a-2010797808.us-east-1.elb.amazonaws.com\
+    \   3000:32344/TCP   6d\n```\n**NOTE:** This is just one example of a Pod that\
+    \ can utilize the bucket information,\nthere are several ways that these pod applications\
+    \ can be developed and therefore\nthe method of getting the actual values needed\
+    \ from the Secrets and ConfigMaps\nwill vary greatly, but the idea remains the\
+    \ same, that the pod consumes the generated\nConfigMap and Secret created by the\
+    \ provisioner.\n"
+  displayName: AWS S3 Operator
+  icon:
+  - base64data: PHN2ZyB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAuMCAwLjAgOTYuMCA5Ni4wIiBmaWxsPSJub25lIiBzdHJva2U9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJzcXVhcmUiIHN0cm9rZS1taXRlcmxpbWl0PSIxMCIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNsaXBQYXRoIGlkPSJwLjAiPjxwYXRoIGQ9Im0wIDBsOTYuMCAwbDAgOTYuMGwtOTYuMCAwbDAgLTk2LjB6IiBjbGlwLXJ1bGU9Im5vbnplcm8iLz48L2NsaXBQYXRoPjxnIGNsaXAtcGF0aD0idXJsKCNwLjApIj48cGF0aCBmaWxsPSIjMDAwMDAwIiBmaWxsLW9wYWNpdHk9IjAuMCIgZD0ibTAgMGw5Ni4wIDBsMCA5Ni4wbC05Ni4wIDB6IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48cGF0aCBmaWxsPSIjMDAwMDAwIiBmaWxsLW9wYWNpdHk9IjAuMCIgZD0ibTMzLjIxNiAyOS42OTM0OGMwIC0wLjAzMTQ5NjA0OCAwIC0wLjA0NzI0MzEyIDAgLTAuMDYyOTkyMDk2YzAgLTAuMDE1NzQ3MDcgMCAtMC4wMzE0OTYwNDggMCAtMC4wNjI5OTIwOTYiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjxwYXRoIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxLjAiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJtMzMuMjE2IDI5LjY5MzQ4YzAgLTAuMDMxNDk2MDQ4IDAgLTAuMDQ3MjQzMTIgMCAtMC4wNjI5OTIwOTZjMCAtMC4wMTU3NDcwNyAwIC0wLjAzMTQ5NjA0OCAwIC0wLjA2Mjk5MjA5NiIgZmlsbC1ydWxlPSJldmVub2RkIi8+PHBhdGggZmlsbD0iI2NjMDAwMCIgZD0ibTgyLjUxNjg1IDI4LjU3NDgwMmwtMTQuMTI1OTg0IDU2LjUwMzk0bC00NS42Mzc4IDBsLTE0LjEyNTk4NCAtNTYuNTAzOTR6IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48cGF0aCBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMS4wIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0ibTgyLjUxNjg1IDI4LjU3NDgwMmwtMTQuMTI1OTg0IDU2LjUwMzk0bC00NS42Mzc4IDBsLTE0LjEyNTk4NCAtNTYuNTAzOTR6IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48cGF0aCBmaWxsPSIjY2ZlMmYzIiBkPSJtOC42MzA4NjYgMjkuNjM2ODVsMCAwYzAgLTEuMjUyOTkwNyAzLjg5MjM5NiAtMi40NTQ2NjQyIDEwLjgyMDkwNSAtMy4zNDA2NjJjNi45Mjg1MTA3IC0wLjg4NTk5NzggMTYuMzI1NTg0IC0xLjM4Mzc0NzEgMjYuMTIzOTc4IC0xLjM4Mzc0NzFsMCAwYzIwLjQwNDA5NSAwIDM2Ljk0NDg4IDIuMTE1MTkwNSAzNi45NDQ4OCA0LjcyNDQwOWwwIDBjMCAyLjYwOTIyMDUgLTE2LjU0MDc4NyA0LjcyNDQwOSAtMzYuOTQ0ODggNC43MjQ0MDlsMCAwYy0yMC40MDQwOTUgMCAtMzYuOTQ0ODggLTIuMTE1MTg4NiAtMzYuOTQ0ODggLTQuNzI0NDA5eiIgZmlsbC1ydWxlPSJldmVub2RkIi8+PHBhdGggc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEuMCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Im04LjYzMDg2NiAyOS42MzY4NWwwIDBjMCAtMS4yNTI5OTA3IDMuODkyMzk2IC0yLjQ1NDY2NDIgMTAuODIwOTA1IC0zLjM0MDY2MmM2LjkyODUxMDcgLTAuODg1OTk3OCAxNi4zMjU1ODQgLTEuMzgzNzQ3MSAyNi4xMjM5NzggLTEuMzgzNzQ3MWwwIDBjMjAuNDA0MDk1IDAgMzYuOTQ0ODggMi4xMTUxOTA1IDM2Ljk0NDg4IDQuNzI0NDA5bDAgMGMwIDIuNjA5MjIwNSAtMTYuNTQwNzg3IDQuNzI0NDA5IC0zNi45NDQ4OCA0LjcyNDQwOWwwIDBjLTIwLjQwNDA5NSAwIC0zNi45NDQ4OCAtMi4xMTUxODg2IC0zNi45NDQ4OCAtNC43MjQ0MDl6IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48cGF0aCBmaWxsPSIjY2ZlMmYzIiBkPSJtNDAuMTg2MTQyIDI5LjYyOTkyMWwtMS44OTM3ODc0IDAuNzk1NTE1MDZsMCAtMS41OTEwMjgyem0tMS4zNzQ4NTEyIC0zLjkxOTgzNmwtMC44NjI2NDQyIDIuMTQ0NDg3NGwtMC45NTI0MjMxIC0xLjEyNTAxMTR6bS0zLjMxODA2MTggLTEuNjIzNDcwM2wwLjY3MzQ3MzM2IDIuMjM2OTUzN2wtMS4zNDY5NTA1IDB6bS0zLjMxODUwMDUgMS42MjM0NzAzbDEuODE1NTA2IDEuMDE5NDc1OWwtMC45NTI0MjMxIDEuMTI1MDExNHptLTEuMzc0NDEyNSAzLjkxOTgzNmwxLjg5Mzc4MzYgLTAuNzk1NTEzMTVsMCAxLjU5MTAyODJ6bTEuMzc0NDEyNSAzLjkxOTMyM2wwLjg2MzA4MjkgLTIuMTQzOTc0M2wwLjk1MjQyMzEgMS4xMjUwMTE0em0zLjMxODUwMDUgMS42MjM5ODUzbC0wLjY3MzQ3NzIgLTIuMjM2OTU3NmwxLjM0Njk1MDUgMHptMy4zMTgwNjE4IC0xLjYyMzk4NTNsLTEuODE1MDY3MyAtMS4wMTg5NjI5bDAuOTUyNDIzMSAtMS4xMjUwMTE0em0tNS42NjQ1MjAzIC0zLjkxOTMyM2MwIC0xLjUzMDc0MDcgMS4wNTA1NDQ3IC0yLjc3MTY1NDEgMi4zNDY0NTg0IC0yLjc3MTY1NDFjMS4yOTU5MDk5IDAgMi4zNDY0NTQ2IDEuMjQwOTEzNCAyLjM0NjQ1NDYgMi43NzE2NTQxYzAgMS41MzA3NDI2IC0xLjA1MDU0NDcgMi43NzE2NTIyIC0yLjM0NjQ1NDYgMi43NzE2NTIyYy0xLjI5NTkxMzcgMCAtMi4zNDY0NTg0IC0xLjI0MDkwOTYgLTIuMzQ2NDU4NCAtMi43NzE2NTIyeiIgZmlsbC1ydWxlPSJldmVub2RkIi8+PHBhdGggc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEuMCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Im00MC4xODYxNDIgMjkuNjI5OTIxbC0xLjg5Mzc4NzQgMC43OTU1MTUwNmwwIC0xLjU5MTAyODJ6bS0xLjM3NDg1MTIgLTMuOTE5ODM2bC0wLjg2MjY0NDIgMi4xNDQ0ODc0bC0wLjk1MjQyMzEgLTEuMTI1MDExNHptLTMuMzE4MDYxOCAtMS42MjM0NzAzbDAuNjczNDczMzYgMi4yMzY5NTM3bC0xLjM0Njk1MDUgMHptLTMuMzE4NTAwNSAxLjYyMzQ3MDNsMS44MTU1MDYgMS4wMTk0NzU5bC0wLjk1MjQyMzEgMS4xMjUwMTE0em0tMS4zNzQ0MTI1IDMuOTE5ODM2bDEuODkzNzgzNiAtMC43OTU1MTMxNWwwIDEuNTkxMDI4MnptMS4zNzQ0MTI1IDMuOTE5MzIzbDAuODYzMDgyOSAtMi4xNDM5NzQzbDAuOTUyNDIzMSAxLjEyNTAxMTR6bTMuMzE4NTAwNSAxLjYyMzk4NTNsLTAuNjczNDc3MiAtMi4yMzY5NTc2bDEuMzQ2OTUwNSAwem0zLjMxODA2MTggLTEuNjIzOTg1M2wtMS44MTUwNjczIC0xLjAxODk2MjlsMC45NTI0MjMxIC0xLjEyNTAxMTR6bS01LjY2NDUyMDMgLTMuOTE5MzIzYzAgLTEuNTMwNzQwNyAxLjA1MDU0NDcgLTIuNzcxNjU0MSAyLjM0NjQ1ODQgLTIuNzcxNjU0MWMxLjI5NTkwOTkgMCAyLjM0NjQ1NDYgMS4yNDA5MTM0IDIuMzQ2NDU0NiAyLjc3MTY1NDFjMCAxLjUzMDc0MjYgLTEuMDUwNTQ0NyAyLjc3MTY1MjIgLTIuMzQ2NDU0NiAyLjc3MTY1MjJjLTEuMjk1OTEzNyAwIC0yLjM0NjQ1ODQgLTEuMjQwOTA5NiAtMi4zNDY0NTg0IC0yLjc3MTY1MjJ6IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48cGF0aCBmaWxsPSIjY2ZlMmYzIiBkPSJtNDcuOTk5NzkgMjIuMDM0MTJsLTEuODkzNzg3NCAwLjc5NTUxNTA2bDAgLTEuNTkxMDI4MnptLTEuMzc0ODUxMiAtMy45MTk4MzZsLTAuODYyNjQ0MiAyLjE0NDQ4NzRsLTAuOTUyNDIzMSAtMS4xMjUwMTE0em0tMy4zMTgwNjE4IC0xLjYyMzQ3MDNsMC42NzM0NzMzNiAyLjIzNjk1MzdsLTEuMzQ2OTUwNSAwem0tMy4zMTg0OTY3IDEuNjIzNDcwM2wxLjgxNTUwMjIgMS4wMTk0NzU5bC0wLjk1MjQyMzEgMS4xMjUwMTE0em0tMS4zNzQ0MTY0IDMuOTE5ODM2bDEuODkzNzgzNiAtMC43OTU1MTMxNWwwIDEuNTkxMDI4MnptMS4zNzQ0MTY0IDMuOTE5MzIzbDAuODYzMDc5MSAtMi4xNDM5NzQzbDAuOTUyNDIzMSAxLjEyNTAxMTR6bTMuMzE4NDk2NyAxLjYyMzk4MzRsLTAuNjczNDc3MiAtMi4yMzY5NTM3bDEuMzQ2OTUwNSAwem0zLjMxODA2MTggLTEuNjIzOTgzNGwtMS44MTUwNjczIC0xLjAxODk2MjlsMC45NTI0MjMxIC0xLjEyNTAxMTR6bS01LjY2NDUyMDMgLTMuOTE5MzIzYzAgLTEuNTMwNzQyNiAxLjA1MDU0NDcgLTIuNzcxNjU0MSAyLjM0NjQ1ODQgLTIuNzcxNjU0MWMxLjI5NTkwOTkgMCAyLjM0NjQ1NDYgMS4yNDA5MTE1IDIuMzQ2NDU0NiAyLjc3MTY1NDFjMCAxLjUzMDc0MjYgLTEuMDUwNTQ0NyAyLjc3MTY1NDEgLTIuMzQ2NDU0NiAyLjc3MTY1NDFjLTEuMjk1OTEzNyAwIC0yLjM0NjQ1ODQgLTEuMjQwOTExNSAtMi4zNDY0NTg0IC0yLjc3MTY1NDF6IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48cGF0aCBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMS4wIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0ibTQ3Ljk5OTc5IDIyLjAzNDEybC0xLjg5Mzc4NzQgMC43OTU1MTUwNmwwIC0xLjU5MTAyODJ6bS0xLjM3NDg1MTIgLTMuOTE5ODM2bC0wLjg2MjY0NDIgMi4xNDQ0ODc0bC0wLjk1MjQyMzEgLTEuMTI1MDExNHptLTMuMzE4MDYxOCAtMS42MjM0NzAzbDAuNjczNDczMzYgMi4yMzY5NTM3bC0xLjM0Njk1MDUgMHptLTMuMzE4NDk2NyAxLjYyMzQ3MDNsMS44MTU1MDIyIDEuMDE5NDc1OWwtMC45NTI0MjMxIDEuMTI1MDExNHptLTEuMzc0NDE2NCAzLjkxOTgzNmwxLjg5Mzc4MzYgLTAuNzk1NTEzMTVsMCAxLjU5MTAyODJ6bTEuMzc0NDE2NCAzLjkxOTMyM2wwLjg2MzA3OTEgLTIuMTQzOTc0M2wwLjk1MjQyMzEgMS4xMjUwMTE0em0zLjMxODQ5NjcgMS42MjM5ODM0bC0wLjY3MzQ3NzIgLTIuMjM2OTUzN2wxLjM0Njk1MDUgMHptMy4zMTgwNjE4IC0xLjYyMzk4MzRsLTEuODE1MDY3MyAtMS4wMTg5NjI5bDAuOTUyNDIzMSAtMS4xMjUwMTE0em0tNS42NjQ1MjAzIC0zLjkxOTMyM2MwIC0xLjUzMDc0MjYgMS4wNTA1NDQ3IC0yLjc3MTY1NDEgMi4zNDY0NTg0IC0yLjc3MTY1NDFjMS4yOTU5MDk5IDAgMi4zNDY0NTQ2IDEuMjQwOTExNSAyLjM0NjQ1NDYgMi43NzE2NTQxYzAgMS41MzA3NDI2IC0xLjA1MDU0NDcgMi43NzE2NTQxIC0yLjM0NjQ1NDYgMi43NzE2NTQxYy0xLjI5NTkxMzcgMCAtMi4zNDY0NTg0IC0xLjI0MDkxMTUgLTIuMzQ2NDU4NCAtMi43NzE2NTQxeiIgZmlsbC1ydWxlPSJldmVub2RkIi8+PHBhdGggZmlsbD0iI2NmZTJmMyIgZD0ibTU1Ljg3MTE4IDE1Ljc4NzQwMWwtMS44OTM3ODc0IDAuNzk1NTE1MDZsMCAtMS41OTEwMjgyem0tMS4zNzQ4NTEyIC0zLjkxOTgzNmwtMC44NjI2NDQyIDIuMTQ0NDg3NGwtMC45NTI0MjMxIC0xLjEyNTAxMTR6bS0zLjMxODA2MTggLTEuNjIzNDcwM2wwLjY3MzQ3MzM2IDIuMjM2OTU0N2wtMS4zNDY5NTA1IDB6bS0zLjMxODUwMDUgMS42MjM0NzAzbDEuODE1NTA2IDEuMDE5NDc1OWwtMC45NTI0MjMxIDEuMTI1MDExNHptLTEuMzc0NDEyNSAzLjkxOTgzNmwxLjg5Mzc4MzYgLTAuNzk1NTEzMTVsMCAxLjU5MTAyODJ6bTEuMzc0NDEyNSAzLjkxOTMyM2wwLjg2MzA4MjkgLTIuMTQzOTc0M2wwLjk1MjQyMzEgMS4xMjUwMTE0em0zLjMxODUwMDUgMS42MjM5ODUzbC0wLjY3MzQ3NzIgLTIuMjM2OTU1NmwxLjM0Njk1MDUgMHptMy4zMTgwNjE4IC0xLjYyMzk4NTNsLTEuODE1MDY3MyAtMS4wMTg5NjI5bDAuOTUyNDIzMSAtMS4xMjUwMTE0em0tNS42NjQ1MjAzIC0zLjkxOTMyM2MwIC0xLjUzMDc0MTcgMS4wNTA1NDQ3IC0yLjc3MTY1MzIgMi4zNDY0NTg0IC0yLjc3MTY1MzJjMS4yOTU5MDk5IDAgMi4zNDY0NTQ2IDEuMjQwOTExNSAyLjM0NjQ1NDYgMi43NzE2NTMyYzAgMS41MzA3NDI2IC0xLjA1MDU0NDcgMi43NzE2NTQxIC0yLjM0NjQ1NDYgMi43NzE2NTQxYy0xLjI5NTkxMzcgMCAtMi4zNDY0NTg0IC0xLjI0MDkxMTUgLTIuMzQ2NDU4NCAtMi43NzE2NTQxeiIgZmlsbC1ydWxlPSJldmVub2RkIi8+PHBhdGggc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEuMCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Im01NS44NzExOCAxNS43ODc0MDFsLTEuODkzNzg3NCAwLjc5NTUxNTA2bDAgLTEuNTkxMDI4MnptLTEuMzc0ODUxMiAtMy45MTk4MzZsLTAuODYyNjQ0MiAyLjE0NDQ4NzRsLTAuOTUyNDIzMSAtMS4xMjUwMTE0em0tMy4zMTgwNjE4IC0xLjYyMzQ3MDNsMC42NzM0NzMzNiAyLjIzNjk1NDdsLTEuMzQ2OTUwNSAwem0tMy4zMTg1MDA1IDEuNjIzNDcwM2wxLjgxNTUwNiAxLjAxOTQ3NTlsLTAuOTUyNDIzMSAxLjEyNTAxMTR6bS0xLjM3NDQxMjUgMy45MTk4MzZsMS44OTM3ODM2IC0wLjc5NTUxMzE1bDAgMS41OTEwMjgyem0xLjM3NDQxMjUgMy45MTkzMjNsMC44NjMwODI5IC0yLjE0Mzk3NDNsMC45NTI0MjMxIDEuMTI1MDExNHptMy4zMTg1MDA1IDEuNjIzOTg1M2wtMC42NzM0NzcyIC0yLjIzNjk1NTZsMS4zNDY5NTA1IDB6bTMuMzE4MDYxOCAtMS42MjM5ODUzbC0xLjgxNTA2NzMgLTEuMDE4OTYyOWwwLjk1MjQyMzEgLTEuMTI1MDExNHptLTUuNjY0NTIwMyAtMy45MTkzMjNjMCAtMS41MzA3NDE3IDEuMDUwNTQ0NyAtMi43NzE2NTMyIDIuMzQ2NDU4NCAtMi43NzE2NTMyYzEuMjk1OTA5OSAwIDIuMzQ2NDU0NiAxLjI0MDkxMTUgMi4zNDY0NTQ2IDIuNzcxNjUzMmMwIDEuNTMwNzQyNiAtMS4wNTA1NDQ3IDIuNzcxNjU0MSAtMi4zNDY0NTQ2IDIuNzcxNjU0MWMtMS4yOTU5MTM3IDAgLTIuMzQ2NDU4NCAtMS4yNDA5MTE1IC0yLjM0NjQ1ODQgLTIuNzcxNjU0MXoiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjxwYXRoIGZpbGw9IiNjZmUyZjMiIGQ9Im01NS4yODU4OCAyNi44NzQwMTZsLTEuODkzNzg3NCAwLjc5NTUxMzE1bDAgLTEuNTkxMDI2M3ptLTEuMzc0ODUxMiAtMy45MTk4MzZsLTAuODYyNjQ0MiAyLjE0NDQ4NzRsLTAuOTUyNDI2OSAtMS4xMjUwMTE0em0tMy4zMTgwNjU2IC0xLjYyMzQ3MDNsMC42NzM0NzcyIDIuMjM2OTUzN2wtMS4zNDY5NTA1IDB6bS0zLjMxODQ5NjcgMS42MjM0NzAzbDEuODE1NTA2IDEuMDE5NDc1OWwtMC45NTI0MjY5IDEuMTI1MDExNHptLTEuMzc0NDE2NCAzLjkxOTgzNmwxLjg5Mzc4NzQgLTAuNzk1NTEzMTVsMCAxLjU5MTAyNjN6bTEuMzc0NDE2NCAzLjkxOTMyM2wwLjg2MzA3OTEgLTIuMTQzOTc0M2wwLjk1MjQyNjkgMS4xMjUwMTE0em0zLjMxODQ5NjcgMS42MjM5ODUzbC0wLjY3MzQ3MzM2IC0yLjIzNjk1NTZsMS4zNDY5NTA1IDB6bTMuMzE4MDY1NiAtMS42MjM5ODUzbC0xLjgxNTA3MTEgLTEuMDE4OTYyOWwwLjk1MjQyNjkgLTEuMTI1MDExNHptLTUuNjY0NTIwMyAtMy45MTkzMjNjMCAtMS41MzA3NDI2IDEuMDUwNTQ0NyAtMi43NzE2NTQxIDIuMzQ2NDU0NiAtMi43NzE2NTQxYzEuMjk1OTEzNyAwIDIuMzQ2NDU4NCAxLjI0MDkxMTUgMi4zNDY0NTg0IDIuNzcxNjU0MWMwIDEuNTMwNzQyNiAtMS4wNTA1NDQ3IDIuNzcxNjU0MSAtMi4zNDY0NTg0IDIuNzcxNjU0MWMtMS4yOTU5MDk5IDAgLTIuMzQ2NDU0NiAtMS4yNDA5MTE1IC0yLjM0NjQ1NDYgLTIuNzcxNjU0MXoiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjxwYXRoIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxLjAiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJtNTUuMjg1ODggMjYuODc0MDE2bC0xLjg5Mzc4NzQgMC43OTU1MTMxNWwwIC0xLjU5MTAyNjN6bS0xLjM3NDg1MTIgLTMuOTE5ODM2bC0wLjg2MjY0NDIgMi4xNDQ0ODc0bC0wLjk1MjQyNjkgLTEuMTI1MDExNHptLTMuMzE4MDY1NiAtMS42MjM0NzAzbDAuNjczNDc3MiAyLjIzNjk1MzdsLTEuMzQ2OTUwNSAwem0tMy4zMTg0OTY3IDEuNjIzNDcwM2wxLjgxNTUwNiAxLjAxOTQ3NTlsLTAuOTUyNDI2OSAxLjEyNTAxMTR6bS0xLjM3NDQxNjQgMy45MTk4MzZsMS44OTM3ODc0IC0wLjc5NTUxMzE1bDAgMS41OTEwMjYzem0xLjM3NDQxNjQgMy45MTkzMjNsMC44NjMwNzkxIC0yLjE0Mzk3NDNsMC45NTI0MjY5IDEuMTI1MDExNHptMy4zMTg0OTY3IDEuNjIzOTg1M2wtMC42NzM0NzMzNiAtMi4yMzY5NTU2bDEuMzQ2OTUwNSAwem0zLjMxODA2NTYgLTEuNjIzOTg1M2wtMS44MTUwNzExIC0xLjAxODk2MjlsMC45NTI0MjY5IC0xLjEyNTAxMTR6bS01LjY2NDUyMDMgLTMuOTE5MzIzYzAgLTEuNTMwNzQyNiAxLjA1MDU0NDcgLTIuNzcxNjU0MSAyLjM0NjQ1NDYgLTIuNzcxNjU0MWMxLjI5NTkxMzcgMCAyLjM0NjQ1ODQgMS4yNDA5MTE1IDIuMzQ2NDU4NCAyLjc3MTY1NDFjMCAxLjUzMDc0MjYgLTEuMDUwNTQ0NyAyLjc3MTY1NDEgLTIuMzQ2NDU4NCAyLjc3MTY1NDFjLTEuMjk1OTA5OSAwIC0yLjM0NjQ1NDYgLTEuMjQwOTExNSAtMi4zNDY0NTQ2IC0yLjc3MTY1NDF6IiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L2c+PC9zdmc+
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - objectbucket.io
+          resources:
+          - objectbucketclaims
+          - objectbuckets
+          verbs:
+          - '*'
+        serviceAccountName: aws-s3-provisioner-1-0-0
+      deployments:
+      - name: aws-s3-provisioner
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              k8s-app: aws-s3-provisioner
+          template:
+            metadata:
+              labels:
+                k8s-app: aws-s3-provisioner
+            spec:
+              containers:
+              - image: quay.io/screeley44/aws-s3-provisioner:v1.0.0
+                name: aws-s3-provisioner
+              serviceAccount: aws-s3-provisioner-1-0-0
+      permissions:
+      - rules:
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - persistentvolumes
+          - events
+          - secrets
+          - configmaps
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - '*'
+        serviceAccountName: aws-s3-provisioner-1-0-0
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - awss3provisioner
+  - aws
+  - S3
+  - provisioner
+  - buckets
+  labels:
+    alm-owner-awss3: awss3operator
+    alm-status-descriptors: awss3operator.v1.0.0
+  links:
+  - name: AWS S3 Provisioner
+    url: https://github.com/yard-turkey/awss3operator
+  - name: Documentation
+    url: https://github.com/yard-turkey/awss3operator
+  maintainers:
+  - email: openshift-operators@redhat.com
+    name: Red Hat
+  maturity: alpha
+  provider:
+    name: Red Hat
+  selector:
+    matchLabels:
+      alm-owner-awss3: awss3operator
+  version: 1.0.0

@@ -1,0 +1,144 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: reportdatasources.metering.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.prometheusMetricsImportStatus.earliestImportedMetricTime
+    name: Earliest Metric
+    type: string
+  - JSONPath: .status.prometheusMetricsImportStatus.newestImportedMetricTime
+    name: Newest Metric
+    type: string
+  - JSONPath: .status.prometheusMetricsImportStatus.importDataStartTime
+    name: Import Start
+    type: string
+  - JSONPath: .status.prometheusMetricsImportStatus.importDataEndTime
+    name: Import End
+    type: string
+  - JSONPath: .status.prometheusMetricsImportStatus.lastImportTime
+    name: Last Import Time
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: metering.openshift.io
+  names:
+    kind: ReportDataSource
+    plural: reportdatasources
+    shortNames:
+    - datasource
+    - datasources
+    singular: reportdatasource
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          oneOf:
+          - required:
+            - prometheusMetricsImporter
+          - required:
+            - reportQueryView
+          - required:
+            - awsBilling
+          - required:
+            - prestoTable
+          properties:
+            awsBilling:
+              properties:
+                source:
+                  properties:
+                    bucket:
+                      minLength: 1
+                      type: string
+                    prefix:
+                      type: string
+                    region:
+                      minLength: 1
+                      type: string
+                  required:
+                  - bucket
+                  - region
+                  type: object
+              required:
+              - source
+              type: object
+            prestoTable:
+              properties:
+                tableRef:
+                  properties:
+                    name:
+                      minLength: 1
+                      type: string
+                  required:
+                  - name
+                  type: object
+              required:
+              - tableRef
+              type: object
+            prometheusMetricsImporter:
+              properties:
+                prometheusConfig:
+                  properties:
+                    url:
+                      format: uri
+                      type: string
+                  required:
+                  - url
+                  type: object
+                query:
+                  minLength: 1
+                  type: string
+                storage:
+                  properties:
+                    storageLocationName:
+                      minLength: 1
+                      type: string
+                  required:
+                  - storageLocationName
+                  type: object
+              required:
+              - query
+              type: object
+            reportQueryView:
+              properties:
+                inputs:
+                  items:
+                    properties:
+                      name:
+                        minLength: 1
+                        type: string
+                      value: {}
+                    required:
+                    - name
+                    - value
+                    type: object
+                  minItems: 1
+                  type: array
+                queryName:
+                  minLength: 1
+                  type: string
+                storage:
+                  properties:
+                    storageLocationName:
+                      minLength: 1
+                      type: string
+                  required:
+                  - storageLocationName
+                  type: object
+              required:
+              - queryName
+              type: object
+          type: object
+      required:
+      - spec
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
