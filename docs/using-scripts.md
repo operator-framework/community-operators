@@ -46,11 +46,13 @@ Using the [Operator Lifecycle Manager](https://github.com/operator-framework/ope
 You can either provide an Kubernetes cluster as a testbed via `KUBECONFIG` or `~/.kube/confg` or the Makefile will install a `minikube` cluster for you. 
 Once successfully deployed this test will run the `scorecard` test of the Operator-SDK for you.
 
-For this type of test, additionally the following Options exist:
+For this type of test, additionally the following options exist:
 
 ` VM_DRIVER ` - VM_DRIVER flag passed to `minikube` in case no existing cluster was supplied. Default is determined by your `minikube` install.
 
-` CLEAN_MODE ` - selection of `NORMAL`, `NONE` and `FORCE`. As the test installs OLM components in your Kubernetes cluster this controls the clean up of those. In `NORMAL` clean up will happen if no errors occured. When set to `NONE` clean up is ommitted, when set to `FORCE` clean up will always be done. Default is `NORMAL`.
+` CLEAN_MODE ` - any of `NORMAL`, `NONE` and `FORCE`. As the test installs OLM components in your Kubernetes cluster this controls the clean up of those. In `NORMAL` clean up will happen if no errors occured. When set to `NONE` clean up is ommitted, when set to `FORCE` clean up will always be done. Default is `NORMAL`.
+
+` INSTALL_MODE ` - any of `OwnNamespace`, `SingleNamespace`, `AllNamespaces`. this controls the installation mode of the Operator and should be set according to what your Operator states as supported in the `installModes` section of the CSV. Default is `SingleNamepsace`.
 
 Example, run from the top-level directory of this repository:
 
