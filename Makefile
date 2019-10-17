@@ -1,6 +1,6 @@
 MAKEFLAGS += --no-print-directory
 OP_PATH=''
-CLEAN_MODE='NORMAL'
+CLEAN_MODE=NORMAL
 VM_DRIVER=none
 KUBECONFIG?="${HOME}/.kube/config"
 
