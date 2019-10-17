@@ -55,6 +55,9 @@ Similarly to add a new Operator, to update your Operator you need to submit a PR
 
 This indicates that existing installations of your Operator may be upgraded seamlessly to the new version. It is encouraged to use continuous delivery to update your Operator often as new features are added and bugs are fixed.
 
+### Operator Bundle Editor
+You can now create your Operator bundle using the [bundle editor](https://operatorhub.io/bundle). Starting by uploading your Kubernetes YAML manifests, the forms on the page will be populated with all valid information and used to create the new Operator bundle. You can modify or add properties through these forms as well.
+
 ## Provide information about your Operator
 
 A large part of the information gathered in the CSV is used for user-friendly visualization on [OperatorHub.io](https://operatorhub.io) or components like the embedded OperatorHub in OpenShift. Your work is on display, so please ensure to provide relevant information in your Operator's description, specifically covering:
