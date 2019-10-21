@@ -1,0 +1,136 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: objectbuckets.objectbucket.io
+spec:
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  group: objectbucket.io
+  names:
+    kind: ObjectBucket
+    listKind: ObjectBucketList
+    plural: objectbuckets
+    singular: objectbucket
+    shortNames:
+      - ob
+      - obs
+  scope: Cluster
+  subresources:
+    status: {}
+  additionalPrinterColumns:
+  - JSONPath: .spec.storageClassName
+    description: StorageClass
+    name: Storage-Class
+    type: string
+  - JSONPath: .spec.claimRef.namespace
+    description: ClaimNamespace
+    name: Claim-Namespace
+    type: string
+  - JSONPath: .spec.claimRef.name
+    description: ClaimName
+    name: Claim-Name
+    type: string
+  - JSONPath: .spec.reclaimPolicy
+    description: ReclaimPolicy
+    name: Reclaim-Policy
+    type: string
+  - JSONPath: .status.phase
+    description: Phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          description: Standard object metadata.
+          type: object
+        spec:
+          description: Specification of the desired behavior of the bucket.
+          properties:
+            storageClassName:
+              description: StorageClass names the StorageClass object representing the 
+                desired provisioner and parameters
+              type: string
+            reclaimPolicy:
+              description: Describes a policy for end-of-life maintenance of ObjectBucket.
+              enum:
+                - "Delete"
+                - "Retain"
+                - "Recycle"
+              type: string
+            claimRef:
+              description: ObjectReference to ObjectBucketClaim
+              type: object
+            endpoint:
+              description: Endpoint contains all connection relevant data that an app may
+                require for accessing the bucket
+              properties:
+                bucketHost:
+                  description: Bucket address hostname
+                  type: string
+                bucketPort:
+                  description: Bucket address port
+                  type: integer
+                bucketName:
+                  description: Bucket name
+                  type: string
+                region:
+                  description: Bucket region
+                  type: string
+                subRegion:
+                  description: Bucket sub-region
+                  type: string
+                ssl:
+                  description: SSL whether connection to the bucket requires SSL Authentication or not
+                  type: boolean
+                additionalConfig:
+                  description: AdditionalConfig gives providers a location to set
+                    proprietary config values (tenant, namespace, etc)
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+            additionalState:
+              description: additionalState gives providers a location to set
+                proprietary config values (tenant, namespace, etc)
+              additionalProperties:
+                type: string
+              type: object
+          required:
+            - storageClassName
+          type: object
+        status:
+          description: Most recently observed status of the bucket.
+          properties:
+            phase:
+              description: ObjectBucketStatusPhase is set by the controller to save the 
+                state of the provisioning process
+              enum:
+                - "bound"
+                - "released"
+                - "failed"
+              type: string
+            conditions:
+              description: ConditionsStatus
+              enum:
+                - "True"
+                - "False"
+                - "Unknown"
+              type: string
+          type: object
