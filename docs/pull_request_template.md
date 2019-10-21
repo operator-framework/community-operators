@@ -1,7 +1,11 @@
 Thanks submitting your Operator. Please check below list before you create your Pull Request.
+*************************************************
+Flat operator directory structure is obsolete from 23-rd of October 2019, only nested directory structure will be accepted.
+*************************************************
 
 ### New Submissions
 
+* [ ] Has you operator nested directory structure? (As flat one is obsolete)
 * [ ] Have you selected the Project *Community Operator Submissions* in your PR on the right-hand menu bar?
 * [ ] Are you familiar with our [contribution guidelines](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md)?
 * [ ] Have you [packaged and deployed](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md) your Operator for Operator Framework?
