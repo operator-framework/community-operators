@@ -154,7 +154,7 @@ The team behind OperatorHub.io will support you in making sure you are Operator 
 
 ## Verify CI test results
 
-Every PR against this repository is tested via [Continuous Integration](./ci.md). During these tests your Operator will be deployed on either a `minikube` or OpenShift 4 environments and checked for a healthy deployment. Also several tools are run to check your bundle for completeness. These are the same tools as referenced in our [testing docs](./testing-operators.md). Pay attention to the result of GitHub checks.
+Every PR against this repository is tested via [Continuous Integration](./ci.md). During these tests your Operator will be deployed on either a `minikube` or OpenShift 4 environments and checked for a healthy deployment. Also several tools are run to check your bundle for completeness. These are the same tools as referenced in our [testing docs](./testing-operators.md) and [testing scripts](./using-scripts.md). Pay attention to the result of GitHub checks.
 
 ## Where to contribute
 
