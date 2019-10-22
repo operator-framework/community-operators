@@ -50,10 +50,18 @@ export OP_REGISTRY_IMAGE="quay.io/operatorframework/${PKG_NAME}:${OP_VER}-regist
 export SECRET_FILE="${DEPLOY_DIR}/scorecard.secret.yaml"
 
 export CSV_FILE="$(find "$ABS_BUNDLE_PATH" -name "*${OP_VER}.clusterserviceversion.yaml" -print -quit)"
-export CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
-export CHANNEL_NAME="$(get_channel_name "$PKG_FILE" "$CSV_NAME")"
 
-set +u
-if [[ "$REG_IMAGE" ]]; then
-  export OP_REGISTRY_IMAGE="${REG_IMAGE}"
+if [[ -f $CSV_FILE ]]; then
+
+  export CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
+  export CHANNEL_NAME="$(python3 /scripts/lib-python/cluster/get_operator_channel.py -p "$PKG_FILE" -c "$CSV_NAME")"
+  cat "$PKG_FILE"
+  set +u
+  if [[ "$REG_IMAGE" ]]; then
+    export OP_REGISTRY_IMAGE="${REG_IMAGE}"
+  fi
+else 
+  >&2 echo "CSV file for version ${OP_VER} not found test cannot continue"
+
+  exit 1;
 fi

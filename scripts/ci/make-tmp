@@ -27,16 +27,25 @@ fi
 
 export CSV_FILE="$(find "$OP_PATH" -name "*${OP_VER}.clusterserviceversion.yaml" -print -quit)"
 
-if [[ "$NAMESPACE" == '' ]]; then
-  export NAMESPACE=$(python3 /scripts/lib-python/cluster/get-op-namespace.py -o "$PKG_NAME" -c "$CSV_FILE")
-fi
 
-# Create a namespace if necessary.
-if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
-  printf "Creating namespace %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
-  kubectl create namespace "$NAMESPACE" > /dev/null
-  kubectl label namespace "$NAMESPACE" operator=test > /dev/null
-  printf "Creating namespace %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
-fi
+if [[ -f $CSV_FILE ]]; then
 
-echo -e "TMP=$(mktemp -d 2>/dev/null || mktemp -d)\nNAMESPACE=$NAMESPACE\nOP_VER=$OP_VER" > /tmp/env.conf
+  if [[ "$NAMESPACE" == '' ]]; then
+    export NAMESPACE=$(python3 /scripts/lib-python/cluster/get-op-namespace.py -o "$PKG_NAME" -c "$CSV_FILE")
+  fi
+
+  # Create a namespace if necessary.
+  if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
+    printf "Creating namespace %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+    kubectl create namespace "$NAMESPACE" > /dev/null
+    kubectl label namespace "$NAMESPACE" operator=test > /dev/null
+    printf "Creating namespace %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+  fi
+
+  echo -e "TMP=$(mktemp -d 2>/dev/null || mktemp -d)\nNAMESPACE=$NAMESPACE\nOP_VER=$OP_VER" > /tmp/env.conf
+
+else 
+  >&2 echo "CSV file for version ${OP_VER} not found test cannot continue"
+
+  exit 1;
+fi
