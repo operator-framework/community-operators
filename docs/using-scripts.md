@@ -41,10 +41,9 @@ WARNING: csv metadata.annotations.certified not defined. [cockroachdb/cockroachd
 Verify operator                                   [  OK  ]
 ```
 
-### Testing Operator deployment
+### Deploying and Testing your Operator
 Using the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager)(OLM) your Operator will be packaged into a temporary catalog and installation will be attempted. OLM will be installed for you if not present.
 You can either provide an Kubernetes cluster as a testbed via `KUBECONFIG` or `~/.kube/confg` or the Makefile will install a `minikube` cluster for you. 
-Once successfully deployed this test will run the `scorecard` test of the Operator-SDK for you.
 
 For this type of test, additionally the following options exist:
 
@@ -54,13 +53,13 @@ For this type of test, additionally the following options exist:
 
 ` INSTALL_MODE ` - any of `OwnNamespace`, `SingleNamespace`, `AllNamespaces`. this controls the installation mode of the Operator and should be set according to what your Operator states as supported in the `installModes` section of the CSV. Default is `SingleNamepsace`.
 
-Example, run from the top-level directory of this repository:
+You can start by just deploying your Operator:
 
 ```
 minikube start
 [...]
 
-make operator.test OP_PATH=upstream-community-operators/cockroachdb
+make operator.install OP_PATH=upstream-community-operators/cockroachdb
 
 Pulling docker image                              [  Processing  ]
 Pulling docker image                              [  OK  ]
@@ -94,6 +93,22 @@ Operator deployment                               [  Processing  ]
     Checking csv if passes                        [  OK  ]
     Waiting for deployment                        [  Processing  ]
     Waiting for deployment                        [  OK  ]
+Operator deployment                               [  OK  ]
+```
+
+This way you can test if your Operator is packaged correctly.
+
+You can also run a test that will deploy your Operator and checks if it behaves correctly according to `scorecard` (which is part of the Operator-SDK).
+
+Example, run from the top-level directory of this repository:
+
+```
+minikube start
+[...]
+
+make operator.test OP_PATH=upstream-community-operators/cockroachdb
+
+[...]
 Operator deployment                               [  OK  ]
 Test operator with scorecard                      [  Processing  ]
 Running scorecard trough all CR
@@ -150,6 +165,15 @@ Test operator with scorecard                      [  OK  ]
 ```
 
 ## Additional shortcuts
+
+### Clean up after a failed test
+
+Like explained above (`CLEAN_MODE`), by default, if all tests run correctly, anything that got installed of on your cluster as part of the test will be deleted. If something fails, the deployed resource will not be deleted in order to give you a chance to debug.
+After you finished debugging you can use the following command to clean up any residual resources as part of a test of a particular Operator:
+
+```
+make operator.cleanup OP_PATH=upstream-community-operators/cockroachdb
+```
 
 ### Install a minikube cluster
 Install a `minikube` cluster as a testbed for the Operator deployment. Supply `VM_DRIVER` to amend which of the supported hypervisors is used.
