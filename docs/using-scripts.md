@@ -7,6 +7,7 @@ This is currently tested on `minikube` but should work on other Kubernetes syste
 
 You need the following installed on your local machine:
 
+* Linux or macOS host
 * Docker
 * make
 * minikube (if no existing Kubernetes cluster is available via `KUBECONFIG` or in `~/.kube/config`)
