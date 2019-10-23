@@ -1,0 +1,470 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: openliberties.openliberty.io
+spec:
+  group: openliberty.io
+  names:
+    kind: OpenLiberty
+    listKind: OpenLibertyList
+    plural: openliberties
+    singular: openliberty
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            arch:
+              properties:
+                amd64:
+                  enum:
+                  - 0 - Do not use
+                  - 1 - Least preferred
+                  - 2 - No preference
+                  - 3 - Most preferred
+                  type: string
+                ppc64le:
+                  enum:
+                  - 0 - Do not use
+                  - 1 - Least preferred
+                  - 2 - No preference
+                  - 3 - Most preferred
+                  type: string
+                s390x:
+                  enum:
+                  - 0 - Do not use
+                  - 1 - Least preferred
+                  - 2 - No preference
+                  - 3 - Most preferred
+                  type: string
+              required:
+              - amd64
+              - ppc64le
+              - s390x
+              type: object
+            autoscaling:
+              properties:
+                enabled:
+                  type: boolean
+                maxReplicas:
+                  type: integer
+                minReplicas:
+                  type: integer
+                targetCPUUtilizationPercentage:
+                  type: integer
+              required:
+              - enabled
+              - minReplicas
+              - maxReplicas
+              - targetCPUUtilizationPercentage
+              type: object
+            deployment:
+              properties:
+                annotations:
+                  type: object
+                labels:
+                  type: object
+              type: object
+            env:
+              properties:
+                jvmArgs:
+                  type: string
+              type: object
+            iiopService:
+              properties:
+                enabled:
+                  type: boolean
+                nonSecurePort:
+                  type: integer
+                nonSecureTargetPort:
+                  type: integer
+                securePort:
+                  type: integer
+                secureTargetPort:
+                  type: integer
+                type:
+                  enum:
+                  - ClusterIP
+                  - NodePort
+                  type: string
+              required:
+              - enabled
+              - nonSecurePort
+              - securePort
+              - type
+              type: object
+            image:
+              properties:
+                extraEnvs:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      value: null
+                    required:
+                    - name
+                    type: object
+                  type: array
+                extraVolumeMounts:
+                  items:
+                    properties:
+                      mountPath:
+                        type: string
+                      name:
+                        type: string
+                      readOnly:
+                        type: boolean
+                    required:
+                    - name
+                    type: object
+                  type: array
+                lifecycle:
+                  properties:
+                    postStart:
+                      type: object
+                    preStop:
+                      type: object
+                  type: object
+                livenessProbe:
+                  properties:
+                    failureThreshold:
+                      minimum: 1
+                      type: integer
+                    initialDelaySeconds:
+                      type: integer
+                    periodSeconds:
+                      minimum: 1
+                      type: integer
+                    successThreshold:
+                      maximum: 1
+                      minimum: 1
+                      type: integer
+                    timeoutSeconds:
+                      minimum: 1
+                      type: integer
+                  type: object
+                pullPolicy:
+                  enum:
+                  - Always
+                  - Never
+                  - IfNotPresent
+                  type: string
+                pullSecret:
+                  type: string
+                readinessProbe:
+                  properties:
+                    failureThreshold:
+                      minimum: 1
+                      type: integer
+                    initialDelaySeconds:
+                      type: integer
+                    periodSeconds:
+                      minimum: 1
+                      type: integer
+                    successThreshold:
+                      minimum: 1
+                      type: integer
+                    timeoutSeconds:
+                      minimum: 1
+                      type: integer
+                  type: object
+                repository:
+                  type: string
+                security:
+                  type: object
+                serverOverridesConfigMapName:
+                  type: string
+                tag:
+                  type: string
+              required:
+              - pullPolicy
+              - repository
+              - tag
+              type: object
+            ingress:
+              properties:
+                annotations:
+                  type: object
+                enabled:
+                  type: boolean
+                host:
+                  type: string
+                labels:
+                  type: object
+                path:
+                  type: string
+                rewriteTarget:
+                  type: string
+                secretName:
+                  type: string
+              required:
+              - enabled
+              - path
+              - rewriteTarget
+              type: object
+            jmsService:
+              properties:
+                enabled:
+                  type: boolean
+                port:
+                  type: integer
+                targetPort:
+                  type: integer
+                type:
+                  enum:
+                  - ClusterIP
+                  - NodePort
+                  type: string
+              required:
+              - enabled
+              - port
+              - type
+              type: object
+            logs:
+              properties:
+                consoleFormat:
+                  enum:
+                  - json
+                  - basic
+                  type: string
+                consoleLogLevel:
+                  enum:
+                  - audit
+                  - error
+                  - info
+                  - 'off'
+                  - warning
+                  type: string
+                consoleSource:
+                  type: string
+                persistLogs:
+                  type: boolean
+                persistTransactionLogs:
+                  type: boolean
+              required:
+              - consoleFormat
+              - consoleLogLevel
+              - consoleSource
+              - persistLogs
+              - persistTransactionLogs
+              type: object
+            microprofile:
+              properties:
+                health:
+                  properties:
+                    enabled:
+                      type: boolean
+                  required:
+                  - enabled
+                  type: object
+              type: object
+            monitoring:
+              properties:
+                enabled:
+                  type: boolean
+              required:
+              - enabled
+              type: object
+            persistence:
+              properties:
+                fsGroupGid:
+                  pattern: ^(?:[0-9]|)$
+                name:
+                  type: string
+                selector:
+                  properties:
+                    label:
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - label
+                  - value
+                  type: object
+                size:
+                  type: string
+                storageClassName:
+                  type: string
+                useDynamicProvisioning:
+                  type: boolean
+              required:
+              - name
+              - size
+              - useDynamicProvisioning
+              type: object
+            pod:
+              properties:
+                annotations:
+                  type: object
+                extraContainers:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  type: array
+                extraInitContainers:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  type: array
+                extraVolumes:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  type: array
+                labels:
+                  type: object
+                security:
+                  type: object
+              type: object
+            rbac:
+              properties:
+                install:
+                  type: boolean
+              required:
+              - install
+              type: object
+            replicaCount:
+              type: integer
+            resourceNameOverride:
+              type: string
+            resources:
+              properties:
+                constraints:
+                  properties:
+                    enabled:
+                      type: boolean
+                  required:
+                  - enabled
+                  type: object
+                limits:
+                  properties:
+                    cpu:
+                      pattern: ^[0-9]+m|[0-9]+\.[0-9]+?$
+                      type: string
+                    memory:
+                      pattern: ^[0-9]+([KMGTPE][i]?|[e][0-9]+)?$
+                      type: string
+                  required:
+                  - cpu
+                  - memory
+                  type: object
+                requests:
+                  properties:
+                    cpu:
+                      pattern: ^[0-9]+m|[0-9]+\.[0-9]+?$
+                      type: string
+                    memory:
+                      pattern: ^[0-9]+([KMGTPE][i]?|[e][0-9]+)?$
+                      type: string
+                  required:
+                  - cpu
+                  - memory
+                  type: object
+              required:
+              - constraints
+              type: object
+            service:
+              properties:
+                annotations:
+                  type: object
+                enabled:
+                  type: boolean
+                extraPorts:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      port:
+                        type: integer
+                      protocol:
+                        type: string
+                      targetPort:
+                        type: integer
+                    required:
+                    - name
+                    type: object
+                  type: array
+                extraSelectors:
+                  type: object
+                labels:
+                  type: object
+                name:
+                  type: string
+                port:
+                  type: integer
+                targetPort:
+                  type: integer
+                type:
+                  enum:
+                  - ClusterIP
+                  - NodePort
+                  type: string
+              required:
+              - enabled
+              - port
+              - type
+              type: object
+            sessioncache:
+              properties:
+                hazelcast:
+                  properties:
+                    embedded:
+                      type: boolean
+                    enabled:
+                      type: boolean
+                    image:
+                      properties:
+                        pullPolicy:
+                          enum:
+                          - Always
+                          - Never
+                          - IfNotPresent
+                          type: string
+                        repository:
+                          type: string
+                        tag:
+                          type: string
+                      required:
+                      - pullPolicy
+                      - tag
+                      type: object
+                  required:
+                  - enabled
+                  - embedded
+                  type: object
+              type: object
+            ssl:
+              properties:
+                createClusterSSLConfiguration:
+                  type: boolean
+                enabled:
+                  type: boolean
+                useClusterSSLConfiguration:
+                  type: boolean
+              required:
+              - enabled
+              - createClusterSSLConfiguration
+              - useClusterSSLConfiguration
+              type: object
+          required:
+          - replicaCount
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

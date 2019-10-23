@@ -1,0 +1,73 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: opsmanagers.mongodb.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.version
+    description: The version of MongoDBOpsManager.
+    name: Version
+    type: string
+  - JSONPath: .spec.applicationDatabase.version
+    description: The version of Application Database  .
+    name: Version (DB)
+    type: string
+  - JSONPath: .status.opsManager.phase
+    description: The current state of the MongoDBOpsManager.
+    name: State
+    type: string
+  - JSONPath: .status.applicationDatabase.phase
+    description: The current state of the MongoDBOpsManager Application Database.
+    name: State (DB)
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    description: The time since the MongoDBOpsManager resource was created.
+    name: Age
+    type: date
+  group: mongodb.com
+  names:
+    kind: MongoDBOpsManager
+    plural: opsmanagers
+    shortNames:
+    - om
+    singular: opsmanager
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            applicationDatabase:
+              properties:
+                exposedExternally:
+                  type: boolean
+                logLevel:
+                  enum:
+                  - DEBUG
+                  - INFO
+                  - WARN
+                  - ERROR
+                  - FATAL
+                  type: string
+                members:
+                  maximum: 50
+                  minimum: 3
+                  type: integer
+                type:
+                  enum:
+                  - ReplicaSet
+                  type: string
+                version:
+                  pattern: ^[0-9]+.[0-9]+.[0-9]+(-.+)?$
+                  type: string
+              required:
+              - version
+              - type
+              - members
+              type: object
+            version:
+              type: string
+          required:
+          - version
+          - applicationDatabase
+  version: v1

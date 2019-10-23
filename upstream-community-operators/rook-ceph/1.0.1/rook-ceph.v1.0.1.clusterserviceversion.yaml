@@ -1,0 +1,420 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"ceph.rook.io/v1\",\n    \"kind\"\
+      : \"CephCluster\",\n    \"metadata\": {\n      \"name\": \"my-rook-ceph\",\n\
+      \      \"namespace\": \"my-rook-ceph\"\n    },\n    \"spec\": {\n      \"cephVersion\"\
+      : {\n        \"image\": \"ceph/ceph:v14.2.1-20190430\"\n      },\n      \"dataDirHostPath\"\
+      : \"/var/lib/rook\",\n      \"mon\": {\n        \"count\": 3\n      },\n   \
+      \   \"dashboard\": {\n        \"enabled\": true\n      },\n      \"network\"\
+      : {\n        \"hostNetwork\": false\n      },\n      \"rbdMirroring\": {\n \
+      \       \"workers\": 0\n      },\n      \"storage\": {\n        \"useAllNodes\"\
+      : true,\n        \"useAllDevices\": true\n      }\n    }\n  },\n  {\n    \"\
+      apiVersion\": \"ceph.rook.io/v1\",\n    \"kind\": \"CephBlockPool\",\n    \"\
+      metadata\": {\n      \"name\": \"replicapool\",\n      \"namespace\": \"my-rook-ceph\"\
+      \n    },\n    \"spec\": {\n      \"failureDomain\": \"host\",\n      \"replicated\"\
+      : {\n        \"size\": 3\n      },\n      \"annotations\": null\n    }\n  },\n\
+      \  {\n    \"apiVersion\": \"ceph.rook.io/v1\",\n    \"kind\": \"CephObjectStore\"\
+      ,\n    \"metadata\": {\n      \"name\": \"my-store\",\n      \"namespace\":\
+      \ \"my-rook-ceph\"\n    },\n    \"spec\": {\n      \"metadataPool\": {\n   \
+      \     \"failureDomain\": \"host\",\n        \"replicated\": {\n          \"\
+      size\": 3\n        }\n      },\n      \"dataPool\": {\n        \"failureDomain\"\
+      : \"host\",\n        \"replicated\": {\n          \"size\": 3\n        }\n \
+      \     },\n      \"gateway\": {\n        \"type\": \"s3\",\n        \"sslCertificateRef\"\
+      : null,\n        \"port\": 8080,\n        \"securePort\": null,\n        \"\
+      instances\": 1,\n        \"allNodes\": false,\n        \"placement\": null,\n\
+      \        \"annotations\": null,\n        \"resources\": null\n      }\n    }\n\
+      \  },\n  {\n    \"apiVersion\": \"ceph.rook.io/v1\",\n    \"kind\": \"CephObjectStoreUser\"\
+      ,\n    \"metadata\": {\n      \"name\": \"my-user\",\n      \"namespace\": \"\
+      my-rook-ceph\"\n    },\n    \"spec\": {\n      \"store\": \"my-store\",\n  \
+      \    \"displayName\": \"my display name\"\n    }\n  }\n]"
+    capabilities: Full Lifecycle
+    categories: Storage
+    certified: 'false'
+    containerImage: rook/ceph:v1.0.1
+    createdAt: 2019-05-16T22-53-57Z
+    description: Install and maintain Ceph Storage cluster
+    repository: https://github.com/rook/rook
+    support: https://slack.rook.io/
+    tectonic-visibility: ocs
+  name: rook-ceph.v1.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Represents a Ceph cluster.
+      displayName: Ceph Cluster
+      kind: CephCluster
+      name: cephclusters.ceph.rook.io
+      version: v1
+    - description: Represents a Ceph Block Pool.
+      displayName: Ceph Block Pool
+      kind: CephBlockPool
+      name: cephblockpools.ceph.rook.io
+      version: v1
+    - description: Represents a Ceph Object Store.
+      displayName: Ceph Object Store
+      kind: CephObjectStore
+      name: cephobjectstores.ceph.rook.io
+      version: v1
+    - description: Represents a Ceph Object Store User.
+      displayName: Ceph Object Store User
+      kind: CephObjectStoreUser
+      name: cephobjectstoreusers.ceph.rook.io
+      version: v1
+  description: '
+
+    The Rook-Ceph storage operator packages, deploys, manages, upgrades and scales
+    Ceph storage for providing persistent storage to infrastructure services (Logging,
+    Metrics, Registry) as well as stateful applications in Kubernetes clusters.
+
+
+    ## Rook-Ceph Storage Operator
+
+
+    Rook runs as a cloud-native service in Kubernetes clusters for optimal integration
+    with applications in need of storage, and handles the heavy-lifting behind the
+    scenes such as provisioning and management.
+
+    Rook orchestrates battle-tested open-source storage technology Ceph, which has
+    years of production deployments and runs some of the worlds largest clusters.
+
+
+    Ceph is a massively scalable, software-defined, cloud native storage platform
+    that offers block, file and object storage services.
+
+    Ceph can be used to back a wide variety of applications including relational databases,
+    NoSQL databases, CI/CD tool-sets, messaging, AI/ML and analytics applications.
+
+    Ceph is a proven storage platform that backs some of the world''s largest storage
+    deployments and has a large vibrant open source community backing the project.
+
+
+    ## Supported features
+
+    * **High Availability and resiliency** - Ceph has no single point of failures
+    (SPOF) and all its components work natively in a highly available fashion
+
+    * **Data Protection** - Ceph periodically scrub for inconsistent objects and repair
+    them if necessary, making sure your replicas are always coherent
+
+    * **Consistent storage platform across hybrid cloud** - Ceph can be deployed anywhere
+    (on-premise or bare metal) and thus offers a similar experience regardless
+
+    * **Block, File & Object storage service** - Ceph can expose your data through
+    several storage interfaces, solving all the application use cases
+
+    * **Scale up/down** - addition and removal of storage is fully covered by the
+    operator.
+
+    * **Dashboard** - The Operator deploys a dashboard for monitoring and introspecting
+    your cluster.
+
+
+    ## Before you start
+
+    https://rook.io/docs/rook/v1.0/k8s-pre-reqs.html
+
+    '
+  displayName: Rook-Ceph
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMiwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCA3MCA3MCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgNzAgNzA7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojMkIyQjJCO30KPC9zdHlsZT4KPGc+Cgk8Zz4KCQk8Zz4KCQkJPHBhdGggY2xhc3M9InN0MCIgZD0iTTUwLjUsNjcuNkgxOS45Yy04LDAtMTQuNS02LjUtMTQuNS0xNC41VjI5LjJjMC0xLjEsMC45LTIuMSwyLjEtMi4xaDU1LjRjMS4xLDAsMi4xLDAuOSwyLjEsMi4xdjIzLjkKCQkJCUM2NSw2MS4xLDU4LjUsNjcuNiw1MC41LDY3LjZ6IE05LjYsMzEuMnYyMS45YzAsNS43LDQuNiwxMC4zLDEwLjMsMTAuM2gzMC42YzUuNywwLDEwLjMtNC42LDEwLjMtMTAuM1YzMS4ySDkuNnoiLz4KCQk8L2c+CgkJPGc+CgkJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik00Mi40LDU2LjdIMjhjLTEuMSwwLTIuMS0wLjktMi4xLTIuMXYtNy4yYzAtNS4xLDQuMi05LjMsOS4zLTkuM3M5LjMsNC4yLDkuMyw5LjN2Ny4yCgkJCQlDNDQuNSw1NS43LDQzLjYsNTYuNyw0Mi40LDU2Ljd6IE0zMCw1Mi41aDEwLjN2LTUuMmMwLTIuOS0yLjMtNS4yLTUuMi01LjJjLTIuOSwwLTUuMiwyLjMtNS4yLDUuMlY1Mi41eiIvPgoJCTwvZz4KCQk8Zz4KCQkJPHBhdGggY2xhc3M9InN0MCIgZD0iTTYyLjksMjMuMkM2Mi45LDIzLjIsNjIuOSwyMy4yLDYyLjksMjMuMmwtMTEuMSwwYy0xLjEsMC0yLjEtMC45LTIuMS0yLjFjMC0xLjEsMC45LTIuMSwyLjEtMi4xCgkJCQljMCwwLDAsMCwwLDBsOS4xLDBWNi43aC02Ljl2My41YzAsMC41LTAuMiwxLjEtMC42LDEuNWMtMC40LDAuNC0wLjksMC42LTEuNSwwLjZsMCwwbC0xMS4xLDBjLTEuMSwwLTIuMS0wLjktMi4xLTIuMVY2LjdoLTYuOQoJCQkJdjMuNWMwLDEuMS0wLjksMi4xLTIuMSwyLjFsLTExLjEsMGMtMC41LDAtMS4xLTAuMi0xLjUtMC42Yy0wLjQtMC40LTAuNi0wLjktMC42LTEuNVY2LjdIOS42djEyLjRoOWMxLjEsMCwyLjEsMC45LDIuMSwyLjEKCQkJCXMtMC45LDIuMS0yLjEsMi4xaC0xMWMtMS4xLDAtMi4xLTAuOS0yLjEtMi4xVjQuNmMwLTEuMSwwLjktMi4xLDIuMS0yLjFoMTEuMWMxLjEsMCwyLjEsMC45LDIuMSwyLjF2My41bDcsMFY0LjYKCQkJCWMwLTEuMSwwLjktMi4xLDIuMS0yLjFoMTEuMWMxLjEsMCwyLjEsMC45LDIuMSwyLjF2My41bDYuOSwwVjQuNmMwLTEuMSwwLjktMi4xLDIuMS0yLjFoMTEuMUM2NCwyLjYsNjUsMy41LDY1LDQuNnYxNi41CgkJCQljMCwwLjUtMC4yLDEuMS0wLjYsMS41QzY0LDIzLDYzLjQsMjMuMiw2Mi45LDIzLjJ6Ii8+CgkJPC9nPgoJPC9nPgo8L2c+Cjwvc3ZnPg==
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules: []
+        serviceAccountName: rook-ceph-cluster-mgmt
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          - pods
+          - pods/log
+          - services
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - patch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        serviceAccountName: rook-ceph-system
+      - rules: []
+        serviceAccountName: rook-ceph-global
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - nodes
+          - nodes/proxy
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          - persistentvolumes
+          - persistentvolumeclaims
+          - endpoints
+          verbs:
+          - get
+          - list
+          - watch
+          - patch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ceph.rook.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - rook.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: rook-ceph-system
+      - rules: []
+        serviceAccountName: rook-ceph-mgr-cluster
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          - nodes
+          - nodes/proxy
+          verbs:
+          - get
+          - list
+          - watch
+        serviceAccountName: rook-ceph-mgr
+      - rules: []
+        serviceAccountName: rook-ceph-mgr-system
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+        serviceAccountName: rook-ceph-mgr
+      deployments:
+      - name: rook-ceph-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: rook-ceph-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: rook-ceph-operator
+            spec:
+              containers:
+              - args:
+                - ceph
+                - operator
+                env:
+                - name: ROOK_CURRENT_NAMESPACE_ONLY
+                  value: 'true'
+                - name: ROOK_ALLOW_MULTIPLE_FILESYSTEMS
+                  value: 'false'
+                - name: ROOK_LOG_LEVEL
+                  value: INFO
+                - name: ROOK_CEPH_STATUS_CHECK_INTERVAL
+                  value: 60s
+                - name: ROOK_MON_HEALTHCHECK_INTERVAL
+                  value: 45s
+                - name: ROOK_MON_OUT_TIMEOUT
+                  value: 600s
+                - name: ROOK_DISCOVER_DEVICES_INTERVAL
+                  value: 60m
+                - name: ROOK_HOSTPATH_REQUIRES_PRIVILEGED
+                  value: 'false'
+                - name: ROOK_ENABLE_SELINUX_RELABELING
+                  value: 'true'
+                - name: ROOK_ENABLE_FSGROUP
+                  value: 'true'
+                - name: ROOK_DISABLE_DEVICE_HOTPLUG
+                  value: 'false'
+                - name: NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                image: rook/ceph:v1.0.1
+                name: rook-ceph-operator
+                resources: {}
+                volumeMounts:
+                - mountPath: /var/lib/rook
+                  name: rook-config
+                - mountPath: /etc/ceph
+                  name: default-config-dir
+              serviceAccountName: rook-ceph-system
+              volumes:
+              - emptyDir: {}
+                name: rook-config
+              - emptyDir: {}
+                name: default-config-dir
+      permissions:
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - configmaps
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - patch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - statefulsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        serviceAccountName: rook-ceph-system
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        serviceAccountName: rook-ceph-osd
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ceph.rook.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: rook-ceph-mgr
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - rook
+  - ceph
+  - storage
+  - object storage
+  - open source
+  - block storage
+  - shared filesystem
+  labels:
+    alm-owner-etcd: rookoperator
+    operated-by: rookoperator
+  links:
+  - name: Blog
+    url: https://blog.rook.io
+  - name: Documentation
+    url: https://rook.github.io/docs/rook/v1.0/
+  maintainers:
+  - email: info@rook.io
+    name: The Rook Authors
+  maturity: alpha
+  minKubeVersion: 1.10.0
+  provider:
+    name: The Rook Authors
+  replaces: rook-ceph.v1.0.0
+  selector:
+    matchLabels:
+      alm-owner-etcd: rookoperator
+      operated-by: rookoperator
+  version: 1.0.1

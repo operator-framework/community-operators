@@ -1,0 +1,98 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: '1.0'
+  name: bindings.ibmcloud.ibm.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: ibmcloud.ibm.com
+  names:
+    kind: Binding
+    plural: bindings
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            parameters:
+              items:
+                properties:
+                  attributes:
+                    description: A parameter may have attributes (e.g. message hub
+                      topic might have partitions)
+                    type: object
+                  name:
+                    description: Name representing the key.
+                    type: string
+                  value:
+                    description: Defaults to null.
+                  valueFrom:
+                    description: Source for the value. Cannot be used if value is
+                      not empty.
+                    properties:
+                      configMapKeyRef:
+                        description: Selects a key of a ConfigMap.
+                        type: object
+                      secretKeyRef:
+                        description: Selects a key of a secret in the resource namespace
+                        type: object
+                    type: object
+                required:
+                - name
+                type: object
+              type: array
+            role:
+              type: string
+            secretName:
+              type: string
+            serviceName:
+              type: string
+            serviceNamespace:
+              type: string
+          required:
+          - serviceName
+          type: object
+        status:
+          properties:
+            generation:
+              format: int64
+              type: integer
+            instanceId:
+              type: string
+            keyInstanceId:
+              type: string
+            message:
+              type: string
+            state:
+              type: string
+          type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ''
+    plural: ''
+  conditions: []
+  storedVersions: []

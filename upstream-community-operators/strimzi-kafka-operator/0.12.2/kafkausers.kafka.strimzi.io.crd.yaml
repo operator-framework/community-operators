@@ -1,0 +1,133 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    app: strimzi
+  name: kafkausers.kafka.strimzi.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.authentication.type
+    description: How the user is authenticated
+    name: Authentication
+    type: string
+  - JSONPath: .spec.authorization.type
+    description: How the user is authorised
+    name: Authorization
+    type: string
+  group: kafka.strimzi.io
+  names:
+    kind: KafkaUser
+    listKind: KafkaUserList
+    plural: kafkausers
+    shortNames:
+    - ku
+    singular: kafkauser
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            authentication:
+              properties:
+                type:
+                  enum:
+                  - tls
+                  - scram-sha-512
+                  type: string
+              required:
+              - type
+              type: object
+            authorization:
+              properties:
+                acls:
+                  items:
+                    properties:
+                      host:
+                        type: string
+                      operation:
+                        enum:
+                        - Read
+                        - Write
+                        - Create
+                        - Delete
+                        - Alter
+                        - Describe
+                        - ClusterAction
+                        - AlterConfigs
+                        - DescribeConfigs
+                        - IdempotentWrite
+                        - All
+                        type: string
+                      resource:
+                        properties:
+                          name:
+                            type: string
+                          patternType:
+                            enum:
+                            - literal
+                            - prefix
+                            type: string
+                          type:
+                            enum:
+                            - topic
+                            - group
+                            - cluster
+                            - transactionalId
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      type:
+                        enum:
+                        - allow
+                        - deny
+                        type: string
+                    required:
+                    - operation
+                    - resource
+                    type: object
+                  type: array
+                type:
+                  enum:
+                  - simple
+                  type: string
+              required:
+              - acls
+              - type
+              type: object
+          type: object
+        status:
+          properties:
+            conditions:
+              items:
+                properties:
+                  lastTransitionTime:
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                type: object
+              type: array
+            observedGeneration:
+              type: integer
+            secret:
+              type: string
+            username:
+              type: string
+          type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false

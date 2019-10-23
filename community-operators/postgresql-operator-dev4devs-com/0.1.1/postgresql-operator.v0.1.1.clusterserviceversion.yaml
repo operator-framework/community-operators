@@ -1,0 +1,672 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"postgresql.dev4devs.com/v1alpha1\"\
+      ,\n    \"kind\": \"Database\",\n    \"metadata\": {\n      \"name\": \"database\"\
+      \n    },\n    \"spec\": {\n      \"databaseCpu\": \"30m\",\n      \"databaseCpuLimit\"\
+      : \"60m\",\n      \"databaseMemoryLimit\": \"512Mi\",\n      \"databaseMemoryRequest\"\
+      : \"128Mi\",\n      \"databaseName\": \"example\",\n      \"databaseNameKeyEnvVar\"\
+      : \"POSTGRESQL_DATABASE\",\n      \"databasePassword\": \"postgres\",\n    \
+      \  \"databasePasswordKeyEnvVar\": \"POSTGRESQL_PASSWORD\",\n      \"databaseStorageRequest\"\
+      : \"1Gi\",\n      \"databaseUser\": \"postgres\",\n      \"databaseUserKeyEnvVar\"\
+      : \"POSTGRESQL_USER\",\n      \"image\": \"centos/postgresql-96-centos7\",\n\
+      \      \"size\": 1\n    }\n  },\n  {\n    \"apiVersion\": \"postgresql.dev4devs.com/v1alpha1\"\
+      ,\n    \"kind\": \"Backup\",\n    \"metadata\": {\n      \"name\": \"backup\"\
+      \n    },\n    \"spec\": {\n      \"awsAccessKeyId\": \"example-awsAccessKeyId\"\
+      ,\n      \"awsS3BucketName\": \"example-awsS3BucketName\",\n      \"awsSecretAccessKey\"\
+      : \"example-awsSecretAccessKey\",\n      \"schedule\": \"0 0 * * *\"\n    }\n\
+      \  }\n]"
+    capabilities: Full Lifecycle
+    categories: Database
+    certified: 'false'
+    containerImage: quay.io/dev4devs-com/postgresql-operator:0.1.1
+    createdAt: '2019-09-08T08:00:00Z'
+    description: Operator in Go developed using the Operator Framework to package,
+      install, configure and manage a PostgreSQL database. This project includes backup
+      feature.
+    repository: https://github.com/dev4devs-com/postgresql-operator
+    support: Dev4Devs, Inc
+  name: postgresql-operator.v0.1.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Backup is the Schema for the backups API
+      displayName: Database Backup
+      kind: Backup
+      name: backups.postgresql.dev4devs.com
+      resources:
+      - kind: CronJob
+        name: A Kubernetes Deployment
+        version: v1beta1
+      - kind: PersistentVolumeClaim
+        name: A Kubernetes PersistentVolumeClaim
+        version: v1
+      - kind: Service
+        name: A Kubernetes Service
+        version: v1
+      specDescriptors:
+      - description: 'Key ID of AWS S3 storage. Default Value: nil Required to create
+          the Secret with the data to allow send the backup files to AWS S3 storage.'
+        displayName: AWS S3 accessKey/token ID
+        path: awsAccessKeyId
+      - description: 'Name of AWS S3 storage. Default Value: nil Required to create
+          the Secret with the AWS data to allow send the backup files to AWS S3 storage.'
+        displayName: AWS S3 Bucket name
+        path: awsS3BucketName
+      - description: 'Secret/Token of AWS S3 storage. Default Value: nil Required
+          to create the Secret with the data to allow send the backup files to AWS
+          S3 storage.'
+        displayName: AWS S3 accessKey/token
+        path: awsSecretAccessKey
+      - description: 'Name of the secret with the AWS data credentials pre-existing
+          in the cluster Default Value: nil See here the template: https://github.com/integr8ly/backup-container-image/blob/master/templates/openshift/sample-config/s3-secret.yaml'
+        displayName: 'AWS Secret name:'
+        path: awsSecretName
+      - description: 'Namespace of the secret with the AWS data credentials pre-existing
+          in the cluster Default Value: nil NOTE: If the namespace be not informed
+          then the operator will try to find it in the same namespace where it is
+          applied'
+        displayName: 'AWS Secret namespace:'
+        path: awsSecretNamespace
+      - description: 'Name of the configMap key where the operator should looking
+          for the value for the database name for its env var Default value: nil'
+        displayName: ConfigMap Database Key
+        path: configMapDatabaseNameKey
+      - description: 'Name of the configMap key where the operator should looking
+          for the value for the database user for its env var Default value: nil'
+        displayName: ConfigMap Password Key
+        path: configMapDatabasePasswordKey
+      - description: 'Name of the configMap key where the operator should looking
+          for the value for the database password for its env var Default value: nil'
+        displayName: ConfigMap User Key
+        path: configMapDatabaseUserKey
+      - description: 'Name of the ConfigMap where the operator should looking for
+          the EnvVars keys and/or values only Default value: nil'
+        displayName: ConfigMap name
+        path: configMapName
+      - description: 'Policy definition to pull the Database Image More info: https://kubernetes.io/docs/concepts/containers/images/
+          Default value:'
+        displayName: Container Image Pull Policy
+        path: containerImagePullPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:imagePullPolicy
+      - description: 'Name of the Database CR applied which this backup will work
+          with Default Value: "database"'
+        displayName: Name of Database CR
+        path: databaseCRName
+      - description: 'CPU resource request which will be available for the database
+          container Default value: 10Mi'
+        displayName: Database CPU
+        path: databaseCpu
+      - description: 'Limit of CPU request which will be available for the database
+          container Default value: 20Mi'
+        displayName: Database CPU Limit
+        path: databaseCpuLimit
+      - description: 'Limit of Memory which will be available for the database container
+          Default value: 512Mi'
+        displayName: Database Memory Limit
+        path: databaseMemoryLimit
+      - description: 'Limit of Memory Request which will be available for the database
+          container Default value: 128Mi'
+        displayName: Database Memory Request
+        path: databaseMemoryRequest
+      - description: 'Value for the Database Environment Variable (spec.databaseNameKeyEnvVar).
+          Default value: example'
+        displayName: Database Name
+        path: databaseName
+      - description: 'Key Value for the Database Environment Variable in order to
+          inform the database mame Note that each database version/image can expected
+          a different value for it. Default value: nil'
+        displayName: EnvVar Key (Database Name)
+        path: databaseNameKeyEnvVar
+      - description: 'Value for the Database Environment Variable (spec.databasePasswordKeyEnvVar).
+          Default value: postgres'
+        displayName: Database Password
+        path: databasePassword
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:password
+      - description: 'Key Value for the Database Environment Variable in order to
+          inform the database password Note that each database version/image can expected
+          a different value for it. Default value: nil'
+        displayName: EnvVar Key (Database Password)
+        path: databasePasswordKeyEnvVar
+      - description: 'Limit of Storage Request which will be available for the database
+          container Default value: 1Gi'
+        displayName: Database Storage Request
+        path: databaseStorageRequest
+      - description: 'Value for the Database Environment Variable (spec.databaseUserKeyEnvVar).
+          Default value: postgres'
+        displayName: Database User
+        path: databaseUser
+      - description: 'Key Value for the Database Environment Variable in order to
+          inform the database user Note that each database version/image can expected
+          a different value for it. Default value: nil'
+        displayName: EnvVar Key (Database User)
+        path: databaseUserKeyEnvVar
+      - description: 'Database version. (E.g 9.6). Default Value: <9.6> IMPORTANT:
+          Just the first 2 digits should be used.'
+        displayName: Databaseversion
+        path: databaseVersion
+      - description: 'Name of the secret with the Encrypt data pre-existing in the
+          cluster Default Value: nil See here the template: https://github.com/integr8ly/backup-container-image/blob/master/templates/openshift/sample-config/gpg-secret.yaml'
+        displayName: 'EncryptKey Secret name:'
+        path: encryptKeySecretName
+      - description: 'Namespace of the secret with the Encrypt data pre-existing in
+          the cluster Default Value: nil NOTE: If the namespace be not informed then
+          the operator will try to find it in the same namespace where it is applied'
+        displayName: 'EncryptKey Secret namespace:'
+        path: encryptKeySecretNamespace
+      - description: 'GPG email to create the EncryptionKeySecret with this data Default
+          Value: nil See here how to create this key : https://help.github.com/en/articles/generating-a-new-gpg-key'
+        displayName: 'Gpg public email:'
+        path: gpgEmail
+      - description: 'GPG public key to create the EncryptionKeySecret with this data
+          Default Value: nil See here how to create this key : https://help.github.com/en/articles/generating-a-new-gpg-key'
+        displayName: 'Gpg public key:'
+        path: gpgPublicKey
+      - description: 'GPG trust model to create the EncryptionKeySecret with this
+          data. the default value is true when it is empty. Default Value: nil See
+          here how to create this key : https://help.github.com/en/articles/generating-a-new-gpg-key'
+        displayName: 'Gpg trust model:'
+        path: gpgTrustModel
+      - description: 'Database image:tag Default value: centos/postgresql-96-centos7'
+        displayName: Image:tag
+        path: image
+      - description: 'Image:tag used to do the backup. Default Value: <quay.io/integreatly/backup-container:1.0.8>
+          More Info: https://github.com/integr8ly/backup-container-image'
+        displayName: Image:tag
+        path: image
+      - description: 'Used to create the directory where the files will be stored
+          Default Value: <postgresql>'
+        displayName: AWS tag name
+        path: productName
+      - description: 'Schedule period for the CronJob. Default Value: <0 0 * * *>
+          daily at 00:00'
+        displayName: Schedule
+        path: schedule
+      - description: 'Quantity of instances Default value: 1'
+        displayName: Size
+        path: size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      statusDescriptors:
+      - description: Namespace  of the secret object with the Aws data to allow send
+          the backup files to the AWS storage
+        displayName: AWS Secret Namespace
+        path: awsCredentialsSecretNamespace
+      - description: Name  of the secret object with the Aws data to allow send the
+          backup files to the AWS storage
+        displayName: AWS Secret Name
+        path: awsSecretName
+      - description: Will be as "OK when all objects are created successfully
+        displayName: Backup Status
+        path: backupStatus
+      - description: Name of the CronJob object created and managed by it to schedule
+          the backup job
+        displayName: CronJob Name
+        path: cronJobName
+      - description: Status of the CronJob object
+        displayName: v1beta1.CronJobStatus
+        path: cronJobStatus
+      - description: It will be as "OK when all objects are created successfully
+        displayName: Database Status
+        path: databaseStatus
+      - description: Name of the secret object created with the database data to allow
+          the backup image connect to the database
+        displayName: Database Secret Name
+        path: dbSecretName
+      - description: Status of the Database Deployment created and managed by it
+        displayName: appsv1.DeploymentStatus
+        path: deploymentStatus
+      - description: Name  of the secret object with the Encryption GPG Key
+        displayName: Encryption GPG Secret Name
+        path: encryptKeySecretName
+      - description: Namespace of the secret object with the Encryption GPG Key
+        displayName: Encryption GPG Secret Namespace
+        path: encryptKeySecretNamespace
+      - description: Boolean value which has true when it has an EncryptionKey to
+          be used to send the backup files
+        displayName: Is Encryption GPG Key configure?
+        path: hasEncryptKey
+      - description: Boolean value which has true when the Database Pod was found
+          in order to create the secret with the database data to allow the backup
+          image connect into it.
+        displayName: Is the Database Pod found?
+        path: isDatabasePodFound
+      - description: Boolean value which has true when the Service Database Pod was
+          found in order to create the secret with the database data to allow the
+          backup image connect into it.
+        displayName: Is the Database Service found?
+        path: isDatabaseServiceFound
+      - description: Name of the PersistentVolumeClaim created and managed by it
+        displayName: v1.PersistentVolumeClaimStatus
+        path: pvcStatus
+      - description: Status of the Database Service created and managed by it
+        displayName: v1.ServiceStatus
+        path: serviceStatus
+      version: v1alpha1
+    - description: Database is the Schema for the the Database Database API
+      displayName: Database Database
+      kind: Database
+      name: databases.postgresql.dev4devs.com
+      resources:
+      - kind: Deployment
+        name: A Kubernetes Deployment
+        version: v1
+      - kind: PersistentVolumeClaim
+        name: A Kubernetes PersistentVolumeClaim
+        version: v1
+      - kind: Service
+        name: A Kubernetes Service
+        version: v1
+      specDescriptors:
+      - description: 'Key ID of AWS S3 storage. Default Value: nil Required to create
+          the Secret with the data to allow send the backup files to AWS S3 storage.'
+        displayName: AWS S3 accessKey/token ID
+        path: awsAccessKeyId
+      - description: 'Name of AWS S3 storage. Default Value: nil Required to create
+          the Secret with the AWS data to allow send the backup files to AWS S3 storage.'
+        displayName: AWS S3 Bucket name
+        path: awsS3BucketName
+      - description: 'Secret/Token of AWS S3 storage. Default Value: nil Required
+          to create the Secret with the data to allow send the backup files to AWS
+          S3 storage.'
+        displayName: AWS S3 accessKey/token
+        path: awsSecretAccessKey
+      - description: 'Name of the secret with the AWS data credentials pre-existing
+          in the cluster Default Value: nil See here the template: https://github.com/integr8ly/backup-container-image/blob/master/templates/openshift/sample-config/s3-secret.yaml'
+        displayName: 'AWS Secret name:'
+        path: awsSecretName
+      - description: 'Namespace of the secret with the AWS data credentials pre-existing
+          in the cluster Default Value: nil NOTE: If the namespace be not informed
+          then the operator will try to find it in the same namespace where it is
+          applied'
+        displayName: 'AWS Secret namespace:'
+        path: awsSecretNamespace
+      - description: 'Name of the configMap key where the operator should looking
+          for the value for the database name for its env var Default value: nil'
+        displayName: ConfigMap Database Key
+        path: configMapDatabaseNameKey
+      - description: 'Name of the configMap key where the operator should looking
+          for the value for the database user for its env var Default value: nil'
+        displayName: ConfigMap Password Key
+        path: configMapDatabasePasswordKey
+      - description: 'Name of the configMap key where the operator should looking
+          for the value for the database password for its env var Default value: nil'
+        displayName: ConfigMap User Key
+        path: configMapDatabaseUserKey
+      - description: 'Name of the ConfigMap where the operator should looking for
+          the EnvVars keys and/or values only Default value: nil'
+        displayName: ConfigMap name
+        path: configMapName
+      - description: 'Policy definition to pull the Database Image More info: https://kubernetes.io/docs/concepts/containers/images/
+          Default value:'
+        displayName: Container Image Pull Policy
+        path: containerImagePullPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:imagePullPolicy
+      - description: 'Name of the Database CR applied which this backup will work
+          with Default Value: "database"'
+        displayName: Name of Database CR
+        path: databaseCRName
+      - description: 'CPU resource request which will be available for the database
+          container Default value: 10Mi'
+        displayName: Database CPU
+        path: databaseCpu
+      - description: 'Limit of CPU request which will be available for the database
+          container Default value: 20Mi'
+        displayName: Database CPU Limit
+        path: databaseCpuLimit
+      - description: 'Limit of Memory which will be available for the database container
+          Default value: 512Mi'
+        displayName: Database Memory Limit
+        path: databaseMemoryLimit
+      - description: 'Limit of Memory Request which will be available for the database
+          container Default value: 128Mi'
+        displayName: Database Memory Request
+        path: databaseMemoryRequest
+      - description: 'Value for the Database Environment Variable (spec.databaseNameKeyEnvVar).
+          Default value: example'
+        displayName: Database Name
+        path: databaseName
+      - description: 'Key Value for the Database Environment Variable in order to
+          inform the database mame Note that each database version/image can expected
+          a different value for it. Default value: nil'
+        displayName: EnvVar Key (Database Name)
+        path: databaseNameKeyEnvVar
+      - description: 'Value for the Database Environment Variable (spec.databasePasswordKeyEnvVar).
+          Default value: postgres'
+        displayName: Database Password
+        path: databasePassword
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:password
+      - description: 'Key Value for the Database Environment Variable in order to
+          inform the database password Note that each database version/image can expected
+          a different value for it. Default value: nil'
+        displayName: EnvVar Key (Database Password)
+        path: databasePasswordKeyEnvVar
+      - description: 'Limit of Storage Request which will be available for the database
+          container Default value: 1Gi'
+        displayName: Database Storage Request
+        path: databaseStorageRequest
+      - description: 'Value for the Database Environment Variable (spec.databaseUserKeyEnvVar).
+          Default value: postgres'
+        displayName: Database User
+        path: databaseUser
+      - description: 'Key Value for the Database Environment Variable in order to
+          inform the database user Note that each database version/image can expected
+          a different value for it. Default value: nil'
+        displayName: EnvVar Key (Database User)
+        path: databaseUserKeyEnvVar
+      - description: 'Database version. (E.g 9.6). Default Value: <9.6> IMPORTANT:
+          Just the first 2 digits should be used.'
+        displayName: Databaseversion
+        path: databaseVersion
+      - description: 'Name of the secret with the Encrypt data pre-existing in the
+          cluster Default Value: nil See here the template: https://github.com/integr8ly/backup-container-image/blob/master/templates/openshift/sample-config/gpg-secret.yaml'
+        displayName: 'EncryptKey Secret name:'
+        path: encryptKeySecretName
+      - description: 'Namespace of the secret with the Encrypt data pre-existing in
+          the cluster Default Value: nil NOTE: If the namespace be not informed then
+          the operator will try to find it in the same namespace where it is applied'
+        displayName: 'EncryptKey Secret namespace:'
+        path: encryptKeySecretNamespace
+      - description: 'GPG email to create the EncryptionKeySecret with this data Default
+          Value: nil See here how to create this key : https://help.github.com/en/articles/generating-a-new-gpg-key'
+        displayName: 'Gpg public email:'
+        path: gpgEmail
+      - description: 'GPG public key to create the EncryptionKeySecret with this data
+          Default Value: nil See here how to create this key : https://help.github.com/en/articles/generating-a-new-gpg-key'
+        displayName: 'Gpg public key:'
+        path: gpgPublicKey
+      - description: 'GPG trust model to create the EncryptionKeySecret with this
+          data. the default value is true when it is empty. Default Value: nil See
+          here how to create this key : https://help.github.com/en/articles/generating-a-new-gpg-key'
+        displayName: 'Gpg trust model:'
+        path: gpgTrustModel
+      - description: 'Database image:tag Default value: centos/postgresql-96-centos7'
+        displayName: Image:tag
+        path: image
+      - description: 'Image:tag used to do the backup. Default Value: <quay.io/integreatly/backup-container:1.0.8>
+          More Info: https://github.com/integr8ly/backup-container-image'
+        displayName: Image:tag
+        path: image
+      - description: 'Used to create the directory where the files will be stored
+          Default Value: <postgresql>'
+        displayName: AWS tag name
+        path: productName
+      - description: 'Schedule period for the CronJob. Default Value: <0 0 * * *>
+          daily at 00:00'
+        displayName: Schedule
+        path: schedule
+      - description: 'Quantity of instances Default value: 1'
+        displayName: Size
+        path: size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      statusDescriptors:
+      - description: Namespace  of the secret object with the Aws data to allow send
+          the backup files to the AWS storage
+        displayName: AWS Secret Namespace
+        path: awsCredentialsSecretNamespace
+      - description: Name  of the secret object with the Aws data to allow send the
+          backup files to the AWS storage
+        displayName: AWS Secret Name
+        path: awsSecretName
+      - description: Will be as "OK when all objects are created successfully
+        displayName: Backup Status
+        path: backupStatus
+      - description: Name of the CronJob object created and managed by it to schedule
+          the backup job
+        displayName: CronJob Name
+        path: cronJobName
+      - description: Status of the CronJob object
+        displayName: v1beta1.CronJobStatus
+        path: cronJobStatus
+      - description: It will be as "OK when all objects are created successfully
+        displayName: Database Status
+        path: databaseStatus
+      - description: Name of the secret object created with the database data to allow
+          the backup image connect to the database
+        displayName: Database Secret Name
+        path: dbSecretName
+      - description: Status of the Database Deployment created and managed by it
+        displayName: appsv1.DeploymentStatus
+        path: deploymentStatus
+      - description: Name  of the secret object with the Encryption GPG Key
+        displayName: Encryption GPG Secret Name
+        path: encryptKeySecretName
+      - description: Namespace of the secret object with the Encryption GPG Key
+        displayName: Encryption GPG Secret Namespace
+        path: encryptKeySecretNamespace
+      - description: Boolean value which has true when it has an EncryptionKey to
+          be used to send the backup files
+        displayName: Is Encryption GPG Key configure?
+        path: hasEncryptKey
+      - description: Boolean value which has true when the Database Pod was found
+          in order to create the secret with the database data to allow the backup
+          image connect into it.
+        displayName: Is the Database Pod found?
+        path: isDatabasePodFound
+      - description: Boolean value which has true when the Service Database Pod was
+          found in order to create the secret with the database data to allow the
+          backup image connect into it.
+        displayName: Is the Database Service found?
+        path: isDatabaseServiceFound
+      - description: Name of the PersistentVolumeClaim created and managed by it
+        displayName: v1.PersistentVolumeClaimStatus
+        path: pvcStatus
+      - description: Status of the Database Service created and managed by it
+        displayName: v1.ServiceStatus
+        path: serviceStatus
+      version: v1alpha1
+  description: 'A very flexible and customizable Operator in Go developed using the
+    Operator Framework to package, install, configure and manage a PostgreSQL database.
+    Also, the usage of this operator offers:
+
+    * Backup your data and sent it to a AWS Storage
+
+    * Usage of encryption to send the data
+
+    * Customization of the image and version of your PostgreSQL
+
+    * Customization of the enviroment variables keys and values which should be used
+    with
+
+    * Allow you setup the operator to get the values required for its enviroment variables
+    (user, password and database name) in an ConfigMap applied in the cluster already.
+
+    *NOTE: It is very useful to centralize and share this information accross the
+    cluster for your solutions. Also, you are able to configure each configMap keys
+    that contains each EnvVar* required for the PostgreSQL database image.
+
+    * To configure AWS Storage to sent the Backup data you are able to inform the
+    data required or inform the secret which has this information and is applied in
+    the cluster already
+
+    * To configure encryption feature in the Backup you are able to inform the data
+    required or inform the secret which has this information and is applied in the
+    cluster already
+
+    * Allow you customize the resources and their limmits (Memory, CPU and Storage)'
+  displayName: PostgreSQL Operator by Dev4Ddevs.com
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ''
+          resources:
+          - pods/exec
+          verbs:
+          - create
+        - apiGroups:
+          - ''
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          - serviceaccounts
+          - rolebindings
+          - pods
+          - services
+          - service/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - postgresql-operator
+          - postgresql
+          - backup
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          verbs:
+          - get
+        - apiGroups:
+          - postgresql-operator.dev4devs.com
+          resources:
+          - '*'
+          - backups
+          verbs:
+          - '*'
+        - apiGroups:
+          - postgresql.dev4devs.com
+          resources:
+          - '*'
+          - backups
+          verbs:
+          - '*'
+        serviceAccountName: postgresql-operator
+      deployments:
+      - name: postgresql-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: postgresql-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: postgresql-operator
+            spec:
+              containers:
+              - command:
+                - postgresql-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: postgresql-operator
+                image: quay.io/dev4devs-com/postgresql-operator:0.1.1
+                imagePullPolicy: Always
+                name: postgresql-operator
+                resources:
+                  limits:
+                    cpu: 60m
+                    memory: 128Mi
+                  requests:
+                    cpu: 30m
+                    memory: 64Mi
+              serviceAccountName: postgresql-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - postgresql
+  - postgre
+  - database
+  - backup
+  - PostgreSQL
+  - dev4Devs-com
+  - backup
+  labels:
+    operated-by: postgresql-operator
+  links:
+  - name: Documentation
+    url: https://github.com/dev4devs-com/postgresql-operator/blob/master/README.adoc
+  - name: Source
+    url: https://github.com/dev4devs-com/postgresql-operator
+  - name: https://www.dev4devs.com/
+    url: https://www.dev4devs.com/
+  maintainers:
+  - email: dev4devs.com@gmail.com
+    name: Dev4Devs.com
+  maturity: alpha
+  minKubeVersion: 1.11.3
+  provider:
+    name: Dev4Devs.com
+  version: 0.1.1
