@@ -1,0 +1,206 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"teiid.io/v1alpha1\",\n    \"kind\"\
+      : \"VirtualDatabase\",\n    \"metadata\": {\n      \"name\": \"rdbms-springboot\"\
+      \n    },\n    \"spec\": {\n      \"replicas\": 1,\n      \"env\": [\n      \
+      \  {\n          \"name\": \"SPRING_DATASOURCE_SAMPLEDB_USERNAME\",\n       \
+      \   \"value\": \"user\"\n        },\n        {\n          \"name\": \"SPRING_DATASOURCE_SAMPLEDB_PASSWORD\"\
+      ,\n          \"value\": \"mypassword\"\n        },\n        {\n          \"\
+      name\": \"SPRING_DATASOURCE_SAMPLEDB_DATABASENAME\",\n          \"value\": \"\
+      sampledb\"\n        },\n        {\n          \"name\": \"SPRING_DATASOURCE_SAMPLEDB_JDBCURL\"\
+      ,\n          \"value\": \"jdbc:postgresql://postgresql/$(SPRING_DATASOURCE_SAMPLEDB_DATABASENAME)\"\
+      \n        }\n      ],\n      \"build\": {\n        \"source\": {\n         \
+      \ \"ddl\": \"CREATE DATABASE customer OPTIONS (ANNOTATION 'Customer VDB');\\\
+      nUSE DATABASE customer;\\n\\nCREATE FOREIGN DATA WRAPPER postgresql;\\nCREATE\
+      \ SERVER sampledb TYPE 'NONE' FOREIGN DATA WRAPPER postgresql;\\n\\nCREATE SCHEMA\
+      \ accounts SERVER sampledb;\\nCREATE VIRTUAL SCHEMA portfolio;\\n\\nSET SCHEMA\
+      \ accounts;\\nIMPORT FOREIGN SCHEMA public FROM SERVER sampledb INTO accounts\
+      \ OPTIONS(\\\"importer.useFullSchemaName\\\" 'false');\\n\\nSET SCHEMA portfolio;\\\
+      n\\nCREATE VIEW CustomerZip(id bigint PRIMARY KEY, name string, ssn string,\
+      \ zip string) AS \\n    SELECT c.ID as id, c.NAME as name, c.SSN as ssn, a.ZIP\
+      \ as zip \\n    FROM accounts.CUSTOMER c LEFT OUTER JOIN accounts.ADDRESS a\
+      \ \\n    ON c.ID = a.CUSTOMER_ID;\\n\"\n        }\n      }\n    }\n  }\n]"
+    capabilities: Basic Install
+    categories: Database, Integration & Delivery
+    certified: 'false'
+    containerImage: quay.io/teiid/teiid-operator:0.0.1
+    createdAt: 2019-06-24 12:48:22
+    description: Teiid Cloud Operator for deployment and management of Virtual Database
+      services.
+    repository: https://github.com/teiid/teiid-operator
+    support: Red Hat, Inc.
+    tectonic-visibility: ocs
+  labels:
+    operator-teiid: 'true'
+  name: teiid.0.0.1
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: A project prescription running a teiid service.
+      displayName: VirtualDatabase
+      kind: VirtualDatabase
+      name: virtualdatabases.teiid.io
+      resources:
+      - kind: DeploymentConfig
+        version: apps.openshift.io/v1
+      - kind: Secret
+        version: v1
+      - kind: PersistentVolumeClaim
+        version: v1
+      - kind: Service
+        version: v1
+      - kind: Route
+        version: route.openshift.io/v1
+      - kind: BuildConfig
+        version: build.openshift.io/v1
+      - kind: Build
+        version: build.openshift.io/v1
+      - kind: ImageStream
+        version: image.openshift.io/v1
+      specDescriptors:
+      - description: Runtime
+        displayName: Runtime
+        path: runtime
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      statusDescriptors:
+      - description: Deployments for the VirtualDatabase environment.
+        displayName: Deployments
+        path: deployments
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podStatuses
+      - description: The address for accessing teiid service, if it is deployed.
+        displayName: Route
+        path: route
+        x-descriptors:
+        - urn:alm:descriptor:org.w3:link
+      version: v1alpha1
+  description: "Teiid is a data virtualization system that allows applications to\
+    \ use data from multiple, heterogeneous data stores. Through its abstraction and\
+    \ federation, data is accessed and integrated in real-time across distributed\
+    \ data sources without copying or otherwise moving data from its system of record.\
+    \ \n\nFor example, you can access your all data in Oracle, Postgres, MongoDB and/or\
+    \ Rest API (many more) with a single request. Teiid gives you all the tools required\
+    \ to build logical/abstraction layer that can exposed as Virtual Database by essentially\
+    \ making all sources underneath as a black box to the consuming user. Since this\
+    \ integration of data happens in real time there is no ETL process to run and\
+    \ data is always fresh. For the end user the Virtual Database exactly looks like\
+    \ a relational database like Postgres, that can be accessed using JDBC, ODBC,\
+    \ OData V4 and Postgres protocols, i.e. can be accessed from any language that\
+    \ you have your application written in.\n\nTeiid, out of box also exposes the\
+    \ OData v4 REST API without any further coding, with this you can expose you single\
+    \ or multiple databases as rest services without any coding. Alternatively if\
+    \ you want expose a Open API directly over your data that is also possible with\
+    \ Teiid."
+  displayName: Teiid Operator
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAAIAAAAB8CAYAAAChbripAAABhmlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AYht+malUqCnYQcchQBcGCqIijVqEIFUKt0KqDyaV/0KQhSXFxFFwLDv4sVh1cnHV1cBUEwR8QF1cnRRcp8bum0CLGO457eO97X+6+A4RqkWlW2zig6baZiEXFVHpVDLyii2YfRtEhM8uYk6Q4PMfXPXx8v4vwLO+6P0ePmrEY4BOJZ5lh2sQbxNObtsF5nzjE8rJKfE48ZtIFiR+5rrj8xjlXZ4FnhsxkYp44RCzmWlhpYZY3NeIp4rCq6ZQvpFxWOW9x1opl1rgnf2Ewo68sc53WEGJYxBIkiFBQRgFF2IjQrpNiIUHnUQ//YN0vkUshVwGMHAsoQYNc94P/we/eWtnJCTcpGAXaXxznYxgI7AK1iuN8HztO7QTwPwNXetNfqgIzn6RXmlr4COjdBi6um5qyB1zuAANPhmzKdclPS8hmgfcz+qY00H8LdK+5fWuc4/QBSFKv4jfAwSEwkqPsdY93d7b27d+aRv9+ADI1co3308v3AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wkJEDMfSVklwgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAACAASURBVHja7J13mFTV+cc/597pszM723tnK0tbeq9SFDsRg90odk1sSUz8aYzGFjXGGmOLvSA2LBQpUqSXXWDpbXvfnZ0+c+/9/TELiiB1UVDf59kHHpa5c+453/Oe9/2+5QhN0zR+lf0kGAzx+psfcuNjb5DlMOD3CGJjIsnMS2PyuEGMP20IZpPplHkfBYUydlJAGiaM+/1O90td5EAwRGV1LRazmcT4mP1+V9/YxOPTZ3NJcYiLS5poc+vZ1tDOB5tquXRNGZ/FRTNsQMkp9b5ax8/35RcJgHaXh2deeYcZs74hMcrGpRefzbgRg/B6vWzbVcmCpavYUNXE387wMzgjgISfkOYk2ZHA5AU6fF7vz2YufnEAcHu8PP7sq7zyyVy6xoaobWjilvufZsRn89jZ0ExNbQMhRSEuUqJnkh9NAwWBJASugEacQYfJZPwVAKeieLw+XnlzOve+MZObSzT+PKya3U4Dzy6L59UVazk9RmNSpkpiZIBuiU5SIkOACB8ZIY1dbWCXoKmlDX8ggNFgOOXnRPySjMBvlq5j0G/+yrUjNO4eWU+yLXw61rTLbKy1ku7wkerwY9YLQKCo3zlDNY2FO83cuSiWBo+FP152Nldfch6qquHz+TGbjeh1J+d+UlAo7TACzb9kI7Cqqg4qm7igyECylY4FFsRbVeKy2xECQNpv4fftFCEYlu3jvag6Jn0ay99e+oBgwEN9Uxu7KmpITYrjlqmXkJQQd0rNiXzvvffe+0sBgCLB4p2beGSj4Mw0L8kRClqHig8vfljhi0M8w2FWGZwUYEW1iXcXlOKt3olwt/Dy4k2YtRBD+/dCluWTzAPQqKOVWCLRf2/P/6KOAEVRmLtwKXc/9jJxhkaen1BNsl2gdsxAi1fCH5SxmQJYDQJJgEBDRfDdWRJobGm00OqViTS7QRP8cXYqgYgknn/wT2Smp5wyR4D0SzoCZFmmW1EeGYlRKEH9fn6xPwTvrYvimk+TeG1tNGiCKqfEliYDTp+KLNSwZtBAQ5Af56V/uouCOI3CxBC9ElzsaGhjd1XtKTUnvygAAFRV17G5sokeyW2k2EDVwiq/yqnnv9tMrG/TsaHZjKrBZ1siGP9hMkOnJXP3giicfoEvJBEIgaqGPxvWHhJj8xvZ2hSiuroGRVV/BcDJKKFQiF17qljX4qEoPoToeHtV05i23s45qT7yLQpCgE+B7fURnBYf4MHefu5fHs26SguF78Xz7PJIgmpYI6iaRotHxqIzQEihzdmOegoB4BfjBezYXcE3K9bx+dxFEBA4TFrHsaAxZ5uJu0ptfDquhu1VEXhCUOUULK+XGd/FRazdDVYba+sl0jUD2Q4fJr3A6dP4eIODVTVm3t0agtJacrtko9PJvwLgZJJ1GzZzw53/oNIVYHcIburRwpAUF2gSjR6VBxbHkiBJXDIzhSghGGwP0uqxsMWtY8GaKAyrohkcHULVBLUeiQRbOwhBo1vh0o/jyYz2cubgvtz/8Q3ExUUf0ov4FQA/gZRt2EatO8j5OW1c16+JLrEqqiKhahpLK8xU+/U8PbSOrOgQDy6KwatolNYI4iwh3h7RhMcvkeLw8tU2B/F6jeTI8HMbvDpQVG67chI3XPlbhBCn3Nz8IgCgN+hQgKzoEF3iFZSgtM+h650c4vUJtXSN82G1qmRvcPFKdQSWkI0+UUH6pXkw61U8AZl/LjCTHuUl2qyA0FhZZYdIyMlIRdO0XwFwskpmWhI2g8yOFgMeL5h03xI/CVaFBKuCBqhBib8Ob+fWkJflFTp0koxeAlWT2N0qU9Zs4LQCD3aTitMjMX+PlRHpdtJSk5CkU9Oe/kUAICczjYQYO3ua3dQ6DcREhGholxFCIi0qiNwBBk0Dq1HDagxyZmGww0MATQWTrHJWYTvjcpygCYKKwKvI7G51s3N3FQWnmPH3i2MC//2f17jlide5vNiEosHrNYL+DpmXTm+gMC7AISdBA0mAJmlomkBTQSdrrKnWU/JuEilmK/NfvJ8uWekn5bv/ygQCF54/kRt/M5blShrOuO7cMX4Uy+ol7p4fzfp6GVlSf9h6F6B2TJYgfHwoqqBHYpDF5zZQ1VDD829+9OsRcDJLfGw0j//fHwiFQghJQhKCgSVdueBvz7L+41QeHdLI+Dw3B9PikoCQolJabSIvzo/ZEI4NSEKwod4AZW763lfwKwB+SDxeH4FgEHuE9Sc1lvR6HXr9t688cdwoXnJ7efzFd3i3NIoR2V4iZHWv1qeqTabNJ1PvNvJxuZ6nN1q4vquPPwxsIcmu8E5pBFNnRvGb6wYwYfSgThunz+/H7w8SCob2aSC9XofVYu70SOMJB0B9YxP/fPJFtjW5OG9oCQUFueTnZmGLsP707qFepme3AoxGAwm2doy6by2BNh/8fUEsL20OQlmQ/hOzuH50Ks9+sYIqZxxFcSoPlslM6pfJ335/5XG/j6KoVFTXUrpuI+Xbd7J+cwVbNtbjD2pIVpk+3ZMYVNKVYYP7kZ2ReuoA4M0PZvLoy19AbCQffrmM/DQHfQoyGT1qMMX5XSjKzcZqNf9kIGhra8cbUIi1BJElBVmSUFWoaTXz0haZmyYMYfJTo0lPTyU22sHpo5cycdzjfJwVZFjfHP7199tJSUo45u8PBIIsXrmO2fOXsGxVGXN3tYJOBVkCSaN7lI81LgNrljTw0tfrOOOzBfz9ruvoXpTfKbzDCfUCAoEg+eNvICdO4t5bp7KlqpHy0k0sW7WWFZUNmE1GumelcMagnvTr3Y0+3YowmY0/akLFkuVruf6vjxKr9zAx10NJSjuZDoVPN0Ry4+IoVr90D726F33rEGgauyuqqa5rpDAvi6hI+zF9b0hRWL1uI4+9/B5frNpAJIKe8Sp9M130TfSRHxUizgJCqCiaYHeb4IPNNv6zxkJhZgbv/OtuEuJij9sLOKEaYFdFFb5gKwOK+9O7exFD+pvQzhtLXUMLGzdtpnzTFpauWs+d//kQ1v8HiOCp/1zGwL496NIlm0hbxAkHQEmPIm64+Gxmzl/KHxZWQpupgyUKcdGEArIz93fthBBkpqccV9JHbX0T0z7+kpumPg39E7irSGV0Xiu9U3xEmjRAoKka2r4drtHdDAWxLdiFjttn7mT2gmVcPOmMk1sDfDBjDtff/wzP/PlqzjtrAtL3VFYgGKSlpY3dldWUbdzCO1+tYM66zegl+MeV53HrtZcgSSeeXg0GQzQ2N1NRWcOWHbupqKoHAWeNG05RfpdOpXjXlG3i6Vfe5eWPljGhRM+tJW0MSPNiNapo38s8OggdwYJtEYz5IIrBucnMeOEfOCJtJ6cGCARClK7fRFq0jaKCvAMWH8Cg15MQH0tCfCy9e3Rl8jmn89b7n/LIy9N4/4t5jB05kO6FuT+Kd5CUEE9SQjy9exajKGrY8tbpOnXxl60q5cZ7/8XuVjd3DBfcPryWaLPWkVdw+O/RNGh0a5iibOzcU8nb0z/nuismH9eYTphPVlNXx6qycnoXdaEov8th/78syyBgW0UNFr1Gi9PJ/AVL8PsDP6pRKMsyBoMeg17fqYu/p6qGm/7xPBWtrdzWq4WHJtQTZ9GOOHQsRNgz2ST14507rybRbmfurHnUN7WcfADQNI1NW7bz2fKt9CzpccSfa2pp44n55Vxa6GJkmo8nP5jL1h27TnkSKhAI8uzL77BiewWPDnFyY79W4Ntk1MMuPiBJGp+WR9Bv1BmMH9GX0UNL+GRbLYuXrgprrJMJAH5/gNL1m8CvMahn0VEYRw2EqmoZnu3iwu5OdlS1Mv3zeYRCyikNgJVrynj4mRn8qY/G2YVOTHo4YsurIw7x2lIX83TjGTmoP0ajgQsmjiJQ7WHGV4txezwnFwCaW9p49tNviCzKIu8oAiSfzV3CaVk+cmJDDEwNMLGHwj33f8iGraeuFtA0jede+5guhQ5G5LiIOMqqcldA45XVNrYk3coLd9+yry4xPi6O7NwYXp67mu0795xcANiwZSe7vlrLoxePw2w+skJKr8/P/OWlJFmh3q0jpCr8vX87RcU6/v3y26csAFweL011DSRYJGItwSM682UBiqaypdbPvxYn4hj2J/5646X7FaU2NTcTkHV0S7Dz7KvvE9hLG58MTODsBasBPUP69Tzizxj0OvoU5/HEazvY3mxjcIadpFgv+Qk63p23nCuWrmLIgN6nHACMBgN6ocMdEnhDMkIE4PsWf4eaR4SzjFdV+Zm/1UyFbSJX3XoJhblZyN+Jofj9Ad79YgGv3XcLS1es464/v8q44UOZdPaoozd6O7s0LBAMcsl9T3H1lKGcc/roI66glSSJQb27cfaovhjtUSyrDPHcyiCBoJ5okx6/38vAvj0xGU+tilxZlvCG/Lzw6RLsegvF8W7sxu+ElgmHmlt9sK1e5s5FDrYYzmDUpN9z+ZTzSU6IO8CFXrh0JR6Xh8lnjyWkKqzbvZmtu6uZOGbwQefnUKVhna4BVpdtorGygQF9emAxW1AUhZ17qmhpdZIYH4sj0obVajkoL2CLsNK/pBv9S7px9ZQ2duzew+ezF/LuzK9pbm7D6/H+KOxgZ8s5E0bw4nuf8eTGFlr1veljbyLBXI0koMWpw2nKoVIkoIvrwh13DqEovws6+cDTWVM1Vq/bwHuzFvHAH65CCEHPrnnkpyWwvbKONaUbGTmk3097BMxdsIT0FAe5OZnIsoQ/EOCdD7/g7tteY/TkngzqWUBGcjLFxXn06Jr/gzs6OiqS6Khu+PxB3v7ia4ryMomKijwl7YDoKAe3XH4+39z0T4oum8iwkUPweNoJBkNkmS0YbXaSYiKJtFkPGQeZ/tls1pVt5+7rLia6Yy4sFjORkXYaNu5g8fLV9O/dHYvZ9NMAoKGxmZlfr2B0j1zSUpL2nYFXTjmXaIeNZ9+bxd+f/oSMdBuRZiNJ9gjOPHM040cNJj01Gf33sjE0Dcq37aLe5aNn14JTuiHDsIG9Gdw/lz++PZOLz5tAclGXI84krqlr4I57HmfYwF78+dYr9mtQ1d7uxmY1k50czztfLOLs8SMpLsw7YhKrUwGwadtOKhtaGNi3Jw57mKNWVZXE+Fiuv3IKvzlrArv2VPDlwpVsKN/C1t013Hjvi/DkO5w9uJgJA3owekg/sjPTkSRBa5uTsvWb0IREvz49j3t8qqrS5nRR39iE1+sNn8ACrBYL8bHRmIxG9HrdCUlaiY2J5tKJI1l874u8+ckcbp865ZCLFAyGqKyppXTjFj5euIabpv6Wvr267Xd0qprG0tVlnDl2OONGD2Ps8Nt47+PZFORmo9frf1wABIMh1mzYiltRKcrLwWDQ09TSxldffY3L66Nb13z6lHQnLjaKviXdqWtsobq2noo9FcxbtJxnvviGj5+bzYQrhvH2k/cQaYugpq6BucvKuPz0YUQ77Mc1vrqGJubOW8xHXyxhxaYadnp9CB1oiqDQaqE4J568Lsl0K8wiMS4andGIxWLFYNDjcNixms3Y7VYkcWzg0Otkhg/uy6Ciz3hl2hcUZCQxYkj/AxJJ9lTWsHnrdlaXluMLwJhhJTx82++Ii3Yc8Myq6jqWfFPKnbdchiRJnHvZYO6/axqTz51AcUHOjwuAVmc76zduoa7MxfgRA4BwPf7kP70KO2qxlcRx5Zje5OXn0rNbEcX52fTsmkev4nzGjBzMzVMvYU3ZRmKiHJiNRlRVY+u2HWyYV8Zzj/z52He9prFy7QaeePo13lm2hnGn6xg9OoAtPoRAIxQUOOsNOOtq+GrTal7+FGoaALOJnCgrNoOBtBg7kRYzsQ4TpqgoIqPtpKYmkZ6SRE5GCglx0eiOoD1Mbk4G55w+nKfemsHj/32b2ctKSY11YDUaaPf5qa1vxWg2UJydwsSxw8nKTP/B83zztp08/+r7XHXxuTgibaiqxqWTRvPh/xYwZ/7qHx8ALS1tvLaolOtvGUt8bFSYrYqNZv2MR1hRWs6M2YuYsWAtvvmrMRoNWKNjmDSkOyMH9qZ7t0IyM1LJykzbjxj6+8sfYRpYQnFu5jGPq2zjFsZc/xA985384dEQUWlBWqs1mnZZcTWC2QFx2W6y+wfpNkFDCejwuzX8rnaCXhcBj4QSrCHk01PhBE+LQtNWico3dciSCVtsJOP6FHLGqEGMGNwPWZYO6epOHDeSd2ctJjYygpsvPhur1YrT5cJmtWKxmDAZTYftQrZw6Sqmfz6X6664gLyc8NwIIYiLcgABQu4jb2PXKQDQNI1dldX4l3/Cja89uO/fPR4f+bmZdC3I4fILJrJ5207mzF9C+aatbNpZxT0vfsI9t79B3MAk7r3yXM6aMIqU5ASEENQ3NLFq+jz+/I/rsFktxzSuPZXV9LzgToYPDTDiWjehoMSK6VYMmwvp0zUbSYJAo8LWVTWsi1xHv/NdWKJVjLa9xIwGKCAUEAFQw++KJggFNGrLW6gq8zNnYyVPPDGdq68Yw+03Xk5WRup+yafflYKcTEYP6s0jb37GJVt3ctb4USQRfwT2i0Z9YxMLl6xg1uLV3H/ntSTEfdvgUlEUVm/cCphJyE/7sQEAr779CQMmXUVqSjIA23ft4f2PZmIwGSnIy6ZbfhdyMtPJvyoLZ7ub2roGtu/aw6qyTXy6aA03XH0fy2/aytMP3kmE1cy8RctBimfEMfbcaW1zcs9jL1KQF6D/hX4kGZa9EM253Sdz9tUjWLlmMzWNdagqXHP6cKorhvPkyy8w4rpGDBaJA8NPYr8/Zb0gtZdEao82ipth8HkRrJm1hKFTtvDQbRdy8XmnHxQEQhJces5YHnn2E/43fSZDB/Qh6hD2japqbN2xm+VryqisbaSkKJcn/3YrFsv+eZQ7dlfxwOufQb80xvbv/uMCoKK6lrdnruRvN/1m35mlaRoff76AOo8Xi9GA1WphZJ+ujB0xkEH9e5PXJZPcLpmMGT6Qay+7gD331JCUGEuE1YzP52fmktWMPb+A/C5ZxxSXn7N4JTMWlHLe7X6i0lXWf24hx9SPyy87m6qaem5/8BlkGZz+IGP6FPHsQ3dRVV3Pkq9fpftEFTV0eNBrCqAJzA4wR/qJzdUom9HCjQ+9htlo4MJzxh9cC+Rm8edrJ/Lgfz8m/bHn+OPNV5EYt3+7Wpfby4rV65g1byEbK5r46/UXcf7EMZhNpgPmw+cP8ODTL1G3q5b3n/4jcTFRPy4AFi5ZBgEY2Lt4nwvVJSuDl5/5Ox98Np89VZU0NDTx+qxvePjVL5Dj7Nx+9mhOG9KX/C5pRDkiKeleuJ/FvnzzTi4e2ZvY2Oijt0fanHzx+Ty6lvhJ66Xgb1fZukrhxglhksRkMpGflcDGinrQ6zDoZCRZpl+fYqa/EE3XsfWIQ7iCQoDPCa1VOhIKgmGtIIULRbpN8OBzwj9f/YjBfXuSlpJ4EHpY5pqLzuHB12bxr/fn4nT5SI6PxmS2IISGq91Fu9uNbLRyztiR3H8ILVhT18j9/3qJV+et5q7rzuO0kYOPyo09bgC43R4+mruc04Z2ITsjbT90FuZm8dffZ+Fye6hvaKK2vpGyjZv5etlaHv7LczzMyzAojz+M6c1NV04mqyPf/ZtV69jZ2EqfXt2wWo4+ZXzp8jW8/PFKbngygJAEqiLR1O4lJSncwy8tOZ4n/nY7lVXVgCAnMx2LyYjJZEQEZNSggmyS+KGCQSFBW5XKnIccXPBsJQarCSFB3SY91rgQRWP8vLmgmuVr1x8UAADxCXE8fOO5/PH59xgxsITxowbT2taOJAsiLBYsFgu2iEPbPuVbt/OPp17ljac+5/Z7pnDzVb89aqr8uAGwq6KGpdv2MKlfEXGxMQf9PxFWCxFWC9mZafTpVcyks8Zzx/WX8PGXi7j3vs95Ysnb9CrMJSsjlUAgyJJla+gVH0mXLl2Oejxen4+vF6+m/0iN6AwFTRXojCpZaRGsXb+FUUP7hl2yrHRyv5OroGkaVVX1CJsHnUl36ORMDaxxMo70IKZIA0owHNGJyQqAFLYSEpJUmhp+OF3LbDIypH8vSj6fx6z5Szh9zFByczKOjHFtamXGrPm8+cFnfDVzG39/bCo3/O63x5SiftwAKN2wFdHmBgRtTid6nRzeST9wbhv0emKiHcREO+hZ3JVbpk5hZ0U1RXnZ++yJdRu2kpedQWpy/FGPp66hic+/3kjPyQoGS3ixhE6m+DQ3c99YxvhRAyjMzzkgLl/b0Mib0+fQ/Vwnh8vU01SwRGkMv6kFTZH2gcIUKRASuBsh4BXIukOr4uL8LhR1yWTdpm2sLtvI6KEDDqq+NQ1UVaG5tZ0ZX37N06/OoMrVQF5iDC88fzMXnTfhqPj/TgVAQW4GBV1SePLleTz54Cdcd8fpnH/6SNLT04iOchBpj0D3Q1a8AEekjV6R+ft24dqycpZVNvHgmeOxHYP6376zglJvPePyQ2gdcXdNgbhcHQ1D1/HAk89z7ZTJZGeno9frwiVZFVW89M5H+IvnEZNpgCNI1xIS2BLCVUT7+/rQVi3R0qCnMD/7kM+w2yO4ZspZDD3zTzz2wptoikrXwrwwHS0EwVAIfyBAbW09Gzdt43ePvwdrK+k5tgu3TpnIxLHDjyjh9oQCoFtRHs8/eCfbd1Qwa9EqHvt8Cc89+iZdx/ZleK8CehbnkZuZSUF+9gGW7gH2hNfPsrLN+Dd7GT3k2C5kmL1oNcP6ubE4NL7b9FUJQt4QieqEJdw7fRPRrZnExdtpaXFRq99B9sAmuhcbORqHQztILmbQr7J9hYnePbMo6JJ92GcM7t+baa/8iUlnPsDMefcwbkQRyXFRGPQ6mlrb2dXQzMq1u2HPKnqcOZmrb5rE6CF9yEhLwWw+/ltLOq0wRFVVVFXD6XJTtmk7n3w5l7nLS1lf20JelAU80LVnLndeM5nuRXkYDhLZq6yuY8IlfyEhIYJPX37oqK9laWlt54wr7iTvrG3kDgqhKgcnrcJETvjcFhLo9ICkwXGmgWsaVKzS8eITJt679yZ+c/bYI/qcoijsqqzlg09ns3zlWupanfiDCrF2K3HRkfTs1Y3xIwaRHB9LRIRlv+ygI3r+IQpDTmhlUE1tA2vLNrBs7UbKtuyktLyCbYs3M+C8AVx53mn0LMwjNSUBh92G2Wxi2apSBvS5lg8+uYdzzxx31O3W1pdvptvIq7nxOT0JhSqaGlb/nlYZIVQMFg2d6XvcTme9vQBPC3z+LyOFsX357yN/PqwVf9DFUlWamtsIhoJE2m1EWI6/cPYnqw1MSowjKXEEo4YNorahierqOjZt38X0L79m6sXXQ2YPzhlZzKCSIroX5rG6rBx6xNKjuOCYeu3NX7KG5GIjJru6b2E9LTKzHopESAEGXe0hvovy7U7vxMWX9QplM6yoDYnc8/crjmnxAWRJ2hdL+THkR2kQYTQayEhNIiM1ib4l3Zh8zjicj9zFJ1/O5bO5S7nzpRkkmsAXVLlyVG+SEo/e+teA2XOXkJdjwexo22fJN+4Q+F2CM+7zEBGrhhe/M3c+IFBZ+WYEOxdF8cR9UynIy+ZUkR+9RYxOJ6PTmbGYzUy97AIuPP8Mdu6qYNHKUrbsrmbKxNGYjEdv3NQ3NNFQ3UTsABW9WexbYKMlxJCpbdjiFEDga9dQAhp6AwidQDZKCLR9oBBCQxN7zcfD6yE1pLFzsZGFX+i47eLTGDqghFOpXeCPCoBgSEGSxH5GjD3CSo/iAnoUFxAMhn4winb4eEQdTkUiO9EXXsQOFzChUAOCIARBj8aaD6xUlespxUmqRcYRIWG3BdEbFex2woxgJOiNEJMRwhqrHaDuhQh7GN5WjR3LDbzzgMrTD0zmqkt/c8xpayElDFCdLP38ANDa1s6X85ewdesOzFYLY4YPpEdh7gFk0bEuPkBNfROuNgVb4v6+mZDFd/4OXs3D2N5n88q542h1OvF6fLS0ORFAdU09r783H097EKMlxIBrnVhjgvsUgZA0FL9GS4WOxh0GVi8M0rA7npefOJ8p559xTIvvDwR4/8sF7Nm+E03TGDqoP0P6dkf6kYBwwgGwu6KGex95ls+XlZPoCOF2ydzx0HtULH2Z1ONorfJ98bW5CdaANV4Ox+8PcsbrjIKiARr/vP0b/u/2q/dLx9qwaRsffrkMY1obA87wEpenYLSo+wxGITTaqgRr37exo0zPjho/d18/iYsfGk9OZtoxdzV59a2PuPbR1yiMM4Gi8L9PFnLrFWdx+YXn/Cg1ECcUAPWNLUy+5T4qnds5+yaNpK5BmveYePrcNtaUbuo0AKiqhtvvQ1hVZFk75NmdkKcx7tJaXnl7BpdccAYul4v3P5nDA++/y5DR7UyYoGG0djB82rcdOloqJGY+YSPKmMqd14xgwughpHdkPh+rtLvczF26hv7FeoZObcbsUFg33cd1D7+CLOm4dPLEE54JfUIB8Nms+dS5qjj/ZpXYLiEkWRD0KoCTnE7sdLXXDbDEhxDyoQP5kl6iZILG9PfeYtFfNlDbVkFMrx1cfKcgJlUgyeIAAinkh7JZOuLs6Tz1t98fcb7d4cRkNJKVEk9pxQY0TcIQodLrAi/WOCNT//oKQ/r3pPAEexSdCgBVVdm1pxq314c/EGDxsnV0KVRIKg4R9Ak0RWPHGo077/4dWZmdCIC9Z7Q4vN2uqWC2C4Zf6sTbOpe8CBmDUULI37J5BxivXsHsWV7mP3dJpy3+XpvngrPH8fCrnzCwwoQ9SUHWQ0bfEPm9Jb5auAwNgaqpJMbGEBvjOHkAoKoqfn8AVdOorWtkxuyv+XjeCirq61GUAEIIdH6JnIHfquRQUGPnOpmbby3p3PNN27t4R+5/6QxgS9AfER/gaRcUOfJPiH9f0r0IIiJpb/SBEl4RIUGMxcLTr3/IE29MBwQGnYmuXdKZPGE4o4f2w2jQI+tkTEbjjw+AkKIwa95i+zHvtwAAHIBJREFUHnpyGgtn1EKRRk5WOz1HaOSkKBiM4SwZv8vEhs9MuBraMUXqkGRBfBps3bYHZbRyRKnUR6QARDjXzlOvQ1V0QOiogHPIZ0vQtDNIYU4CtojOr0usqK6DNhfmCN2+Yv2mXTKOlCDdJrahMwZQVQm/20zVxloueGQN3B4JW91cfFMJf7nxEvJzs465nc0xrcCMWV9z7p+fZPRwH5Mf0ahaa0JvM5I3qAVbYrizsqaAJnyghvB7JEyRIMmCgqEqt979LiU9Cxg+uF8nAUAQYTSihSDo3buyncPGhLN/dGTER3b6VTBuj5enX3qL/PwIYrKc+y6x0ptUCk9zEZUWrhuXJQ1VcWON1NG6zULUgFYcySqlC5dx10Mennv4zv0yhE8oAIKhEM/863XGDNUYcJEPgxXyxgTYNl/P1087iEyTQFXJHuIhPjdEet/wBcx7Q6dJRSGGnynz+H/fo0dxAY5Ie6dMptVhxxQt8Lao0Ild2wXgc+mRTYLORsDaDVuYOXcdvc9uJyZT2zdH8bkhhCRQAiobPjPibLCgBBW8LRK9JrWTVBy2UjP7Szx0zVKu3bCZsSMG/TgAaG1tp9nlJj1GIHSC6g06nDWQWKQRn9tCS3UkelMAR0oQsRfSHRm0kk7DaNFI66ryydu1NDa1dBoA4mIdWB0ybVU6Unp0bk+ho7EtjspNrmukZlGAcx73gTCApqFqYl9vRKGTyBjgp26zDr3RR3RGEE+Lia0LJOJzVSzRKo6MdgIe7zGPQTr6iY5izLhBrF/pYcUbETRu1xOZLFG9Xse2hXbsiQFSu3uwRot9lnXAC5u+MlG3yUjQp9FaZcBcF2Lap7PYU1XTKZOZmZaCXYRw1pvozGv7NA0M5lCnF4wuX13Kx7O/pi2kULNeT8ClsW2RiZ2L9YCKEGFDNTpdkNbTQ9BvouwTO+4mCUuMxNr3zZTPMtNak0b2EeYSdpoNcNv1l/DYonW4v2rivLvdJBZrJBaCq17l66ftBHyRxGZ7SCtxkTlAYDALkrq6mPNQDIndTPS5sI3oNA//eWYOn85ZxuN/u5n+Jd2Pa0JjoiNJy0ununEjARcY7XRaxM9kD1K5vRlJOv4exsFgiCf/8zr/eWsWETYft8xvQwkIPvmTg5zBTorP1hBCwufUKJ8l01pto2aNnm7nNDHgChA6DaHB7qVGZryr48HfnUlWRtoxj+eYWsRYLWYuHd6brdt3sXF9C0l5QYw2DZNdomiCn9hsF5pmxBanEhEXzrQxOyS6n+2jvV6jfouOruNCpPX00FgX4q+3T6OqrZnEaBtWixmdTj6iHacoKu0uN7srq/nPW5/w5YKVRCUrJBf7wxHBTrIBAm6ZN1908tzHs0ixW4iOjEBv1CNL0mGtb03TCARD1Dc08dXXy5lyy0PMLltCnzEhBk91gqYy79FIhlzfTt7o8K2leyOT7iYjMVkK/S5uIa13x/eoGruW6Vg608IfJo/n5qumHDZ1/oTdHr5pyw6m3vFPAvZd9Dk3QGJRCNFRJIHa0ftW/V4VSzusfktH/ytC6Ewa/nZB/TYDGxYGWPx8LFNv7sGg/kXk5WSREB+DzWYPv6AIW/vt7S7cbjdNTS1s27GHFWvLefz99eQU1TJ4giAhL4AtTtvPYAt6FGSDQNIdmxpvq9Gz8Qsr5lgP05+HvgW5/GZCT/LzsyjIycRiteKIjNwXwNFUDWe7C6ezjcqqOso3b+PjOeuYs6mc8y8JklqkEZWuYLDC1vlQsTaaUTc3EArK3/Nu1HAwSxNIMvhcGru+MfHa4z7uufpCbrv+kiO6p+CEpoSVb9nBRf/3FDsrtjJ0TJDMXiGi0hT0loMwdUDdFj0bZugZeoMH2fAt1x70CtpqJMq+1LF7vQ5zyE5KvIPkhGjsERYEYeOosdVJY3M7lbUttClOknIUikf7SCzUMFo1hLR/w2VNg23zDUSmhkjIVw4A5JGIp0Vi6zyZrhODeFsFe1ZJrF+gw9VoIckWSXJCFCkJUUhC3tfpq7G5jcqaZqpbWxE2D92HBskeqGCL15Dk8LgknUblWpU178cz8veNRMR0nFrat/OlaeBpFtRtkdi2wsTXcyUevWUSUy85H/sRFoGc8JzA5pY2Ppk5n5emzWbnrlpSMoNEJSvYU/zoDGCNCauu9kbB1vk2mipluk/00OMsN0bbd6xsAQINb6uKq8lEa5WCq0Em4NET9JvQGQPodCHsCQHsyRK2uGD42UIcNEM3vIs0qkr11JRp9Lk4dEwA8DsFq94y0v9KP7IhvIBBn4K7UU9bjURbjYbfpcPnNoMGBnMAozWAPUnDkaJhiw2ht0j7xRgE0LRbsPR/DhqqZNILfaR082KJEQQ84HdquFt0OGsNNOyWaGzScfqQYi6aNIHhA/sc1RV1P1pSaG1DEyvXrGftylK27amhsdnDttp2vG6VoKqRnWRm9JBCYmOjePzpz8gZ7qT3JB/WODV8lmrfMnuIcPx9X26OCGfzat/Z2poqDttyVUgadRv1bF+oMfiaEOoxACDkg3UfWSga68Ec850dKoEkwseNhuhIFAkDWnScvfvG+J3PhPwajdt1fPmCgTxbNldddjaffbmQJesqcbk0hKyRGmsmLtpMVkoU2TkZDBnUl9zsjGNLNP2xs4KDoRBtznZ8Pj9en3+fMWTQ64mLicJoMjJ3wVLuefptqrybGXGWRGZfPwYb4R2qHb/lJiQNoWo46yRWv2uly3AvKT3VH9QUh3MFt8w1Yo4KkdHn2LSI6Og30LRTsGuFiY+mCX5/1mhuuuoCsjPTaGxuobWtHVXTQNPQ63QYjQYiIqxEWMzH5Yb+ZGnhhwsmtbS18+rb07n9qWn0zjXSa5KTtF4hJIMIl14fw8LvVc9tVTKb51hp2KKn5wUu0nsFO7o+HNtzm7ZLlH1sZvhN7Qi9dOQgFeHrf9ytKptmWymdaaJB0/HaX65j7KghmIz6Ez7XJyUAvnXlFGbMXcKHM+Ywd+FWEotaKRruJyZTw+LQkA0gyRqS7kDNoKkaaghURcLv1vC0yNRu0thdaqZqqYmSyT56nNuOMUIc067db5wBjdkPRdHnYidR6SpCaEg6wl7P99w+VQFVEQS90N4gUbFaZvM3JhyheAaN7MF1U86iS3bGjzfHJzMA9kpTSxtlG7exYk0p079YwtL6PaSn+SnM0xOVoCMiRkLWBxCyGq7s8RvwuzWc9QqVuxVWbQ6RqsTTNz+T00f1Z8GS1VTL6xh5swtNPX4WT5I0dnyjZ+37kSR29RMRH8QSLaM3qugMgY7Lp3X4PTrcLSHqK0MsKQ9hbnEwoUcR50wYQlFBLoX5WRj0+h93k/0UAFBVFX8gQHVdI+1OF75gcJ/1azaZSE6MxWGzofteIqg/EKTd5aZsw2ZKN5SzYEU5H07bBM4AZEhh7lIFajXwSnSbkMJZg4ro2S2fHt0KSYyPJSLCytsfz+LW+55nygONxGTJBy0TO9pjQPWrzHooCm9DJJu8Ct5vmiFVAmPHFLqAuhD6gfFcPbSIgb0K6d69kMy0FKwWyyEbSP0sAKBpGjV1jaxcu56Fy0tZvnUPLQ0tuNweXL7gvpRqu8mEPTqSwowkJgzuxYgh/UlKiD3A0FE1DbfbSygQwO3z0uZ0IcJZ/Bj0OqIcdnR6PRaz6YBdtXN3JefdeB/ZAyspOd+Dqhw/MyjJsHGWnsZ5uTz+wC1ERUXS3Ny2b9ySJBHlsGE0GjEajZhNxpNBuZ54AASDISqqavjos6+47clPwdFO30KJxGwJR2KAiCg/RpuGJIESAk+zTFujlfodMH+NAk0WXv7rpYwZMYCkxPgfLic/CvH6fFzz50fY7V3G8Kvb0ZuP/5lCQGslPHa2xLyZ9zNi6EBOBTmhtYFVNXV89OV83nxnDtXSNi662URctkJEbACDVUXWy2jatx03hAj/aJqHgFuj5Cw9FWu83PHMv8l7czbXX3k6E08bfkTXoR1KDHoDPXMz+GbWEoI+PXqz2gkaDqyxkNxfZfnqjQwe2Be97tS+f/u4Rr9jdwX/98jzfP31Dvpd2MSoMWCwehF7bz9ARgl9PzDx7aGqMwkcKQr2pBA5g2DTnJ3cef//mLVgOffcdjU5mccR5ZIlstMT2dYaQFP3Gg7HL5IO+gzT88icddw0NXTKA0A69p1fz+33PsnyHWuY+Jc6Si4MYLTTsfhHa2ELrDGC3hd4mXBLK2U1axh+6Z0sWLoKXweRdCz2SG1DC0lWfUfDx06aMAmi02WaZlTjDwQ41eWYAOD1+XnqpXdZ21jG6Tf6Se6pofiPj8EL920QZA0MMuZ6N72GtzLizId4/vVptLQ5j36MXj/LN2wjJ0WPwezvvBkTYLKFIC1AXWPzLxMAi1as5eFXZzDmQoXY7GOjVw+OgjAVbE/UKDnPx8X3OvnD49O46/5/sbOi+qgetWHzdpat3kxSThCjrXPdL70xBHHhZo6qqp3SADhqL8Dr83PW+TcTSq1hyFXtGCLo1Fr776uFitU6ln9gRQTi+cdtlzNycF9MJsMhNcnuymru+sezbKor44w/NmO06+hMtqNxG8x7Kgahs5GUkkK39BTGj+xNn+4F2GwRJ+S+gRPlBRx1RtCi5Wt57YM5dD8jnPX7/Ruw9kXIEPssfrE3OHO0uetC4EhVSc734/P4+NvfFhJlVYhy2MO3cX3neldV02hpdbKhfAsPP/Eqi7auYsxUL440jpsG/r54mgRNO2TS+7egWfawYWc5D/1hASv2lJMaZyMuLgajQX/SAKBTL43asWUXCIjrEurw575170ClrVqmrUqmvVkjGAh7A0ajhjVaYE9QsCeGkA1SOCx7BLtSUwWONOjzGw+JuQYef/0NPvjkG4b0zyc9IxmrNdw0ydnezpYtu5mzZCP2Lo2ce3uA6AylUwigA3aUIkgs8NNtgh8hJIJeGHKhYMPMUsZdt4M/XjyKSy6YSEGXzJ+XG+jzB6hvacUaFcJgVfdbfFeDSumHdnZv0FHdBoUJUSRERaJpGjsbWtjR3E5chEJ8PBROcJPcLYjOeGSqUlNBbxZkDQxwZXeoLt3BmrXVzN1kJNRxa6reCtFJPoZe6yGxK+iMe4nnzpeAR4chQkLShbWc0QZGW4jBV2hk9Wnn0zfnsGbjNp576I9kpCb9fACgaRohRcUSrSDLIUCHpkD9dsHMf0WSEpnKJaf3YvTQfiQkJhIVaQtfed7UTHNLC6vWbWTJijLeuWsPxSPr6PubENGZCrL+SD0IgdEGOcMVuoxw4WttwefSEFK44NMUqUcJinDr1hOnT/F7dJhjOOBIk3SCzP5BjDYXnz6+nQ9nzOKWay47qVvGHBUAhAj77AG3hKpJIDQqVhv4+HkdZw7szx3X/ZaczPQDOn3YbRayM1Pp1b0rk84ax+8u2c4rr3zKU/cuZtJkAwWjvOGQ7WFAIMngc4Zoq7YQ2yWA3mJAbwVvK1StN2G2+7EnBTHZZTStI02skw1UVYXWXSqpfQ6OMiUoiMkIkZoqU7u7ClVVf7IgUKcDwGgwEGuz0l6tQwnqcTeGWPSekcmjh/Hvv99+WCNPliVioh0M7V9Cv57FjP/yKy684xnGVFkZcLkbkxnUH6jCEQJaKzTmPhFH93Paic1V0bRwYoaQNBq3C9pq7LTslEns6iH/ND+OZAXZKNA60Q5Qg+Cs1hOVenASSEgqu5fp2VwumDIq66Re/GPQAIKUlBRCmqBhq8DnMdHQGsXt11x0VBa+EAKTychvzhpPtMPBHfe/yKJn6ul/mZuIuB+q0dfYPM9K/8vbSOmuoCrfTqzJJugzxUvQ58TTKNOwzcSGTy3IskZaXz+Jhd/LUj5Wn1mC1kqJmNwAelNoPxpFCAh4YMc3Rma+buGyM4dw4bln/LyMQIDBg0vITI1i1ptOKqrd/GPqcJKPoa9fmFaVGDVsII/dIzPmhkcJqRqDr/AcFAQBr0TIpxCXe6Blr2mgBECS9NgSwZboJ72Pn/YamdrNepb9z0zheBfxuRqKcuyMpSRr7F5hILlbCJ0x3EZGlsIFKo3bDZTN0jH3bY0XHruISWeNO+RVMKcsAKIibTz76B95/n/TSEuK54qLzj2u7l6yJBg9tD/LXvk/xtzwEPKbKoMv82GO1vb33wUIWTvw5u2DeAwgkA0QlaXiyPDRuCPI2mkRpPfzkz0oEDY6j3rxw00nWyr0dDvLB2goAUHddsGu1UY++0jHyG75zP/otwwZ2Oeo+/meMkzgXm8gGAohCdFpTR4A1pSWc/3d/0a2VTHgsnYcqd/2+1MCsHqalfwRLiJTxNExewIUv6DsIz26CImCMV50hqMDQcinsvBZB3mj3SQWBqku07NlbgSNu/Rkp2Yw5dzRTBgzGLvddkCe4MnMBB4TTIUQGPT6Tl18gF7dC/n3vdej96Ty1TN2nHU69uJTNmik9gzwzYvWo4/uaSAbNbqfF8DXKqhcazi6+IUGu1ZaUNFwN2jMuDuW2Q/EUbfZjNVoZcq5oxgyoBd6veGkW/zDauBjKQ49kZKSlEDvbrls2dTAf9/aSUacgcikILJexhodpHqDCVSNqDTlqIkeIUNMVoiNX5jRGzQcKcpha/+FUKnbKFM6LQK/W0/VWgs6kyCh0Edabx9JvXx8tXYOv//7F1gCQWJi7JiMBozGk+ei6xNWHHrCBqxpNLc6eeKZV3ngtS84c7KBXuc0YrAb8bVofP2cjYFXuLDFc9S9AISA9gbByjesDLiyFbND94PaQJLDlbhrP7Qz4qY2zJHgc4UwmiWMNoEka/vKmNwNAWY9EkOwxkFEipXrp0zg/DPHYTT+9DGBUyIt/GDi9fl5+e0PeXvaXHyWekrOcZNUpLB9gY6aciM9zvcQmagiHeVJJOk0Vr1mwhQjUzDWfYALq2ngdwl2LtFTs8FAv4uc2JMEihKmfms2Gti90oDR5EdVO0rYhB5Z1ohM8tCw08LatQqDM/pz102X0zU/e79bv38FwFExbyql5duY9uGXPPDcXAb0V4jJDXf0Dno0LA5I7RUkJj2ckaSpoqPL56GNQr9T45uXbPS92E1EXJhO1jQVb6tEVZmR6lKZ5OIg6X0C+1hKZ62gYbsegzGAbBSE/DKaKjDZJEx2P1HpCiCjaRrOGsHGxSq7F+cz7d937bvj92QDwElnAxzM4EyMj2H9lp2Ut33DsItDZA8KktrTT0r3ELIBdi/XsWe5CU+zDrQQRquGJB+GldSHq3BDQQmTXaN5N+xebqZ8pgWrI0jh2AAJBeG+AnuPCFkHQoTQMBBw6/C2h5lBX7tGdanA22YgIkZByAKjFRIyoamhmc0rXIwe2u+43OUTZQOcMhmNalAhKtpHfL4RWRfON5D1kNw1SGJ+gLYaicpVespnmxGyRO/JLkw2cUhWLzorxMo3Ilg9XeBqMWDGQMDoJjJVwutUw63tpG8vmNAZITpDIESw4+6h7x4bgqp1sPkrA3ljAuhNoLcI8kpknr/sC/56y5VYUpNPfSLop5Lhg3pxx6Np9JvQSFpPpYMH0GipBknIRMRq9DjPj6KCt1XFaD68h2uNkml1woTeQ5gweiAOh4OKikqWrdzAwkc240rcRckEPzFpYI2S0BnVcAMKdS8ztb9xmdY7fB3N5q/M2BMlPK4g33yl8LtrxmC3n5ys4ElvA+wVl9vDky++xbOvfsH597YRnx8GQe16QeVaE0pQw2DREZMdIDrdjy1eQWfUoYQ4aFmYkMJ3/z52vYdv3vkPA3oV7/ud0+WmuqaOsvVbmT5zOe+ULaZ/SSv53SNI6KIQmawC0g88V2PrfCPLno7ntxcNpVePXPr06kpyUvxPNnentBH4Xampa+SqW+6lSapg2FQn9kRQQhqogpAPXPWCHUskasrtgCCxwEWXoW4caTo6urfs27U+p8ailywsWB5Nzax/kxgfc4ArqqoagUCA2oZmPpgxl1c++JQmxU33bio9z3VhS5Q6evjsm00kATu+gcWvJPHec/fRrTD3VzewM2Xj1h1MuflBLAlVDPudN9wipmNhJQGSXuBz+mnaYaBxl5W6ch2eJjDbfRhsAqNN4G6AyiURxObGcOe1kzh99DCEAFmnO6S71tzq5OvFy/j8qxWsWrwDY1EtGX0C6HR+VEVHW62RLXMtJJgTGHdmb37/uwuJsFp+BUBny5KVpVz7x38TU1DJwIu8WGO+139HChdwKIpK0BsO0wZcespmWCl7wYKlGNIz7Ywc2IOUhFiC/iCyXkdGWjIlPYuJizn0tW2tbe3s3FPF1q17qKqsw+v1YbQYibZHkpaZSGpyPBlpyb+c4tCfgilct76cK297lJiCZgZe3ozB/G3qtxIIN+XRGQXuRonV75nIH+MjOl2lplzHhs8jcFUbMMh63DoPBpuG3y1Q2gzkZSZyyzUXMXpI38PmOCiKiqIoqFo441mSBDpZPubO3b8C4Cjl868W84f7niOnbyu9J7swWMNMXfNu2DzLQPE5QWxxKo3bZco+MWGN1sgZHsQY4cXbEk4bs8YoRMTJBNwqDdt1bJxtZ2e5haf+OpUzTht2yoR1f7ZE0KGkS1Y68VEWHrpvEZmFMtEZYcbGZAeQKJ1mxmhTSShQSevtQ9JL7F5poHK1kbZqA63VOqrKLPicYIsXxGapJBZ48bfAG29sYHjfApIS40+x+N7REUGntAYACAaDvDVtBnc+/wJXP+LFaBf7ui06ayQ2f2VCSJDUNUhUahCjXSPkFQR8EkLSCPkl6sr11JbrKZ7oITZbwdMqWPi6kcRgCc89fAex0VE/Ww1wyus3vV7P+NFDGZrRnfI5Zr7jk2FP0uh9oZeMvj7qNplY+qqNr5+y01otE5mgEhELjhSV/NF+SiZ5KPvUhM8lsERB37ODTFu5iQ1bdvBzFt3P4SUcjkiGDerGv57fQVZ/fziTqIO/l3SQUKCRkO/E51Jp2mWidLqV9iF+cob4910saUtUSCtRWTfdSFLXAHvKZGJsZqJttp81AKSfw0sYDXpGDx9AUCfYvtDS4QV8K6oCqiphtOpI6RZk2M1O6jbKVK4zIDpOQCEJMvq4adhhZdHzCaR4B/G/u68lPzf7VwCcCtK1sAu3X30mH80I0FJh4GCt/TUt3L/PZBd0P9fHlnkm/F6x73fGCJmu41qR0HPDNVM447ShGAy6XwFwqsiVU85nUp/eLH5Tpu0Q7QQ0FSwO9f/bO3vXpqIwjP/OvUlzo6ahxpuvkqZgSwUhhHQPWKdOdWtxcJMaBMV2KUU6dOhHKAgxIIiLi0MHcYkQoSC4Sc0gqUL9iKGgEhM6Rc29NycOyWCpSAeHeNPfv3AezuF9zvu8Lye9FrWSQtMUyKbAMsGpqcjqT5xS0AvYSt4ezwlWF1LcWsrwZK3I5HULfdQElENdxA4XhOMWz9OneVurE4ia7NclxscWN68mCA/qPSGA/74M/BO770ssrt+n8G6H5GWDSOIHrlPKgd4/AXz7IMjdGeDGzBSiJXC7XQyG/MRj5wkF7CMA2zqBf+NLpcpK9iHZR3kuXNSITe2jj7TTzK3OQpFyQeFB2kf5aYZwUO8Mdla7Os177AMckZD/DHeX58ndu02geY7MpSj5DYXqJ9me8FFu8WJT5VpynKDfh8Ohdnx8egrb3gC/8/lrhVev3/Bs6yXZx9vQ2APLS+rKBHOz05wdHuq6D5zjJ+AfI6XEaFgY3xtYpokQKu5+DZfWZ+vDbwtAUqTEGBE0DgZWfgHlelbwNEnekQAAAABJRU5ErkJggg==
+    mediatype: image/png
+  install:
+    spec:
+      deployments:
+      - name: teiid-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: teiid-operator
+          template:
+            metadata:
+              labels:
+                name: teiid-operator
+            spec:
+              containers:
+              - command:
+                - teiid-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.labels['name']
+                image: quay.io/teiid/teiid-operator:0.0.1
+                imagePullPolicy: Always
+                name: teiid-operator
+              serviceAccountName: teiid-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ''
+          - teiid.io
+          - apps.openshift.io
+          - image.openshift.io
+          - build.openshift.io
+          - route.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - teiid-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        serviceAccountName: teiid-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - teiid
+  - cloud
+  - vdb
+  - operator
+  - springboot
+  labels:
+    alm-owner-teiid: teiid-operator
+    operated-by: teiid.0.0.1
+  links:
+  - name: Product Page
+    url: http://teiid.io/
+  maintainers:
+  - email: teiid-dev@lists.jboss.org
+    name: Red Hat, Inc.
+  maturity: alpha
+  provider:
+    name: Red Hat, Inc.
+  selector:
+    matchLabels:
+      alm-owner-teiid: teiid-operator
+      operated-by: teiid.0.0.1
+  version: 0.0.1

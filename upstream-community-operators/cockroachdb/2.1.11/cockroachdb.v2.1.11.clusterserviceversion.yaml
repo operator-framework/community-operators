@@ -1,0 +1,248 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{ "apiVersion": "charts.helm.k8s.io/v1alpha1", "kind": "Cockroachdb",
+      "metadata": { "name": "example" }, "spec": { "Name": "cdb", "Image": "cockroachdb/cockroach",
+      "ImageTag": "v19.1.3", "ImagePullPolicy": "Always", "Replicas": 3, "MaxUnavailable":
+      1, "Component": "cockroachdb", "InternalGrpcPort": 26257, "ExternalGrpcPort":
+      26257, "InternalGrpcName": "grpc", "ExternalGrpcName": "grpc", "InternalHttpPort":
+      8080, "ExternalHttpPort": 8080, "HttpName": "http", "Resources": { "requests":
+      { "cpu": "500m", "memory": "512Mi" } }, "InitPodResources": { }, "Storage":
+      "10Gi", "StorageClass": null, "CacheSize": "25%", "MaxSQLMemory": "25%", "ClusterDomain":
+      "cluster.local", "NetworkPolicy": { "Enabled": false, "AllowExternal": true
+      }, "Service": { "type": "ClusterIP", "annotations": { } }, "PodManagementPolicy":
+      "Parallel", "UpdateStrategy": { "type": "RollingUpdate" }, "NodeSelector": {
+      }, "Tolerations": { }, "Secure": { "Enabled": false, "RequestCertsImage": "cockroachdb/cockroach-k8s-request-cert",
+      "RequestCertsImageTag": "0.4", "ServiceAccount": { "Create": true } } } }]'
+    capabilities: Basic Install
+    categories: Database
+    certified: 'false'
+    containerImage: quay.io/helmoperators/cockroachdb:2.1.1
+    createdAt: 2019-01-24T15-33-43Z
+    description: CockroachDB Operator based on the CockroachDB helm chart
+    repository: https://github.com/dmesser/cockroachdb-operator
+    support: a-robinson
+  name: cockroachdb.v2.1.11
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Represents a CockroachDB cluster
+      displayName: CockroachDB
+      kind: Cockroachdb
+      name: cockroachdbs.charts.helm.k8s.io
+      resources:
+      - kind: Deployment
+        version: v1
+      - kind: Service
+        version: v1
+      - kind: ReplicaSet
+        version: v1
+      - kind: Pod
+        version: v1
+      - kind: Secret
+        version: v1
+      - kind: ConfigMap
+        version: v1
+      - kind: StatefulSet
+        version: apps/v1
+      version: v1alpha1
+  description: 'CockroachDB is a scalable, survivable, strongly-consistent SQL database.
+
+
+    ## About this Operator
+
+
+    This Operator is based on a Helm chart for CockroachDB. It supports reconfiguration
+    for some parameters, but notably does not handle scale down of the replica count
+    in a seamless manner. Scale up works great.
+
+
+    ## Core capabilities
+
+    * **StatefulSet** - Sets up a dynamically scalable CockroachDB cluster using a
+    Kubernetes StatefulSet
+
+    * **Expand Replicas** - Supports expanding the set of replicas by simply editing
+    your object
+
+    * **Dashboard** - Installs the CockroachDB user interface to administer your cluster.
+    Easily expose it via an Ingress rule.
+
+
+    Review all of the [confiuguration options](https://github.com/helm/charts/tree/master/stable/cockroachdb#configuration)
+    to best run your database instance. The example configuration is derived from
+    the chart''s [`values.yaml`](https://github.com/helm/charts/blob/master/stable/cockroachdb/values.yaml).
+
+
+    ## Using the cluster
+
+
+    The resulting cluster endpoint can be consumed from a `Service` that follows the
+    pattern: `<StatefulSet-name>-public`. For example to connect using the command
+    line client, use something like the following to obtain the name of the service:
+
+
+    ```
+
+    kubectl get service -l chart=cockroachdb-2.0.11
+
+    NAME                                           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)              AGE
+
+    example-9f8ngwzrxbxrulxqmdqfhn51h-cdb          ClusterIP   None             <none>        26257/TCP,8080/TCP   24m
+
+    example-9f8ngwzrxbxrulxqmdqfhn51h-cdb-public   ClusterIP   10.106.249.134   <none>        26257/TCP,8080/TCP   24m
+
+    ```
+
+
+    Then you can use the CockroachDB command line client to connect to the database
+    cluster:
+
+
+    ```
+
+    kubectl run -it --rm cockroach-client --image=cockroachdb/cockroach --restart=Never
+    --command -- ./cockroach sql --insecure --host example-9f8ngwzrxbxrulxqmdqfhn51h-cdb-public
+
+    ```
+
+
+    ## Before you start
+
+
+    This Operator requires a cluster with PV support in order to run correctly.
+
+    '
+  displayName: CockroachDB
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMS44MiAzMiIgd2lkdGg9IjI0ODYiIGhlaWdodD0iMjUwMCI+PHRpdGxlPkNMPC90aXRsZT48cGF0aCBkPSJNMTkuNDIgOS4xN2ExNS4zOSAxNS4zOSAwIDAgMS0zLjUxLjQgMTUuNDYgMTUuNDYgMCAwIDEtMy41MS0uNCAxNS42MyAxNS42MyAwIDAgMSAzLjUxLTMuOTEgMTUuNzEgMTUuNzEgMCAwIDEgMy41MSAzLjkxek0zMCAuNTdBMTcuMjIgMTcuMjIgMCAwIDAgMjUuNTkgMGExNy40IDE3LjQgMCAwIDAtOS42OCAyLjkzQTE3LjM4IDE3LjM4IDAgMCAwIDYuMjMgMGExNy4yMiAxNy4yMiAwIDAgMC00LjQ0LjU3QTE2LjIyIDE2LjIyIDAgMCAwIDAgMS4xM2EuMDcuMDcgMCAwIDAgMCAuMDkgMTcuMzIgMTcuMzIgMCAwIDAgLjgzIDEuNTcuMDcuMDcgMCAwIDAgLjA4IDAgMTYuMzkgMTYuMzkgMCAwIDEgMS44MS0uNTQgMTUuNjUgMTUuNjUgMCAwIDEgMTEuNTkgMS44OCAxNy41MiAxNy41MiAwIDAgMC0zLjc4IDQuNDhjLS4yLjMyLS4zNy42NS0uNTUgMXMtLjIyLjQ1LS4zMy42OS0uMzEuNzItLjQ0IDEuMDhhMTcuNDYgMTcuNDYgMCAwIDAgNC4yOSAxOC43Yy4yNi4yNS41My40OS44MS43M3MuNDQuMzcuNjcuNTQuNTkuNDQuODkuNjRhLjA3LjA3IDAgMCAwIC4wOCAwYy4zLS4yMS42LS40Mi44OS0uNjRzLjQ1LS4zNS42Ny0uNTQuNTUtLjQ4LjgxLS43M2ExNy40NSAxNy40NSAwIDAgMCA1LjM4LTEyLjYxIDE3LjM5IDE3LjM5IDAgMCAwLTEuMDktNi4wOWMtLjE0LS4zNy0uMjktLjczLS40NS0xLjA5cy0uMjItLjQ3LS4zMy0uNjktLjM1LS42Ni0uNTUtMWExNy42MSAxNy42MSAwIDAgMC0zLjc4LTQuNDggMTUuNjUgMTUuNjUgMCAwIDEgMTEuNi0xLjg0IDE2LjEzIDE2LjEzIDAgMCAxIDEuODEuNTQuMDcuMDcgMCAwIDAgLjA4IDBxLjQ0LS43Ni44Mi0xLjU2YS4wNy4wNyAwIDAgMCAwLS4wOUExNi44OSAxNi44OSAwIDAgMCAzMCAuNTd6IiBmaWxsPSIjMTUxZjM0Ii8+PHBhdGggZD0iTTIxLjgyIDE3LjQ3YTE1LjUxIDE1LjUxIDAgMCAxLTQuMjUgMTAuNjkgMTUuNjYgMTUuNjYgMCAwIDEtLjcyLTQuNjggMTUuNSAxNS41IDAgMCAxIDQuMjUtMTAuNjkgMTUuNjIgMTUuNjIgMCAwIDEgLjcyIDQuNjgiIGZpbGw9IiMzNDg1NDAiLz48cGF0aCBkPSJNMTUgMjMuNDhhMTUuNTUgMTUuNTUgMCAwIDEtLjcyIDQuNjggMTUuNTQgMTUuNTQgMCAwIDEtMy41My0xNS4zN0ExNS41IDE1LjUgMCAwIDEgMTUgMjMuNDgiIGZpbGw9IiM3ZGJjNDIiLz48L3N2Zz4=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      deployments:
+      - name: cockroachdb
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: cockroachdb
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: cockroachdb
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: cockroachdb
+                image: quay.io/helmoperators/cockroachdb:v2.1.11
+                imagePullPolicy: Always
+                name: cockroachdb
+                resources: {}
+              serviceAccountName: cockroachdb-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - charts.helm.k8s.io
+          resources:
+          - cockroachdbs
+          - cockroachdbs/status
+          - cockroachdbs/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - get
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - '*'
+        - apiGroups:
+          - extensions
+          resources:
+          - ingresses
+          - ingresses/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - statefulsets
+          verbs:
+          - '*'
+        serviceAccountName: cockroachdb-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - cockroach
+  - cockroachdb
+  - postgres
+  labels:
+    alm-owner-etcd: couchbaseoperator
+    operated-by: couchbaseoperator
+  links:
+  - name: Helm Chart Source
+    url: https://github.com/helm/charts/tree/master/stable/cockroachdb
+  - name: Configuration Options
+    url: https://github.com/helm/charts/tree/master/stable/cockroachdb#configuration
+  - name: CockroachDB Source
+    url: https://github.com/cockroachdb/cockroach
+  maintainers:
+  - email: alex@cockroachlabs.com
+    name: a-robinson
+  - email: dmesser@redhat.com
+    name: Daniel Messer
+  maturity: stable
+  minKubeVersion: 1.8.0
+  provider:
+    name: Helm Community
+  replaces: cockroachdb.v2.1.1
+  selector:
+    matchLabels:
+      alm-owner-etcd: couchbaseoperator
+      operated-by: couchbaseoperator
+  version: 2.1.11

@@ -1,0 +1,449 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"metering.openshift.io/v1\",\n   \
+      \ \"kind\": \"MeteringConfig\",\n    \"metadata\": {\n      \"name\": \"operator-metering\"\
+      \n    },\n    \"spec\": {\n      \"storage\": {\n        \"hive\": {\n     \
+      \     \"s3\": {\n            \"bucket\": \"bucketname/path/\",\n           \
+      \ \"createBucket\": true,\n            \"region\": \"us-west-1\",\n        \
+      \    \"secretName\": \"my-aws-secret\"\n          },\n          \"type\": \"\
+      s3\"\n        },\n        \"type\": \"hive\"\n      }\n    }\n  },\n  {\n  \
+      \  \"apiVersion\": \"metering.openshift.io/v1\",\n    \"kind\": \"Report\",\n\
+      \    \"metadata\": {\n      \"name\": \"unready-deployment-replicas-hourly\"\
+      \n    },\n    \"spec\": {\n      \"query\": \"unready-deployment-replicas\"\
+      ,\n      \"schedule\": {\n        \"period\": \"hourly\"\n      }\n    }\n \
+      \ },\n  {\n    \"apiVersion\": \"metering.openshift.io/v1\",\n    \"kind\":\
+      \ \"ReportQuery\",\n    \"metadata\": {\n      \"name\": \"unready-deployment-replicas\"\
+      \n    },\n    \"spec\": {\n      \"columns\": [\n        {\n          \"name\"\
+      : \"period_start\",\n          \"type\": \"timestamp\"\n        },\n       \
+      \ {\n          \"name\": \"period_end\",\n          \"type\": \"timestamp\"\n\
+      \        },\n        {\n          \"name\": \"namespace\",\n          \"type\"\
+      : \"varchar\"\n        },\n        {\n          \"name\": \"deployment\",\n\
+      \          \"type\": \"varchar\"\n        },\n        {\n          \"name\"\
+      : \"total_replica_unready_seconds\",\n          \"type\": \"double\"\n     \
+      \   },\n        {\n          \"name\": \"avg_replica_unready_seconds\",\n  \
+      \        \"type\": \"double\"\n        }\n      ],\n      \"inputs\": [\n  \
+      \      {\n          \"name\": \"ReportingStart\",\n          \"type\": \"time\"\
+      \n        },\n        {\n          \"name\": \"ReportingEnd\",\n          \"\
+      type\": \"time\"\n        },\n        {\n          \"default\": \"unready-deployment-replicas\"\
+      ,\n          \"name\": \"UnreadyDeploymentReplicasDataSourceName\",\n      \
+      \    \"type\": \"ReportDataSource\"\n        }\n      ],\n      \"query\": \"\
+      SELECT\\n    timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart\
+      \ | prestoTimestamp |}' AS period_start,\\n    timestamp '{| default .Report.ReportingEnd\
+      \ .Report.Inputs.ReportingEnd | prestoTimestamp |}' AS period_end,\\n    labels['namespace']\
+      \ AS namespace,\\n    labels['deployment'] AS deployment,\\n    sum(amount *\
+      \ \\\"timeprecision\\\") AS total_replica_unready_seconds,\\n    avg(amount\
+      \ * \\\"timeprecision\\\") AS avg_replica_unready_seconds\\nFROM {| dataSourceTableName\
+      \ .Report.Inputs.UnreadyDeploymentReplicasDataSourceName |}\\nWHERE \\\"timestamp\\\
+      \" >= timestamp '{| default .Report.ReportingStart .Report.Inputs.ReportingStart\
+      \ | prestoTimestamp |}'\\nAND \\\"timestamp\\\" < timestamp '{| default .Report.ReportingEnd\
+      \ .Report.Inputs.ReportingEnd | prestoTimestamp |}'\\nGROUP BY labels['namespace'],\
+      \ labels['deployment']\\nORDER BY total_replica_unready_seconds DESC, avg_replica_unready_seconds\
+      \ DESC, namespace ASC, deployment ASC\\n\"\n    }\n  },\n  {\n    \"apiVersion\"\
+      : \"metering.openshift.io/v1\",\n    \"kind\": \"ReportDataSource\",\n    \"\
+      metadata\": {\n      \"name\": \"unready-deployment-replicas\"\n    },\n   \
+      \ \"spec\": {\n      \"prometheusMetricsImporter\": {\n        \"query\": \"\
+      sum(kube_deployment_status_replicas_unavailable) by (namespace, deployment)\\\
+      n\"\n      }\n    }\n  },\n  {\n    \"apiVersion\": \"metering.openshift.io/v1\"\
+      ,\n    \"kind\": \"StorageLocation\",\n    \"metadata\": {\n      \"name\":\
+      \ \"s3-storage-example\"\n    },\n    \"spec\": {\n      \"hive\": {\n     \
+      \   \"databaseName\": \"metering-s3\",\n        \"location\": \"s3a://bucketName/pathInBucket\"\
+      ,\n        \"unmanagedDatabase\": true\n      }\n    }\n  },\n  {\n    \"apiVersion\"\
+      : \"metering.openshift.io/v1\",\n    \"kind\": \"PrestoTable\",\n    \"metadata\"\
+      : {\n      \"name\": \"example-baremetal-cost\"\n    },\n    \"spec\": {\n \
+      \     \"catalog\": \"hive\",\n      \"unmanaged\": false,\n      \"columns\"\
+      : [\n        {\n          \"name\": \"cost_per_gigabyte_hour\",\n          \"\
+      type\": \"double\"\n        },\n        {\n          \"name\": \"cost_per_cpu_hour\"\
+      ,\n          \"type\": \"double\"\n        },\n        {\n          \"name\"\
+      : \"currency\",\n          \"type\": \"varchar\"\n        }\n      ],\n    \
+      \  \"createTableAs\": true,\n      \"query\": \"SELECT * FROM (\\n  VALUES (10.00,\
+      \ 50.00, 'USD')\\n) AS t (cost_per_gigabyte_hour, cost_per_cpu_hour, currency)\\\
+      n\",\n      \"schema\": \"default\",\n      \"tableName\": \"example_baremetal_cost\"\
+      \n    }\n  },\n  {\n    \"apiVersion\": \"metering.openshift.io/v1\",\n    \"\
+      kind\": \"HiveTable\",\n    \"metadata\": {\n      \"name\": \"apache-log\"\
+      ,\n      \"annotations\": {\n        \"reference\": \"based on the RegEx example\
+      \ from https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormats&SerDe\"\
+      \n      }\n    },\n    \"spec\": {\n      \"columns\": [\n        {\n      \
+      \    \"name\": \"host\",\n          \"type\": \"string\"\n        },\n     \
+      \   {\n          \"name\": \"identity\",\n          \"type\": \"string\"\n \
+      \       },\n        {\n          \"name\": \"user\",\n          \"type\": \"\
+      string\"\n        },\n        {\n          \"name\": \"time\",\n          \"\
+      type\": \"string\"\n        },\n        {\n          \"name\": \"request\",\n\
+      \          \"type\": \"string\"\n        },\n        {\n          \"name\":\
+      \ \"status\",\n          \"type\": \"string\"\n        },\n        {\n     \
+      \     \"name\": \"size\",\n          \"type\": \"string\"\n        },\n    \
+      \    {\n          \"name\": \"referer\",\n          \"type\": \"string\"\n \
+      \       },\n        {\n          \"name\": \"agent\",\n          \"type\": \"\
+      string\"\n        }\n      ],\n      \"databaseName\": \"default\",\n      \"\
+      external\": true,\n      \"fileFormat\": \"TEXTFILE\",\n      \"location\":\
+      \ \"s3a://my-bucket/apache_logs\",\n      \"rowFormat\": \"SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'\\\
+      nWITH SERDEPROPERTIES (\\n  \\\"input.regex\\\" = \\\"([^ ]*) ([^ ]*) ([^ ]*)\
+      \ (-|\\\\\\\\[[^\\\\\\\\]]*\\\\\\\\]) ([^ \\\\\\\"]*|\\\\\\\"[^\\\\\\\"]*\\\\\
+      \\\") (-|[0-9]*) (-|[0-9]*)(?: ([^ \\\\\\\"]*|\\\\\\\"[^\\\\\\\"]*\\\\\\\")\
+      \ ([^ \\\\\\\"]*|\\\\\\\"[^\\\\\\\"]*\\\\\\\"))?\\\"\\n)\\n\",\n      \"tableName\"\
+      : \"apache_log\"\n    }\n  }\n]"
+    capabilities: Basic Install
+    categories: OpenShift Optional, Monitoring
+    certified: 'false'
+    containerImage: quay.io/coreos/metering-ansible-operator:latest
+    createdAt: 2019-01-01 11:59:59
+    description: Chargeback and reporting tool to provide accountability for how resources
+      are used across a cluster
+    repository: https://github.com/operator-framework/operator-metering
+    support: Red Hat, Inc.
+  name: metering-operator-upstream.v4.2.0
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: An instance of Metering with high-level configuration
+      displayName: Metering Configuration
+      kind: MeteringConfig
+      name: meteringconfigs.metering.openshift.io
+      version: v1
+    - description: A scheduled or on-off Metering Report summarizes data based on
+        the query specified.
+      displayName: Metering Report
+      kind: Report
+      name: reports.metering.openshift.io
+      version: v1
+    - description: A SQL query used by Metering to generate reports.
+      displayName: Metering Report Query
+      kind: ReportQuery
+      name: reportqueries.metering.openshift.io
+      version: v1
+    - description: Used under-the-hood. A resource representing a database table in
+        Presto. Used by ReportQueries to determine what tables exist, and by the HTTP
+        API to determine how to query a table.
+      displayName: Metering Data Source
+      kind: ReportDataSource
+      name: reportdatasources.metering.openshift.io
+      version: v1
+    - description: Represents a configurable storage location for Metering to store
+        metering and report data.
+      displayName: Metering Storage Location
+      kind: StorageLocation
+      name: storagelocations.metering.openshift.io
+      version: v1
+    - description: Used under-the-hood. A resource describing a source of data for
+        usage by Report Queries.
+      displayName: Metering Presto Table
+      kind: PrestoTable
+      name: prestotables.metering.openshift.io
+      version: v1
+    - description: Used under-the-hood. A resource representing a database table in
+        Hive.
+      displayName: Metering Hive Table
+      kind: HiveTable
+      name: hivetables.metering.openshift.io
+      version: v1
+  description: 'Operator Metering is a chargeback and reporting tool to provide accountability
+    for how resources are used across a cluster. Cluster admins can schedule reports
+    based on historical usage data by Pod, Namespace, and Cluster wide. Operator Metering
+    is part of the [Operator Framework](https://coreos.com/blog/introducing-operator-framework-metering).
+
+
+    Read the user guide for more details on [running and viewing your first report](https://github.com/operator-framework/operator-metering/blob/master/Documentation/using-metering.md).
+
+
+    ### Core capabilities
+
+
+    * **Chargeback/Showback** - Break down the reserved and utlized resources requested
+    by applications.
+
+
+    * **Pod, Namespace & Cluster Reports** - Built in reports exist to break down
+    CPU and RAM in any way you desire.
+
+
+    * **Scheduled Reports** - Schedule reports to run on a standard interval, eg.
+    daily or monthly
+
+
+    * **Post-Processing** - Reports are generated in CSV format and stored in persistent
+    storage for further post-processing. Use this to send reminder emails, integrate
+    into your ERP system, or graph on a dashboard.
+
+
+    * **HTTP API** - Reports can be queried from an in-cluster HTTP API in addition
+    to reading from persistent storage.
+
+
+    ### Before you start
+
+
+    Metering runs a big data stack to crunch your data and requires at least 4GB of
+    RAM and 4 CPU cores. At least one Node should have 2GB of RAM and 2 CPU cores.
+    Memory and CPU consumption may often be lower, but will spike when running reports,
+    or collecting data for larger clusters.
+
+
+    ### Common Configurations
+
+
+    Metering works out of the box without any customizations or configuration. Read
+    the [full documentation](https://github.com/operator-framework/operator-metering/blob/master/Documentation/metering-config.md)
+    for more details.
+
+
+    * **Use a specific StorageClass** - Follow the example to [use your own StorageClass](https://github.com/operator-framework/operator-metering/blob/master/manifests/metering-config/shared-storage.yaml)
+    instead of the Dynamic Provisioner.
+
+
+    * **Store data in S3 instead of PV** - Store your report output [in an S3 bucket](https://github.com/operator-framework/operator-metering/blob/master/Documentation/configuring-storage.md#storing-data-in-s3)
+    instead of a PersistentVolume.
+
+
+    * **Configure AWS Billing Data Source** - To assign Pod $$ costs on AWS, create
+    a [read-only IAM user](https://github.com/operator-framework/operator-metering/blob/master/Documentation/configuring-aws-billing.md)
+    ([example-policy](https://github.com/operator-framework/operator-metering/blob/master/Documentation/aws/read-only.json))
+    and [configure Metering](https://github.com/operator-framework/operator-metering/blob/master/manifests/metering-config/aws-billing.yaml)
+    to use it.
+
+    '
+  displayName: Metering
+  icon:
+  - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMzcgMTI3Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2MwMDt9LmNscy0ye2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPm9wZXJhdG9yX2xvZ29fbWV0ZXJpbmdfY29sb3I8L3RpdGxlPjxnIGlkPSJQYWdlLTEiPjxwYXRoIGlkPSJGaWxsLTEiIGNsYXNzPSJjbHMtMSIgZD0iTTY2LjUsMjRBNDIuNSw0Mi41LDAsMSwxLDI0LDY2LjUsNDIuNTEsNDIuNTEsMCwwLDEsNjYuNSwyNCIvPjxwYXRoIGlkPSJGaWxsLTUiIGNsYXNzPSJjbHMtMiIgZD0iTTQxLjUzLDczLDc2LjA4LDI5Yy43NywxLjUyLDAsMi4zOC0uMywzLjI5LTMuMTQsOC42MS02LjIzLDE3LjI4LTkuNTIsMjUuODQtLjgxLDIuMTctLjQ2LDIuNjgsMS44MiwyLjY4SDkwLjMyYy42LDAsMS40Mi0uMywxLjc3LjM2cy0uNDEsMS4xNi0uNzYsMS42N0w2MywxMDAuMzNjLS40NS42MS0uOSwxLjUyLTEuNzIsMS4wN3MtLjMtMS4zNywwLTIuMTNjMi4xOC04LDQuMjYtMTUuOTEsNi41NC0yMy44Ni41Ni0xLjg3LDAtMi4yOC0xLjcyLTIuMjNINDVaIi8+PC9nPjxwYXRoIGQ9Ik0xMjIuNzMsNTIuNzljMC01LjE5LDIuNDYtMTAuODYsOS4yMS0xMC44NnM5LjIxLDUuNjcsOS4yMSwxMC44Ni0yLjQzLDEwLjg2LTkuMjEsMTAuODZTMTIyLjczLDU4LDEyMi43Myw1Mi43OVptMTQuNywwYzAtMy40NS0xLjQxLTcuNDEtNS40OS03LjQxcy01LjQ5LDQuMTctNS40OSw3LjQxYzAsMy40MiwxLjQxLDcuNDEsNS40OSw3LjQxUzEzNy40Myw1NiwxMzcuNDMsNTIuNzlaIi8+PHBhdGggZD0iTTE0NS41LDQyLjI5aDguNzNjNS4yMiwwLDcuMDUsMy4zLDcuMDUsNi41MSwwLDMtMiw2LjU0LTcuMDUsNi41NEgxNDkuMXY3Ljk1aC0zLjZabTEyLjA2LDYuNTFhMi45LDIuOSwwLDAsMC0zLjE1LTMuMDlIMTQ5LjF2Ni4yMWg1LjMxQTIuOTQsMi45NCwwLDAsMCwxNTcuNTYsNDguOFoiLz48cGF0aCBkPSJNMTY0LjU4LDQyLjI5aDEzLjY4djMuMzlIMTY4LjE4djUuMDdoNi4yMXYzLjM5aC02LjIxVjU5LjloMTAuNzR2My4zOUgxNjQuNThaIi8+PHBhdGggZD0iTTE4Myw0Mi4yOWg5LjNjNS4yMiwwLDYuOSwzLjA5LDYuOSw2LjM5YTYuMTUsNi4xNSwwLDAsMS00LjMyLDZsNC4yLDguNjFIMTk1TDE5MSw1NS4wN2gtNC4zOHY4LjIySDE4M1ptOS4zNiw5LjM2YzIuMzQsMCwzLjEyLTEuNDQsMy4xMi0zcy0uNjYtMy0zLjEyLTNoLTUuNzZ2NS45NFoiLz48cGF0aCBkPSJNMjE1LjI1LDU4LjdoLTguMzFsLTEuNjUsNC41OWgtMy44MWw3LjgzLTIxaDMuNTdsNy44LDIxSDIxNi45Wm0tMy40NS05LjU0YTE3LjYzLDE3LjYzLDAsMCwxLS42OS0yLjEzYy0uMTguNjMtLjQ4LDEuNTMtLjY5LDIuMTNsLTIuMzQsNi4zaDZaIi8+PHBhdGggZD0iTTIyOS43MSw2My4yOWgtMy42VjQ1Ljc0aC02VjQyLjI5aDE1LjU0djMuNDVoLTZaIi8+PHBhdGggZD0iTTIzNy42OSw1Mi43OWMwLTUuMTksMi40Ni0xMC44Niw5LjIxLTEwLjg2czkuMjEsNS42Nyw5LjIxLDEwLjg2LTIuNDMsMTAuODYtOS4yMSwxMC44NlMyMzcuNjksNTgsMjM3LjY5LDUyLjc5Wm0xNC43LDBjMC0zLjQ1LTEuNDEtNy40MS01LjQ5LTcuNDFzLTUuNDksNC4xNy01LjQ5LDcuNDFjMCwzLjQyLDEuNDEsNy40MSw1LjQ5LDcuNDFTMjUyLjM5LDU2LDI1Mi4zOSw1Mi43OVoiLz48cGF0aCBkPSJNMjYwLjQ2LDQyLjI5aDkuM2M1LjIyLDAsNi45LDMuMDksNi45LDYuMzlhNi4xNSw2LjE1LDAsMCwxLTQuMzIsNmw0LjIsOC42MWgtNC4wNWwtNC4wNS04LjIyaC00LjM4djguMjJoLTMuNlptOS4zNiw5LjM2YzIuMzQsMCwzLjEyLTEuNDQsMy4xMi0zcy0uNjYtMy0zLjEyLTNoLTUuNzZ2NS45NFoiLz48cGF0aCBkPSJNMTQ1LDEwMC4yOVY4NS40MWMwLTEsLjA4LTIuNi4xNi0zLjM2LS4zNiwxLjA4LS44OCwyLjQ0LTEuMjgsMy40NGwtNi43OSwxNS4yOC02LjgtMTUuMzZjLS40NC0xLTEtMi4yOC0xLjMyLTMuMzYuMDguNzYuMTYsMi4zNi4xNiwzLjM2djE0Ljg4aC00Ljh2LTI4aDQuODRsNy4yLDE2LjQ0Yy4yOC42OC41NiwxLjQ0Ljc2LDIuMDguMi0uNjQuNDgtMS40Ljc2LTIuMDhsNy4yMy0xNi40NGg0LjY4djI4WiIvPjxwYXRoIGQ9Ik0xNTYuNjEsNzIuMjloMTguMjN2NC41MkgxNjEuNDF2Ni43Nmg4LjI4djQuNTJoLTguMjh2Ny42OGgxNC4zMXY0LjUySDE1Ni42MVoiLz48cGF0aCBkPSJNMTkyLjA5LDEwMC4yOWgtNC44Vjc2Ljg5aC04di00LjZIMjAwdjQuNmgtNy45NVoiLz48cGF0aCBkPSJNMjA1LjA1LDcyLjI5aDE4LjIzdjQuNTJIMjA5Ljg1djYuNzZoOC4yN3Y0LjUyaC04LjI3djcuNjhoMTQuMzF2NC41MkgyMDUuMDVaIi8+PHBhdGggZD0iTTIyOS41Nyw3Mi4yOUgyNDJjNywwLDkuMiw0LjEyLDkuMiw4LjUyYTguMiw4LjIsMCwwLDEtNS43Niw4bDUuNiwxMS40OGgtNS40bC01LjQtMTFoLTUuODN2MTFoLTQuOFpNMjQyLDg0Ljc3YzMuMTIsMCw0LjE2LTEuOTIsNC4xNi00LDAtMS44OC0uODgtNC00LjE2LTRoLTcuNjd2Ny45MloiLz48cGF0aCBkPSJNMjU3LjE3LDcyLjI5SDI2MnYyOGgtNC44WiIvPjxwYXRoIGQ9Ik0yODYuMzYsMTAwLjI5bC0xMS42LTE3LjY4Yy0uMzYtLjU2LS44LTEuMzYtMS4xNi0yLjA4YTE2LjEzLDE2LjEzLDAsMCwxLC4xMywyLjA4djE3LjY4SDI2OXYtMjhoNC42M2wxMS4zMiwxNy40YTIxLDIxLDAsMCwxLDEuMTYsMi4xMiwyMC41NCwyMC41NCwwLDAsMS0uMTItMi4xMlY3Mi4yOWg0Ljc2djI4WiIvPjxwYXRoIGQ9Ik0yOTYuNTMsODYuMjljMC02Ljg0LDMuODctMTQuNDgsMTIuMjctMTQuNDgsNS40LDAsOCwyLjcyLDkuOCw1LjY0bC00LjI4LDIuNDRjLTEuMjQtMS44NC0yLjg4LTMuNDQtNS41Mi0zLjQ0LTUuNjQsMC03LjMyLDUuNDgtNy4zMiw5Ljg0LDAsNSwyLjEyLDkuODQsNy4zMiw5Ljg0YTUuMjIsNS4yMiwwLDAsMCw1LjQtNS4yNHYtLjQ0aC00LjkyVjg1LjkzaDkuOHYzLjg4YzAsNy4xMi00LjQ4LDExLTEwLjI4LDExQzMwMC4xNywxMDAuNzcsMjk2LjUzLDkzLjYxLDI5Ni41Myw4Ni4yOVoiLz48L3N2Zz4K
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          verbs:
+          - '*'
+        serviceAccountName: metering-operator
+      deployments:
+      - name: metering-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: metering-operator
+          strategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                app: metering-operator
+            spec:
+              containers:
+              - command:
+                - /opt/ansible/scripts/ansible-logs.sh
+                - /tmp/ansible-operator/runner
+                - stdout
+                image: quay.io/coreos/metering-ansible-operator:release-4.2
+                imagePullPolicy: Always
+                name: ansible
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+                  readOnly: true
+              - env:
+                - name: OPERATOR_NAME
+                  value: metering-ansible-operator
+                - name: DISABLE_OCP_FEATURES
+                  value: 'true'
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: METERING_ANSIBLE_OPERATOR_IMAGE
+                  value: quay.io/coreos/metering-ansible-operator:release-4.2
+                - name: METERING_REPORTING_OPERATOR_IMAGE
+                  value: quay.io/coreos/metering-reporting-operator:release-4.2
+                - name: METERING_PRESTO_IMAGE
+                  value: quay.io/coreos/presto:release-4.2
+                - name: METERING_HIVE_IMAGE
+                  value: quay.io/coreos/hive:release-4.2
+                - name: METERING_HADOOP_IMAGE
+                  value: quay.io/coreos/hadoop:release-4.2
+                - name: GHOSTUNNEL_IMAGE
+                  value: quay.io/coreos/metering-ghostunnel:release-4.2
+                image: quay.io/coreos/metering-ansible-operator:release-4.2
+                imagePullPolicy: Always
+                name: operator
+                resources:
+                  limits:
+                    cpu: 1500m
+                    memory: 500Mi
+                  requests:
+                    cpu: 750m
+                    memory: 400Mi
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+              restartPolicy: Always
+              securityContext:
+                runAsNonRoot: true
+              serviceAccount: metering-operator
+              terminationGracePeriodSeconds: 30
+              volumes:
+              - emptyDir: {}
+                name: runner
+      permissions:
+      - rules:
+        - apiGroups:
+          - metering.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - pods/attach
+          - pods/exec
+          - pods/portforward
+          - pods/proxy
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          - endpoints
+          - persistentvolumeclaims
+          - secrets
+          - serviceaccounts
+          - services
+          - services/proxy
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          - namespaces/status
+          - pods/log
+          - pods/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - deployments
+          - deployments/finalizers
+          - deployments/rollback
+          - deployments/scale
+          - replicasets
+          - replicasets/scale
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs
+          - jobs
+          verbs:
+          - '*'
+        - apiGroups:
+          - extensions
+          resources:
+          - daemonsets
+          - deployments
+          - deployments/rollback
+          - deployments/scale
+          - replicasets
+          - replicasets/scale
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          - authorization.openshift.io
+          resources:
+          - rolebindings
+          - roles
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - '*'
+        serviceAccountName: metering-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - metering metrics reporting prometheus chargeback
+  labels:
+    operator-metering: 'true'
+  links:
+  - name: Documentation
+    url: https://github.com/operator-framework/operator-metering/blob/master/Documentation/index.md
+  maintainers:
+  - email: sd-operator-metering@redhat.com
+    name: Red Hat
+  maturity: stable
+  minKubeVersion: 1.11.0
+  provider:
+    name: Red Hat
+  selector:
+    matchLabels:
+      operator-metering: 'true'
+  version: 4.2.0

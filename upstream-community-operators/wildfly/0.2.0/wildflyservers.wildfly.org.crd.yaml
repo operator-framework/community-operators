@@ -1,0 +1,92 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: wildflyservers.wildfly.org
+spec:
+  group: wildfly.org
+  names:
+    kind: WildFlyServer
+    listKind: WildFlyServerList
+    plural: wildflyservers
+    singular: wildflyserver
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            applicationImage:
+              description: ApplicationImage is the name of the application image to
+                be deployed
+              type: string
+            env:
+              description: Env contains environment variables for the containers running
+                the WildFlyServer application
+              items:
+                type: object
+              type: array
+            envFrom:
+              items:
+                type: object
+              type: array
+            serviceAccountName:
+              type: string
+            size:
+              format: int32
+              type: integer
+            standaloneConfigMap:
+              properties:
+                key:
+                  type: string
+                name:
+                  type: string
+              required:
+              - name
+              type: object
+            storage:
+              properties:
+                emptyDir:
+                  type: object
+                volumeClaimTemplate:
+                  type: object
+              type: object
+          required:
+          - applicationImage
+          - size
+          type: object
+        status:
+          properties:
+            pods:
+              items:
+                properties:
+                  name:
+                    type: string
+                  podIP:
+                    type: string
+                required:
+                - name
+                - podIP
+                type: object
+              type: array
+          required:
+          - pods
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

@@ -1,0 +1,195 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: clusterinstallations.mattermost.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    description: State of Mattermost
+    name: State
+    type: string
+  - JSONPath: .status.image
+    description: Image of Mattermost
+    name: Image
+    type: string
+  - JSONPath: .status.version
+    description: Version of Mattermost
+    name: Version
+    type: string
+  - JSONPath: .status.endpoint
+    description: Endpoint
+    name: Endpoint
+    type: string
+  group: mattermost.com
+  names:
+    kind: ClusterInstallation
+    listKind: ClusterInstallationList
+    plural: clusterinstallations
+    singular: clusterinstallation
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          description: "Standard object\xE2\u20AC\u2122s metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata\
+            \ +k8s:openapi-gen=false"
+          type: object
+        spec:
+          description: 'Specification of the desired behavior of the Mattermost cluster.
+            More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status'
+          properties:
+            affinity:
+              description: If specified, affinity will define the pod's scheduling
+                constraints
+              type: object
+            database:
+              properties:
+                externalSecret:
+                  description: If the user want to use an external DB. This can be
+                    inside the same k8s cluster or outside like AWS RDS.
+                  type: string
+                replicas:
+                  description: Defines the number of database replicas. For redundancy
+                    use at least 2 replicas. Setting this will override the number
+                    of replicas set by 'Size'.
+                  format: int32
+                  type: integer
+                resources:
+                  description: Defines the resource requests and limits for the database
+                    pods.
+                  type: object
+                storageSize:
+                  description: Defines the storage size for the database. ie 50Gi
+                  pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                  type: string
+                type:
+                  type: string
+              type: object
+            elasticSearch:
+              properties:
+                host:
+                  type: string
+                password:
+                  type: string
+                username:
+                  type: string
+              type: object
+            image:
+              description: Image defines the ClusterInstallation Docker image.
+              type: string
+            ingressAnnotations:
+              additionalProperties:
+                type: string
+              type: object
+            ingressName:
+              description: IngressName defines the name to be used when creating the
+                ingress rules
+              type: string
+            mattermostLicenseSecret:
+              description: Secret that contains the mattermost license
+              type: string
+            minio:
+              properties:
+                replicas:
+                  description: 'Defines the number of Minio replicas. Supply 1 to
+                    run Minio in standalone mode with no redundancy. Supply 4 or more
+                    to run Minio in distributed mode. Note that it is not possible
+                    to upgrade Minio from standalone to distributed mode. Setting
+                    this will override the number of replicas set by ''Size''. More
+                    info: https://docs.min.io/docs/distributed-minio-quickstart-guide.html'
+                  format: int32
+                  type: integer
+                resources:
+                  description: Defines the resource requests and limits for the Minio
+                    pods.
+                  type: object
+                storageSize:
+                  description: Defines the storage size for Minio. ie 50Gi
+                  pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                  type: string
+              type: object
+            nodeSelector:
+              additionalProperties:
+                type: string
+              description: 'NodeSelector is a selector which must be true for the
+                pod to fit on a node. Selector which must match a node''s labels for
+                the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/'
+              type: object
+            replicas:
+              description: Replicas defines the number of replicas to use for the
+                Mattermost app servers. Setting this will override the number of replicas
+                set by 'Size'.
+              format: int32
+              type: integer
+            resources:
+              description: Defines the resource requests and limits for the Mattermost
+                app server pods.
+              type: object
+            serviceAnnotations:
+              additionalProperties:
+                type: string
+              type: object
+            size:
+              description: 'Size defines the size of the ClusterInstallation. This
+                is typically specified in number of users. This will set replica and
+                resource requests/limits appropriately for the provided number of
+                users. Accepted values are: 100users, 1000users, 5000users, 10000users,
+                250000users. Defaults to 5000users. Setting ''Replicas'', ''Resources'',
+                ''Minio.Replicas'', ''Minio.Resource'', ''Database.Replicas'', or
+                ''Database.Resources'' will override the values set by Size.'
+              type: string
+            useServiceLoadBalancer:
+              type: boolean
+            version:
+              description: Version defines the ClusterInstallation Docker image version.
+              type: string
+          required:
+          - ingressName
+          type: object
+        status:
+          description: 'Most recent observed status of the Mattermost cluster. Read-only.
+            Not included when requesting from the apiserver, only from the Mattermost
+            Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status'
+          properties:
+            endpoint:
+              description: The endpoint to access the Mattermost instance
+              type: string
+            image:
+              description: The image running on the pods in the Mattermost instance
+              type: string
+            replicas:
+              description: Total number of non-terminated pods targeted by this Mattermost
+                deployment
+              format: int32
+              type: integer
+            state:
+              description: Represents the running state of the Mattermost instance
+              type: string
+            updatedReplicas:
+              description: Total number of non-terminated pods targeted by this Mattermost
+                deployment that are running with the desired image.
+              format: int32
+              type: integer
+            version:
+              description: The version currently running in the Mattermost instance
+              type: string
+          type: object
+      required:
+      - spec
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

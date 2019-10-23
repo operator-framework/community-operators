@@ -1,0 +1,309 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: clickhouseinstallations.clickhouse.altinity.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.version
+    description: Operator version
+    name: version
+    priority: 1
+    type: string
+  - JSONPath: .status.clusters
+    description: Clusters count
+    name: clusters
+    priority: 0
+    type: integer
+  - JSONPath: .status.shards
+    description: Shards count
+    name: shards
+    priority: 1
+    type: integer
+  - JSONPath: .status.hosts
+    description: Hosts count
+    name: hosts
+    priority: 0
+    type: integer
+  - JSONPath: .status.status
+    description: CHI status
+    name: status
+    priority: 0
+    type: string
+  - JSONPath: .status.updated
+    description: Updated hosts count
+    name: updated
+    priority: 1
+    type: integer
+  - JSONPath: .status.added
+    description: Added hosts count
+    name: added
+    priority: 1
+    type: integer
+  - JSONPath: .status.deleted
+    description: Hosts deleted count
+    name: deleted
+    priority: 1
+    type: integer
+  - JSONPath: .status.delete
+    description: Hosts to be deleted count
+    name: delete
+    priority: 1
+    type: integer
+  - JSONPath: .status.endpoint
+    description: Client access endpoint
+    name: endpoint
+    priority: 1
+    type: string
+  group: clickhouse.altinity.com
+  names:
+    kind: ClickHouseInstallation
+    plural: clickhouseinstallations
+    shortNames:
+    - chi
+    singular: clickhouseinstallation
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            configuration:
+              properties:
+                clusters:
+                  items:
+                    properties:
+                      layout:
+                        properties:
+                          replicasCount:
+                            type: integer
+                          shards:
+                            items:
+                              properties:
+                                definitionType:
+                                  type: string
+                                internalReplication:
+                                  type: string
+                                name:
+                                  pattern: ^([a-zA-Z0-9_-]){0,8}$
+                                  type: string
+                                replicas:
+                                  items:
+                                    properties:
+                                      name:
+                                        pattern: ^([a-zA-Z0-9_-]){0,8}$
+                                        type: string
+                                      port:
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      templates:
+                                        properties:
+                                          clusterServiceTemplate:
+                                            type: string
+                                          podTemplate:
+                                            type: string
+                                          replicaServiceTemplate:
+                                            type: string
+                                          serviceTemplate:
+                                            type: string
+                                          shardServiceTemplate:
+                                            type: string
+                                          volumeClaimTemplate:
+                                            type: string
+                                        type: object
+                                    type: object
+                                  type: array
+                                replicasCount:
+                                  minimum: 1
+                                  type: integer
+                                templates:
+                                  properties:
+                                    clusterServiceTemplate:
+                                      type: string
+                                    podTemplate:
+                                      type: string
+                                    replicaServiceTemplate:
+                                      type: string
+                                    serviceTemplate:
+                                      type: string
+                                    shardServiceTemplate:
+                                      type: string
+                                    volumeClaimTemplate:
+                                      type: string
+                                  type: object
+                                weight:
+                                  type: integer
+                              type: object
+                            type: array
+                          shardsCount:
+                            type: integer
+                          type:
+                            type: string
+                        type: object
+                      name:
+                        pattern: ^[a-zA-Z]([a-zA-Z0-9_-]){0,14}$
+                        type: string
+                      replicasCount:
+                        minimum: 1
+                        type: integer
+                      shardsCount:
+                        minimum: 1
+                        type: integer
+                      templates:
+                        properties:
+                          clusterServiceTemplate:
+                            type: string
+                          podTemplate:
+                            type: string
+                          replicaServiceTemplate:
+                            type: string
+                          serviceTemplate:
+                            type: string
+                          shardServiceTemplate:
+                            type: string
+                          volumeClaimTemplate:
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  type: array
+                files:
+                  type: object
+                profiles:
+                  type: object
+                quotas:
+                  type: object
+                settings:
+                  type: object
+                users:
+                  type: object
+                zookeeper:
+                  properties:
+                    identity:
+                      type: string
+                    nodes:
+                      items:
+                        properties:
+                          host:
+                            type: string
+                          port:
+                            maximum: 65535
+                            minimum: 1
+                            type: integer
+                        required:
+                        - host
+                        type: object
+                      type: array
+                    operation_timeout_ms:
+                      type: integer
+                    root:
+                      type: string
+                    session_timeout_ms:
+                      type: integer
+                  type: object
+              type: object
+            defaults:
+              properties:
+                distributedDDL:
+                  properties:
+                    profile:
+                      type: string
+                  type: object
+                replicasUseFQDN:
+                  type: string
+                templates:
+                  properties:
+                    clusterServiceTemplate:
+                      type: string
+                    podTemplate:
+                      type: string
+                    replicaServiceTemplate:
+                      type: string
+                    serviceTemplate:
+                      type: string
+                    shardServiceTemplate:
+                      type: string
+                    volumeClaimTemplate:
+                      type: string
+                  type: object
+              type: object
+            stop:
+              enum:
+              - '0'
+              - '1'
+              - 'false'
+              - 'true'
+              - 'no'
+              - 'yes'
+              - 'off'
+              - 'on'
+              - disabled
+              - enabled
+              type: string
+            templates:
+              properties:
+                podTemplates:
+                  items:
+                    properies:
+                      distribution:
+                        enum:
+                        - Unspecified
+                        - OnePerHost
+                        type: string
+                      name:
+                        type: string
+                      spec:
+                        type: object
+                      zone:
+                        properties:
+                          key:
+                            type: string
+                          values:
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - values
+                        type: object
+                    required:
+                    - name
+                    - spec
+                    type: object
+                  type: array
+                serviceTemplates:
+                  items:
+                    properties:
+                      generateName:
+                        type: string
+                      metadata:
+                        type: object
+                      name:
+                        type: string
+                      spec:
+                        type: object
+                    required:
+                    - name
+                    - spec
+                    type: object
+                  type: array
+                volumeClaimTemplates:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      reclaimPolicy:
+                        enum:
+                        - Retain
+                        - Delete
+                        type: string
+                      spec:
+                        type: object
+                    required:
+                    - name
+                    - spec
+                    type: object
+                  type: array
+              type: object
+          type: object
+  version: v1

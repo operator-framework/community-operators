@@ -1,0 +1,267 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"vault.banzaicloud.com/v1alpha1\"\
+      ,\n    \"kind\": \"Vault\",\n    \"metadata\": {\n      \"name\": \"vault\"\n\
+      \    },\n    \"spec\": {\n      \"size\": 1,\n      \"image\": \"vault:1.0.0\"\
+      ,\n      \"bankVaultsImage\": \"banzaicloud/bank-vaults:latest\",\n      \"\
+      annotations\": {\n        \"prometheus.io/scrape\": \"true\",\n        \"prometheus.io/port\"\
+      : \"9102\"\n      },\n      \"serviceAccount\": \"vault\",\n      \"serviceType\"\
+      : \"ClusterIP\",\n      \"ingress\": {\n        \"annotations\": null,\n   \
+      \     \"spec\": {\n        }\n      },\n      \"unsealConfig\": {\n        \"\
+      kubernetes\": {\n          \"secretNamespace\": \"default\"\n        }\n   \
+      \   },\n      \"config\": {\n        \"storage\": {\n          \"file\": {\n\
+      \            \"path\": \"/vault/file\"\n          }\n        },\n        \"\
+      listener\": {\n          \"tcp\": {\n            \"address\": \"0.0.0.0:8200\"\
+      ,\n            \"tls_cert_file\": \"/vault/tls/server.crt\",\n            \"\
+      tls_key_file\": \"/vault/tls/server.key\"\n          }\n        },\n       \
+      \ \"telemetry\": {\n          \"statsd_address\": \"localhost:9125\"\n     \
+      \   },\n        \"ui\": true\n      },\n      \"externalConfig\": {\n      \
+      \  \"policies\": [\n          {\n            \"name\": \"allow_secrets\",\n\
+      \            \"rules\": \"path \\\"secret/*\\\" { capabilities = [\\\"create\\\
+      \", \\\"read\\\", \\\"update\\\", \\\"delete\\\", \\\"list\\\"] }\"\n      \
+      \    }\n        ],\n        \"auth\": [\n          {\n            \"type\":\
+      \ \"kubernetes\",\n            \"roles\": [\n              {\n             \
+      \   \"name\": \"default\",\n                \"bound_service_account_names\"\
+      : \"default\",\n                \"bound_service_account_namespaces\": \"default\"\
+      ,\n                \"policies\": \"allow_secrets\",\n                \"ttl\"\
+      : \"1h\"\n              }\n            ]\n          }\n        ],\n        \"\
+      secrets\": [\n          {\n            \"path\": \"secret\",\n            \"\
+      type\": \"kv\",\n            \"description\": \"General secrets.\",\n      \
+      \      \"options\": {\n              \"version\": 2\n            }\n       \
+      \   }\n        ],\n        \"startupSecrets\": [\n          {\n            \"\
+      type\": \"kv\",\n            \"path\": \"secret/data/accounts/aws\",\n     \
+      \       \"data\": {\n              \"data\": {\n                \"AWS_ACCESS_KEY_ID\"\
+      : \"secretId\",\n                \"AWS_SECRET_ACCESS_KEY\": \"s3cr3t\"\n   \
+      \           }\n            }\n          }\n        ]\n      },\n      \"vaultEnvsConfig\"\
+      : [\n        {\n          \"name\": \"VAULT_LOG_LEVEL\",\n          \"value\"\
+      : \"debug\"\n        }\n      ]\n    }\n  }\n]\n"
+    capabilities: Full Lifecycle
+    categories: Security
+    certified: 'false'
+    containerImage: banzaicloud/vault-operator:0.4.10
+    createdAt: '2019-03-07T08:00:00Z'
+    description: Creates and maintain highly-available Vault clusters on Kubernetes
+    repository: https://github.com/banzaicloud/bank-vaults/tree/master/operator
+    support: Banzai Cloud
+  name: vaultoperator.v0.4.10
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a cluster of Vault nodes.
+      displayName: Vault Cluster
+      kind: Vault
+      name: vaults.vault.banzaicloud.com
+      resources:
+      - kind: Service
+        version: v1
+      - kind: StatefulSet
+        version: v1
+      - kind: Deployment
+        version: v1
+      - kind: Secret
+        version: v1
+      - kind: ConfigMap
+        version: v1
+      specDescriptors:
+      - description: The desired number of member Pods for the Vault cluster.
+        displayName: Size
+        path: size
+        x-descriptors:
+        - urn:alm:descriptor:com.banzaicloud.vault:podCount
+      - description: Limits describes the minimum/maximum amount of compute resources
+          required/allowed
+        displayName: Resource Requirements
+        path: pod.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      statusDescriptors:
+      - description: The service at which the running Vault cluster can be accessed.
+        displayName: Service
+        path: serviceName
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Service
+      - description: The current size of the Vault cluster.
+        displayName: Cluster Size
+        path: size
+      - description: The current status of the Vault cluster.
+        displayName: Status
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.phase
+      - description: Explanation for the current status of the cluster.
+        displayName: Status Details
+        path: reason
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.phase:reason
+      version: v1alpha1
+  description: "The Vault Operator creates and maintains highly-available Vault clusters\
+    \ on Kubernetes, allowing engineers to easily deploy and manage Vault clusters\
+    \ for their applications.\n\nSecure, store and tightly control access to tokens,\
+    \ passwords, certificates, encryption keys for protecting secrets and other sensitive\
+    \ data using a UI, CLI, or HTTP API.\n\n### Reading and writing to Vault\n\nCommunicate\
+    \ with Vault through its command line utility `vault` via port forwarding:\n\n\
+    \    $ kubectl --namespace default port-forward service/vault 8200:8200\n    $\
+    \ export VAULT_TOKEN=$(kubectl get secrets vault-unseal-keys -o jsonpath={.data.vault-root}\
+    \ | base64 -D)\n    $ vault list secrets\n\nThe Vault-Operator helps to provision\
+    \ and manage Vault on top of Kubernetes with\nthe Bank-Vaults CLI tool which is\
+    \ a tool to help automate the setup and management of HashiCorp Vault.\n\nFeatures:\n\
+    \  - Initializes Vault and stores the root token and unseal keys in one of the\
+    \ followings\n    - AWS KMS keyring (backed by S3)\n    - Azure Key Vault\n  \
+    \  - Google Cloud KMS keyring (backed by GCS)\n    - Alibaba Cloud KMS (backed\
+    \ by OSS)\n    - Kubernetes Secrets (should be used only for development purposes)\n\
+    \    - Dev Mode (useful for vault server -dev dev mode Vault servers)\n    - Files\
+    \ (backed by files, should be used only for development purposes)\n  - Automatically\
+    \ unseals Vault with these keys\n  - Continuously configures Vault with a YAML/JSON\
+    \ based external configuration (besides the standard Vault configuration)\n  -\
+    \ If the configuration is updated Vault will be reconfigured\n  - It supports\
+    \ configuring Vault secret engines, plugins, auth methods, and policies, audit\
+    \ devices\n  - Direct secret injection into Pods via the vault-secrets-webhook\
+    \ (https://github.com/banzaicloud/bank-vaults#mutating-webhook)\n"
+  displayName: Vault Operator
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ny40MSAxMTQuNjQiPjx0aXRsZT5Bc3NldCAxPC90aXRsZT48ZyBpZD0iTGF5ZXJfMiIgZGF0YS1uYW1lPSJMYXllciAyIj48ZyBpZD0iTG9nbyI+PHBhdGggZD0iTTEwLjM5LDg5LjI3Vjg3LjE2SDguNDZ2Mi4xMWgtMVY4NC4xOWgxdjIuMTNoMS45NFY4NC4xOWgxdjUuMDhabTQuNjEsMGgtLjc4TDE0LjE1LDg5YTIuMTUsMi4xNSwwLDAsMS0xLjE0LjMyYy0uNywwLTEtLjQ2LTEtMS4wOXMuMzQtMSwxLjExLTFIMTR2LS4zOGMwLS40MS0uMTItLjU1LS43My0uNTVhNS41NSw1LjU1LDAsMCwwLTEuMDYuMTFsLS4xMi0uN2E1LjE4LDUuMTgsMCwwLDEsMS4zMS0uMTdjMS4yLDAsMS41NS40MSwxLjU1LDEuMzJabS0xLTEuMzhoLS43MWMtLjMxLDAtLjQuMDgtLjQuMzZzLjA5LjM3LjM4LjM3YTEuNTUsMS41NSwwLDAsMCwuNzItLjE5Wm0zLDEuNDZhNC42Nyw0LjY3LDAsMCwxLTEuMzItLjIxbC4xMy0uN2E0LjQ0LDQuNDQsMCwwLDAsMS4xNC4xNmMuNDIsMCwuNDktLjA5LjQ5LS4zN3MwLS4zNC0uNjctLjQ4Yy0uOTMtLjIyLTEtLjQ0LTEtMS4xNXMuMzQtMS4wNiwxLjQzLTEuMDZhNS4yMiw1LjIyLDAsMCwxLDEuMTQuMTNsLS4wOS43M2E3LDcsMCwwLDAtMS4wNS0uMTFjLS40MiwwLS40OS4wOS0uNDkuMzJzMCwuMzIuNTQuNDRjMS4wNy4yNywxLjE3LjQxLDEuMTcsMS4xNlMxOC4xNiw4OS4zNSwxNyw4OS4zNVptNC4zOC0uMDhWODYuNzFjMC0uMi0uMDktLjI5LS4zMS0uMjlhMi43MiwyLjcyLDAsMCwwLTEsLjMxdjIuNTRoLTFWODQuMTJsMSwuMTR2MS42MmEzLjQ4LDMuNDgsMCwwLDEsMS40LS4zNWMuNjMsMCwuODYuNDMuODYsMS4wOHYyLjY2Wm0xLjc2LTQuMTh2LS45aDF2LjlabTAsNC4xOFY4NS42MWgxdjMuNjdabTEuNzItMy42M2MwLS45Mi41Ni0xLjQ1LDEuODYtMS40NWE2LjE0LDYuMTQsMCwwLDEsMS40Mi4xN2wtLjExLjgyQTgsOCwwLDAsMCwyNi43NSw4NWMtLjY4LDAtLjkuMjMtLjkuNzZ2MS45M2MwLC41My4yMi43Ni45Ljc2QTgsOCwwLDAsMCwyOCw4OC4zNmwuMTEuODJhNi4xNCw2LjE0LDAsMCwxLTEuNDIuMTdjLTEuMywwLTEuODYtLjUzLTEuODYtMS40NVptNS4zOSwzLjcxYy0xLjMxLDAtMS42Ni0uNjktMS42Ni0xLjQ0Vjg3YzAtLjc1LjM1LTEuNDQsMS42Ni0xLjQ0czEuNjYuNjksMS42NiwxLjQ0di45M0MzMS45MSw4OC42NSwzMS41Niw4OS4zNSwzMC4yNSw4OS4zNVptMC0zYy0uNTEsMC0uNzEuMjItLjcxLjYzdjFjMCwuNDEuMi42My43MS42M3MuNzEtLjIyLjcxLS42M3YtMUMzMSw4Ni41MywzMC43Niw4Ni4zMSwzMC4yNSw4Ni4zMVptNC4zNS4wNmE3LjU4LDcuNTgsMCwwLDAtMSwuNTN2Mi4zNmgtMVY4NS42MWguODFsLjA2LjQxYTQuMzUsNC4zNSwwLDAsMSwxLS40OFptMy44MiwxLjY4YTEuMTMsMS4xMywwLDAsMS0xLjI2LDEuMjksNS40OCw1LjQ4LDAsMCwxLTEtLjExdjEuNWwtMSwuMTRWODUuNjFoLjc2bC4wOS4zMWEyLjA2LDIuMDYsMCwwLDEsMS4yMS0uMzhjLjc3LDAsMS4xOC40NCwxLjE4LDEuMjdabS0yLjI4LjQxYTQuNDEsNC40MSwwLDAsMCwuODUuMWMuMzQsMCwuNDgtLjE2LjQ4LS40OVY4Ni43OGMwLS4zLS4xMi0uNDctLjQ3LS40N2ExLjM4LDEuMzgsMCwwLDAtLjg1LjMzWiIvPjxwYXRoIGQ9Ik0yMS43Myw5My4zNmg0LjEybC02LjI2LDIxSDEzLjczbC02LjI2LTIxaDQuMTJsNS4wNywxNy40N1oiLz48cGF0aCBkPSJNMzcuMzEsMTE0LjMySDM0LjE2bC0uMjgtMWE4LjM4LDguMzgsMCwwLDEtNC41NiwxLjM1Yy0yLjgsMC00LTEuOTItNC00LjU2LDAtMy4xMiwxLjM1LTQuMzEsNC40Ny00LjMxaDMuNjh2LTEuNjFjMC0xLjctLjQ3LTIuMy0yLjkzLTIuM2EyMS40MiwyMS40MiwwLDAsMC00LjI1LjQ3bC0uNDctMi45M2EyMCwyMCwwLDAsMSw1LjI2LS43MmM0LjgyLDAsNi4yMywxLjcsNi4yMyw1LjU0Wm0tMy44NC01Ljc5SDMwLjYzYy0xLjI2LDAtMS42MS4zNS0xLjYxLDEuNTFzLjM1LDEuNTQsMS41NCwxLjU0YTYsNiwwLDAsMCwyLjktLjc5WiIvPjxwYXRoIGQ9Ik00My4zNSw5OXYxMC43YzAsLjgyLjM1LDEuMjMsMS4yMywxLjIzYTEwLjU5LDEwLjU5LDAsMCwwLDQtMS4yOVY5OWgzLjg0djE1LjMzSDQ5LjQ5TDQ5LjExLDExM0ExNS4zNSwxNS4zNSwwLDAsMSw0MywxMTQuNjRjLTIuNTUsMC0zLjQ2LTEuNzktMy40Ni00LjUzVjk5WiIvPjxwYXRoIGQ9Ik01NC40NiwxMTQuMzJWOTIuNzNsMy44NC0uNTN2MjIuMTNaIi8+PHBhdGggZD0iTTY5Ljc2LDExNGExMC42NCwxMC42NCwwLDAsMS0zLjM3LjZjLTIuOCwwLTQuMjItMS4zMi00LjIyLTQuMDZWMTAyaC0yLjNWOTloMi4zVjk1LjE5TDY2LDk0LjY1Vjk5aDMuOTNMNjkuNjksMTAySDY2djhhMS4yMSwxLjIxLDAsMCwwLDEuMzgsMS4zNSw3LjM5LDcuMzksMCwwLDAsMS45Mi0uMzFaIi8+PHBhdGggZD0iTTAsMCwzOC41Nyw3Ny40MSw3Ny40MSwwWk00My4xNiwxNS41NGg0LjQ5VjIwSDQzLjE2Wm0tOC45NCwxOEgyOS43M1YyOWg0LjQ5Wm0wLTYuNzNIMjkuNzNWMjIuMjdoNC40OVptMC02LjczSDI5LjczVjE1LjU0aDQuNDlaTTQxLDQwLjIySDM2LjQ2VjM1LjczSDQxWm0wLTYuNzNIMzYuNDZWMjlINDFabTAtNi43M0gzNi40NlYyMi4yN0g0MVpNNDEsMjBIMzYuNDZWMTUuNTRINDFabTIuMjEsMi4yNGg0LjQ5djQuNDlINDMuMTZabTAsMTEuMjJWMjloNC40OXY0LjQ5WiIvPjwvZz48L2c+PC9zdmc+
+    mediatype: image/svg+xml
+  install:
+    spec:
+      deployments:
+      - name: vault-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: vault-operator-alm-owned
+          template:
+            metadata:
+              labels:
+                name: vault-operator-alm-owned
+              name: vault-operator-alm-owned
+            spec:
+              containers:
+              - command:
+                - vault-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: vault-operator
+                image: banzaicloud/vault-operator:latest
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  failureThreshold: 1
+                  httpGet:
+                    path: /
+                    port: 8080
+                  initialDelaySeconds: 4
+                  periodSeconds: 10
+                name: vault-operator
+                ports:
+                - containerPort: 9091
+                  name: metrics
+                readinessProbe:
+                  failureThreshold: 1
+                  httpGet:
+                    path: /ready
+                    port: 8080
+                  initialDelaySeconds: 4
+                  periodSeconds: 10
+              serviceAccountName: vault-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - vault.banzaicloud.com
+          resources:
+          - vaults
+          - vaults/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - extensions
+          resources:
+          - ingresses
+          verbs:
+          - get
+          - create
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - statefulsets
+          verbs:
+          - get
+          - create
+          - update
+          - list
+        serviceAccountName: vault-operator
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          verbs:
+          - '*'
+        serviceAccountName: vault
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - vault
+  - secrets
+  - security
+  - banzaicloud
+  - open source
+  labels:
+    alm-owner-vault: vaultoperator
+    operated-by: vaultoperator
+  links:
+  - name: Blog
+    url: https://banzaicloud.com/tags/vault
+  - name: Documentation
+    url: https://github.com/banzaicloud/bank-vaults/blob/master/README.md
+  - name: Vault Operator Source Code
+    url: https://github.com/banzaicloud/bank-vaults/tree/master/operator
+  maintainers:
+  - email: info@banzaicloud.com
+    name: Banzai Cloud
+  maturity: alpha
+  provider:
+    name: Banzai Cloud
+  selector:
+    matchLabels:
+      alm-owner-vault: vaultoperator
+      operated-by: vaultoperator
+  version: 0.4.10

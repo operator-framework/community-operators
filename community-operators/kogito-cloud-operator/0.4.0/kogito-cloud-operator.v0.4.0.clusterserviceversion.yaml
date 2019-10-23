@@ -1,0 +1,252 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"app.kiegroup.org/v1alpha1","kind":"KogitoApp","metadata":{"name":"example-quarkus"},"spec":{"build":{"gitSource":{"contextDir":"jbpm-quarkus-example","uri":"https://github.com/kiegroup/kogito-examples"}}}},{"apiVersion":"app.kiegroup.org/v1alpha1","kind":"KogitoDataIndex","metadata":{"name":"kogito-data-index"},"spec":{"cpuLimit":"","cpuRequest":"","env":{},"image":"quay.io/kiegroup/kogito-data-index:latest","infinispan":{"serviceURI":"infinispan-server:11222"},"kafka":{"serviceURI":"my-cluster-kafka-bootstrap:9092"},"memoryLimit":"","memoryRequest":"","name":"kogito-data-index","replicas":1}}]'
+    capabilities: Basic Install
+    categories: Integration & Delivery
+    certified: 'false'
+    containerImage: quay.io/kiegroup/kogito-cloud-operator:0.4.0
+    createdAt: '2019-08-22T13:12:22Z'
+    description: Kogito Cloud Operator for deployment and management of Kogito Services.
+    repository: https://github.com/kiegroup/kogito-cloud-operator
+    support: Red Hat, Inc.
+    tectonic-visibility: ocs
+  labels:
+    operator-kogitocloud: 'true'
+  name: kogito-cloud-operator.v0.4.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: A project prescription running a Kogito Runtime Service.
+      displayName: Kogito Service
+      kind: KogitoApp
+      name: kogitoapps.app.kiegroup.org
+      resources:
+      - kind: DeploymentConfig
+        name: ''
+        version: apps.openshift.io/v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: Route
+        name: ''
+        version: route.openshift.io/v1
+      - kind: BuildConfig
+        name: ''
+        version: build.openshift.io/v1
+      specDescriptors:
+      - description: Runtime
+        displayName: Runtime
+        path: runtime
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      statusDescriptors:
+      - description: Deployments for the KogitoApp environment.
+        displayName: Deployments
+        path: deployments
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podStatuses
+      - description: The address for accessing kogito service, if it is deployed.
+        displayName: Route
+        path: route
+        x-descriptors:
+        - urn:alm:descriptor:org.w3:link
+      version: v1alpha1
+    - description: The Kogito Data Index Service infrastructure deployment. See more
+        at https://github.com/kiegroup/kogito-runtimes/wiki/Data-Index-Service
+      displayName: Kogito Data Index
+      kind: KogitoDataIndex
+      name: kogitodataindices.app.kiegroup.org
+      resources:
+      - kind: StatefulSet
+        name: ''
+        version: v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: Route
+        name: ''
+        version: route.openshift.io/v1
+      - kind: ConfigMap
+        name: ''
+        version: v1
+      specDescriptors:
+      - description: The number of pod replicas that the Data Index Service will spin
+        displayName: Replicas
+        path: replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: The image used to by the Data Index Service
+        displayName: Image
+        path: image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The Infinispan Service URI used by the Data Index Service
+        displayName: Infinispan Service URI
+        path: infinispan.serviceURI
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The Kafka Cluster Service URI used by the Data Index Service
+        displayName: Kafka Service URI
+        path: kafka.serviceURI
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      statusDescriptors:
+      - description: The address for accessing data index service, if it is deployed.
+        displayName: Route
+        path: route
+        x-descriptors:
+        - urn:alm:descriptor:org.w3:link
+      version: v1alpha1
+  description: 'Kogito Operator is designed to deploy Kogito Runtimes Services from
+    source and every piece of infrastructure that the services might need:
+
+
+    * Creates two kinds of build configuration: Native or JVM. For more information
+    refer to [Native X JVM Builds](https://github.com/kiegroup/kogito-cloud-operator#native-x-jvm-builds)
+    on our docs
+
+    * Builds a Kogito Runtime Service from a remote git repository and creates a custom
+    image for the given runtime: Quarkus or Springboot. [See more](https://github.com/kiegroup/kogito-cloud-operator#trigger-a-kogito-runtime-service-deployment).
+
+    * Installs the [Kogito Data Index Service](https://github.com/kiegroup/kogito-runtimes/wiki/Data-Index-Service)
+    to enable data index feature for Kogito Runtimes. [See more](https://github.com/kiegroup/kogito-cloud-operator#install-data-index-service).'
+  displayName: Kogito Cloud Operator
+  icon:
+  - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojMDg1ODcwO30uY2xzLTJ7ZmlsbDojZmZmO30uY2xzLTN7ZmlsbDojZjU4OTFmO30uY2xzLTR7ZmlsbDojOTdkNGU4O308L3N0eWxlPjwvZGVmcz48dGl0bGU+a29naXRvX2ljb25fcmdiX2NvbG9yX2RlZmF1bHQ8L3RpdGxlPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTkyOS4zNywzMC41QTcwLjMxLDcwLjMxLDAsMCwwLDg3Mi4xOSwxQzg2OC4wOSwxLDczOCwyMy42Nyw3MzgsMjMuNjdhNzAuMTUsNzAuMTUsMCwwLDAtNDguMSwzMy4yNUw2NjgsOTMuNzdjLTQ4LjQxLTQyLjQ2LTEwMS43NC02NC43LTE1Ni02NC43UzQwNC40Myw1MS4zMSwzNTYsOTMuNzdMMzM0LjExLDU2LjkyQTcwLjEzLDcwLjEzLDAsMCwwLDI4NiwyMy42N1MxNTUuOSwxLDE1MS44MSwxQTcwLjE5LDcwLjE5LDAsMCwwLDkwLjU0LDEwNS40MWw1MC4yNCw5MGExMTUuMTIsMTE1LjEyLDAsMCwwLDYwLjMsMTY5LjlMMTA4LjMsNzk0LjYsNTEyLDEwMjMsOTE1LjcsNzk0LjYsODIyLjkyLDM2NS4yN2ExMTUuMTIsMTE1LjEyLDAsMCwwLDYwLjMtMTY5LjlsNTAuMjQtOTBBNzAuNDksNzAuNDksMCwwLDAsOTI5LjM3LDMwLjVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNNDgwLjA5LDI3OC4zbDguNTctLjA5TDUxMiwzMDEuNGwyMy4xOS0yMy4xOSw4LjYuMDhjNjMuMjMuNjMsMTIzLjgyLDMuMTQsMTc2LjI4LDcuMjctNDUuOTQtOTkuNDktMTIyLTE4Ni4zLTIwOC0xODYuM1MzNDkuOSwxODYuMDcsMzA0LDI4NS41N0MzNTYuMzksMjgxLjQ0LDQxNi45NCwyNzguOTIsNDgwLjA5LDI3OC4zWiIvPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTQ0OC43LDY5Ni4xNmExMTYuMzYsMTE2LjM2LDAsMCwwLDEzMS4xNy41MSw1ODEuNDcsNTgxLjQ3LDAsMCwwLTEzMS4xNy0uNTFaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNNjkxLjU3LDY3OS43M2ExODUuNDQsMTg1LjQ0LDAsMCwwLTE3LjI3LTQxLjQ3Yy0xLjIxLTIuMTItMi41LTQuMTgtMy43OC02LjI0LS43My0xLjE5LTEuNDMtMi40MS0yLjE5LTMuNTgtMS4yLTEuODUtMi40OS0zLjYzLTMuNzUtNS40My0uOTQtMS4zNC0xLjg1LTIuNzEtMi44Mi00LTEuMTItMS41MS0yLjMyLTMtMy40OC00LjQzcy0yLjM4LTMuMDgtMy42NC00LjU3Yy0xLTEuMTgtMi0yLjI5LTMtMy40NEExODYuNjksMTg2LjY5LDAsMCwwLDU3MC43Myw1NTNjLTE3LjI1LDExLjU2LTM5LDIyLjY5LTU4LjczLDIyLjY5UzQ3MC41Miw1NjQuNTcsNDUzLjI3LDU1M2ExODYuNTksMTg2LjU5LDAsMCwwLTgwLjkxLDUzLjZjLTEsMS4xMy0yLDIuMjItMywzLjM3LTEuMjYsMS41LTIuNDQsMy4wNi0zLjY2LDQuNnMtMi4zNCwyLjkxLTMuNDYsNC40MWMtMSwxLjMyLTEuODgsMi42OS0yLjgzLDQtMS4yNiwxLjc5LTIuNTQsMy41Ni0zLjczLDUuNC0uNzcsMS4xOS0xLjQ4LDIuNDItMi4yMiwzLjYyLTEuMjcsMi4wNS0yLjU2LDQuMS0zLjc1LDYuMjFhMTg1LDE4NSwwLDAsMC0xNy4yOCw0MS40N2MxMi44NC00LjQsMjYuNDMtOC4yMyw0MC40Ni0xMS42NywwLDAtLjA1LS4wOS0uMDctLjE0LDEuNDUtLjM1LDIuOTUtLjY2LDQuNDEtMWwxNi45NS00Ny4yNnY0My41MWMxLS4yLDItLjM0LDMtLjU0cTkuNDQtMS44NSwxOS4xNC0zLjM5Yy43OS0uMTMsMS41Ny0uMjcsMi4zNi0uMzlxMTEuNzQtMS44MywyMy44Ni0zLjJsMTMuODctNTUuNTF2NTQuMDljOC41Ni0uNzcsMTcuMjYtMS4zMSwyNi0xLjcybDMuOTItLjE3YzMuMjctLjEzLDYuNTMtLjI3LDkuODMtLjM1LDUuMjMtLjE0LDEwLjUtLjIzLDE1LjgtLjIzLDUuNDksMCwxMC45My4xLDE2LjM0LjI1LDIuOS4wOCw1Ljc5LjE5LDguNjcuMzFsNS43NS4yNmM4LjM2LjQxLDE2LjY2Ljk0LDI0LjgyLDEuNjhWNjAwLjEzbDEzLjg4LDU1LjUzYy41NS4wNiwxLjA5LjE1LDEuNjUuMjIsNy4zLjg1LDE0LjU0LDEuNzksMjEuNjUsMi44OSwyLjczLjQxLDUuMzguOTIsOC4wOCwxLjM3LDMuOTUuNjgsNy45LDEuMzUsMTEuNzgsMi4xLDEuNzIuMzIsMy41LjU4LDUuMi45MlY2MTkuNjVsMTcsNDcuMjljMS4yMy4yOSwyLjQuNjQsMy42Mi45NCwxLjg0LjQ1LDMuNzIuODYsNS41NCwxLjMybC0uMDYuMUM2NjguMTksNjcyLjQ0LDY4MC4yMSw2NzUuODMsNjkxLjU3LDY3OS43M1oiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik03MzcuNTcsMzI4LjA3bC0xMC0uODRjLTUxLjU2LTQuMzgtMTEyLjEzLTcuMS0xNzUuNjctNy45TDUxMiwzNTkuMjRsLTQwLjA5LTM5LjkxYy02My40OC44MS0xMjQsMy41My0xNzUuNTQsNy45bC0xMCwuODVDMjY4LjI3LDM3Ny44MiwyNTgsNDI4LjExLDI1OCw0NzAuMjRjMCw2OS45NCwyOC4zMSwxMDQuMTYsNzQsMTIwLjkzQTIyOS40OCwyMjkuNDgsMCwwLDEsNDE4LjI4LDUyM2EyMC40MywyMC40MywwLDAsMSwzMi4xNi0yNC4xNmMxNi4xMiwxNC45LDQ1Ljg5LDM1LjkxLDYxLjU2LDM1LjkxczQ1Ljk0LTIxLjQzLDYxLjU1LTM1LjkxQTIwLjQzLDIwLjQzLDAsMCwxLDYwNS43Miw1MjMsMjI5LjY1LDIyOS42NSwwLDAsMSw2OTIsNTkxLjE3YzQ1Ljc0LTE2Ljc3LDc0LTUxLDc0LTEyMC45M0M3NjYsNDI4LjExLDc1NS43MywzNzcuODIsNzM3LjU3LDMyOC4wN1pNNDAzLjUsNDYyLjc3Yy0yOS4zMS42Ni01Ni0xNi4yLTc0LjgyLTQzLjUxLDE3LjUzLTI4LjEzLDQzLjQ3LTQ2LjE3LDcyLjc4LTQ2LjgzczU2LDE2LjE5LDc0LjgyLDQzLjUxQzQ1OC43NSw0NDQuMDcsNDMyLjgxLDQ2Mi4xMSw0MDMuNSw0NjIuNzdabTI5MS44Mi0xMy4xOC0zMiwzMi0zMi0zMi0zMiwzMi0zMi0zMiwzMi0zMi0zMi0zMiwzMi0zMiwzMiwzMiwzMi0zMiwzMiwzMi0zMiwzMloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik02MDguMjMsNzk3bDE5LjkxLDc5LjY3LDc2LjMyLTQzLjE4Vjc0NWwxOS4zOCw3Ny41MywxMTIuMzUtNjMuNTZMNzkxLjUyLDU1Mi4yN2MtMTQuOTQsMzMuOTItNDAuNjgsNTguNzctNzcuMiw3NC4xMkEyMjUuMTQsMjI1LjE0LDAsMCwxLDczMSw2NjguNzFhNDAuOTQsNDAuOTQsMCwwLDEtNTIuNzIsNDkuNzUsNDM4LjI3LDQzOC4yNywwLDAsMC00Ni43My0xMywxNTcuMDcsMTU3LjA3LDAsMCwxLTIzNC42LTEsNDQzLjg2LDQ0My44NiwwLDAsMC01MS4yMywxNEE0MC45NCw0MC45NCwwLDAsMSwyOTMsNjY4LjcxYTIyNC44NiwyMjQuODYsMCwwLDEsMTYuNjktNDIuMzNjLTM2LjUzLTE1LjM0LTYyLjI3LTQwLjItNzcuMjEtNzQuMTFMMTg3LjgxLDc1OC45NCwzMDAuMTYsODIyLjUsMzE5LjU0LDc0NXY4OC41bDc2LjMyLDQzLjE4TDQxNS43Nyw3OTd2OTAuOTNMNTEyLDk0Mi4zNmw5Ni4yMy01NC40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yNTMuOTEsMjk4LjQzYTU4MC4wNiw1ODAuMDYsMCwwLDEsNDMuNTUtODcuNjRxMTEuOTMtMTkuNTEsMjQuNjktMzYuNjRMMjczLjc4LDkyLjc5bC0xMjItMjEuNiw3OC43NiwxNDEsLjA2LjA3YTQ0LjgxLDQ0LjgxLDAsMSwwLDIzLjI3LDg2LjEzWiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTc5My4zNSwyMTIuM2wuMDctLjA3LDc4Ljc2LTE0MS0xMjIsMjEuNi00OC4zNyw4MS4zNnExMi43MiwxNy4xNywyNC42OSwzNi42NGE1ODAuMDYsNTgwLjA2LDAsMCwxLDQzLjU1LDg3LjY0LDQ0LjgsNDQuOCwwLDEsMCwyMy4yNi04Ni4xM1oiLz48L3N2Zz4=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      deployments:
+      - name: kogito-cloud-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: kogito-cloud-operator
+          strategy:
+            type: Recreate
+          template:
+            metadata:
+              labels:
+                name: kogito-cloud-operator
+            spec:
+              containers:
+              - command:
+                - kogito-cloud-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.labels['name']
+                - name: DEBUG
+                  value: 'false'
+                image: quay.io/kiegroup/kogito-cloud-operator:0.4.0
+                imagePullPolicy: Always
+                name: kogito-cloud-operator
+                resources: {}
+              serviceAccountName: kogito-cloud-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ''
+          - app.kiegroup.org
+          - apps.openshift.io
+          - image.openshift.io
+          - build.openshift.io
+          - rbac.authorization.k8s.io
+          - route.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          - deployments
+          - replicasets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - kogito-cloud-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        serviceAccountName: kogito-cloud-operator
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - services
+          verbs:
+          - list
+          - get
+          - watch
+        serviceAccountName: kogito-service-viewer
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - cloud
+  - kogito
+  - quarkus
+  - springboot
+  - operator
+  - native
+  - automation
+  labels:
+    alm-owner-kogitocloud: kogitocloud-operator
+    operated-by: kogitocloud-operator.0.4.0
+  links:
+  - name: Product Page
+    url: https://kogito.kie.org/
+  - name: Documentation
+    url: https://github.com/kiegroup/kogito-cloud-operator/blob/master/README.md
+  - name: Source
+    url: https://github.com/kiegroup/kogito-cloud-operator/
+  maintainers:
+  - email: bsig-cloud@redhat.com
+    name: Red Hat, Inc.
+  maturity: alpha
+  provider:
+    name: Red Hat, Inc.
+  selector:
+    matchLabels:
+      alm-owner-kogitocloud: kogitocloud-operator
+      operated-by: kogitocloud-operator.0.4.0
+  version: 0.4.0

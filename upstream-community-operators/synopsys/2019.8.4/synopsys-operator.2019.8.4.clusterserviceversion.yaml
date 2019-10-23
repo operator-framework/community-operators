@@ -1,0 +1,677 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"synopsys.com/v1\",\n    \"kind\"\
+      : \"OpsSight\",\n    \"metadata\": {\n      \"name\": \"ops\"\n    },\n    \"\
+      spec\": {\n      \"namespace\": \"opssight-test\",\n      \"perceptor\": {\n\
+      \        \"name\": \"opssight-core\",\n        \"port\": 3001,\n        \"image\"\
+      : \"docker.io/blackducksoftware/opssight-core:latest\",\n        \"checkForStalledScansPauseHours\"\
+      : 999999,\n        \"stalledScanClientTimeoutHours\": 999999,\n        \"modelMetricsPauseSeconds\"\
+      : 15,\n        \"unknownImagePauseMilliseconds\": 15000,\n        \"clientTimeoutMilliseconds\"\
+      : 100000,\n        \"expose\": \"NONE\"\n      },\n      \"scannerPod\": {\n\
+      \        \"name\": \"opssight-scanner\",\n        \"scanner\": {\n         \
+      \ \"name\": \"opssight-scanner\",\n          \"port\": 3003,\n          \"image\"\
+      : \"docker.io/blackducksoftware/opssight-scanner:latest\",\n          \"clientTimeoutSeconds\"\
+      : 600\n        },\n        \"imageFacade\": {\n          \"name\": \"opssight-image-getter\"\
+      ,\n          \"port\": 3004,\n          \"internalRegistries\": [],\n      \
+      \    \"image\": \"docker.io/blackducksoftware/opssight-image-getter:latest\"\
+      ,\n          \"serviceAccount\": \"opssight-scanner\",\n          \"imagePullerType\"\
+      : \"skopeo\"\n        },\n        \"replicaCount\": 1\n      },\n      \"perceiver\"\
+      : {\n        \"enableImagePerceiver\": false,\n        \"enablePodPerceiver\"\
+      : true,\n        \"port\": 3002,\n        \"imagePerceiver\": {\n          \"\
+      name\": \"opssight-image-processor\",\n          \"image\": \"docker.io/blackducksoftware/opssight-image-processor:latest\"\
+      \n        },\n        \"podPerceiver\": {\n          \"name\": \"opssight-pod-processor\"\
+      ,\n          \"image\": \"docker.io/blackducksoftware/opssight-pod-processor:latest\"\
+      \n        },\n        \"serviceAccount\": \"opssight-processor\",\n        \"\
+      annotationIntervalSeconds\": 30,\n        \"dumpIntervalMinutes\": 30\n    \
+      \  },\n      \"prometheus\": {\n        \"name\": \"prometheus\",\n        \"\
+      port\": 9090,\n        \"image\": \"docker.io/prom/prometheus:v2.1.0\",\n  \
+      \      \"expose\": \"NONE\"\n      },\n      \"enableSkyfire\": false,\n   \
+      \   \"skyfire\": {\n        \"image\": \"gcr.io/saas-hub-stg/blackducksoftware/pyfire:master\"\
+      ,\n        \"name\": \"skyfire\",\n        \"port\": 3005,\n        \"prometheusPort\"\
+      : 3006,\n        \"serviceAccount\": \"skyfire\",\n        \"hubClientTimeoutSeconds\"\
+      : 120,\n        \"hubDumpPauseSeconds\": 240,\n        \"kubeDumpIntervalSeconds\"\
+      : 60,\n        \"perceptorDumpIntervalSeconds\": 60\n      },\n      \"enableMetrics\"\
+      : true,\n      \"defaultCPU\": \"300m\",\n      \"defaultMem\": \"1300Mi\",\n\
+      \      \"scannerCPU\": \"300m\",\n      \"scannerMem\": \"1300Mi\",\n      \"\
+      logLevel\": \"debug\",\n      \"configMapName\": \"blackduck\",\n      \"secretName\"\
+      : \"blackduck\",\n      \"blackduck\": {\n        \"connectionsEnvironmentVariableName\"\
+      : \"blackduck.json\",\n        \"blackduckPassword\": \"<COMMON_BLACKDUCK_PWD_OPSSIGHT_TYPE_BASE64_ENCODED>\"\
+      ,\n        \"tlsVerification\": false,\n        \"initialCount\": 0,\n     \
+      \   \"maxCount\": 0,\n        \"blackduckSpec\": {\n          \"namespace\"\
+      : \"\",\n          \"type\": \"opssight\",\n          \"size\": \"small\",\n\
+      \          \"version\": \"2019.8.1\",\n          \"exposeService\": \"NONE\"\
+      ,\n          \"livenessProbes\": false,\n          \"persistentStorage\": false,\n\
+      \          \"certificateName\": \"default\",\n          \"licenseKey\": \"<BLACKDUCK_LICENSE_KEY>\"\
+      \n        }\n      }\n    }\n  },\n  {\n    \"apiVersion\": \"synopsys.com/v1\"\
+      ,\n    \"kind\": \"Blackduck\",\n    \"metadata\": {\n      \"name\": \"bd\"\
+      \n    },\n    \"spec\": {\n      \"namespace\": \"blackduck-ephemeral\",\n \
+      \     \"size\": \"Small\",\n      \"type\": \"opssight\",\n      \"version\"\
+      : \"2019.8.1\",\n      \"exposeService\": \"NONE\",\n      \"livenessProbes\"\
+      : false,\n      \"persistentStorage\": false,\n      \"licenseKey\": \"<BLACKDUCK_LICENSE_KEY>\"\
+      ,\n      \"certificateName\": \"default\",\n      \"adminPassword\": \"<POSTGRES_ADMIN_USER_PASSWORD_BASE64_ENCODED>\"\
+      ,\n      \"postgresPassword\": \"<POSTGRES_POSTGRES_USER_PASSWORD_BASE64_ENCODED>\"\
+      ,\n      \"userPassword\": \"<POSTGRES_BLACKDUCK_USER_PASSWORD_BASE64_ENCODED>\"\
+      \n    }\n  },\n  {\n    \"apiVersion\": \"synopsys.com/v1\",\n    \"kind\":\
+      \ \"Alert\",\n    \"metadata\": {\n      \"clusterName\": \"\",\n      \"name\"\
+      : \"alert-test\"\n    },\n    \"spec\": {\n      \"namespace\": \"alert-test\"\
+      ,\n      \"version\": \"5.0.0\",\n      \"exposeService\": \"\",\n      \"standAlone\"\
+      : true,\n      \"port\": 8443,\n      \"encryptionPassword\": \"\",\n      \"\
+      encryptionGlobalSalt\": \"\",\n      \"environs\": [ \"ALERT_SERVER_PORT:8443\"\
+      , \"PUBLIC_HUB_WEBSERVER_HOST:<<BLACK_DUCK_HOST>>\", \"PUBLIC_HUB_WEBSERVER_PORT:443\"\
+      \ ],\n      \"alertMemory\": \"2560Mi\",\n      \"cfsslMemory\": \"640Mi\",\n\
+      \      \"persistentStorage\": false,\n      \"pvcSize\": \"\",\n      \"pvcStorageClass\"\
+      : \"\"\n    }\n  }\n]"
+    capabilities: Full Lifecycle
+    categories: Security, Monitoring
+    certified: 'false'
+    containerImage: docker.io/blackducksoftware/synopsys-operator:2019.8.4
+    createdAt: 2019-07-22 17:09:00
+    description: Synopsys Operator is a cloud-native administration utility for Synopsys
+      software.
+    repository: https://github.com/blackducksoftware/synopsys-operator
+    support: Synopsys, Inc
+  name: synopsys-operator.2019.8.4
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Manages Black Duck instances
+      displayName: Black Duck
+      kind: Blackduck
+      name: blackducks.synopsys.com
+      resources:
+      - kind: NameSpace
+        name: ''
+        version: v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: ReplicationController
+        name: ''
+        version: v1
+      - kind: ConfigMap
+        name: ''
+        version: v1
+      - kind: Secret
+        name: ''
+        version: v1
+      - kind: ServiceAccount
+        name: ''
+        version: v1
+      - kind: PersistentVolumeClaim
+        name: ''
+        version: v1
+      specDescriptors:
+      - description: Namespace for the Black Duck Connector.
+        displayName: Namespace
+        path: namespace
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:namespaceSelector
+      - description: Black Duck Version.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Black Duck license key.
+        displayName: LicenseKey
+        path: licenseKey
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Size of the Black Duck instance in the cluster, either Small,
+          Medium, Large, X Large.
+        displayName: Size
+        path: size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Existing Black Duck database to clone into the new Black Duck
+          instance.
+        displayName: DbPrototype
+        path: dbPrototype
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Verifies that all Black Duck containers are running properly
+          and restarts them if they fail.
+        displayName: LivenessProbes
+        path: livenessProbes
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: If this Black Duck instance uses a persistent volume claim.
+        displayName: PersistentStorage
+        path: persistentStorage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Type of Black Duck instance, which indicates relationship with
+          OpsSight Connector.
+        displayName: Type
+        path: type
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Names and versions of the Black Duck container images.
+        displayName: ImageRegistries
+        path: imageRegistries
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: List of Environment variables to be in the Black Duck container.
+        displayName: Environs
+        path: environs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Controls which Black Duck services to expose outside the cluster.
+        displayName: ExposeService
+        path: exposeService
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Certificate Name
+        displayName: CertificateName
+        path: certificateName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Postgres Admin User Password
+        displayName: AdminPassword
+        path: adminPassword
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Postgres Postgres User Password
+        displayName: PostgresPassword
+        path: postgresPassword
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Postgres Black Duck User Password
+        displayName: UserPassword
+        path: userPassword
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      statusDescriptors:
+      - description: Externally Black Duck instance IP address, if known.
+        displayName: IP
+        path: ip
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podStatuses
+      - description: The state of the Black Duck instance.
+        displayName: State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podStatuses
+      - description: Current Error Message.
+        displayName: ErrorMessage
+        path: errorMessage
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1
+    - description: Manages the OpsSight Connector
+      displayName: OpsSight Connector
+      kind: OpsSight
+      name: opssights.synopsys.com
+      resources:
+      - kind: NameSpace
+        name: ''
+        version: v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: ReplicationController
+        name: ''
+        version: v1
+      - kind: ConfigMap
+        name: ''
+        version: v1
+      - kind: Secret
+        name: ''
+        version: v1
+      - kind: ServiceAccount
+        name: ''
+        version: v1
+      - kind: ClusterRole
+        name: ''
+        version: authorization.openshift.io/v1
+      - kind: ClusterRoleBinding
+        name: ''
+        version: authorization.openshift.io/v1
+      specDescriptors:
+      - description: Namespace for the OpsSight Connector.
+        displayName: Namespace
+        path: namespace
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:namespaceSelector
+      - -x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+        description: Enable Prometheus metrics. Default is true.
+        displayName: EnableMetrics
+        path: enableMetrics
+      - description: The default amount of CPU each container in a pod can request
+          on a node.
+        displayName: DefaultCPU
+        path: defaultCPU
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: The default amount of memory required for a container to run.
+        displayName: DefaultMem
+        path: defaultMem
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: The scanner amount of CPU each container in a pod can request
+          on a node.
+        displayName: ScannerCPU
+        path: scannerCPU
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: The scanner amount of memory required for a container to run.
+        displayName: DefaultMem
+        path: scannerMem
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: The loglevel of the log messages that are produced by each individual
+          OpsSight container.
+        displayName: LogLevel
+        path: logLevel
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Enable Skyfire testing
+        displayName: EnableSkyfire
+        path: enableSkyfire
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Skyfire object
+        displayName: Skyfire
+        path: skyfire
+      - description: Perceiver object which percieves cluster events
+        displayName: Perceiver
+        path: perceiver
+      - description: Perceptor object which is the core OpsSight container
+        displayName: Perceptor
+        path: perceptor
+      - description: ScannerPod object which contains the scanner and image getter
+          capabilities
+        displayName: ScannerPod
+        path: scannerPod
+      - description: Blackduck object which stores the Black Duck instance
+        displayName: Blackduck
+        path: blackduck
+      - description: Prometheus object which stores the prometheus info
+        displayName: Prometheus
+        path: prometheus
+      - description: Name of the configmap
+        displayName: ConfigMapName
+        path: configMapName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      statusDescriptors:
+      - description: The state of the OpsSight pods.
+        displayName: State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podStatuses
+      - description: Current Error Message within OpsSight.
+        displayName: ErrorMessage
+        path: errorMessage
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1
+    - description: Manages Black Duck Alert
+      displayName: Black Duck Alert
+      kind: Alert
+      name: alerts.synopsys.com
+      resources:
+      - kind: NameSpace
+        name: ''
+        version: v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: ReplicationController
+        name: ''
+        version: v1
+      - kind: ConfigMap
+        name: ''
+        version: v1
+      - kind: Secret
+        name: ''
+        version: v1
+      - kind: PersistentVolumeClaim
+        name: ''
+        version: v1
+      specDescriptors:
+      - description: Namespace for Black Duck Alert.
+        displayName: Namespace
+        path: namespace
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:namespaceSelector
+      - description: Alert Version.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Name of the Alert container image.
+        displayName: AlertImageName
+        path: alertImageName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Version of the Alert container image.
+        displayName: AlertImageVersion
+        path: alertImageVersion
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Alert Server Port
+        displayName: Port
+        path: port
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The default amount of memory required for a alert container to
+          run.
+        displayName: AlertMem
+        path: alertMem
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: The default amount of memory required for a cfssl container to
+          run.
+        displayName: CfsslMem
+        path: cfsslMem
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Is this a stand alone deployment or installed with Black Duck.
+        displayName: StandAlone
+        path: standAlone
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: List of Environment variables to be in the Alert container.
+        displayName: Environs
+        path: environs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      statusDescriptors:
+      - description: The state of Black Duck Alert.
+        displayName: State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podStatuses
+      - description: Current Error Message.
+        displayName: ErrorMessage
+        path: errorMessage
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1
+  description: "[Synopsys Operator](https://synopsys.atlassian.net/wiki/spaces/BDLM/pages/34373652/Synopsys+Operator)\
+    \ is a cloud-native administration utility for Synopsys software. Synopsys Operator\
+    \ assists in the deployment and management of Synopsys software like Black Duck,\
+    \ OpsSight Connector, and Black Duck Alert, in a Kubernetes and Red Hat OpenShift\
+    \ environment.\n\nThe Synopsys Operator deployment can be managed by a utility\
+    \ called [synopsysctl](https://github.com/blackducksoftware/synopsys-operator/releases).\
+    \ synopsysctl makes it easy to deploy Synopsys Operator, and it eliminates the\
+    \ need to edit YML/JSON configuration files when deploying and managing software\
+    \ with Synopsys Operator. Synopsysctl provides a rich set of command-line parameters\
+    \ to allow for fast and highly-configurable deployments of Black Duck, OpsSight\
+    \ Connector, and Black Duck Alert. synopsysctl\xE2\u20AC\u2122s interface mimics\
+    \ that of kubectl and oc, making it immediately familiar to anyone with Kubernetes\
+    \ and/or Red Hat OpenShift experience.\n\n## Black Duck\n[Black Duck](https://www.synopsys.com/software-integrity/security-testing/software-composition-analysis.html)\
+    \ is a comprehensive solution for managing security, license compliance, and code\
+    \ quality risks that come from the use of open source in applications and containers.\
+    \ Black Duck gives you unmatched visibility into third-party code, enabling you\
+    \ to control it across your software supply chain and throughout the application\
+    \ life cycle.\n\n### Supported Features\n\n* **Find and fix security vulnerabilities**\
+    \ at each stage in the SDLC, with detailed, vulnerability-specific remediation\
+    \ guidance and technical insight.\n\n* **Eliminate risk of open source license**\
+    \ noncompliance and safeguard your intellectual property by using the industry\xE2\
+    \u20AC\u2122s largest open source knowledge base to identify which of 2,500+ licenses\
+    \ are relevant to the open source in your applications.\n\n* **Scan virtually\
+    \ any software, firmware, and source code** to generate acomprehensive bill of\
+    \ materials (BoM) of what\xE2\u20AC\u2122s inside.\n\n* **Automatically monitor\
+    \ for new vulnerabilities** hat affect your BoM, with custom policies and workflow\
+    \ triggers to accelerate remediation and reduce your risk exposure.\n\n## OpsSight\
+    \ Connector\n[Synopsys Black Duck OpsSight](https://synopsys.atlassian.net/wiki/spaces/BDLM/pages/34242566/OpsSight)\
+    \ for Red Hat OpenShift Container Platform provides automated open source identification\
+    \ and monitoring in all container images in a Kubernetes or OpenShift cluster\
+    \ to give teams visibility into, and control over, the risks associated with open\
+    \ source components in those images.\n\n### Supported Features\n\n* **Automated\
+    \ Detection** - OpsSight\xE2\u20AC\u2122s automated multifactor open source detection\
+    \ inventories all the open source in container images as they are deployed.\n\n\
+    * **Security Intelligence** -  Black Duck Enhanced Vulnerability Data identifies\
+    \ all known vulnerabilities for the open source in your container images while\
+    \ actionable mitigation and remediation guidance helps minimize exploit risk.\n\
+    \n* **Policy Management** - OpsSight policy management allows teams to define\
+    \ open source use and security policies, which are evaluated with each scan and\
+    \ documented as metadata on your containers, allowing you to flag images that\
+    \ violate policies and prevent them from deploying to production.\n\n* **Continous\
+    \ Monitoring** - OpsSight continuously monitors for newly reported open source\
+    \ security vulnerabilities associated with open source in use, providing same-day\
+    \ alerts so teams can understand how newly discovered vulnerabilities affect their\
+    \ containers in production.\n\n## Black Duck Alert\nBlack Duck Alert is an additional\
+    \ deployment to Black Duck that enables you to see Security Vulnerability and\
+    \ Policy Management notifications through email, Slack or HipChat.\n\n## About\
+    \ Synopsys\n\n[Synopsys Software Integrity](https://www.synopsys.com/software-integrity.html)\
+    \ helps development teams build secure, high-quality software, minimizing risks\
+    \ while maximizing speed and productivity. Synopsys, a recognized leader in application\
+    \ security, provides static analysis, software composition analysis, and dynamic\
+    \ analysis solutions that enable teams to quickly find and fix vulnerabilities\
+    \ and defects in proprietary code, open source components, and application behavior."
+  displayName: Synopsys Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - deletecollection
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
+          - roles
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - deletecollection
+        - apiGroups:
+          - batch
+          - extensions
+          resources:
+          - jobs
+          - cronjobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - deletecollection
+        - apiGroups:
+          - extensions
+          - apps
+          resources:
+          - deployments
+          - deployments/scale
+          - deployments/rollback
+          - statefulsets
+          - statefulsets/scale
+          - replicasets
+          - replicasets/scale
+          - daemonsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - deletecollection
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          - configmaps
+          - persistentvolumeclaims
+          - services
+          - secrets
+          - replicationcontrollers
+          - replicationcontrollers/scale
+          - serviceaccounts
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - deletecollection
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - pods/log
+          - endpoints
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - ''
+          resources:
+          - pods/exec
+          verbs:
+          - create
+        - apiGroups:
+          - synopsys.com
+          resources:
+          - '*'
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+          - deletecollection
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - get
+          - list
+        serviceAccountName: synopsys-operator
+      deployments:
+      - name: synopsys-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: synopsys-operator
+              component: operator
+          template:
+            metadata:
+              labels:
+                app: synopsys-operator
+                component: operator
+            spec:
+              containers:
+              - command:
+                - ./operator
+                env:
+                - name: SEAL_KEY
+                  value: abcdefghijklmnopqrstuvwxyz01234
+                - name: SO_DRYRUN
+                  value: 'false'
+                - name: SO_LOGLEVEL
+                  value: debug
+                - name: SO_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: SO_THREADINESS
+                  value: '5'
+                - name: SO_POSTGRESRESTARTINMINS
+                  value: '10'
+                - name: SO_PODWAITTIMEOUTSECONDS
+                  value: '600'
+                - name: SO_RESYNCINTERVALINSECONDS
+                  value: '120'
+                - name: SO_TERMINATIONGRACEPERIODSECONDS
+                  value: '180'
+                - name: SO_OPERATORTIMEBOMBINSECONDS
+                  value: '315576000'
+                - name: SO_CRDNAMES
+                  value: alerts.synopsys.com,blackducks.synopsys.com,opssights.synopsys.com
+                - name: SO_ISCLUSTERSCOPED
+                  value: 'true'
+                image: docker.io/blackducksoftware/synopsys-operator:2019.8.4
+                imagePullPolicy: Always
+                name: synopsys-operator
+                ports:
+                - containerPort: 8080
+                  protocol: TCP
+              serviceAccountName: synopsys-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - security
+  - scanning
+  - monitoring
+  labels:
+    app: synopsys-operator
+    component: operator
+  links:
+  - name: Synopsys Integrity
+    url: https://www.synopsys.com/software-integrity.html
+  - name: Synopsys Operator Documentation
+    url: https://synopsys.atlassian.net/wiki/spaces/BDLM/pages/34373652/Synopsys+Operator
+  - name: synopsysctl download
+    url: https://github.com/blackducksoftware/synopsys-operator/releases
+  - name: Black Duck Datasheet
+    url: https://www.synopsys.com/content/dam/synopsys/sig-assets/datasheets/blackduck-sca-ds-ul.pdf
+  - name: OpsSight Data Sheet
+    url: https://www.synopsys.com/content/dam/synopsys/sig-assets/datasheets/openshift-ds-ul.pdf
+  - name: Black Duck Alert Documentation
+    url: https://synopsys.atlassian.net/wiki/spaces/INTDOCS/pages/622882/Black+Duck+Alert
+  maintainers:
+  - email: software-integrity-support@synopsys.com
+    name: Synopsys, Inc
+  maturity: stable
+  minKubeVersion: 1.11.0
+  provider:
+    name: Synopsys, Inc
+  selector:
+    matchLabels:
+      app: synopsys-operator
+      component: operator
+  version: 2019.8.4

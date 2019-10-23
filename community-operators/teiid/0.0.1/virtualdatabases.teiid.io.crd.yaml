@@ -1,0 +1,158 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: virtualdatabases.teiid.io
+spec:
+  group: teiid.io
+  names:
+    kind: VirtualDatabase
+    listKind: VirtualDatabaseList
+    plural: virtualdatabases
+    shortNames:
+    - vdb
+    - vdbs
+    singular: virtualdatabase
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            build:
+              properties:
+                env:
+                  items:
+                    oneOf:
+                    - required:
+                      - value
+                    - required:
+                      - valueFrom
+                    properties:
+                      name:
+                        description: Name of an environment variable
+                        type: string
+                      value:
+                        description: Value for that environment variable
+                        type: string
+                      valueFrom:
+                        description: Source for the environment variable's value
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  type: array
+                git:
+                  properties:
+                    contextDir:
+                      description: Context/subdirectory where the code is located,
+                        relatively to repo root
+                      type: string
+                    reference:
+                      description: Branch to use in the git repository
+                      type: string
+                    uri:
+                      description: Git URI for the s2i source
+                      type: string
+                  type: object
+                incremental:
+                  type: boolean
+                source:
+                  properties:
+                    ddl:
+                      description: Virtual database in DDL as string
+                      type: string
+                    dependencies:
+                      description: Maven dependencies required for build
+                      items:
+                        description: maven dependency in GAV format
+                        type: string
+                      minItems: 0
+                      type: array
+                  type: object
+                webhooks:
+                  items:
+                    description: WebHook secrets for build configs
+                    properties:
+                      secret:
+                        description: Secret value for webhook
+                        type: string
+                      type:
+                        description: WebHook type, either GitHub or Generic
+                        enum:
+                        - GitHub
+                        - Generic
+                        type: string
+                    required:
+                    - type
+                    - secret
+                    type: object
+                  minItems: 1
+                  type: array
+              type: object
+            env:
+              items:
+                oneOf:
+                - required:
+                  - value
+                - required:
+                  - valueFrom
+                properties:
+                  name:
+                    description: Name of an environment variable
+                    type: string
+                  value:
+                    description: Value for that environment variable
+                    type: string
+                  valueFrom:
+                    description: Source for the environment variable's value
+                    type: object
+                required:
+                - name
+                type: object
+              type: array
+            exposeVia3scale:
+              type: bool
+            replicas:
+              format: int32
+              type: integer
+            resources:
+              properties:
+                limits:
+                  type: object
+                requests:
+                  type: object
+              type: object
+            runtime:
+              description: The name of the runtime used, defaults to springboot
+              properties:
+                type:
+                  description: type of runtime
+                  type: string
+                version:
+                  description: version of the runtime
+                  type: string
+              type: object
+          required:
+          - build
+          type: object
+        status:
+          type: object
+      required:
+      - spec
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

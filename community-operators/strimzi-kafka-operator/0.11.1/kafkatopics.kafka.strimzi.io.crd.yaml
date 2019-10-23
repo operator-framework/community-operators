@@ -1,0 +1,75 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    app: strimzi
+  name: kafkatopics.kafka.strimzi.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.partitions
+    description: The desired number of partitions in the topic
+    name: Partitions
+    type: integer
+  - JSONPath: .spec.replicas
+    description: The desired number of replicas of each partition
+    name: Replication factor
+    type: integer
+  group: kafka.strimzi.io
+  names:
+    kind: KafkaTopic
+    listKind: KafkaTopicList
+    plural: kafkatopics
+    shortNames:
+    - kt
+    singular: kafkatopic
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            config:
+              type: object
+            partitions:
+              minimum: 1
+              type: integer
+            replicas:
+              maximum: 32767
+              minimum: 1
+              type: integer
+            topicName:
+              type: string
+          required:
+          - partitions
+          - replicas
+          type: object
+        status:
+          properties:
+            conditions:
+              items:
+                properties:
+                  lastTransitionTime:
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                type: object
+              type: array
+            observedGeneration:
+              type: integer
+          type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false

@@ -1,0 +1,160 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"node-problem-detector.operator.k8s.io/v1alpha1\"\
+      ,\n    \"kind\": \"NodeProblemDetector\",\n    \"metadata\": {\n      \"name\"\
+      : \"node-problem-detector\",\n      \"namespace\": \"openshift-node-problem-detector\"\
+      \n    }\n  }\n]\n"
+    categories: OpenShift Optional
+    certifiedLevel: Primed
+    containerImage: registry.svc.ci.openshift.org/openshift/origin-v4.0:node-problem-detector-operator
+    createdAt: 2019/01/31
+    description: An operator to run the OpenShift Node Problem Detector
+    healthIndex: B
+    repository: https://github.com/openshift/node-problem-detector-operator
+    support: Red Hat
+  name: node-problem-detector.v0.0.1
+  namespace: openshift-node-problem-detector
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents an instance of a Node Problem Detector application
+      displayName: Node Problem Detector Operator
+      kind: NodeProblemDetector
+      name: nodeproblemdetectors.node-problem-detector.operator.k8s.io
+      version: v1alpha1
+  description: "# Node Problem Detector\n\nnode-problem-detector aims to make various\
+    \ node problems visible to the upstream\nlayers in cluster management stack.\n\
+    It is a daemon which runs on each node, detects node problems and reports them\
+    \ to apiserver.\nnode-problem-detector runs as a DaemonSet\n\n## Background\n\
+    There are many problems that could possibly affect the pods running on the node\
+    \ such as:\n* Infrastructure daemon issues: ntp service down;\n* Hardware issues:\
+    \ Bad cpu, memory or disk;\n* Kernel issues: Kernel deadlock, corrupted file system;\n\
+    * Container runtime issues: Unresponsive runtime daemon;\n* ...\n\nCurrently these\
+    \ problems are invisible to the upstream layers in cluster management\nstack,\
+    \ so Kubernetes will continue scheduling pods to the bad nodes.\n\nnode-problem-detector\
+    \ watches the node for problems and publishes them to the API server.\n\n## Problem\
+    \ API\nnode-problem-detector uses `Event` and `NodeCondition` to report problems\
+    \ to\napiserver.\n* `NodeCondition`: Permanent problem that makes the node unavailable\
+    \ for pods should\nbe reported as `NodeCondition`. A reboot of the node will remove\
+    \ the `NodeCondition`.\n* `Event`: Temporary problem that has limited impact on\
+    \ pod but is informative\nshould be reported as an `Event`.\n\n## Prerequisites\n\
+    \nAn Operator Group is required to install this operator. For example:\n```\n\
+    $ oc create ns openshift-node-problem-detector\n$ oc create -f - <<EOF\napiVersion:\
+    \ operators.coreos.com/v1alpha2\nkind: OperatorGroup\nmetadata:\n  name: npd-operators\n\
+    \  namespace: openshift-node-problem-detector\nspec:\n  targetNamespaces:\n  -\
+    \ openshift-node-problem-detector\nEOF\n```\n"
+  displayName: Node Problem Detector
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - nodes
+          verbs:
+          - get
+        - apiGroups:
+          - ''
+          resources:
+          - nodes/status
+          verbs:
+          - patch
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+          - update
+        serviceAccountName: node-problem-detector-operator
+      deployments:
+      - name: node-problem-detector-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: node-problem-detector-operator
+          template:
+            metadata:
+              labels:
+                name: node-problem-detector-operator
+            spec:
+              containers:
+              - command:
+                - node-problem-detector-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: OPERATOR_NAME
+                  value: node-problem-detector-operator
+                image: registry.svc.ci.openshift.org/openshift/origin-v4.0:node-problem-detector-operator
+                imagePullPolicy: Always
+                name: node-problem-detector-operator
+                ports:
+                - containerPort: 60000
+                  name: metrics
+              serviceAccountName: node-problem-detector-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - node-problem-detector.operator.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - events
+          - configmaps
+          - secrets
+          - services
+          - endpoints
+          - serviceaccounts
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          verbs:
+          - '*'
+        serviceAccountName: node-problem-detector-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  labels:
+    olm-owner-enterprise-app: node-problem-detector
+    olm-status-descriptors: node-problem-detector.v0.0.1
+  maintainers:
+  - email: support@redhat.com
+    name: Red Hat
+  provider:
+    name: Red Hat
+  version: 0.0.1
