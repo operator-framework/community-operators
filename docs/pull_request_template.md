@@ -5,7 +5,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 
 ### New Submissions
 
-* [ ] Has you operator nested directory structure?
+* [ ] Has you operator [nested directory structure](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#create-a-bundle)?
 * [ ] Have you selected the Project *Community Operator Submissions* in your PR on the right-hand menu bar?
 * [ ] Are you familiar with our [contribution guidelines](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md)?
 * [ ] Have you [packaged and deployed](https://github.com/operator-framework/community-operators/blob/master/docs/testing-operators.md) your Operator for Operator Framework?
