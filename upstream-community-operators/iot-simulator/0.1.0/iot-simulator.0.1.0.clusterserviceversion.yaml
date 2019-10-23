@@ -1,0 +1,410 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[{\n    \"apiVersion\": \"iot.dentrassi.de/v1alpha1\",\n    \"\
+      kind\": \"Simulator\",\n    \"metadata\": {\n      \"name\": \"hono1\",\n  \
+      \      \"namespace\": \"iot-simulator\"\n    },\n    \"spec\": {\n        \"\
+      endpoint\": {\n            \"messaging\": {\n                \"user\": \"foo\"\
+      ,\n                \"password\": \"bar\",\n                \"host\": \"messaging.host.hono.svc\"\
+      ,\n                \"port\": 5671,\n                \"caCertificate\": \"\"\n\
+      \            },\n            \"registry\": {\n                \"url\": \"https://your-device-registry\"\
+      \n            },\n            \"adapters\": {\n                \"mqtt\": {\n\
+      \                    \"host\": \"mqtt-adapter.hono.svc\",\n                \
+      \    \"port\": 8883\n                },\n                \"http\": {\n     \
+      \               \"url\": \"https://http-adapter.hono.svc\"\n               \
+      \ }\n            }\n        }\n    }\n},\n{\n  \"apiVersion\": \"iot.dentrassi.de/v1alpha1\"\
+      ,\n  \"kind\": \"SimulatorConsumer\",\n  \"metadata\": {\n    \"name\": \"consumer1\"\
+      ,\n    \"namespace\": \"iot-simulator\"\n  },\n  \"spec\": {\n    \"simulator\"\
+      : \"hono1\",\n    \"tenant\": \"myapp1.iot\",\n    \"type\": \"telemetry\",\n\
+      \    \"replicas\": 1\n  }\n},\n{\n  \"apiVersion\": \"iot.dentrassi.de/v1alpha1\"\
+      ,\n  \"kind\": \"SimulatorProducer\",\n  \"metadata\": {\n    \"name\": \"producer1\"\
+      ,\n    \"namespace\": \"iot-simulator\"\n  },\n  \"spec\": {\n    \"simulator\"\
+      : \"hono1\",\n    \"tenant\": \"myapp1.iot\",\n    \"type\": \"telemetry\",\n\
+      \    \"protocol\": \"http\",\n    \"replicas\": 1,\n    \"numberOfDevices\"\
+      : 10\n  }\n}\n]"
+    capabilities: Seamless Upgrades
+    categories: Streaming & Messaging
+    certified: 'false'
+    containerImage: ctron/iot-simulator-operator:0.1
+    createdAt: 2019-03-19 00:00:00
+    description: An IoT device simulator, simulating producers and consumers using
+      the Eclipse Hono API
+    repository: https://github.com/ctron/iot-simulator-operator
+    support: none
+  name: iot-simulator.0.1.0
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: A new simulator instance
+      displayName: Simulator
+      kind: Simulator
+      name: simulators.iot.dentrassi.de
+      resources:
+      - kind: DeploymentConfig
+        name: ''
+        version: apps.openshift.io/v1
+      - kind: BuildConfig
+        name: ''
+        version: build.openshift.io/v1
+      - kind: Route
+        name: ''
+        version: route.openshift.io/v1
+      - kind: ImageStream
+        name: ''
+        version: imagestream.openshift.io/v1
+      - kind: Deployment
+        name: ''
+        version: apps/v1
+      - kind: ConfigMap
+        name: ''
+        version: v1
+      - kind: Secret
+        name: ''
+        version: v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: StatefulSet
+        name: ''
+        version: apps/v1
+      specDescriptors:
+      - description: The name of the user for the AMQP messaging endpoint
+        displayName: Messaging Endpoint User
+        path: endpoint.messaging.user
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The password of the user for the AMQP messaging endpoint
+        displayName: Messaging Endpoint Password
+        path: endpoint.messaging.password
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: A CA certificate to validate the AMQP messaging endpoint
+        displayName: Messaging Endpoint CA Certificate
+        path: endpoint.messaging.caCertificate
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The hostname of the AMQP messaging endpoint
+        displayName: Messaging Endpoint Host
+        path: endpoint.messaging.host
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The port of the AMQP messaging endpoint
+        displayName: Messaging Endpoint Port
+        path: endpoint.messaging.port
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The URL of the device registry instance
+        displayName: Device Registry URL
+        path: endpoint.registry.url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The hostname of the MQTT protocol adapter
+        displayName: MQTT Protocol Adapter Hostname
+        path: endpoint.adapters.mqtt.host
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The port of the MQTT protocol adapter
+        displayName: MQTT Protocol Adapter Port
+        path: endpoint.adapters.mqtt.port
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The URL of the HTTP protocol adapter
+        displayName: HTTP Protocol Adapter URL
+        path: endpoint.adapters.http.url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+    - description: A new consumer for an existing simulator instance
+      displayName: Simulator Consumer
+      kind: SimulatorConsumer
+      name: simulatorconsumers.iot.dentrassi.de
+      resources:
+      - kind: DeploymentConfig
+        name: ''
+        version: apps.openshift.io/v1
+      - kind: Deployment
+        name: ''
+        version: apps/v1
+      specDescriptors:
+      - description: The ID of the simulator instance
+        displayName: Simulator ID
+        path: simulator
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:iot.dentrassi.de:v1alpha1:Simulator
+      - description: The name of the Hono tenant
+        displayName: Tenant Name
+        path: tenant
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The type of messages being consumed
+        displayName: Message Type
+        path: type
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The number of replicas
+        displayName: Replicas
+        path: replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      version: v1alpha1
+    - description: A new producer for an existing simulator instance
+      displayName: Simulator Producer
+      kind: SimulatorProducer
+      name: simulatorproducers.iot.dentrassi.de
+      resources:
+      - kind: DeploymentConfig
+        name: ''
+        version: apps.openshift.io/v1
+      - kind: Deployment
+        name: ''
+        version: apps/v1
+      specDescriptors:
+      - description: The ID of the simulator instance
+        displayName: Simulator ID
+        path: simulator
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:iot.dentrassi.de:v1alpha1:Simulator
+      - description: The name of the Hono tenant
+        displayName: Tenant Name
+        path: tenant
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The type of messages being produces
+        displayName: Message Type
+        path: type
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The number of replicas
+        displayName: Replicas
+        path: replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: The type of the protocol
+        displayName: Protocol Type
+        path: protocol
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The number of devices simulated per pod
+        displayName: Number of devices per pod
+        path: numberOfDevices
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+    required:
+    - description: A prometheus instance
+      displayName: Prometheus
+      kind: Prometheus
+      name: prometheuses.monitoring.coreos.com
+      version: v1
+    - description: A prometheus service monitor
+      displayName: ServiceMonitor
+      kind: ServiceMonitor
+      name: servicemonitors.monitoring.coreos.com
+      version: v1
+  description: 'A scalable IoT simulator, which simulates producers (MQTT or HTTP)
+    and consumers.
+
+
+    ## Pre-requisites
+
+
+    You will need to have access to a Hono instance, including the messaging backend
+
+    and the HTTP endpoint of the device registry.
+
+
+    As metrics information is stored in a Prometheus instance, this operator also
+
+    requires the Prometheus operator to be installed.
+
+
+    ## Creating an instance
+
+
+    Once you have the operator deployed, you need to set up at least one `Simulator`
+    resource.
+
+    This will trigger the creation of the web console and deploy a Prometheus instance
+    for
+
+    gathering metrics. The `Simulator` instance also contains the endpoint information
+    for the
+
+    Hono instance.
+
+
+    ## Producers & Consumer
+
+
+    After a `Simulator` instance has been created, you can create `SimulatorProducer`
+    and
+
+    `SimulatorConsumer` instances as necessary. You will need to reference the `Simulator`
+
+    instance.
+
+    '
+  displayName: IoT simulator
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj48c3ZnIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHZpZXdCb3g9IjAgMCAyNDgxIDM1MDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeG1sbnM6c2VyaWY9Imh0dHA6Ly93d3cuc2VyaWYuY29tLyIgc3R5bGU9ImZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxLjQxNDIxOyI+PHBhdGggZD0iTTEyMTUuMjYsMTc0Ny4xM2w4MjcuNjQ4LC04MjcuNjQ4YzY5LC02OSAxODEuMDM4LC02OSAyNTAuMDM4LDBsNDcuNjI2LDQ3LjYyNmM2OC45OTksNjguOTk5IDY4Ljk5OSwxODEuMDM3IDAsMjUwLjAzN2wtOTk0LjczNyw5OTQuNzM3Yy01OS42NjgsNTkuNjY4IC0xNTEuNTIsNjcuNzM3IC0yMTkuODkyLDI0LjIwNmMtMTkuNTg5LC04LjU3OSAtMzcuOTM0LC0yMC44ODIgLTUzLjk1OCwtMzYuOTA2bC01MDIuOTI1LC01MDIuOTI1Yy02OSwtNjkgLTY5LC0xODEuMDM3IDAsLTI1MC4wMzdsNDcuNjI2LC00Ny42MjZjNjguOTk5LC02OSAxODEuMDM3LC02OSAyNTAuMDM3LDBsMzQ4LjUzNywzNDguNTM2WiIgc3R5bGU9ImZpbGw6dXJsKCNfTGluZWFyMSk7Ii8+PHBhdGggZD0iTTIzMzIuNTksMTM4My42N2M3NS41NTksMjI1LjI2MyA4My4yNTIsNDc0LjMxOSAxNC4wMTcsNzA0LjI0MWMtOTguMzA3LDMyNi40NyAtMzQ4LjM3Miw2MDIuNjU1IC02NjIuOTczLDczMy41MzNjLTM0NS4yMDYsMTQzLjYxIC03NjAuODk1LDEwNi40NDQgLTEwNzYuNzcsLTEwMS41MjljLTMxNS4xNjUsLTIwNy41MDUgLTUxOS41MDMsLTU3My44MzQgLTUyMC43MzMsLTk2MS4yODhjLTEuMTk2LC0zNzcuMDMzIDE5NC4wNTYsLTc0OS40NjUgNTEyLjA1LC05NjIuOTY3YzE4Mi40NjYsLTEyMi41MDggNDAxLjQ4NywtMTkxLjA0MyA2MjAuMjg2LC0xOTUuMjEzYzguNjgsLTAuMTY1IDE3LjM2LC0wLjIxOCAyNi4wNTMsLTAuMjA3YzI1NC4yNTgsMS4zMDMgNTA3LjYxNCw5MS4zMTkgNzEwLjI4MiwyNDkuMjdjLTQ3LjIzMyw0Ni45OTIgLTk0LjQxOSw5NC4wMzEgLTE0MS41NjksMTQxLjEwM2MtNTUuODQ1LC00Mi41OTkgLTExNi43MjIsLTc5LjE5NiAtMTgxLjg5OSwtMTA4LjQ0N2MtMTIxLjIwNSwtNTQuMzk0IC0yNTQuMDU1LC04Mi41NyAtMzg3LjQ1LC04My4yNTRsLTYuMTg3LDBjLTM0Ny41NDcsMS43ODIgLTY4NC41MTEsMjAzLjc4OSAtODQ2Ljk4NCw1MTguNDUzYy0xMzQuMjMyLDI1OS45NjkgLTE0MC41NTMsNTgyLjMyNiAtMTIuODk2LDg0OS4xMzRjMTI4LjEyOSwyNjcuNzk1IDM4Ni44NTQsNDY5LjY5OCA2NzkuMDk0LDUyNi43MWMyOTkuMzA5LDU4LjM5MiA2MjMuNzQ3LC0zNS43ODIgODQ1LjM2LC0yNDguNGMxODUuMDQ5LC0xNzcuNTM3IDI5NC41MTIsLTQzMS40MjMgMjk0LjUxMiwtNjg5LjkwOWMwLC03MC44MzMgLTguNDc4LC0xNDEuMzU1IC0yNC42NTgsLTIxMC4xMzZjNTMuNTE4LC01My42NjkgMTA3LjAwOCwtMTA3LjM2NiAxNjAuNDY3LC0xNjEuMDk0WiIgc3R5bGU9ImZpbGw6dXJsKCNfUmFkaWFsMik7ZmlsbC1ydWxlOm5vbnplcm87Ii8+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJfTGluZWFyMSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiBncmFkaWVudFRyYW5zZm9ybT0ibWF0cml4KDE4NzUuMDEsMCwwLDEzOTUuOSw1MTcuMzA3LDE1NjUuNjgpIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiNjM2RiOWE7c3RvcC1vcGFjaXR5OjEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiMxN2E3Mzc7c3RvcC1vcGFjaXR5OjEiLz48L2xpbmVhckdyYWRpZW50PjxyYWRpYWxHcmFkaWVudCBpZD0iX1JhZGlhbDIiIGN4PSIwIiBjeT0iMCIgcj0iMSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMjMwOC4wOCwwLDAsMjMwNy40LDg2LjExODksMTc1My45NCkiPjxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6IzlkOWM5YztzdG9wLW9wYWNpdHk6MSIvPjxzdG9wIG9mZnNldD0iMSIgc3R5bGU9InN0b3AtY29sb3I6I2Q4ZDhkODtzdG9wLW9wYWNpdHk6MSIvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjwvc3ZnPg==
+    mediatype: image/svg+xml
+  install:
+    spec:
+      deployments:
+      - name: iot-simulator-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              k8s-app: iot-simulator-operator
+          template:
+            metadata:
+              labels:
+                k8s-app: iot-simulator-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: IMAGE_TAG
+                  value: '0.1'
+                - name: DEFAULT_GIT_REF
+                  value: release-0.1.x
+                image: docker.io/ctron/iot-simulator-operator:0.1
+                imagePullPolicy: Always
+                name: operator
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 100Mi
+                  requests:
+                    cpu: 100m
+                    memory: 50Mi
+              serviceAccountName: iot-simulator-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          - secrets
+          - pods
+          - serviceaccounts
+          - services
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - '*'
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          verbs:
+          - '*'
+        - apiGroups:
+          - build.openshift.io
+          resources:
+          - buildconfigs
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - '*'
+        - apiGroups:
+          - iot.dentrassi.de
+          resources:
+          - simulators
+          - simulators/finalizers
+          - simulators/status
+          - simulatorconsumers
+          - simulatorconsumers/finalizers
+          - simulatorconsumers/status
+          - simulatorproducers
+          - simulatorproducers/finalizers
+          - simulatorproducers/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheuses
+          - servicemonitors
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - endpoints
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - cm
+          verbs:
+          - get
+        serviceAccountName: iot-simulator-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - iot
+  - messaging
+  - amqp
+  - mqtt
+  - http
+  labels:
+    alm-owner-iot-simulator: iot-simulator
+  links:
+  - name: Documentation
+    url: https://dentrassi.de/iot-simulator
+  - name: "Eclipse Hono\xE2\u201E\xA2 Simulator"
+    url: https://github.com/ctron/hono-simulator
+  - name: IoT Simulator Console
+    url: https://github.com/ctron/iot-simulator-console
+  - name: IoT Simulator Operator
+    url: https://github.com/ctron/iot-simulator-operator
+  maintainers:
+  - email: ctron@dentrassi.de
+    name: Jens Reimann
+  maturity: alpha
+  provider:
+    name: Jens Reimann
+  selector:
+    matchLabels:
+      alm-owner-iot-simulator: iot-simulator
+  version: 0.1.0

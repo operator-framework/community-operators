@@ -1,0 +1,196 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[{\n  \"apiVersion\": \"hawt.io/v1alpha1\",\n  \"kind\": \"Hawtio\"\
+      ,\n  \"metadata\": {\n    \"name\": \"example-hawtio\"\n  },\n  \"spec\": {\n\
+      \    \"replicas\": 1,\n    \"version\": \"1.7.1\"\n  }\n}]"
+    capabilities: Seamless Upgrades
+    categories: Monitoring
+    certified: 'false'
+    containerImage: docker.io/hawtio/operator:0.1.0
+    createdAt: '2019-08-09T12:31:00Z'
+    description: Hawtio eases the discovery and management of Java applications deployed
+      on OpenShift.
+    repository: https://github.com/hawtio/hawtio-operator
+    support: Red Hat
+  name: hawtio-operator.v0.1.0
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: A Hawtio Console
+      displayName: Hawtio
+      kind: Hawtio
+      name: hawtios.hawt.io
+      version: v1alpha1
+  description: "Hawtio\n==============\n\nThe Hawtio console eases the discovery and\
+    \ management of Java applications deployed on OpenShift.\n\nTo secure the communication\
+    \ between the Hawtio console and the Jolokia agents, a client certificate must\
+    \ be generated and mounted into the Hawtio console pod with a secret, to be used\
+    \ for TLS client authentication. This client certificate must be signed using\
+    \ the [service signing certificate](https://docs.openshift.com/container-platform/4.1/authentication/certificates/service-serving-certificate.html)\
+    \ authority private key.\n\nHere are the steps to be performed prior to the deployment:\n\
+    \n1. First, retrieve the service signing certificate authority keys, by executing\
+    \ the following commmands as a _cluster-admin_ user:\n    ```sh\n    # The CA\
+    \ certificate\n    $ oc get secrets/signing-key -n openshift-service-ca -o \"\
+    jsonpath={.data['tls\\.crt']}\" | base64 --decode > ca.crt\n    # The CA private\
+    \ key\n    $ oc get secrets/signing-key -n openshift-service-ca -o \"jsonpath={.data['tls\\\
+    .key']}\" | base64 --decode > ca.key\n    ```\n\n2. Then, generate the client\
+    \ certificate, as documented in [Kubernetes certificates administration](https://kubernetes.io/docs/concepts/cluster-administration/certificates/),\
+    \ using either `easyrsa`, `openssl`, or `cfssl`, e.g., using `openssl`:\n    ```sh\n\
+    \    # Generate the private key\n    $ openssl genrsa -out server.key 2048\n \
+    \   # Write the CSR config file\n    $ cat <<EOT >> csr.conf\n      [ req ]\n\
+    \      default_bits = 2048\n      prompt = no\n      default_md = sha256\n   \
+    \   distinguished_name = dn\n\n      [ dn ]\n      CN = hawtio-online.hawtio.svc\n\
+    \n      [ v3_ext ]\n      authorityKeyIdentifier=keyid,issuer:always\n      keyUsage=keyEncipherment,dataEncipherment\n\
+    \      extendedKeyUsage=serverAuth,clientAuth\n      EOT\n    # Generate the CSR\n\
+    \    $ openssl req -new -key server.key -out server.csr -config csr.conf\n   \
+    \ # Issue the signed certificate\n    $ openssl x509 -req -in server.csr -CA ca.crt\
+    \ -CAkey ca.key -CAcreateserial -out server.crt -days 10000 -extensions v3_ext\
+    \ -extfile csr.conf\n    ```\n\n3. Finally, you can create the secret to be mounted\
+    \ in the Hawtio console pod, from the generated certificate:\n   ```sh\n   $ oc\
+    \ create secret tls hawtio-online-tls-proxying --cert server.crt --key server.key\n\
+    \   ```\n\nNote that `CN=hawtio-online.hawtio.svc` must be trusted by the Jolokia\
+    \ agents, for which client certification authentication is enabled. See the `clientPrincipal`\
+    \ parameter from the [Jolokia agent configuration options](https://jolokia.org/reference/html/agents.html#agent-jvm-config).\n"
+  displayName: Hawtio Operator
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE2LjAuNCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgogICAgIHdpZHRoPSI2MDBweCIgaGVpZ2h0PSIxOTkuNDlweCIgdmlld0JveD0iMCAwIDYwMCAxOTkuNDkiIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDYwMCAxOTkuNDkiIHhtbDpzcGFjZT0icHJlc2VydmUiPgo8Zz4KCTxnPgoJCTxwYXRoIGZpbGw9IiNDMEMwQzAiIGQ9Ik0xODMuMzA0LDc1LjUwMWMtMTIuOTQ5LDAtMjAsNS4zOTgtMjcuMDE5LDEwLjQ2OVYzNi42NjloLTIyLjI5OXY5NS40N2wyMi4zODMsMjIuMzh2LTUzLjY4MwoJCQljNi41OTMtNS4wMzQsMTEuNTExLTcuMzYxLDIwLjUxNy03LjM2MWM1LjY3MywwLDkuMzc1LDMuMDQ1LDkuMzc1LDExLjQ4NXY1Ni44NjJoMjIuMzgydi01Ni41MQoJCQlDMjA4LjY0Myw4OS4xMzUsMjAzLjA2LDc1LjUwMSwxODMuMzA0LDc1LjUwMXoiLz4KICAgICAgICA8cGF0aCBmaWxsPSIjQzBDMEMwIiBkPSJNMjE1LjQyMiwxMzIuMTkyYzAtMTIuMzUsNi42NzYtMjMuMjc5LDI0Ljg3My0yMy4yNzljMCwwLDI0LjkyOSwwLjE1NiwyNC45MjksMGMwLDAsMC4xNjUtNS4yODIsMC01LjQ0MQoJCQljMC05LjA0OC00LjIyOS0xMC40NjktMTEuMzQ3LTEwLjQ2OWMtNy4zNzgsMC0yOC42NjgsMS4zMjQtMzUuNjQ4LDEuODI3VjgxLjAxN2MxMS4xNzktNC4zNDIsMjIuODUyLTUuNjA2LDM4LjY4LTUuNjc5CgkJCWMxOC4yOC0wLjA3NSwzMC43MDIsNi4yNDEsMzAuNzAyLDI3LjI1NXY1OS4yM2gtMTcuNjcybC00LjcxNC05LjM1Yy0wLjkzMSwxLjg0LTEyLjg0MywxMC41NzItMjUuODExLDEwLjMwOAoJCQljLTE2LjMzNC0wLjQzNy0yMy45OTEtMTEuNTYtMjMuOTkxLTIyLjU5OVYxMzIuMTkyeiBNMjQ1Ljc0MiwxNDQuNzk1YzkuMzYyLDAsMTkuNDgyLTYuNTY4LDE5LjQ4Mi02LjU2OFYxMjIuNjdsLTIwLjUzMiwxLjU4MgoJCQljLTUuOTEsMC41NTMtNi44ODQsNC45MjMtNi44ODQsOC42MzV2NC4xMjVDMjM3LjgwOCwxNDQuMDcsMjQxLjYyNSwxNDQuNzk1LDI0NS43NDIsMTQ0Ljc5NXoiLz4KICAgICAgICA8cGF0aCBmaWxsPSIjQzBDMEMwIiBkPSJNMzExLjk0Miw3Ni45MzdsMTcuMDA4LDU4LjY2N2wxNS4yMDctNTguNjY3aDIyLjI4bC01LjkwNywyMi44NjdsMTQuMDYyLDM1LjhsMTYuNzQ2LTU4LjY2N2gyNC4wMjkKCQkJbC0yNy40MzMsODQuODg2aC0yNS4wMjVsLTEyLjcwMy0zMC43NTJsLTkuNjAyLDMwLjc1MkgzMTUuMTVsLTI3LjE0OS04NC44ODZIMzExLjk0MnoiLz4KICAgICAgICA8cGF0aCBmaWxsPSIjQzBDMEMwIiBkPSJNNDIwLjA2Miw4MS40MTJsMTMuNzA5LTQuNjM0bDMuNzU4LTIzLjY2MmgxOC42MjV2MjMuNjYyaDE4Ljk3N3YxNy4xMDRoLTE4Ljk3N3YzNC4wNDkKCQkJYzAsMTIuNTAzLDIuODgyLDE1LjE3Myw3LjI2NywxNi44MDFjMCwwLDkuNTkyLDMuMzU3LDEwLjcwMywzLjM1N3YxMy43NDloLTE5LjUxM2MtMTIuNTY3LDAtMjAuODQtNy44NDktMjAuODQtMzAuMzg5VjkzLjg4MgoJCQloLTEzLjcwOVY4MS40MTJ6Ii8+CiAgICAgICAgPHBhdGggZmlsbD0iI0MwQzBDMCIgZD0iTTQ4NC42MjMsNTAuMTYyYzAtMi4zOTgsMS4yNzctNCwzLjgzOS00aDE2Ljc4NmMyLjM5NSwwLDMuNTg0LDEuNzY1LDMuNTg0LDR2MTQuMTcxCgkJCWMwLDIuMzk0LTEuMzQ5LDMuNjc4LTMuNTg0LDMuNjc4aC0xNi43ODZjLTIuMjM5LDAtMy44MzktMS40MzYtMy44MzktMy42NzhWNTAuMTYyeiBNNDg1LjQzMSw3Ni45MzdoMjIuMzc2djg0Ljg4NmgtMjIuMzc2CgkJCVY3Ni45Mzd6Ii8+CiAgICAgICAgPHBhdGggZmlsbD0iI0MwQzBDMCIgZD0iTTU1OS42MzcsNzYuMTQyYzI5LjIzMywwLDM4LjcyOSwxMC43MDgsMzguNzI5LDQ0LjQzNWMwLDMxLjQ5Ni05LjA1NSw0Mi4wNDQtMzguNzI5LDQyLjA0NAoJCQljLTI5LjMxMywwLTM4LjcyNi0xMS42Ny0zOC43MjYtNDIuMDQ0QzUyMC45MTEsODUuODkzLDUzMC45NDgsNzYuMTQyLDU1OS42MzcsNzYuMTQyeiBNNTU5LjYzNywxNDQuNjM5CgkJCWMxMi42MTEsMCwxNi4zNS0xLjcxMSwxNi4zNS0yNC4wNjJjMC0yMy43NzItMy4wMS0yNi40NTMtMTYuMzUtMjYuNDUzYy0xMy4yNDMsMC0xNi4zNDIsMi42OTMtMTYuMzQyLDI2LjQ1MwoJCQlDNTQzLjI5NSwxNDIuNTQ0LDU0Ny43NDQsMTQ0LjYzOSw1NTkuNjM3LDE0NC42Mzl6Ii8+Cgk8L2c+CiAgICA8cGF0aCBmaWxsPSIjQzBDMEMwIiBkPSJNMjAuNTc1LDEzMi41MTRjMTEuNzM2LDExLjc0MSwyNy4zNSwxOC4yMTQsNDMuOTUzLDE4LjIxNGMxMS40MDksMCwyMi42MjUtMy4xODcsMzIuNDQxLTkuMjExbDIuMDc3LTEuMjcKCQlsMjEuOTIsMjEuOTI5aDM0LjMzOGwtMzkuMDk5LTM5LjFsMS4yNzQtMi4wNjdjMTUuMDkxLTI0LjU5MywxMS4zOS01Ni4wMDctOC45OTctNzYuMzkzCgkJQzk2Ljc0MiwzMi44NzYsODEuMTI5LDI2LjQwOSw2NC41MjgsMjYuNDA5Yy0xNi42MDQsMC0zMi4yMDYsNi40NjgtNDMuOTQ3LDE4LjIwN0M4LjgzOCw1Ni4zNTgsMi4zNjUsNzEuOTcsMi4zNjUsODguNTY5CgkJQzIuMzY1LDEwNS4xNjcsOC44MzIsMTIwLjc3NSwyMC41NzUsMTMyLjUxNHogTTM3Ljc0NSw2MS43ODVjNy4xNDgtNy4xNTYsMTYuNjYzLTExLjA5NSwyNi43ODMtMTEuMDk1CgkJYzEwLjExNywwLDE5LjYyOSwzLjkzOSwyNi43OCwxMS4wOTVjNy4xNTUsNy4xNTgsMTEuMDk1LDE2LjY2OCwxMS4wOTUsMjYuNzg1YzAsMTAuMTIxLTMuOTQsMTkuNjMtMTEuMDk4LDI2Ljc4MwoJCWMtNy4xNDYsNy4xNTMtMTYuNjYsMTEuMDkyLTI2Ljc3NywxMS4wOTJjLTEwLjEyLDAtMTkuNjM0LTMuOTM4LTI2Ljc4Ni0xMS4wOTJjLTcuMTU0LTcuMTYxLTExLjA5NS0xNi42NjctMTEuMDk1LTI2Ljc4MwoJCUMyNi42NDcsNzguNDUzLDMwLjU4OCw2OC45NDIsMzcuNzQ1LDYxLjc4NXoiLz4KICAgIDxnPgoJCTxwYXRoIGZpbGw9IiNFQzc5MjkiIGQ9Ik04MC4xOTcsOTIuOTI2djAuMDkzYzAuNDY5LDAuODU0LDAuNzMzLDEuODI0LDAuNzQ2LDIuODYyYzAsMy4yNjktMi42NTUsNS45MjItNS45MjUsNS45MjIKCQkJYy0zLjI3LDAtNS45MTgtMi42NTMtNS45MTgtNS45MjJjMC0xLjQ0MiwwLjUxNS0yLjc2NywxLjM3OC0zLjc5NmMwLDAsMTQuNDY0LTIwLjEzNy01Ljc4NS0zMy40OThjMCwwLDUuODc1LDE1Ljg2LTguMTI5LDIyLjUyNwoJCQljMCwwLTMuODY2LDIuNzI5LDAuNC02LjMzNWMwLDAtMTEuODksNi42ODMtMTEuODksMjIuODE0YzAsNy4yOTEsMy43NzYsMTMuNjkxLDkuNDc0LDE3LjM3NgoJCQljLTAuMTc3LTAuNjU4LTAuMjg5LTEuNDExLTAuMjg5LTIuMjk5YzAuMDA2LTYuNDY5LDUuODA0LTE0LjAzMSw3LjU4Ni0xNC4wMTljMCwwLDAuNDUsNy42NjQsMi41MDYsMTEuMjc3CgkJCWMxLjYyLDMuMDU4LDAuNjM2LDYuNDQ0LTEuNTEzLDguMTM4YzAuOTYyLDAuMTM5LDEuOTQ0LDAuMjM0LDIuOTQ3LDAuMjM0YzUuNDY4LDAsMTAuNDQ2LTIuMTIyLDE0LjE0Ny01LjU5MQoJCQljMCwwLTAuMDA2LTAuMDE4LTAuMDA2LTAuMDIzQzg2LjgzMywxMDMuNjA1LDgyLjgyOCw5Ni4yMjQsODAuMTk3LDkyLjkyNnoiLz4KCTwvZz4KPC9nPgo8L3N2Zz4=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - oauth.openshift.io
+          resources:
+          - oauthclients
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - clusterversions
+          verbs:
+          - get
+        serviceAccountName: hawtio-operator
+      deployments:
+      - name: hawtio-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: hawtio-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: hawtio-operator
+            spec:
+              containers:
+              - command:
+                - hawtio-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: hawtio-operator
+                image: docker.io/hawtio/operator:0.1.0
+                imagePullPolicy: Always
+                name: hawtio-operator
+                ports:
+                - containerPort: 60000
+                  name: metrics
+                resources: {}
+              serviceAccountName: hawtio-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          - serviceaccounts
+          - services
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - '*'
+        - apiGroups:
+          - template.openshift.io
+          resources:
+          - processedtemplates
+          verbs:
+          - '*'
+        - apiGroups:
+          - hawt.io
+          resources:
+          - '*'
+          - hawtios
+          verbs:
+          - '*'
+        serviceAccountName: hawtio-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - Hawtio
+  - Java
+  - Management
+  - Console
+  links:
+  - name: Hawtio Web site
+    url: https://hawt.io
+  maintainers:
+  - email: hawtio@googlegroups.com
+    name: The Hawtio team
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.1.0

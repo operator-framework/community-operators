@@ -1,0 +1,273 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[{\n  \"apiVersion\": \"falco.org/v1alpha1\",\n  \"kind\": \"Falco\"\
+      ,\n  \"metadata\": {\n    \"name\": \"falco-with-ebpf\"\n  },\n  \"spec\": {\n\
+      \    \"ebpf\": {\n      \"enabled\": true\n    }\n  }\n},\n{\n  \"apiVersion\"\
+      : \"falco.org/v1alpha1\",\n  \"kind\": \"Falco\",\n  \"metadata\": {\n    \"\
+      name\": \"falco-with-traefik-rules\"\n  },\n  \"spec\": {\n    \"customRules\"\
+      : {\n      \"rules-traefik.yaml\": \"- macro: traefik_consider_syscalls\\n \
+      \ condition: (evt.num < 0)\\n\\n- macro: app_traefik\\n  condition: container\
+      \ and container.image startswith \\\"traefik\\\"\\n\\n# Restricting listening\
+      \ ports to selected set\\n\\n- list: traefik_allowed_inbound_ports_tcp\\n  items:\
+      \ [443, 80, 8080]\\n\\n- rule: Unexpected inbound tcp connection traefik\\n\
+      \  desc: Detect inbound traffic to traefik using tcp on a port outside of expected\
+      \ set\\n  condition: inbound and evt.rawres >= 0 and not fd.sport in (traefik_allowed_inbound_ports_tcp)\
+      \ and app_traefik\\n  output: Inbound network connection to traefik on unexpected\
+      \ port (command=%proc.cmdline pid=%proc.pid connection=%fd.name sport=%fd.sport\
+      \ user=%user.name %container.info image=%container.image)\\n  priority: NOTICE\\\
+      n\\n# Restricting spawned processes to selected set\\n\\n- list: traefik_allowed_processes\\\
+      n  items: [\\\"traefik\\\"]\\n\\n- rule: Unexpected spawned process traefik\\\
+      n  desc: Detect a process started in a traefik container outside of an expected\
+      \ set\\n  condition: spawned_process and not proc.name in (traefik_allowed_processes)\
+      \ and app_traefik\\n  output: Unexpected process spawned in traefik container\
+      \ (command=%proc.cmdline pid=%proc.pid user=%user.name %container.info image=%container.image)\\\
+      n  priority: NOTICE\"\n    }\n  }\n}]"
+    capabilities: Basic Install
+    categories: Security
+    certified: 'false'
+    containerImage: docker.io/falcosecurity/falco-operator-helm:0.7.6
+    createdAt: '2019-03-12T18:30:00Z'
+    description: Falco is a behavioral activity monitor designed to detect anomalous
+      activity in your applications. You can use Falco to monitor run-time security
+      of your Kubernetes applications and internal components.
+    repository: https://github.com/falcosecurity/falco-operator/tree/helm-based-operator
+    support: Sysdig, Inc.
+  name: falco-operator.v0.7.6
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Represents a Falco running on each node of your cluster.
+      displayName: Falco daemonSet
+      kind: Falco
+      name: falcos.falco.org
+      version: v1alpha1
+  description: "[Falco](https://falco.org) is a behavioral activity monitor designed\
+    \ to detect anomalous activity in your applications. You can use Falco to monitor\
+    \ run-time security of your Kubernetes applications and internal components.\n\
+    \nTo know more about Falco have a look at:\n\n- [Kubernetes security logging with\
+    \ Falco & Fluentd](https://sysdig.com/blog/kubernetes-security-logging-fluentd-falco/)\n\
+    - [Active Kubernetes security with Sysdig Falco, NATS, and kubeless](https://sysdig.com/blog/active-kubernetes-security-falco-nats-kubeless/)\n\
+    - [Detecting cryptojacking with Sysdig\xE2\u20AC\u2122s Falco](https://sysdig.com/blog/detecting-cryptojacking-with-sysdigs-falco/)\n\
+    \nThis operator adds Falco to all nodes in your cluster using a DaemonSet. It\n\
+    also provides a Deployment for generating Falco alerts. This is useful for\ntesting\
+    \ purposes.\n\n## Settings\n\nThis operator, uses the same options than the\n\
+    [Helm Chart](https://hub.helm.sh/charts/stable/falco), please take a look to\n\
+    all the options in the following table:\n\n| Parameter                       \
+    \                | Description                                               \
+    \           | Default                                                        \
+    \                        |\n| ---                                            \
+    \ | ---                                                                  | ---\
+    \                                                                            \
+    \        |\n| `image.repository`                              | The image repository\
+    \ to pull from                                    | `falcosecurity/falco`    \
+    \                                                              |\n| `image.tag`\
+    \                                     | The image tag to pull                \
+    \                                | `0.15.0`                                  \
+    \                                             |\n| `image.pullPolicy`        \
+    \                      | The image pull policy                               \
+    \                 | `IfNotPresent`                                           \
+    \                              |\n| `resources`                              \
+    \       | Specify container resources                                        \
+    \  | `{}`                                                                    \
+    \               |\n| `extraArgs`                                     | Specify\
+    \ additional container args                                    | `[]`        \
+    \                                                                           |\n\
+    | `rbac.create`                                   | If true, create & use RBAC\
+    \ resources                                 | `true`                         \
+    \                                                        |\n| `serviceAccount.create`\
+    \                         | Create serviceAccount                            \
+    \                    | `true`                                                \
+    \                                 |\n| `serviceAccount.name`                 \
+    \          | Use this value as serviceAccountName                            \
+    \     | ` `                                                                  \
+    \                  |\n| `fakeEventGenerator.enabled`                    | Run\
+    \ falco-event-generator for sample events                          | `false` \
+    \                                                                            \
+    \   |\n| `fakeEventGenerator.replicas`                   | How many replicas of\
+    \ falco-event-generator to run                    | `1`                      \
+    \                                                              |\n| `proxy.httpProxy`\
+    \                               | Set the Proxy server if is behind a firewall\
+    \                         | ``                                               \
+    \                                      |\n| `proxy.httpsProxy`               \
+    \               | Set the Proxy server if is behind a firewall               \
+    \          | ``                                                              \
+    \                       |\n| `proxy.noProxy`                                 |\
+    \ Set the Proxy server if is behind a firewall                         | ``  \
+    \                                                                            \
+    \       |\n| `ebpf.enabled`                                  | Enable eBPF support\
+    \ for Falco instead of `falco-probe` kernel module | `false`                 \
+    \                                                               |\n| `ebpf.settings.hostNetwork`\
+    \                     | Needed to enable eBPF JIT at runtime for performance reasons\
+    \         | `true`                                                           \
+    \                      |\n| `ebpf.settings.mountEtcVolume`                  |\
+    \ Needed to detect which kernel version are running in Google COS      | `true`\
+    \                                                                            \
+    \     |\n| `falco.rulesFile`                               | The location of the\
+    \ rules files                                      | `[/etc/falco/falco_rules.yaml,\
+    \ /etc/falco/falco_rules.local.yaml, /etc/falco/rules.d]` |\n| `falco.jsonOutput`\
+    \                              | Output events in json or text               \
+    \                         | `false`                                          \
+    \                                      |\n| `falco.jsonIncludeOutputProperty`\
+    \               | Include output property in json output                     \
+    \          | `true`                                                          \
+    \                       |\n| `falco.logStderr`                               |\
+    \ Send Falco debugging information logs to stderr                      | `true`\
+    \                                                                            \
+    \     |\n| `falco.logSyslog`                               | Send Falco debugging\
+    \ information logs to syslog                      | `true`                   \
+    \                                                              |\n| `falco.logLevel`\
+    \                                | The minimum level of Falco debugging information\
+    \ to include in logs  | `info`                                               \
+    \                                  |\n| `falco.priority`                     \
+    \           | The minimum rule priority level to load and run                \
+    \      | `debug`                                                             \
+    \                   |\n| `falco.bufferedOutputs`                         | Use\
+    \ buffered outputs to channels                                     | `false` \
+    \                                                                            \
+    \   |\n| `falco.outputs.rate`                            | Number of tokens gained\
+    \ per second                                   | `1`                         \
+    \                                                           |\n| `falco.outputs.maxBurst`\
+    \                        | Maximum number of tokens outstanding              \
+    \                   | `1000`                                                 \
+    \                                |\n| `falco.syslogOutput.enabled`           \
+    \         | Enable syslog output for security notifications                  \
+    \    | `true`                                                                \
+    \                 |\n| `falco.fileOutput.enabled`                      | Enable\
+    \ file output for security notifications                        | `false`    \
+    \                                                                            |\n\
+    | `falco.fileOutput.keepAlive`                    | Open file once or every time\
+    \ a new notification arrives              | `false`                          \
+    \                                                      |\n| `falco.fileOutput.filename`\
+    \                     | The filename for logging notifications               \
+    \                | `./events.txt`                                            \
+    \                             |\n| `falco.stdoutOutput.enabled`              \
+    \      | Enable stdout output for security notifications                     \
+    \ | `true`                                                                   \
+    \              |\n| `falco.programOutput.enabled`                   | Enable program\
+    \ output for security notifications                     | `false`            \
+    \                                                                    |\n| `falco.programOutput.keepAlive`\
+    \                 | Start the program once or re-spawn when a notification arrives\
+    \       | `false`                                                            \
+    \                    |\n| `falco.programOutput.program`                   | Command\
+    \ to execute for program output                                | `mail -s \"Falco\
+    \ Notification\" someone@example.com`                                     |\n\
+    | `customRules`                                   | Third party rules enabled\
+    \ for Falco                                  | `{}`                          \
+    \                                                         |\n| `integrations.gcscc.enabled`\
+    \                    | Enable Google Cloud Security Command Center integration\
+    \              | `false`                                                     \
+    \                           |\n| `integrations.gcscc.webhookUrl`             \
+    \    | The URL where sysdig-gcscc-connector webhook is listening            |\
+    \ `http://sysdig-gcscc-connector.default.svc.cluster.local:8080/events`      \
+    \            |\n| `integrations.gcscc.webhookAuthenticationToken` | Token used\
+    \ for authentication and webhook                            | `b27511f86e911f20b9e0f9c8104b4ec4`\
+    \                                                     |\n| `integrations.natsOutput.enabled`\
+    \               | Enable NATS Output integration                             \
+    \          | `false`                                                         \
+    \                       |\n| `integrations.natsOutput.natsUrl`               |\
+    \ The NATS' URL where Falco is going to publish security alerts        | `nats://nats.nats-io.svc.cluster.local:4222`\
+    \                                           |\n| `integrations.snsOutput.enabled`\
+    \                | Enable Amazon SNS Output integration                      \
+    \           | `false`                                                        \
+    \                        |\n| `integrations.snsOutput.topic`                 \
+    \ | The SNS topic where Falco is going to publish security alerts        | ` `\
+    \                                                                            \
+    \        |\n| `integrations.snsOutput.aws_access_key_id`      | The AWS Access\
+    \ Key Id credentials for access to SNS n                | ` `                \
+    \                                                                    |\n| `integrations.snsOutput.aws_secret_access_key`\
+    \  | The AWS Secret Access Key credential to access to SNS                | `\
+    \ `                                                                          \
+    \          |\n| `integrations.snsOutput.aws_default_region`     | The AWS region\
+    \ where SNS is deployed                                 | ` `                \
+    \                                                                    |\n| `tolerations`\
+    \                                   | The tolerations for scheduling         \
+    \                              | `node-role.kubernetes.io/master:NoSchedule` \
+    \                                           |\n\n\nFor example, if you want to\
+    \ deploy a DaemonSet with eBPF enabled:\n\n```yaml\napiVersion: falco.org/v1alpha1\n\
+    kind: Falco\nmetadata:\n  name: falco-with-ebpf\nspec:\n  ebpf:\n    enabled:\
+    \ true\n```\n\nAnd you can apply this file with `kubectl apply -f`"
+  displayName: Falco Operator
+  icon:
+  - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDQuODUgMzc1LjkyIj48ZGVmcz48c3R5bGU+LmNscy0xLC5jbHMtMntmaWxsOiMwMGI0Yzg7fS5jbHMtMntmb250LXNpemU6NzEuOThweDtmb250LWZhbWlseTpSb2JvdG8tTWVkaXVtLCBSb2JvdG87fTwvc3R5bGU+PC9kZWZzPjx0aXRsZT5GYWxjbyB0ZWFsIHN0YWNrIGxvZ288L3RpdGxlPjxnIGlkPSJmcXFaWFQiPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI0NCwxMjguMDlxLTQ0LjA1LDQ0LjM5LTg4LjM3LDg4LjVhMzkuNjIsMzkuNjIsMCwwLDEtNC4zNyw0Yy0yLjExLDEuNTctNC40MiwxLjY5LTYuMzQtLjM3cy0xLjI0LTQuMTUuMzUtNS44NWMzLjgtNC4wOSw3Ljc0LTguMDcsMTEuNy0xMnE0My41My00My4zMiw4Ny4wOS04Ni42M0MyNDYuNzgsMTEzLDI1OSwxMjIsMjYxLjg4LDEyNSIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI1Mi41NCwxNDIuMTVjLS4xMiwxLjc3LTEuMjcsMi45My0yLjQzLDQuMDhxLTM2LjM2LDM2LjM2LTcyLjczLDcyLjcxYy0yLjI4LDIuMjgtNSw0LjUtNy44NCwxLjQtMi42LTIuODEtLjQxLTUuMzQsMS43MS03LjQ2cTM2LTM2LDcyLTcxLjk1YzEuODQtMS44NCwzLjgtMy41MSw2LjY2LTIuNDhBMy44MiwzLjgyLDAsMCwxLDI1Mi41NCwxNDIuMTVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTMzLjE3LDU5YzItLjA4LDMuMzgsMS4wOSw0LjY3LDIuMzhRMTcyLjQ4LDk2LDIwNy4wOSwxMzAuNjFjMi4xNSwyLjE2LDQuMTEsNC43NiwxLjQsNy40N3MtNS4zMS44LTcuNDgtMS4zN3EtMzQuNjItMzQuNjEtNjkuMjMtNjkuMjRjLTEuNzQtMS43NC0zLjA4LTMuNjQtMi02LjI0QTMuNTcsMy41NywwLDAsMSwxMzMuMTcsNTlaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjQyLjksMjIyLjJjLTQuMTUuODEtNy4zNy0xLjExLTEwLjMxLTQuMTgtNS4yNi01LjQ3LTEwLjY2LTEwLjgxLTE2LjA3LTE2LjEyLTMuMi0zLjE0LTMuMzUtNi4xMy0uMTItOS4zNCw5LjIyLTkuMTcsMTguMzktMTguNCwyNy42Mi0yNy41NywyLTIsNC41LTMuNzMsNy4wOC0xLjI4LDIuODgsMi43MSwxLDUuMy0xLjE1LDcuNDYtNy4yNCw3LjMzLTE0LjQ0LDE0LjY5LTIxLjg2LDIxLjgzLTIuODIsMi43MS0zLjI2LDQuNzQtLjE2LDcuNSwzLjQ5LDMuMTMsNi43Myw2LjU1LDEwLDEwYTkuNDksOS40OSwwLDAsMCw3LjYsMy40YzMuMTMtLjEyLDYuODYtLjEsNi43Niw0LjIxcy0zLjkzLDQtNyw0LjI3QTE4LjIxLDE4LjIxLDAsMCwxLDI0Mi45LDIyMi4yWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE5Ny41OCwxNDcuOTRjLS42MywyLjg5LTIuMjIsNC42NC01LjMzLDMuNjFhMTAuOTQsMTAuOTQsMCwwLDEtMy45My0yLjc0UTE2My4zOSwxMjQsMTM4LjU1LDk5LjA4YTE4LjkyLDE4LjkyLDAsMCwxLTIuMTItMi40NGMtMS40My0yLTEuNTUtNC4xMS4yNS01LjlzNC0xLjQ1LDUuNzkuMjJjMywyLjg0LDUuOTQsNS43OSw4Ljg3LDguNzNxMjEuMjQsMjEuMjMsNDIuNDcsNDIuNDhDMTk1LjQ0LDE0My44MSwxOTcuNCwxNDUuMjcsMTk3LjU4LDE0Ny45NFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xODUuMTksMTYwYTQuMDYsNC4wNiwwLDAsMS0yLjEsMy41NSw0LjQ2LDQuNDYsMCwwLDEtNS40OS0uNzhjLTIuNzgtMi41Ny01LjQ0LTUuMjYtOC4xMi03LjkzUTE1Ny42MiwxNDMsMTQ1Ljc5LDEzMS4xM2EyNy43OCwyNy43OCwwLDAsMS0zLjQ1LTQuMTMsMy43NiwzLjc2LDAsMCwxLC4yOS01LDQuMTYsNC4xNiwwLDAsMSw1LS45NCw5Ljg4LDkuODgsMCwwLDEsMy4wNywyLjE0cTE2LjEsMTYsMzIuMTIsMzIuMTFDMTg0LjA4LDE1Ni42MywxODUuMjEsMTU4LDE4NS4xOSwxNjBaIi8+PC9nPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE4Ny40LDI4NC4zMmExMC45NCwxMC45NCwwLDAsMC00LjQ2LTIuODcsMjAuMjcsMjAuMjcsMCwwLDAtNi44OS0xLDM2LjIxLDM2LjIxLDAsMCwwLTYuNDEuNTQsMzIuNDUsMzIuNDUsMCwwLDAtNC41NywxLjFsMSw2LjY4YTIzLjc5LDIzLjc5LDAsMCwxLDMuODgtMSwzMS40MywzMS40MywwLDAsMSw1LjI1LS40MSw5Ljc5LDkuNzksMCwwLDEsMy41MS41NSw1LjUyLDUuNTIsMCwwLDEsMi4yNSwxLjUzLDUuNzMsNS43MywwLDAsMSwxLjIsMi4yOSwxMC41MywxMC41MywwLDAsMSwuMzQsMi43M3YxLjM2YTI2Ljc0LDI2Ljc0LDAsMCwwLTMuMjEtLjU4LDI2LjE5LDI2LjE5LDAsMCwwLTIuODYtLjE3LDI2LjU0LDI2LjU0LDAsMCwwLTUuNjMuNTgsMTQsMTQsMCwwLDAtNC43MywxLjkxLDkuNyw5LjcsMCwwLDAtMy4yNCwzLjQ0LDEwLjM4LDEwLjM4LDAsMCwwLTEuMiw1LjE5LDEyLjIsMTIuMiwwLDAsMCwxLjA2LDUuMzgsOS4yNyw5LjI3LDAsMCwwLDIuOTMsMy41NSwxMi4zLDEyLjMsMCwwLDAsNC41NCwyLDI2LDI2LDAsMCwwLDUuODYuNjEsNTguNDMsNTguNDMsMCwwLDAsOC43LS41OHEzLjg0LS41OCw1Ljc2LTFWMjk0LjU0YTIxLjczLDIxLjczLDAsMCwwLS43Mi01Ljc2QTEwLjYzLDEwLjYzLDAsMCwwLDE4Ny40LDI4NC4zMlptLTQuODcsMjYuNDVhMzAuMTEsMzAuMTEsMCwwLDEtNS44LjQxLDkuNTIsOS41MiwwLDAsMS01LTEuMTJjLTEuMjItLjc1LTEuODQtMi4xLTEuODQtNC4wNmE0LjI1LDQuMjUsMCwwLDEsLjY5LTIuNDksNC40OCw0LjQ4LDAsMCwxLDEuOC0xLjUzLDguMjEsOC4yMSwwLDAsMSwyLjUzLS43NSwxOC41MiwxOC41MiwwLDAsMSwyLjc2LS4yMSwxNy45MywxNy45MywwLDAsMSwyLjg2LjIxLDE0LjcsMTQuNywwLDAsMSwyLC40MVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMDguMjIsMzA5LjE3YTQsNCwwLDAsMS0uODUtMS43NCwxMS4yMSwxMS4yMSwwLDAsMS0uMjQtMi41MlYyNjQuMDZsLTguMjUsMS4zN3Y0MS4wNWExNy41OCwxNy41OCwwLDAsMCwuNTgsNC43NCw3Ljc3LDcuNzcsMCwwLDAsMiwzLjQ4LDkuNDIsOS40MiwwLDAsMCwzLjg2LDIuMTQsMjIuMDksMjIuMDksMCwwLDAsNi4xLjgybDEuMTYtNi44MmExMi44MiwxMi44MiwwLDAsMS0yLjctLjU4QTMuODMsMy44MywwLDAsMSwyMDguMjIsMzA5LjE3WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTIzOC43OSwzMTAuM2EyMS4zNCwyMS4zNCwwLDAsMS00LjE2LjQxcS01LjY1LDAtOC0zLjExdC0yLjM5LTguNDJxMC01LjUyLDIuNTItOC41NnQ3LjM3LTNhMTcuNTUsMTcuNTUsMCwwLDEsMy44NS40MSwxOC43MSwxOC43MSwwLDAsMSwzLjI0LDFsMS43Ny02Ljc1YTI0LjksMjQuOSwwLDAsMC05LjU0LTEuODQsMTguMjgsMTguMjgsMCwwLDAtNy4zNywxLjQzLDE2LjE2LDE2LjE2LDAsMCwwLTUuNTYsNCwxNy42NCwxNy42NCwwLDAsMC0zLjUxLDYsMjEuODksMjEuODksMCwwLDAtMS4yMyw3LjQsMjQuNTcsMjQuNTcsMCwwLDAsMS4xLDcuNDcsMTYsMTYsMCwwLDAsMy4zLDUuOTMsMTUuMDcsMTUuMDcsMCwwLDAsNS41OSwzLjg5LDIwLjcyLDIwLjcyLDAsMCwwLDgsMS40LDI5LjU5LDI5LjU5LDAsMCwwLDUuNjktLjU1LDE2LjgyLDE2LjgyLDAsMCwwLDQuMTMtMS4yM2wtMS4xNi02LjgyQTE5Ljk0LDE5Ljk0LDAsMCwxLDIzOC43OSwzMTAuM1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNzkuMTgsMjkxLjQ0YTE3LjYyLDE3LjYyLDAsMCwwLTMuNTEtNS45LDE1LjQsMTUuNCwwLDAsMC01LjQyLTMuNzgsMTcuNjcsMTcuNjcsMCwwLDAtNi45Mi0xLjMzLDE3LjQyLDE3LjQyLDAsMCwwLTYuODksMS4zMywxNS43NywxNS43NywwLDAsMC01LjQyLDMuNzgsMTcuMzgsMTcuMzgsMCwwLDAtMy41NSw1LjksMjIuMjQsMjIuMjQsMCwwLDAtMS4yNiw3LjY3LDIyLjUxLDIyLjUxLDAsMCwwLDEuMjYsNy43MSwxNy4zNywxNy4zNywwLDAsMCwzLjUxLDUuOTMsMTUuOCwxNS44LDAsMCwwLDUuMzksMy44MiwxNy4yNSwxNy4yNSwwLDAsMCw3LDEuMzYsMTcuNTQsMTcuNTQsMCwwLDAsNy0xLjM2LDE1LjY0LDE1LjY0LDAsMCwwLDUuNDItMy44MiwxNywxNywwLDAsMCwzLjQ4LTUuOTMsMjMuMjYsMjMuMjYsMCwwLDAsMS4yMi03LjcxQTIyLjI0LDIyLjI0LDAsMCwwLDI3OS4xOCwyOTEuNDRabS05LjQ4LDE2LjJhOC4wNiw4LjA2LDAsMCwxLTEyLjc1LDBxLTIuMjgtMy4xMy0yLjI4LTguNTN0Mi4yOC04LjQyYTguMSw4LjEsMCwwLDEsMTIuNzUsMHEyLjMsMy4xLDIuMjksOC40MlQyNjkuNywzMDcuNjRaIi8+PHRleHQgY2xhc3M9ImNscy0yIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMjQuNDEgMzE3Ljg0KSI+RjwvdGV4dD48L3N2Zz4=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: falco-operator
+      deployments:
+      - name: falco-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: falco-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: falco-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: falco-operator
+                image: docker.io/falcosecurity/falco-operator-helm:0.7.6
+                imagePullPolicy: Always
+                name: falco-operator
+                ports:
+                - containerPort: 60000
+                  name: metrics
+                resources: {}
+              serviceAccountName: falco-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - monitoring
+  - security
+  - alerting
+  - metric
+  - troubleshooting
+  - run-time
+  links:
+  - name: Falco
+    url: https://falco.org
+  - name: Helm Chart
+    url: https://hub.helm.sh/charts/stable/falco
+  - name: Sysdig Operator
+    url: https://github.com/falcosecurity/falco-operator/tree/helm-based-operator
+  - name: Configuration Options
+    url: https://github.com/helm/charts/tree/master/stable/falco#configuration
+  maintainers:
+  - email: nestor.salceda@sysdig.com
+    name: "N\xC3\xA9stor Salceda"
+  provider:
+    name: Sysdig
+  replaces: falco-operator.v0.5.6
+  version: 0.7.6

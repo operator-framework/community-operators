@@ -1,0 +1,272 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"core.libopenstorage.org/v1alpha1\"\
+      ,\n    \"kind\": \"StorageCluster\",\n    \"metadata\": {\n      \"name\": \"\
+      portworx\",\n      \"namespace\": \"test-operator\",\n      \"annotations\"\
+      : {\n        \"portworx.io/is-openshift\": \"true\"\n      }\n    },\n    \"\
+      spec\": {\n      \"image\": \"portworx/oci-monitor:2.1.5\",\n      \"stork\"\
+      : {\n        \"enabled\": true,\n        \"image\": \"openstorage/stork:2.2.5\"\
+      \n      },\n      \"userInterface\": {\n        \"enabled\": true,\n       \
+      \ \"image\": \"portworx/px-lighthouse:2.0.4\"\n      },\n      \"storage\":\
+      \ {\n        \"useAll\": true\n      }\n    }\n  },\n  {\n    \"apiVersion\"\
+      : \"core.libopenstorage.org/v1alpha1\",\n    \"kind\": \"StorageNodeStatus\"\
+      ,\n    \"metadata\": {\n      \"name\": \"example\",\n      \"namespace\": \"\
+      test-operator\"\n    }\n  }\n]"
+    capabilities: Deep Insights
+    categories: Storage
+    certified: 'false'
+    containerImage: portworx/px-operator:1.0.6
+    createdAt: 2019-10-01 08:00:00
+    description: Cloud native storage solution for production workloads
+    repository: https://github.com/libopenstorage/operator
+    support: Portworx, Inc
+  name: portworx-operator.v1.0.6
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Storage Cluster installs any Open Storage cluster like Portworx
+        in the environment. It has all the necessary configurations to setup and update
+        a storage cluster.
+      displayName: Storage Cluster
+      kind: StorageCluster
+      name: storageclusters.core.libopenstorage.org
+      resources:
+      - kind: Pod
+        name: ''
+        version: v1
+      - kind: Service
+        name: ''
+        version: v1
+      - kind: Deployment
+        name: ''
+        version: v1
+      - kind: DaemonSet
+        name: ''
+        version: v1
+      - kind: ConfigMap
+        name: ''
+        version: v1
+      specDescriptors:
+      - description: The docker image name and version of Portworx Enterprise.
+        displayName: Image
+        path: image
+      - description: It is the pull policy for the image. Takes one of Always, Never,
+          IfNotPresent. Defaults to Always.
+        displayName: Image Pull Policy
+        path: imagePullPolicy
+      - description: It is a reference to secret in the kube-system namespace which
+          is used for pulling images used by this storage cluster.
+        displayName: Image Pull Secret
+        path: imagePullSecret
+      - description: 'CustomImageRegistry is a custom container registry server (may
+          include repository) that will be used instead of index.docker.io to download
+          Docker images. (Example: myregistry.net:5443 or myregistry.com/myrepository)'
+        displayName: Custom Image Registry
+        path: customImageRegistry
+      - description: The docker image name and version of Stork.
+        displayName: Stork Image
+        path: stork.image
+      - description: The docker image name and version of Lighthouse.
+        displayName: Lighthouse Image
+        path: userInterface.image
+      - description: The secret provider that Portworx should integrate with to provider
+          features like volume encryption, security, cloud backup and migration.
+        displayName: Secrets Provider
+        path: secretsProvider
+      statusDescriptors:
+      - description: Conditions describe the current state of the cluster
+        displayName: Cluster Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+      - description: Status of the Portworx cluster.
+        displayName: Status
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.phase
+      version: v1alpha1
+    - description: DO NOT create Storage Node Status as it is internally created by
+        the operator. It represents the status of a Portworx node.
+      displayName: Storage Node Status
+      kind: StorageNodeStatus
+      name: storagenodestatuses.core.libopenstorage.org
+      specDescriptors:
+      - description: Version of Portworx on the node.
+        displayName: Version
+        path: version
+      statusDescriptors:
+      - description: Unique identifier for the Portworx node.
+        displayName: Node UID
+        path: nodeUid
+      - description: Status of the Portworx node.
+        displayName: Status
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.phase
+      - description: IP address used by the storage driver for data traffic
+        displayName: Data IP
+        path: network.dataIP
+      - description: IP address used by the storage driver for management traffic
+        displayName: Management IP
+        path: network.mgmtIP
+      - description: Conditions describe the current state of the storage node
+        displayName: Node Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+      version: v1alpha1
+  description: "### About Portworx\n\nPortworx Enterprise is the most widely-used\
+    \ and reliable cloud-native\nstorage solution for production workloads and provides\
+    \ high-availability,\ndata protection and security for containerized applications.\n\
+    \n\nPortworx Enterprise enables you to migrate entire applications,\nincluding\
+    \ data, between clusters in a single data center or cloud, or between\nclouds,\
+    \ with a single kubectl command.\n\n\nThe cloud native storage and data management\
+    \ platform that enterprises trust\nto manage data in containers now has an operator\
+    \ which simplifies the\ninstall, configuration, upgrades and manages the Portworx\
+    \ Enterprise cluster\nlifecycle.\n\n### Uninstall\n\nDeleting the StorageCluster\
+    \ object for Portworx cluster does not stop Portworx service running on the nodes\
+    \ to avoid application downtime.\nTo uninstall Portworx completely without wiping\
+    \ the data, you should add the following delete strategy to the StorageCluster\
+    \ spec:\n```\nspec:\n  deleteStrategy:\n    type: Uninstall\n```\nTo uninstall\
+    \ Portworx and **wipe all the data**, you should use the following delete strategy:\n\
+    ```\nspec:\n  deleteStrategy:\n    type: UninstallAndWipe\n```\n\n### Tutorials\n\
+    \n* [Portworx Enterprise on Openshift](https://portworx.com/openshift/)\n\n* [Stateful\
+    \ applications on Kubernetes](https://docs.portworx.com/portworx-install-with-kubernetes/application-install-with-kubernetes/)\n\
+    \n* [Kafka on Kubernetes](https://portworx.com/kafka-kubernetes/)\n\n* [Elastisearch\
+    \ on Kubernetes](https://portworx.com/elasticsearch-kubernetes/)\n"
+  displayName: Portworx Enterprise
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAGAGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDUgNzkuMTYzNDk5LCAyMDE4LzA4LzEzLTE2OjQwOjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMTktMDMtMjdUMTU6NDY6MjAtMDc6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDE5LTAzLTI3VDE1OjQ5OjMwLTA3OjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDE5LTAzLTI3VDE1OjQ5OjMwLTA3OjAwIiBkYzpmb3JtYXQ9ImltYWdlL3BuZyIgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjNiZjg1ZTk5LTkyNDYtNDEyZC1hZWJjLWNjM2RhNWFhNGE0MCIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOmJmMjIxNjE2LWE4NzgtY2E0Yi1iMDdmLWQ0MGU1NzU2MjA5YSIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjUwOWJjZDJhLWJiMzYtNDFkZS05M2I1LTIxYTBmNjBjYTk0NyI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6NTA5YmNkMmEtYmIzNi00MWRlLTkzYjUtMjFhMGY2MGNhOTQ3IiBzdEV2dDp3aGVuPSIyMDE5LTAzLTI3VDE1OjQ2OjIwLTA3OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoTWFjaW50b3NoKSIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6M2JmODVlOTktOTI0Ni00MTJkLWFlYmMtY2MzZGE1YWE0YTQwIiBzdEV2dDp3aGVuPSIyMDE5LTAzLTI3VDE1OjQ5OjMwLTA3OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoTWFjaW50b3NoKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8L3JkZjpTZXE+IDwveG1wTU06SGlzdG9yeT4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4uenEnAAA9MUlEQVR4nO29WZsjV7UtOsZcEWoys3q32MYtxgZjG7O9DQbccvbL/b7zcn/Tebr379zmuxtsw2bTHjhsMK1NY2PAuKpc2UuKiDXHfVgRUkipzGpcnZUx7CxJoVA00hxrtmsuSkKHDh2Ww271BXTocDujI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkegI0iHDkcgu9UXcCNx/r8/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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: portworx-operator
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: portworx
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: portworx-pvc-controller
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - anyuid
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: px-lighthouse
+      deployments:
+      - name: portworx-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: portworx-operator
+          strategy:
+            rollingUpdate:
+              maxSurge: 1
+              maxUnavailable: 1
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                name: portworx-operator
+            spec:
+              affinity:
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                      - key: name
+                        operator: In
+                        values:
+                        - portworx-operator
+                    topologyKey: kubernetes.io/hostname
+              containers:
+              - command:
+                - /operator
+                - --verbose
+                - --driver=portworx
+                - --leader-elect=true
+                image: portworx/px-operator:1.0.6
+                imagePullPolicy: Always
+                name: portworx-operator
+                resources: {}
+                securityContext:
+                  privileged: false
+              serviceAccountName: portworx-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - portworx
+  - persistent storage
+  - storage
+  - cloud native
+  - open source
+  labels:
+    operated-by: portworx-operator
+  links:
+  - name: Product Features
+    url: https://portworx.com/products/features
+  - name: Documentation
+    url: https://docs.portworx.com
+  - name: Support
+    url: https://docs.portworx.com/support
+  - name: Openstorage Operator Source Code
+    url: https://github.com/libopenstorage/operator
+  maintainers:
+  - email: support@portworx.com
+    name: Portworx
+  maturity: stable
+  minKubeVersion: 1.11.0
+  provider:
+    name: Portworx
+  replaces: portworx-operator.v1.0.5
+  selector:
+    matchLabels:
+      operated-by: portworx-operator
+  version: 1.0.6

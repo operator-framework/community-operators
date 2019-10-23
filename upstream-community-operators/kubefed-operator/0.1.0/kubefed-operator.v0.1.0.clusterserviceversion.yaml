@@ -1,0 +1,391 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\": \"operator.kubefed.io/v1alpha1\",\n\
+      \    \"kind\": \"KubeFed\",\n    \"metadata\": {\n      \"name\": \"kubefed\"\
+      \n      },\n    \"spec\": {\n      \"scope\": \"Namespaced\"\n      }\n  }\n\
+      ]"
+    capabilities: Basic Install
+    categories: OpenShift Optional, Integration & Delivery
+    certified: 'false'
+    containerImage: quay.io/openshift/kubefed-operator:v0.1.0-rc3
+    createdAt: '2019-06-14T00:00:00Z'
+    description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes
+      Federation.
+    repository: https://github.com/openshift/kubefed-operator
+    support: Red Hat
+  name: kubefed-operator.v0.1.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: ClusterPropagatedVersion holds version information about the state
+        propagated from kubefed APIs
+      displayName: ClusterPropagatedVersion
+      kind: ClusterPropagatedVersion
+      name: clusterpropagatedversions.core.kubefed.k8s.io
+      version: v1alpha1
+    - description: DNSEndpoint is the CRD wrapper for Endpoint which is designed to
+        act as a source of truth for external-dns.
+      displayName: DNSEndpoint
+      kind: DNSEndpoint
+      name: dnsendpoints.multiclusterdns.kubefed.k8s.io
+      version: v1alpha1
+    - description: Domain is the DNS zone associated with the kubefed control plane
+      displayName: Domain
+      kind: Domain
+      name: domains.multiclusterdns.kubefed.k8s.io
+      version: v1alpha1
+    - description: KubeFedCluster configures kubefed to be aware of a Kubernetes cluster
+        and encapsulates the details necessary to communicate with the cluster.
+      displayName: KubeFedCluster
+      kind: KubeFedCluster
+      name: kubefedclusters.core.kubefed.k8s.io
+      version: v1beta1
+    - description: FederatedServiceStatus is the observed status of the resource for
+        a named cluster.
+      displayName: FederatedServiceStatus
+      kind: FederatedServiceStatus
+      name: federatedservicestatuses.core.kubefed.k8s.io
+      version: v1alpha1
+    - description: FederatedTypeConfig programs kubefed to know about a single API
+        type - the "target type" - that a user wants to federate.
+      displayName: FederatedTypeConfig
+      kind: FederatedTypeConfig
+      name: federatedtypeconfigs.core.kubefed.k8s.io
+      version: v1beta1
+    - description: KubeFedConfig
+      displayName: KubeFedConfig
+      kind: KubeFedConfig
+      name: kubefedconfigs.core.kubefed.k8s.io
+      version: v1beta1
+    - description: IngressDNSRecord associates one or more Kubernetes Ingress and
+        how to access the Kubernetes Ingress resources, with a scheme for constructing
+        Domain Name System (DNS) resource records for the Ingress.
+      displayName: IngressDNSRecord
+      kind: IngressDNSRecord
+      name: ingressdnsrecords.multiclusterdns.kubefed.k8s.io
+      version: v1alpha1
+    - description: PropagatedVersion
+      displayName: PropagatedVersion
+      kind: PropagatedVersion
+      name: propagatedversions.core.kubefed.k8s.io
+      version: v1alpha1
+    - description: ReplicaSchedulingPreference provides an automated mechanism of
+        distributing and maintaining total number of replicas for deployment or replicaset
+        based federated workloads into federated clusters.
+      displayName: ReplicaSchedulingPreference
+      kind: ReplicaSchedulingPreference
+      name: replicaschedulingpreferences.scheduling.kubefed.k8s.io
+      version: v1alpha1
+    - description: ServiceDNSRecord associates one or more Kubernetes Service resources
+        and how to access the Service, with a scheme for constructing Domain Name
+        System (DNS) resource records for the Service.
+      displayName: ServiceDNSRecord
+      kind: ServiceDNSRecord
+      name: servicednsrecords.multiclusterdns.kubefed.k8s.io
+      version: v1alpha1
+    - description: KubeFed represents an installation of a particular version of KubeFed
+      displayName: KubeFed
+      kind: KubeFed
+      name: kubefeds.operator.kubefed.io
+      statusDescriptors:
+      - description: The version of KubeFed installed
+        displayName: Version
+        path: version
+      version: v1alpha1
+  description: "Kubernetes Federation is a tool to sync (aka \"federate\") a set of\
+    \ Kubernetes\nobjects from a \"source\" into a set of other clusters. Common use-cases\n\
+    include federating Namespaces across all of your clusters or rolling out an\n\
+    application across several geographically distributed clusters. The\nKubernetes\
+    \ Federation Operator runs all of the components under the hood to\nquickly get\
+    \ up and running with this powerful concept. Federation is a key\npart of any\
+    \ Hybrid Cloud capability.\n\n**Support**: \n\nThe KubeFed operator is purely\
+    \ for prototyping purposes and not supported by any upstream community at this\
+    \ time. Note that at the moment uninstalling the operator doesn't delete the custom\
+    \ resources it reconciles. Users may optionally want to delete the custom resources\
+    \ and the associated CRDs before reinstalling the upgraded version of the operator.\n\
+    \n\n## Start using the operator\n\nThe KubeFed operator supports deploying a KubeFed\
+    \ control plane in both\nnamespace-scoped and cluster-scoped modes. For example,\
+    \ if you subscribe to\nthis package in a namespace `my-namespace`, KubeFed will\
+    \ be deployed to\nmanage objects _only_ in `my-namespace` in the host cluster\
+    \ and target\nclusters.\n\nYou must create the `KubeFed` custom resource (CR)\
+    \ for KubeFed deployment and the operator will create the KubeFed CRD automatically\
+    \ for deploying components of a `KubeFed` control plane in a given cluster.\n\n\
+    \n### KubeFed deployment\nFollow these steps to deploy a KubeFed control plane:\n\
+    \n* Install the operator by following the instructions in the\nOpenShift Container\
+    \ Platform 4.1 documentation on [Installing operator](https://docs.openshift.com/container-platform/4.1/applications/operators/olm-adding-operators-to-cluster.html#olm-installing-operators-from-operatorhub_olm-adding-operators-to-a-cluster).\n\
+    The KubeFed operator only needs to be installed in the host cluster for the\n\
+    deployment. It does not need to be installed in each individual target cluster.\n\
+    \n**Important Notes**: \n\n* It's recommended to deploy KubeFed in either a namespace-scoped\
+    \ or\ncluster-scoped mode but not both ways as deploying a cluster-scoped and\n\
+    namespace-scoped KubeFed control plane to the same cluster will result in\nboth\
+    \ control planes try to manage resources in the namespace of the\nnamespace-scoped\
+    \ control plane and the managed resources will never converge\non the desired\
+    \ state. For more information, visit\n[link](https://github.com/openshift/federation-dev/blob/master/docs/kubefed-scope.md)\n\
+    \n* A KubeFed control plane does not need to be installed on each cluster that\n\
+    it will manage. Clusters whose resources are intended to be managed by\nKubeFed\
+    \ need to be registered with the managing control plane, and the\ncontrol plane\
+    \ will interact with those clusters directly via their API.\n\n* The instructions\
+    \ in this guide refer to the namespace where KubeFed is\ninstalled as `<namespace>`\
+    \ in command examples. The upstream user guide uses\n`kube-federation-system`\
+    \ as the name of this namespace.\n\n```\n$ kubectl get po -n <namespace>\n  NAME\
+    \                               READY   STATUS    RESTARTS   AGE\n  kubefed-operator-db58d9b89-8694x\
+    \   1/1     Running   0          15s\n\n```\n* Create a `KubeFed` resource to\
+    \ drive the installation of a KubeFed control\nplane setting the scope to be either\
+    \ `Namespaced` or `Cluster`. If you're\nplanning to federate a cluster-scoped\
+    \ resource type like, for example\n`StorageClass`, create this CR with `scope:Cluster`.\n\
+    \n```\n$ cat <<-EOF | kubectl apply -n <namespace> -f -\n---\napiVersion: operator.kubefed.io/v1alpha1\n\
+    kind: KubeFed\nmetadata:\n  name: kubefed-resource\nspec: \n  scope: Cluster \n\
+    ---\n```\n```\n$ kubectl get po -n <namespace> \nNAME                        \
+    \                  READY   STATUS    RESTARTS   AGE\nkubefed-controller-manager-67d5d5cc99-5t2fk\
+    \   1/1     Running   0          25s\nkubefed-controller-manager-67d5d5cc99-b865z\
+    \   1/1     Running   0          25s\nkubefed-operator-db58d9b89-8694x       \
+    \       1/1     Running   0          61s\n\n```\n### Installing the KubeFed CLI\
+    \ tool\n\nOnce the KubeFed control plane is up and running, a user can download\
+    \ the\n`kubefedctl` command-line tool to communicate with it. You can get the\n\
+    latest release on\n[GitHub](https://github.com/kubernetes-sigs/kubefed/releases).\n\
+    \n```\n $ curl -Ls https://github.com/kubernetes-sigs/kubefed/releases/download/v0.1.0-rc3/kubefedctl-0.1.0-rc3-linux-amd64.tgz\n\
+    \ $ tar -xvzf kubefedctl-0.1.0-rc3-linux-amd64.tgz\n $ chmod u+x kubefedctl\n\
+    \ $ sudo mv kubefedctl /usr/local/bin/ # make sure the location is in the PATH\n\
+    ```\n### Joining Clusters\n\nUse the `kubefedctl join` command to connect clusters\
+    \ you want KubeFed to manage resources in. The `join` operation reads information\
+    \ \nabout how to connect to the joining cluster and the cluster hosting federation\
+    \ from your local KUBECONFIG.\n\n```\n$ kubefedctl join <cluster-name> \\\n  \
+    \  --cluster-context mycluster \\            # name of a KUBECONFIG context for\
+    \ the cluster to join (required when the context name differs from the cluster\
+    \ name)\n    --host-cluster-context mycluster \\       # name of a KUBECONFIG\
+    \ context for the hosting cluster (required when the current-context isn't set\
+    \ correctly.)\n    --kubefed-namespace=<namespace> \\        # namespace where\
+    \ KubeFed is deployed (required when the kubefed-namespace isn't `kube-federation-system`)\n\
+    \    -v 2\n``` \n**Note**:     \n* If you're using an openshift cluster for deploying\
+    \ the KubeFed operator then use the following command to rename the context to\
+    \ a consumable format.\n \n ```\n $ kubectl config rename-context $(kubectl config\
+    \ current-context) <cluster-name>\n \n ```\n\n `kubefedctl join` creates `KubeFedCluster`\
+    \ resource named `<cluster-name>` to represent the joined cluster.\n\n KubeFedCluster\
+    \ resources configure the API endpoint of a registered cluster and reference a\
+    \ local secret containing \n the authentication token used to connect to that\
+    \ cluster.\n\n  ```\n  $ kubectl get kubefedclusters -n <namespace>\n    NAME\
+    \            READY     AGE\n  <cluster-name>    True      7s\n\n  ```\n  ``` \n\
+    \  $ kubectl get kubefedclusters cluster-name -o yaml                        \
+    \                                                                            \
+    \                                                                 \n    apiVersion:\
+    \ v1\n    items:\n    - apiVersion: core.kubefed.k8s.io/v1beta1\n      kind: KubeFedCluster\n\
+    \      metadata:\n        creationTimestamp: \"2019-06-07T19:42:16Z\"\n      \
+    \  generation: 1\n        name: cluster1\n        namespace: <namespace>\n   \
+    \     resourceVersion: \"1055\"\n        selfLink: /apis/core.kubefed.k8s.io/v1beta1/namespaces/federation-test/kubefedclusters/cluster1\n\
+    \        uid: 5ac7125d-895c-11e9-b736-0242ac110002\n      spec:\n        apiEndpoint:\
+    \ https://172.17.0.2:6443\n        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRFNU1EWXdOekU1TXpZek1Gb1hEVEk1TURZd05ERTVNell6TUZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBS0M1Cjk0UDd3d2RaMjBEby8weGJYbVpGKzdweks0cEE5b1ZaVW4yRFNSckhGQldmYThrcnpyVmtkQmdjdnNIa044RGQKTndxdFRXbGd6Y2NMVEZjb1cwSGE3VjRHMWpGY2piU1JkNHhPaWp6SktqMTNCakh3RStJY2R5UnZJbmpaUVlQcgpta1ZUQWRocU1mL3IwY08wSHRTYkJweTJLV3FsRmsyajdTSUhkT3AvK0cwWGU0SS9BQXN3U0xxNTczdXo2V0xkCmFMSFBYRkFyaWh5cFlwWUxXSzZNZWRqUEp5R0MxL3NPMjh5T0RWRTFxSUhRL1Q3TUk1a0YyOGh4cHpCWEhpcE8KMWlYOVJNOGNXdktyVUozeU13NzNpQ3cxR2RhQk1tcDR0ZmpWdzJDQ3IwVU9BZmpUVGYzc2xkeUVJcmJTblUxZApCL0k1M0IrUXhQTHBzY3U4aCtFQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFGVVNNcS9DbWlXSnhKNlVIY0RqQVc3eW1rUnMKWWh3VktUa3JDbWJVVDNRNUY5SVVGMDFtZGQ2TTdvWUkyWVJFM2J6MkJudU5jM095eGxKakNqNWRLN2FwaGUwSwpham92b3Y2VVhWd0RBQWFWTTNPb2pMODFRbzhHcStFTVpGQ2NITVlqcHlYUEE2c1duMEZFYnRFTTRKQTBYaXpSClgvdUpISWppOGtFdUlWdmNFZHQzYldaTG9rdTVzZ2RvYnBVYWI0WmMrRVpoNVJLazVwY1ByQnpQaUlUcTF0UzAKYTRlemMyRlFHbUEzNHlwUmxWb25jY2FmVWx4aWUwaklmMVlWdnZJVE41d1dKakc5VVpZdmpseGxNT2NjRzRxSwpscm1Wc2JJcytiQTRIWVFCdDEwOTkwR3VmakYybytLZDgwR3g1NkxGZEJvZzVrclZ3VzdOZUxEM0plOD0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=\n\
+    \        secretRef:\n          name: cluster1-jk4hm\n      status:\n        conditions:\n\
+    \        - lastProbeTime: \"2019-06-07T19:42:32Z\"\n          lastTransitionTime:\
+    \ \"2019-06-07T19:42:32Z\"\n          message: /healthz responded with ok\n  \
+    \        reason: ClusterReady\n          status: \"True\"\n          type: Ready\n\
+    \    kind: List\n    metadata:\n      resourceVersion: \"\"\n      selfLink: \"\
+    \"\n  ```\nFor more detailed information on how to use KubeFed, see [KubeFed project\
+    \ documentation](https://github.com/kubernetes-sigs/kubefed/blob/master/docs/userguide.md#user-guide).\n\
+    \n### Useful links\n* [Kubecon EU-2019](https://www.youtube.com/watch?v=GOiN1R2vQos&t=2461s)\n\
+    * [Blog](https://blog.openshift.com/federation-v2-is-now-kubefed/)\n\n\n### Contribution\
+    \ \nIf you've got some ideas or use cases for KubeFed operator, we would love\
+    \ to hear them!\n* Raise issues on [GitHub](https://github.com/openshift/kubefed-operator/issues).\n\
+    * [Join our community](https://github.com/kubernetes/community/tree/master/sig-multicluster#contact)\n\
+    \n### License\nKubeFed is licensed under the [Apache License, Version 2.0](https://github.com/kubernetes-sigs/kubefed/blob/master/LICENSE)\
+    \ license.\n"
+  displayName: Kubefed Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - create
+          - watch
+          - list
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - create
+          - watch
+          - list
+          - update
+        - apiGroups:
+          - scheduling.kubefed.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - watch
+          - list
+          - update
+        - apiGroups:
+          - multiclusterdns.kubefed.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - core.kubefed.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+          - update
+        - apiGroups:
+          - types.kubefed.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - watch
+          - list
+          - update
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - watch
+          - list
+        - apiGroups:
+          - ''
+          resources:
+          - events
+          verbs:
+          - get
+          - create
+          - update
+          - patch
+        serviceAccountName: kubefed-operator
+      deployments:
+      - name: kubefed-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: kubefed-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: kubefed-operator
+            spec:
+              containers:
+              - args:
+                - --filename=$(FILE_NAME)
+                - --recursive=true
+                command:
+                - kubefed-operator
+                env:
+                - name: FILE_NAME
+                  value: deploy/resources
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: kubefed-operator
+                image: quay.io/openshift/kubefed-operator:v0.1.0-rc3
+                imagePullPolicy: Always
+                name: kubefed-operator
+                resources: {}
+              serviceAccountName: kubefed-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - kubefed-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - operator.kubefed.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: kubefed-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - kubernetes
+  - federation
+  - hybrid
+  - hybrid cloud
+  - multi-cluster
+  - cluster
+  links:
+  - name: Documentation
+    url: https://github.com/kubernetes-sigs/kubefed/tree/master/docs/
+  - name: Source Repository
+    url: https://github.com/kubernetes-sigs/kubefed/
+  maintainers:
+  - email: kubefed-operator@redhat.com
+    name: Kubefed Team
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.1.0

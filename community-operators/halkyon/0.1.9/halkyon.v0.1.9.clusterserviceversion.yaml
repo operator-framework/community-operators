@@ -1,0 +1,348 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: "[\n  {\n    \"apiVersion\" : \"halkyon.io/v1beta1\",\n    \"kind\"\
+      \ : \"Capability\",\n    \"metadata\" : {\n      \"name\" : \"postgres-db\"\n\
+      \    },\n    \"spec\" : {\n      \"category\" : \"database\",\n      \"kind\"\
+      \ : \"postgres\",\n      \"version\" : \"10\",\n      \"parameters\" : [\n \
+      \       {\n          \"name\" : \"DB_USER\",\n          \"value\" : \"admin\"\
+      \n        }, {\n          \"name\" : \"DB_PASSWORD\",\n          \"value\" :\
+      \ \"admin\"\n        }, {\n          \"name\" : \"DB_NAME\",\n          \"value\"\
+      \ : \"sample-db\"\n        }\n      ]\n    }\n  },\n  {\n    \"apiVersion\"\
+      \ : \"halkyon.io/v1beta1\",\n    \"kind\" : \"Component\",\n    \"metadata\"\
+      \ : {\n      \"labels\" : {\n        \"app\" : \"fruit-backend-sb\"\n      },\n\
+      \      \"name\" : \"fruit-backend-sb\"\n    },\n    \"spec\" : {\n      \"deploymentMode\"\
+      \ : \"build\",\n      \"runtime\" : \"spring-boot\",\n      \"version\" : \"\
+      2.1.6.RELEASE\",\n      \"exposeService\" : true,\n      \"buildConfig\" : {\n\
+      \        \"type\" : \"s2i\",\n        \"url\" : \"https://github.com/halkyonio/operator.git\"\
+      ,\n        \"ref\" : \"master\",\n        \"contextPath\" : \"demo/\",\n   \
+      \     \"moduleDirName\" : \"fruit-backend-sb\"\n      },\n      \"port\" : 8080\n\
+      \    }\n  },\n  {\n    \"apiVersion\" : \"halkyon.io/v1beta1\",\n    \"kind\"\
+      \ : \"Link\",\n    \"metadata\" : {\n      \"name\" : \"link-to-database\"\n\
+      \    },\n    \"spec\" : {\n      \"componentName\" : \"fruit-backend-sb\",\n\
+      \      \"kind\" : \"Secret\",\n      \"ref\" : \"postgres-db-config\"\n    }\n\
+      \  }\n]"
+    capabilities: Basic Install
+    categories: Developer Tools
+    certified: 'false'
+    containerImage: quay.io/halkyonio/operator:v0.1.9
+    createdAt: 2019-08-21
+    description: 'Halkyon: To get back to the halcyon days of local development in
+      a modern kubernetes setting of microservices!'
+    repository: https://github.com/halkyonio/operator
+    support: Halkyon community
+  name: halkyon.v0.1.9
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: A component describing your microservice
+      displayName: Component
+      group: halkyon.io
+      kind: Component
+      name: components.halkyon.io
+      resources: []
+      specDescriptors:
+      - description: 'How the application is deployed: dev or build mode'
+        displayName: DeploymentMode
+        path: deploymentMode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: 'The type of the runtime application installed: Spring Boot,
+          Vert.x, Tornthail, NodeJS, Quarkus'
+        displayName: Runtime
+        path: runtime
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: 'The version of the runtime or its framework. Example. Spring
+          Boot : 2.1.6.RELEASE'
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Allow to specify if the service should be exposed as Ingress
+          or Openshift Route
+        displayName: Expose Service
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      version: v1beta1
+    - description: A capability or service to be deployed
+      displayName: Capability
+      group: halkyon.io
+      kind: Capability
+      name: capabilities.halkyon.io
+      specDescriptors:
+      - description: 'The category of the capability to be installed: database, ...'
+        displayName: Category
+        path: category
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: According to the `category`, this field represents by example
+          the type of the database to be deployed. `PostgreSQL` is only supported
+          for the moment.
+        displayName: Type
+        path: type
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Identify the version of the `type` to be installed
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: List of name and value pairs used to create the secret of the
+          service
+        displayName: Parameters
+        path: parameters
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1beta1
+    - description: To link the microservices or access secrets
+      displayName: Link
+      group: halkyon.io
+      kind: Link
+      name: links.halkyon.io
+      specDescriptors:
+      - description: Name of the target component/deployment to enrich with Env Variables
+        displayName: Component Name
+        path: componentName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: 'The type of the resource to search for to create the env vars:
+          Secret or Env'
+        displayName: Type
+        path: type
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The reference of the secret to search for when the type selected
+          is Secret
+        displayName: Type
+        path: ref
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: List of env variables defined as name and value pairs
+        displayName: Envs
+        path: envs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1beta1
+  description: "### Introduction\n\nDeploying modern micro-services applications that\
+    \ comply with the [12-factor](https://12factor.net/) guidelines to Kubernetes\
+    \ is difficult, mainly due to the host\nof different and complex Kubernetes Resources\
+    \ involved. In such scenarios developer experience becomes very important.\n\n\
+    This projects aims to tackle said complexity and vastly **simplify** the process\
+    \ of deploying micro-service applications to Kubernetes and get back to\nthe halcyon\
+    \ days of local development! :sunglasses:\n\nBy providing several, easy-to-use\
+    \ Kubernetes [Custom Resources (CRs)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)\
+    \ and\nan [Operator](https://enterprisersproject.com/article/2019/2/kubernetes-operators-plain-english)\
+    \ to handle them, the Halkyon project provides the following features:\n- Install\
+    \ micro-services (`components` in Halkyon's parlance) utilizing `runtimes` such\
+    \ as Spring Boot, Vert.x, Thorntail, Quarkus or Nodejs, serving as base building\
+    \ blocks for your application\n- Manage the relations between the different components\
+    \ using `link` CR allowing one micro-service for example to consume a REST endpoint\
+    \ provided by another\n- Deploy various infrastructure services like a database\
+    \ which are bound to a `component` via the `capability` CR.\n\nThe Halkyon Operator\
+    \ requires `Kubernetes >= 1.13` or `OpenShift >= 3.11`.\n\n### Prerequisite\n\n\
+    In order to use the Halkyon Operator and the CRs, it is mandatory to install [Tekton\
+    \ Pipelines](https://tekton.dev/) and [KubeDB](http://kubedb.com) Operators\n\
+    and their Custom Resources. Otherwise, it will fail to start or to be deployed\
+    \ from the Operatorhub UI screen of the console.\nSee [prerequisite](https://github.com/halkyonio/operator/blob/master/README.md#prerequisites)\
+    \ section of the Halkyon documentation.\n\n### How to use it\n\nDeploy the operator\
+    \ as defined within the [Operator Doc](https://github.com/halkyonio/operator#installing-the-halkyon-operator)\n\
+    or use the operator bundle promoted on [operatorhub.io](https://operatorhub.io/operator/halkyon).\n\
+    \nFirst create a namespace:\n```\nkubectl create ns demo\n```\nNext, create a\
+    \ component yml file with the following information within your maven java project:\n\
+    ```\napiVersion: halkyon.io/v1beta1\nkind: Component\nmetadata:\n  name: spring-boot\n\
+    spec:\n  runtime: spring-boot\n  version: 2.1.6.RELEASE\n  deploymentMode: dev\n\
+    ```\nDeploy it:\n```\nkubectl apply -n demo -f my-component.yml\n```\nVerify if\
+    \ the component has been deployed properly:\n```\nkubectl get components -n demo\n\
+    NAME          RUNTIME       VERSION           AGE     MODE   STATUS   MESSAGE\
+    \   REVISION\nspring-boot   spring-boot   2.1.6.RELEASE   2m19s      dev   Ready\n\
+    ```\n\nPackage your Java Application \"mvn package\" and push the uber java file.\n\
+    ```\nkubectl cp target/my-component-1.0-SNAPSHOT.jar POD_NAME:/deployments/my-component-1.0-SNAPSHOT\
+    \ -n demo\n```\n\nStart your application within the pod\n```\nkubectl exec POD_NAME\
+    \ -n demo /var/lib/supervisord/bin/supervisord ctl start run-cmd\n```\n\nEnrich\
+    \ your application with additional `Component`, `Link` them or deploy a `Capability`\
+    \ database using the supported CRs for your different microservices.\n\nTo simplify\
+    \ your life even more when developing Java applications, add [Dekorate]( https://dekorate.io)\
+    \ to your project to automatically generate the YAML resources for your favorite\
+    \ runtime !\n\n### A Real demo\n\nTo play with a more [real-world example](https://github.com/halkyonio/operator/#key-concepts)\
+    \ and discover the different features currently supported, use the following [demo](https://github.com/halkyonio/operator/tree/master/demo)\n\
+    project. So jump there to see in action how Halkyon enhances the Developer Experience\
+    \ on Kubernetes ;-)\n\n### More info\n\n[Custom Resources and their fields](https://github.com/halkyonio/api)\n\
+    \n[Project documentation - https://github.com/halkyonio/operator](https://github.com/halkyonio/operator#how-to-play-with-it)\n\
+    \n[Zulip Community](https://snowdrop.zulipchat.com/#narrow/stream/207165-halkyon)\n\
+    \nFollow us on [https://twitter.com/halkyonio](https://twitter.com/halkyonio)\n\
+    \n### Contributing\n\nIf you've got some great features, use cases for the Halkyon\
+    \ operator and project, open a ticket on [GitHub](https://github.com/halkyonio/operator/issues)\
+    \ !\n\n### License\n\nHalkyon is licensed under the [Apache License, Version 2.0](https://github.com/halkyonio/operator/blob/master/LICENSE)\
+    \ license."
+  displayName: Halkyon Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - tekton.dev
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - kubedb.com
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - halkyon.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - extensions
+          resources:
+          - deployments
+          - ingresses
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - '*'
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          - imagestreams/layers
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - '*'
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - roles
+          - clusterrolebindings
+          - rolebindings
+          verbs:
+          - '*'
+        serviceAccountName: halkyon-operator
+      deployments:
+      - name: halkyon-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: halkyon-operator
+          template:
+            metadata:
+              labels:
+                name: halkyon-operator
+            spec:
+              containers:
+              - args:
+                - --zap-encoder
+                - $(ZAP_ENCODER)
+                command:
+                - halkyon-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: halkyon-operator
+                - name: ZAP_ENCODER
+                  value: console
+                image: quay.io/halkyonio/operator:v0.1.9
+                imagePullPolicy: Always
+                name: halkyon-operator
+                ports:
+                - containerPort: 60000
+                  name: metrics
+              serviceAccountName: halkyon-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - component
+  - microservices
+  - composition
+  links:
+  - name: Documentation Home
+    url: https://github.com/halkyonio/operator/blob/master/README.md
+  - name: Halkyon Operator Source Code
+    url: https://github.com/halkyonio/operator
+  - name: Halkyon API
+    url: https://github.com/halkyonio/api
+  - name: Developer CLI Tool
+    url: https://github.com/halkyonio/kreate
+  maintainers:
+  - email: cmoulliard@redhat.com
+    name: Halkyon Owner
+  maturity: alpha
+  provider:
+    name: Snowdrop Team
+  replaces: halkyon.v0.1.3
+  version: 0.1.9
