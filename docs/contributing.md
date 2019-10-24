@@ -4,7 +4,7 @@
 
 ## A primer to Kubernetes Community Operators
 
-This projects collects Operators and publishes them to OperatorHub.io, a central registry for community-powered Kubernetes Operators. For OperatorHub.io your Operator needs to work with vanilla Kubernetes.
+This project collects Operators and publishes them to OperatorHub.io, a central registry for community-powered Kubernetes Operators. For OperatorHub.io your Operator needs to work with vanilla Kubernetes.
 This project also collects Community Operators that work with OpenShift to be displayed in the embedded OperatorHub. If you are new to Operators, start [here](https://github.com/operator-framework/getting-started).
 
 ## Sign Your Work
@@ -138,7 +138,7 @@ Unless of purely cosmectic nature, subsequent updates to your Operator should re
 This enables Operator updates being facilitated by OLM on clusters where your Operator is deployed. The CSV being pointed to in the `replaces` property indicate that an existing Operator in that version may be upgraded seamlessly to the new version. It is encouraged to use continuous delivery to update your Operator often as new features are added and bugs are fixed.
 
 ### Operator Bundle Editor
-You can now create your Operator bundle using the [bundle editor](https://operatorhub.io/bundle). Starting by uploading your Kubernetes YAML manifests, the forms on the page will be populated with all valid information and used to create the new Operator bundle. You can modify or add properties through these forms as well. The result will be a downloadable ZIP file
+You can now create your Operator bundle using the [bundle editor](https://operatorhub.io/bundle). Starting by uploading your Kubernetes YAML manifests, the forms on the page will be populated with all valid information and used to create the new Operator bundle. You can modify or add properties through these forms as well. The result will be a downloadable ZIP file.
 
 ## Provide information about your Operator
 
@@ -150,7 +150,7 @@ A large part of the information gathered in the CSV is used for user-friendly vi
 
 ## Test locally before you contribute
 
-The team behind OperatorHub.io will support you in making sure you are Operator works and is packaged correctly. You can accelerate your submission greatly by testing your Operator with the Operator Framework by following our [documentation for local manual testing](./testing-operators.md) or automated testing [using scripts](./using-scripts.md). You are responsible for testing your Operator's APIs when deployed with OLM.
+The team behind OperatorHub.io will support you in making sure your Operator works and is packaged correctly. You can accelerate your submission greatly by testing your Operator with the Operator Framework by following our [documentation for local manual testing](./testing-operators.md) or automated testing [using scripts](./using-scripts.md). You are responsible for testing your Operator's APIs when deployed with OLM.
 
 ## Verify CI test results
 
@@ -167,6 +167,6 @@ There are 2 directories where you can contribute, depending on some basic requir
 
 These repositories are used by OpenShift 4 and OperatorHub.io respectively. Specifically, Operators for Upstream Kubernetes for OperatorHub.io won't automatically appear on the embedded OperatorHub in OpenShift and should not be used on OpenShift.
 
-**If you Operator works on both Kubernetes and OpenShift, place a copy of your packaged bundle in the `upstream-community-operators` directory, as well as the `community-operators` directory. Submit them as separate PRs.**
+**If your Operator works on both Kubernetes and OpenShift, place a copy of your packaged bundle in the `upstream-community-operators` directory, as well as the `community-operators` directory. Submit them as separate PRs.**
 
 For partners and ISVs, certified operators can now be submitted via connect.redhat.com. If you have submitted your Operator there already, please ensure your submission here uses a different package name (refer to the README for more details).
