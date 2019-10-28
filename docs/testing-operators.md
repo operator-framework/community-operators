@@ -109,6 +109,7 @@ The Operator metadata in its bundle format will be uploaded into your namespace 
 **NOTE:** This command will NOT build the image of the operator project as it is done by `operator-sdk build` command.
 Following the steps to build the bundle application and push it to the [quay.io](http://quay.io) registry.
 1. Export the following local environment variables:
+
 | EnvVar     | Description   | Example |
 | --------   | -------- | -------- |
 | OPERATOR_DIR   | Project path where the OLM files are | `my-operator-bundle/` |
@@ -116,6 +117,7 @@ Following the steps to build the bundle application and push it to the [quay.io]
 | PACKAGE_NAME   | The value for `PACKAGE_NAME` **must** be the same as in the operator's `*package.yaml` file and the operator bundle directory name. Assuming it is `my-operator`, this can be found by running `cat my-operator/olm-catalog/my-registry-namespace/my-operator`. | `https://quay.io/application/dev4devs-com/postgresql-operator-operatorhub` |
 | PACKAGE_VERSION   | The `PACKAGE_VERSION` is entirely up for you to decide. The version is independent of the Operator version since your bundle will contain all versions of your Operator metadata files. If you already uploaded your bundle to Quay.io at an earlier point, make sure to increment the version.`. | `1.0.0` |
 | TOKEN   | Quay.io token which will be used to create the application and sent the bundle| `"basic abcdefghijkl=="`  |
+
 Following an example.
 ```
 $export OPERATOR_DIR=my-operator-bundle/
