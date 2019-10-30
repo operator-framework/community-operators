@@ -1,0 +1,516 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"perf.kubestone.xridge.io/v1alpha1","kind":"Drill","metadata":{"name":"drill-sample"},"spec":{"benchmarkFile":"benchmark.yml","benchmarksVolume":{"benchmark.yml":"---\nthreads:
+      1\nbase: ''https://kubernetes.io''\niterations: 2\nrampup: 2\n\nplan:\n  - name:
+      Include other file\n    include: other.yml\n\n  - name: Fetch kubernetes.io\n    request:\n      url:
+      /\n","other.yml":"---\n- name: Fetch docs\n  request:\n    url: /docs\n"},"image":{"name":"xridge/drill:0.5.0"},"options":"--stats"}},{"apiVersion":"perf.kubestone.xridge.io/v1alpha1","kind":"Fio","metadata":{"name":"fio-sample"},"spec":{"cmdLineArgs":"--name=randwrite
+      --iodepth=1 --rw=randwrite --bs=4m --size=256M","image":{"name":"xridge/fio:3.13"},"volume":{"volumeSource":{"emptyDir":{}}}}},{"apiVersion":"perf.kubestone.xridge.io/v1alpha1","kind":"Ioping","metadata":{"name":"ioping-sample"},"spec":{"args":"-w
+      10","image":{"name":"xridge/ioping:1.1"},"volume":{"volumeSource":{"emptyDir":{}}}}},{"apiVersion":"perf.kubestone.xridge.io/v1alpha1","kind":"Iperf3","metadata":{"name":"iperf3-sample"},"spec":{"clientConfiguration":{"podScheduling":{"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"iperf-mode","operator":"In","values":["server"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}},"image":{"name":"xridge/iperf3:3.7.0","pullPolicy":"IfNotPresent"},"serverConfiguration":{"cmdLineArgs":"--verbose","hostNetwork":false,"podLabels":{"iperf-mode":"server"},"podScheduling":{"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"app","operator":"In","values":["store"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}},"udp":false}},{"apiVersion":"perf.kubestone.xridge.io/v1alpha1","kind":"Pgbench","metadata":{"name":"pgbench-sample"},"spec":{"image":{"name":"xridge/pgbench"},"initArgs":"-s
+      5","postgres":{"database":"benchdb","host":"postgres","password":"admin","port":5432,"user":"admin"}}},{"apiVersion":"perf.kubestone.xridge.io/v1alpha1","kind":"Qperf","metadata":{"name":"qperf-sample"},"spec":{"clientConfiguration":{"podLabels":{"qperf-mode":"client"},"podScheduling":{"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"qperf-mode","operator":"In","values":["server"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}},"image":{"name":"xridge/qperf:0.4.11-r0","pullPolicy":"IfNotPresent"},"options":"--verbose
+      --time 10","serverConfiguration":{"hostNetwork":false,"podLabels":{"qperf-mode":"server"},"podScheduling":{"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"app","operator":"In","values":["server"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}},"tests":["tcp_bw","tcp_lat"]}},{"apiVersion":"perf.kubestone.xridge.io/v1alpha1","kind":"Sysbench","metadata":{"name":"sysbench-sample"},"spec":{"command":"run","image":{"name":"xridge/sysbench:1.0.17-1"},"options":"--threads=1
+      --time=10","testName":"cpu"}}]'
+    capabilities: Full Lifecycle
+    categories: Developer Tools
+    certified: "false"
+    containerImage: xridge/kubestone:v0.4.0
+    createdAt: "2019-10-18T12:32:00Z"
+    description: Kubestone is a benchmarking Operator that can evaluate the performance
+      of Kubernetes installations and external services.
+    repository: https://github.com/xridge/kubestone
+    support: info@xridge.io
+  name: kubestone.v0.4.0
+spec:
+  MinKubeVersion: 1.12.0
+  customresourcedefinitions:
+    owned:
+    - description: 'With the drill load generator, you can create a load test plan
+        and execute it against any Web Service inside or outside of your Kubernetes
+        installation: ''Drill is a HTTP load testing application written in Rust.
+        The main goal for this project is to build a really lightweight tool as alternative
+        to other that require JVM and other stuff. You can write brenchmark files,
+        in YAML format, describing all the stuff you want to test. It was inspired
+        by Ansible syntax because it is really easy to use and extend.'''
+      displayName: drill
+      group: perf.kubestone.xridge.io
+      kind: Drill
+      name: drills.perf.kubestone.xridge.io
+      resources:
+      - kind: ConfigMap
+        version: v1
+      - kind: Job
+        version: v1
+      - kind: Pod
+        version: v1
+      specDescriptors:
+      - description: Docker image for the benchmark
+        displayName: Image name
+        path: image.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      version: v1alpha1
+    - description: 'With the fio benchmark you can measure the I/O performance of
+        the disks used in your Kubernetes cluster: ''fio is a tool that will spawn
+        a number of threads or processes doing a particular type of I/O action as
+        specified by the user. The typical use of fio is to write a job file matching
+        the I/O load one wants to simulate.'''
+      displayName: fio
+      group: perf.kubestone.xridge.io
+      kind: Fio
+      name: fios.perf.kubestone.xridge.io
+      resources:
+      - kind: ConfigMap
+        version: v1
+      - kind: Job
+        version: v1
+      - kind: Pod
+        version: v1
+      specDescriptors:
+      - description: Docker image for the benchmark
+        displayName: Image name
+        path: image.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+    - description: 'With ioping benchmark you can measure the latency of the storage
+        I/O subsystem in your Kubernetes cluster: ''A tool to monitor I/O latency
+        in real time. It shows disk latency in the same way as ping shows network
+        latency.'''
+      displayName: ioping
+      group: perf.kubestone.xridge.io
+      kind: Ioping
+      name: iopings.perf.kubestone.xridge.io
+      resources:
+      - kind: Job
+        version: v1
+      - kind: Pod
+        version: v1
+      specDescriptors:
+      - description: Docker image for the benchmark
+        displayName: Image name
+        path: image.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+    - description: 'With the iperf3 benchmark, you can measure the I/O performance
+        of the network hardware and stack used in your Kubernetes cluster: ''iPerf3
+        is a tool for active measurements of the maximum achievable bandwidth on IP
+        networks. It supports tuning of various parameters related to timing, buffers
+        and protocols (TCP, UDP, SCTP with IPv4 and IPv6).'''
+      displayName: iperf3
+      group: perf.kubestone.xridge.io
+      kind: Iperf3
+      name: iperf3s.perf.kubestone.xridge.io
+      resources:
+      - kind: Job
+        version: v1
+      - kind: Deployment
+        version: v1
+      - kind: Service
+        version: v1
+      - kind: Pod
+        version: v1
+      specDescriptors:
+      - description: Docker image for the benchmark
+        displayName: Image name
+        path: image.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+    - description: With the qperf benchmark, you can measure the I/O performance of
+        the network hardware and stack used in your Kubernetes cluster. 'Qperf measures
+        bandwidth and latency between two nodes. It can work over TCP/IP as well as
+        the RDMA transports. On one of the nodes, qperf is typically run with no arguments
+        designating it the server node. One may then run qperf on a client node to
+        obtain measurements such as bandwidth, latency and cpu utilization.'
+      displayName: qperf
+      group: perf.kubestone.xridge.io
+      kind: Qperf
+      name: qperves.perf.kubestone.xridge.io
+      resources:
+      - kind: Job
+        version: v1
+      - kind: Deployment
+        version: v1
+      - kind: Service
+        version: v1
+      - kind: Pod
+        version: v1
+      specDescriptors:
+      - description: Docker image for the benchmark
+        displayName: Image name
+        path: image.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+    - description: 'With the sysbench benchmark you can measure the CPU, Memory, Database
+        and Filesystem characteritics of your Kubernetes cluster: ''sysbench is a
+        scriptable multi-threaded benchmark tool based on LuaJIT. It is most frequently
+        used for database benchmarks, but can also be used to create arbitrarily complex
+        workloads that do not involve a database server.'''
+      displayName: sysbench
+      group: perf.kubestone.xridge.io
+      kind: Sysbench
+      name: sysbenches.perf.kubestone.xridge.io
+      resources:
+      - kind: Job
+        version: v1
+      - kind: Pod
+        version: v1
+      specDescriptors:
+      - description: Docker image for the benchmark
+        displayName: Image name
+        path: image.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+    - description: 'With the pgbench benchmark, you can benchmark your PostgreSQL
+        database, which can both run in the same Kubernetes cluster as kubestone,
+        or anywhere else, as long as it''s reachable: ''pgbench is a simple program
+        for running benchmark tests on PostgreSQL. It runs the same sequence of SQL
+        commands over and over, possibly in multiple concurrent database sessions,
+        and then calculates the average transaction rate (transactions per second).
+        By default, pgbench tests a scenario that is loosely based on TPC-B, involving
+        five SELECT, UPDATE, and INSERT commands per transaction. However, it is easy
+        to test other cases by writing your own transaction script files.'''
+      displayName: pgbench
+      group: perf.kubestone.xridge.io
+      kind: Pgbench
+      name: pgbenches.perf.kubestone.xridge.io
+      resources:
+      - kind: Job
+        version: v1
+      - kind: Pod
+        version: v1
+      specDescriptors:
+      - description: Docker image for the benchmark
+        displayName: Image name
+        path: image.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      version: v1alpha1
+  description: |
+    Kubestone is a benchmarking Operator that can evaluate the performance of Kubernetes installations and external services.
+
+    Features:
+    - Supports common set of benchmarks to measure: CPU, Disk, Network and Application performance
+    - Fine-grained control over Kubernetes Scheduling primitives: Affinity, Anti-Affinity, Tolerations, Storage Classes and Node Selection
+    - Cloud Native: Benchmarks runs are defined as Custom Resources and executed in the cluster using Kubernetes resources: Pods, Jobs, Deployments and Services.
+    - Extensible: New benchmarks can easily be added by implementing a new controller.
+
+    Fore more information please visit [https://kubestone.io/](https://kubestone.io)
+  displayName: Kubestone
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAACC2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KD0UqkwAAMGlJREFUeAHtfQd4HdWZ9jcztxf1asuWe5Mb2CZAKDIhBBxCSbBTIPwhGwLpC5vyZzfE8h/SSHb50wi2KSGEFDvZhI4BFzDBFBvcZNwrsqrVb793Zt/3zL32lSzJcmHDsjqPr+bemTOnfO/Xz5mxyFAZosAQBYYoMESBIQoMUWCIAkMUGKLAe54C2nt+hoOeoKXJsuW6tI3R1S31s1JSo5mDvv0MVRwCZPFip8RG6NLqBQBzkz3o+tQut3SPS8oCLdXj/NCPd4ACy2pdwk+vMvHR7cHiGgn0OL3ecvb4/Q7++N8nIQqEWpEFC+Kka/Xq1Y5X96bmmEnHuclkeKpDs8aLv8Q0/ZVbPd6cZ7o+7HlC0Z+gzNYS7yAWqun/PYAsXg/V1KTLV+fFOPOyB14s7kwmPhYzU9eaop1j6ZKnufxiBStFvEUihkv0SLdl6Ppvcq3w11quLu6S1ZZD5mo91doZRui9D8iyZYaEip1y09woaVey9PnSVks+a5rm9ZZmVFkuj0isG1eglfImJsWda4oFW26ldDEcDgkGROsKPZvv8s9vnad1Ss1qx3G25gyC8t4G5MHVngwQVctWB3a3m7fGzdTNluGcIDqcqRiEJRlOaK48kYLJhuX0aWImbJpomiWW2CoqP89ldHX/NXVV4DrR4HlZkCce34Hy3gSE6onlltmKoJ4lKz+TTKVuTzoc00QjEBFIAIhtJnTNFTSksEosh1ckBbOikSRpsvC7ZaXwMSU/3+nq7r4zfnXwDtW2BTeZoJ3h8t4CpAacW/C0M2MnPEtXXpIwre/AZ50L9QMgoLVMMwl660olOXyiKTB8OA/sCFbvYoMCu6E5NLdXXMnE5bFrAisA0hAgvWnV4ze9pwVVynPKXbxybFjMhUnT/JTldBsSh2oyU+R0EBG6CkwvulO0omliOeHhAiNbMnq0eOyHDUpMfDluPRbaketPvq/tgwUd7wQoYJv/4YVGe1uxRjBmQVXVSvs3Os3k12Gs8yUOiYiG0rpeM5QEEAxIglY4RSxXEGqKknECRWFRM2luCXVEzfz8iZFQ9zdx4t8ymu1MUvAEIzmTXZ3ptsDtq9cYMteOrv33rb48nEj+2HK5pksCgpJMkIoWiK0pTib16D3xVOFUsbyFgwOj57BTANOAkMX9Imd1XxPcJjU1Oj5nzMD/zwSEUrFgAVhdpPChl4d3Rrp/lNSMGyxyejxqE+coEGmKKi5HxFEAyfCVnAoYtiSZZlxy811GOPRI6urADWdabfVhxXqyxLvqF7lRIBlpMAJLnv9iW7h7U8LlucGieopHCRLnBDuBeqpQMigsYO78STYYyoCfAi+yHU1zSme7APXrfY91zMFvS5ZZht3X6f89hVGdfqcn3QKBWLiQ6oeUldylq2Z1p1I/Tbk91Vo0Ih4zlTBgnhlCx1BDVVKdEAwKDCQjf6JY/nLbmzp95Z8Uf67DEQ2vSF4TuFx1dYb+vLsBIZcvAvXSafCJ9z8a3GcGvhVPJL+tuT16MBqCVytGt6UkAtwrEoDa0nHswq0MH2wwIBn+MtubOkOEY+OaP1f3xMOfjFwd/KMsRq7rltPPdb17AcmyE6Shb8nKK8Jm6ie6N1CV202P04q3m5ZLkiA6Z2FAU6XwnWoFGY883VS6qyNvkqT8pWdKMo7BaUHswBS6mdw1rDgw4+3ztQj6Pu0I/t3n9io7cbEuC2zvqWDp6opWK/nduK7fXGwYYna3R48kTZekAIZDl+sq8mX28ELJ97qkLRyT9Yfb5M/1bdLOiKR4shT4S8SwknIEqFFezlhhcAmbZfrzxjc1d38L7dbIciE9VSx0qv28uyQEqfCMG6smdO9zN7rE+n5hIKci3t5qHkmkkkKpcDvkhvI8OX9UqYwtyROvExYEgkHHKhJPyO6mVnn5iFceCefCqMCyQHiKHJqiVjPqKffsVCnW8z4oTAf96s4cl3l2x7y8Paerut4dEsKUR/kGxBR27kmWrKryWalF+R7vx+KJhNQ3NkVBcZfL73HdOCxPzhlZLKOLc8UNiYklkhKKkinBW7AZDqiraaMqZXylQ6rbovJqg8iDR1LSQmsPYEoIDKo2QlwywJArcfVUiibJpGn5c3K645FFaOCGU2kk+x6O5R9bapa5ZOH8hPKgfv6UO8/nujXXtL4b9QYKGpuakFmVREWO133t8AI5e0SRjCjIERfsBYFAagQGnCmlNEkRgTNJSOtBorud0Cqw+oc6TFnfmJS/tiTlcNgGpsxpA1N/+sDApcAo4AG6Xc5Lo/O8q+TBfcgyj4YffvLlHwcIpGIcEoG70wtGpQ+uPjcvZS7qdLgvq+8KIeURjU7O97k+PKJIn1FRKMPyAuJEGup4IDBp6ium053I2OoQevzmKWBBMwMNpwndscNdpmxsSsqTTSnZzowKrpUDGPyTw/hJt5klDa/944R/0YkgFe8J6EYy9iKCxYvVLado4P8hgFQhEVi7vDYlyxekqpfVBjoiR25risa+Uae5g9LRas4pCiY+NLLYXTWsQEpzfHCgNACRghOVLREZSnHZQhcTkqEjowt9nrmQpktPYJJAqrHblC3NSXkWwKzvBBKgwjCXJvgnb58aMAh0ICZOmDcr8bnoVTn3I1j0YnME8vwnV/57AaEHlTPFLbcvUAO97Pd/v2RHV2TRAdO4QBIxuTjPHb10VLFrUlmhXhTwkIFhk/sDghMlGFA9bp84nU5JwAVWXnAfs8qWGBckJgXcjoRN2QY1thLq7EWoNZbhaWAOnSwwdIO9fl1Pxrbn+hLnqmzwKazD9zF0Na4z/kdJxTbYBGy1+fmuXTm/euHgvwKMr4o34L08oJmXjC5JjivNd+X73EplxAcEgsM7BkY4ZUhjKCWlfl18IHZ/oKi7AARVGcMWl2HLUxvSXzth+Fc3JGVFG0w9rg93a+JGnUP4yVUuEgqnByoUNR2giCsRXYSFrJpTsSXvPCCMtu9e7slIxXkPrPrQurbwneLzzb6mxC/VI/JjY4rzHDkel2FBJSUIBGZuG+v+54/AEEsaXtGcbnnhQFS+tyMhCye55MKRTpUtIdGVre+niYzEZAPTGTNlT6sNzOM4MnAhMGyHqozlBMCkxO0z9GS8IWCYF3V+JHeXPGW5ZZ6mNlbYLQz89511e7mUumSDEIxvvrQ9eNf6fYvWdUa+9ImJFa4LSv0WgEh4XQ43LXAc8YNNRE1x78DDhnQYbjGgs+MAsY6eEz51UEEM1ulhEdSBuI1EhoAoro8mAS6+50BdnVXulPGFhlzWnpIX62HmoNJYSmH5G9Em/g1Q0GosbJn+3LJQPPIvqHireOFdq4WxwS33vnOAcNffvPGKMybdv/Kyu97Yc9cHK0pmLJhQJiNzvQm30zBMxBYJuK9kPvChcpQGmK19iaxtYLUPOOJ+5UWVeEBNbHkr8WCjCNQMq+DMoArrERwSOgah0EE3P4g/tcQhYwsccmmHQ/60LyGrOlISBNJh1EO1fgriKTpribjDTCWv9z4R/m1krvYytg9ha4sMyg0+84CoFTwxCMao1fs81p59P9jeHf3KFcOLHTfPrJDioC8ZiyedtBEkKGMIzmJQhZTWkemme4uSgkg54dfm0G9FOznY2kBVh1Bt8IikO84GJq6AAcYY2OQih3wZtknfGpPnAUoeQGlP39PPAUvGkZQVyAvEI+HbUedlmatFVYp+EFtSB02LfjrveZoqimsVNQvijgdWXdy9a8+rByztNrCxY97I/FRZjt/sjsQddF/JkcpO9GxhgF8kMowwAz9mckl0yAHjDA91D/65ceRv4oYulApkrZMpBIbqi/dR/YXilnIWrhwB3sWFdlwIsFL/hVct7mwxrdQ1vkdDV6mqof2D2o56hgABhQgGtt3Mh4S4lq78YTIaX4XVzunS1SXTPI5UWZ7fQNpcV8YYhM2eEyWFn4GKIrLhEQPpEq/DUlE43Vd6SFuh74lCLTykdqRIXKCdB1LjxXVOkNgN3LpdR2GcHgTHlwEmAYM0DLuFxsPAs7FBUNaBjRUJyx80Ypb51Vl0fxm5M0V/gnL6KkulybE7/BZJ5N6/evZ/tiXuTTmdszTYhkQ0oszD5KDHCHiQKQfLIXw6jjgeB/YfACTGHCRcNlgcv7IVDpc4PdhnkIAnBMJj05vs6U7JoYglrzNP5dPlvuaUbOmKyAivLuODuozN06UiBwACnAQMtzL0vRrP9EfwVJ4my0DwGoUPw5IcgDHNq8kuRFBcrWczvN5vIc+FuhCwOj+wuSH0KdR7SPK39er9+LtPD5CsNQvX4uf+b2c88T3L4XRIuNvC/AQbNJUEjsj1iQ+nI7GEAuToMDAjAzPed6RT4gBrTFGuuoEqjQBxwho4n9ncLnHLukNxefpwQl5GpG1fRCecInphf/SHXoW39WoI35rt83PB2ZcPM2R6iVNJTAyo8BYWSh2dAHLNVnhTXlBjZC5S/DyRLhiGAEsF6ogAKsMdZlTLNdtMqiVTt9fRga1HMcsddJuhri/l/bXt0fZr89thS7BdSes3Ra8I1quhE/9UaxaoBntR8puVYx33Pr8y7vL+EItoDuhOLF4jqAKplHHFjCty/TwFGpLEdiHRXSB0S3dUblu3Q2556k15YVcdQiu6vUiFgFoGbnKC0rVtutyxMSZ3vBWTl0Nog7qEVO1LF7ELJZc44v7VSI18a1tcfvBmRHa3YesuGCBzK+0Nf6zaH5cvvRqRO2rj0gqJc4HatB+ZQuA4/pGQOn6hpB33HEOmcs+jQ7raJeXxzwkZjk+nL9lucM96R3+drITgKaNlWDyyd3x4lq66sTmS/IXl9uRgzxIEW239U4sTTs4ARC/wOKUE+SjbCB/tF3SAisB1D0C5ENcf74jInev3KmJVT6xAxO2UKFLvz+5slbsauRtdlyDihC6yK0Cal2fIucX23oKHDyVlF2KQcVBbN45xKGK+3JKS55BMpBjkQ2Wtxfe1b0TljnEuuRjBow+gMhP8PFzaH+1GLI4658Nae0AR4szhZxeuBjMToAwIRIOq7IRFw14wy4xCLXgw/y9UPhP684HLtXolJf0sZA0eECUVCyEVWmrM4udyD4ncHTWcN2E9AEFZN3eb9TBYyhqAGLMDbsn1eZT9oBrKFNoSqqmg2yX/dM4EGZdfJ3fvbpDvvbZHmkIxmVNZIq/vPyyLG3OkrMglDfG4dAHvW4c75PxhABnEyUX8cQAGPX4I3YOIWEOVSQjqRkDtnFdhyScBwot1CfkNkogYH1xWQUQflw54TtPgzr5cn5AHD2L82GP9zQqnXFDhkACAybi9mbFy2JT2PMQ5H4AdWQmpgxrIXO7/SNESzSVdbalkTv7kxkjoMzjxQ6WyuAbUxyNzg2gVTWRtwffet/IcGN8HTKxtsyN0yF57AEu+5SceT8qt48vl47PGCTwscN3x3VE1Ma3ugGHf3dwhD725R15s6LRbRPBXUTFH3sZjGRdi++314O5JhegK90SBARYOoYZScnMt4k8QmenaB6a6ZRSkB8lhcDvUC8axtSkhv92bkPVRS4aDyetolTlqXLwUAN4wwSWjASK9KebBqBF7F9KW3tsjUJv3HU4qVcq2szRb71vs35yzZcXEG3Rr8fCBHN05t+Mq7z7pJ/FILTpwoTubfvbOv/S5G7EesdZ0ugFGOyJPpaJ6gMHGKCpxzgCDGZnnV7agP7eWsUgCqourfpNL8+SzZ4+V/ByvFIJTK3MKAIZTpiMOvH2GV2Ygeo7ETQkDDDKo8thIWFBFjQRHdst0PUsIhI/jcw4k6pszPDISgNWBiqNx9AOsSqioGye6ZHw+HiFBHot2oy8w2BbVGMc6mnYEhUM4buLqSq8/Nh1cEu6MW4FgZUSS/6Rq8Gksrpn0KsedOHqd+Zd0bMFzjqUra0Ka4yFT010SCREMpgP64CWlju0ZwDqWw8Ni7NFvIQExUUpPFFLkgjemwa4cAUhdmhcZV02aQdSNDQlpxqKSB6uAmeCPrVISCEgB7ucRXrEChQREVcQrmjTgvs3I5HZCAugocQmEvgHDCmzFxlpLOmPQ52yyRo57ytkADQi+90+8rHvsr5wgkicxSuDNwaejE9XpNcc30XebtBdLljgY6I373Ss5zsXPPZJ0uhcKNqVhz2wMjQMMjKifgvmqy+9DKj3fj+waiEsjrubL2zK3cl4YQQpHcjt8YHn+rUPS2hpGGsSQVqgq5peOwJAveisu922LydudKcElRWwCrSQP7ZG4bJdcznP0lNCcHISv8WuotDthO0y01Q1QkGmXfPS7Ey7yGtgQenbsXo2bY++jkJ5M1RQgxpnF3NlAlXvfbzOkS6LhqBkMlESSyZtVFT4e10tKjgeEYEyZoskttyRy4dLuC3c9lfD4PyXdnZBSiJmGXeADcDwbpCNEykyA6gm6nbZBx4xNzMMCd6kPvisuA4G0SFKCsK3NOxvlmeVbZdRLh6Vze6t8dbRXrgTlqHbOCmryGDynT2+Myit1WE9HH4zU1eZREEppErQVxYdSAc0mf4ex/z+ovwKxw0zc34l2roF6+grSIG2oR2/tQawc1nWllL0B3/RbCBilj57eBD8nwhWpflREn61wwvC6usOSSpmfCzzRNVVVW95Ty/RUg1RTy5ervbM+RN1d0eSfTI9vDIw3VRRSrLDVfYDB4C2TXMYcJUZ2gl4ZWRhEYha5NrAmpVwj8TFrHdTUIbsGZsijBbfG43bL7hd3S9vvm6WwQJMPJ/LkqpE50oEI39ySlKdaTZkJb2gjQqpvg+O/ACLSU3oNBGWhTufUXsWaOY35Gzh//9u4BgJOh2e0ETrqmhJDbprshoRpsgLg7oSRjwKkWtQdgYgetw9YOHUHkBmLYFMa7awCGZBa88QFN2ORFyujESs/PzfS3X0r7vkyvVbJ8riyAUlv21yQIhjReOJJ0+0pke72MGSa6VWOVy3TKQDSJxTXY5AWNxngmGQtuiqgRaXPK85oUlLwip04pRMAgsJPGlgT3O2EfumOxGTT3hYpep9HDsEd/ZcPjpUAHvczsLXq1qkeKdgZl9/VJ2U8iBsCQX9NYtNCo9uR0FdkhBE4LjtiyrJmO9M9AqoFwiKbAcZn4S5/FN4U3Vral+vKHPKD3UAXN25BGuYCAOMBnSkFlIa+Cm5TpYLiiDEM2rBnGuOcuVm7qxvSZX3G/2jrktDVBZszl3k8BkhNjdpD61383EiAAcnwAoyuEDS/n1zNRAbIqFkkPoI0HvFTiS5DV2ckIV58giD+4SNhORfGYeRZYNAW2B2AkvF8IIPqPvXoAL6Tzzww5G2NHbJ3XxceRUYwmeuQMWNLAWoSXpWl8kjXYyk+F+Hxr6DzS0F4Ep8ZFNLmIIipqANiI+aTELiEMRz2/EorpOBro50ybww2IOAchqjcZXpWCkUMZwui83b0WwHOj2Mu/YlKxo4UIgCthOQdwNiUd0dKDrZomgN2mFLij4VUjmuzikfSi1g2ILQb6YdOoN9+jJ3dY4z2lhC43m9iEjb34wsL2EuDivGByN7uuLg7Y+Jqj4mjLS6O9oQ4oEqa3ozKlJuGSz6CviRYTlMAUrzSc+UXFs6dH8y0vb1bWmCmmsMpuXB6vuTl45EYxDF4kB/uq72+fdU4twRB9B8huub2HUrjQRDlHHg+U/HZAoReh0flB/ciISytUI13jHfJRUQJv+kGO3CNjFoASZuMz1uofwCC1gbgRuTYw+rvL3mQwp8LZpgG9XkAmWbljPR3Q1/n0TcmbAi2vSJT8YnSFdZ/NH5Ia5JFi8iqcGNYuNW/pkby7l15UbtD+4REkPX3Oj2KgvArXWHsvg/FxUPid8TF2RYTA8Q3OmDjMSGqICXnUBEW2DAxUpdRk0rEgbRJBKqIuSlFfNVZ3386uqLgXsQYSIGUFfuwDmVIEslIplq9aAcyqVbyVGAIQGhX60HgK8Hp10MVlQGQegDyW3hTz8Cz4pIry7gCQwLgZu4opbvMKJwOAXhERoOwb3WhEojcSS/AvkXd198fqjvaqAkUTbhrVJVMNg++qMpYe0ZEFcyr7IiGPoR7H7YFwoL4ZK33thvWlQJzEWjriPq6sdyN2C/D/UZHUnSkuxkRK03FkWCiFiJcpcbwkxxkERyoqxHD8+z5nWCwbIslBorRZcVzBJITdGEPBNbM0aCJTxsoeASStxdbdV7jGje4nFtBScGLyx0qxd4NqtAwXwzb8AzqceMbB/TwjpicA+M/OleXYugxptFdOE9bUZQGjczCdXXVYno86kcff1iLVSoJCL4YOMHf9t193NDXKU6aiTwU8NQCHB5W1dAIojD1Vf0Z99KhaUYUp+rbNR2qQ0PiVvUEdUtWsDAZKmfqf9oC5VmRZQCCUj0YYwQR74xKtxQjlc4+MwQ/1ov9LRMsQkUiPoDHBZZVdaFd4uDW5pYuqT/YIJsLKuSNYIm8AMlU+W70m4+xKPqh7zBmxPu43MojfyurDdAYazyPfNbznbbxvhAqqgqEnACpKoe9yOZsBqd0MBhrEEg01efYeZ71CC49BgaZ6GqQnlaaChnjjvUSWOZLch7vGK92qODyUaNeNX+Zy9hUH8CDSAjUoLQJAN079Ht0ZGxI4QoipNs+elAzEGnB/qhZVQWShwg9CXVD+5Bd2IRaNcSkqX8JhAePEnjxaYa6GgUwN29rlh371siuxxul7o4PiMwukSCIkMe9umiMUTZVVhco8ce3E1hr0ZRq2oUNb39CnokUysH1TtQrxnfGcfy+Fjeu7cZ1uKw0yiSs0jkYFGMarjKSb3FWYcrLnCj+HS2cDu1IARKNFwHgFwE47RJY92SLISlY2Jx8XzIevhA372IDRwHJi3W5u4KOnBRY36Ke4DCyABhMb8z1dIJlxo7OR1yB9HmvBSkbCCYSHcLdJmG4PJSQPfuaZO3f98DLQYrdi7QJ7NPeupgUU+yaW5Vcd8GcdFEdgnAs9LCKwC9vwRh/A3ZjFDyw/dzjgirQUIJwBMCkt3ooqeFdKGQwUPoA7qMkUPN0wStbA5c6FyCVwBaBvmoxi8lLqlF2a/dqHwkUr03GzdzxyJR9trSpfk74By1qiEF0cWIv2nmo/gB+p406fumOZAADKUkyK4uf2YtJJ2w7XUENusOSUSMLVTrC5jV7KgSD0sCNcOte2yWvvH4Id8HDqQvJK89zH4clE2bjbTz45gDRZ5bDjoCyF8IoFw7TpBTLt/ngyFK4nLQXdwOEWrirZajbAKJhjUlRCyZEkPaSs+AFfW2SW/wgciMkrw1ubTPq78X3HThGoPO4+Y23ccIrsPzLYNGD+86HamZ8dRGSmecNd6o0DYHJCDvHSOYbC5tFPYrFuFMsMLb0NkSmct19AxKOGL5d/IYjJ2Iky1J4JgYiSD46qcLBxiHLZUiRl5bkKrWkZppuhYA4EW/UN7TLbd9eD7ZEil38Mqs6KP+6cBrUly6rXz4k7dD32yAdX7xutHz82tnwMeCQVDqVgVeggqu73dh0AELXwsPjQpNSo2RjcBQwUxJQDPVWCm6nOivCSXqarEJjTjuxDIHmQ5AKHdcRoshVWA+huvozgFlFwwAJWoPjw2CIkSA810PYdKZwLGyfUkh1yGsEarBF44oXtDYdooTTXbrnUDv8fGk/CoiZUVOq2eyuB9cFAekEF04fE5B8pNxt+3HsXtoSqqkipFP+4wez5MChdjl7egVsRrF4kB6hDSktyZGv/Og1GY/173VvNMq1VyaRivdIFPFI0gVrjzkAB5UwfA7RNe0AljlkPI4zsa7xBgi4B14g3dlnsXD1Ubi/E0FQuroZakL1SyvueYw7VQAgdlDJZ4DIB0YjiY17LxstcgD3vYl0yigQvAjJRK6TZFOEc6UdyUM/E/DZCVVJp0JJ27EpH/+NJoAFzGdh1yWK6TvSIvm7tx6oq7lUbfc6CoiVMDuxK6RZN5zFCCy4AePkpAR90c+PwUNitrW3MefvFCbGhagLz58kF5I9UJ82hAtZ/D5l0nCZOy0o+w+H5c2tIXl2Va18/KPnIN+VUoCAmcHhlnr4hnbAS8qgzZsgQXPHuGXV3pj82/Y41C/Og2Cvw8iPhUfFtsn9rE7v8LkDcTyPiAGjwUmIm6qgGpnAZCofJgy/DWyQozri+FQXR9WVOolb2RaaVA4G0UqTWl3u+SdzBZVgO9VGP7wEJ+/QPglu3mAGn14vxuG1T9fZDR9TTdgi2WWaWr2OB15AT/Z1UgX0kRyfIS9s6pJDbx8RF5bXlBeT1YoiCBqnpCSwXh6D0ccTYcq2MA4pyA/IlR8cL/uQaj9rild+cv8u2bxpPyJvUBSFBz5CcB90PfNX22FLroFkVEHX800a03C8Cr/34Dyv3w/104L6NNIkCwO6LTjHPBjTL/SdPzrMIUWwS1TlbJ/uNL9jiOrD+1CzRyFxuHP+IAx6HVQb3WsInV0oBfxkCuiJZJ0Cwt3eKqXrX5Ix9/1SSr92Ryxw/5Me05vY6/rkTQ/Y1eHcZu6L1iWjlsfs0BErgimyWszUGMwR+jpHl+V/24zAsAABnhcSw60/NkEzLfSWHp6nC8znCc+ZPVauu+6g/PmFZpk61iU//P46+S7UWuXscZKKwZADDLo0JgkKonwAScN86KEOqMs8qJcPwgg/BnWmCAQVtBX1ywIGbInIHqipr2IJNgBgGgHghQgWz8P9SUhZhuqK+L0RyAwcRzIek5AtSJv8Zh+UFOpGFQi4yPs4V/I5jziPV3BITsMhCWzdKJ6Vr4hx4AAAyk+ak4e58UY7cZjaFzb84est6bv5SogaNLNI6uufMEsrrpgvumu8ZXLnwjGw8H1QhePCBkVZ+1qn+FwRmTa1QnE/VVVfIGQ3yuuUFp/PJZUVefLKaweUTsfDn/JIY1hmzRmPdQ6Re3fFVZTeCVb+FCTikko8pwuWRQiqGLMA3J5CRmEdDTMI3wbwLi51KLvz2S1Q9jgNnEAwTRZWeaQc40VaTklH9nj6+k4wqJbBEvLQtqisxDpLHtReNwHgahjfyYV2daikYEOdFG58VYr/9hcJLv2DuN7cjuDFJ+aIkpQVdMOpNTTDTN5Wu3PxI+m+CCd9BBsQ/iipvOIyrNDOsEwo9VMAhG1wrsNKnfLEX5ulcpQuEyeUq0ic104Eii0lSUT5OTJ5TFAeXnFAvKB2KVIpDxRVYilBl/VIocThk45EtPf58W61NYcE5SoiXVO6uUWQmNeRZ+KSbQvBgtr6/gEkPvmdAwTn/BQuMVVcBJKS1ogcYr+FzMZ8GgF5cm9c7q+3pNDrlDaqJDATQQg01UvB1jel6NknJfdnvxfPupdER8rJGl8qJh7fRs7P1CLxFN6E5tAN81e1u5Z+1+6wBq2u4ch6SgG8XXSjgOp3YCe6wIHTgFbN9sh3f7EFnlMQamgckoZco6D7OXALTERGInGZMa1S7l9oycKfrpPajc1SenVI/oxnz0vQAV+bcRFyaEXwgmKQFGUr0S6Nfhy/GdxVY+fJ72DUsdYlf8B6OnfIdxIN/L4LYMzGxgcuTlGz9FsUidQfJX1eRIDr8Nju3Yd1AI/gNNQtOW0t4j+4Tzxv1YrzsTcBWiNgKxBrcpGkXOVQr0jAIiuO9R9mDWMOp9+LrRerpsyouL12p0h1dbVjzZoaCoAqGJ5CQPU6/YJffhV7F36WjHehBewnOsVCULiM2oY0hRvG/fvfvljGjS6VEFLODA5PVDgYbqyjK7xrd7088tAr8tiF58moqROxAhqBi6mrzW9VyJ8Mh4pihM0NDaCvdEJFHYZE1CJN0oITdEVhKmQvpjwTUnUL0vFT4FURDM6cBOhROPhMIfegL8YgfoTmu7Dw9bmXm8XR3CQVh/eLVrtNnCu2AIQm3IHc3YRivG0I2w245ACmUiLLNqBNUSGm626PpiUP+jzeSzZs/cWe6uqaHmCwW46HHzWKGRf88lrTcvxnKoVFbuWf0Uk8tcIGvXDO33g7KpfPzJPbv1gthYUBpEuwbjIYUNAAXx7jwwRbGlvlng0d8tfJVRQBZQfUqCGJqmTPgh3zAxVmH+0pcFfiP2PlsQxJwTCMiE0n1mHldFEnQT0eUfiXjgTjvyP1TfLjh9fIuhWbZfpbewF0G5rPhzoqxIttAALtJEFQ22BwI2xJurADgOECGKnDHo/n6je3/hKRcTV03Rqao6wB2CoLJ0h4DRY+dRAP4+O3SsvTTh5tNdP6YI+8kTHJ7BEeeebZVhk5bIPc+KnzlcQw7nBAGWfTone7Nm10SFVUChBMViQPwzGPyfQCbJ6DMXiKy4EEhI3gn/qwUwogb8bxclByP4i/HQa+Ei55KSQqBO9I8QPvYUFdtQDHe9CWWvMHCAbe02h1h8SP9zEmOrrlsXv+IuuW/U1mlkyQ8CRIgqdCSQBB0NoQNLAQhGNA8Ax7wWta8HJgzazz5viufuONn+MZv8/DPVkMzlL5ctY7Wo66vTyTcrka9GjqsKkZwy1TQc3pnXIhtNzzdNZZXlnyy/1SXp4jH/7QTAUGPS8a8YEK0xNMUjY0tsvjj26TKV8aJf9cVSkleDPWVQCEMQaXaDvQB+MHOFXKVhTCJaa3VQEXnHHLT/D00x+a4nJVhwEXGFuLwH98FyaLAoCuOQDQo9iGG8GHYOBogF4GPKennlorDyzbLFPnvB8JU2T5sFinRfByA9XAcSDY54+B4bas5AGvx30NwNhYJfNdtTKsTzB4YxqQRaSMlW96EMh3HcBOn+F23DqYZ1My/R9/JNMx7UAVNeVcjyz6961SWhyUc88Zjxc1xMGQVB3suu9CwOggPL9mu+xf3yJ3ejtlIvR/DLZpcrEKYJV+RxdHpY2g0BMiuRlfFGHr6ccqLdm2S+TpBid2KjrEwAuUNdgiekYGQNAIBPYOMyznaJSOQN8un09eXrdJvn/XCzJhLF623IGNbtDmuuqg/3GjCSUZhu4GGIl9msu4emPtPVvGyRXuWqlCiFSTUbbHTbyHBKxZc1MUvLOD0fqZKhSCCHa7+RBNDRtuyF2L35CdMNTMX/WO5LP7JFgO+Pa12Dh39+/3yJz3F2JxCWv02EcaAodHsSErxkwh/jlQF9EIuIfIQCrhFoewGSAMQxLF9wl4+Wigo05+u+LvsuPF1yXQUC+utw+Jq6FBHK2tkApsxEAbjCVMuGwmpMeDHTM7tu+TH3zrcWzsxm55PDwSxTwUGNkDPf67AgMGHIFfYq/b4/nI9u1Ltowb9xX3bnnfgGCwqTQgC9mIKuBYbEvBz1476jLXT+VITu9GJD2i2C3762Ny/8OvS2NTh/KimMvqq1BymBN75vmdeHq/VSZMKpCywhzRG9uQtsCwkWxkHVrFBCLeGJgojk8SQZoGTndGwuLraBO9rl4q2xtk3prlYMy58sKv/oJ9AGFsR4LWAOEtvAHC9pttUjAm9oFZGuqbZenip6QRYI0Y58cGnF4PG/U1aJtwCUoGRrXLZbjmbdr2q1oFxu6fQwT7l4xMc/RFUBbhQ8O+SEpGz3PhFYY34TevkVo4f/qFmokJvLHD3PLi0+3iCUaQTCxXktLfyiKBxMYV8eHRtGs/Ml2KioJiYluxgRSLyQQVuJkepQ4iOkA4J55ndLW1YxNGK3bAtIujswvED2G9AssCBX6oskqpnjdHyoYjUAPP9Z4YmcONDkOhiPz+kRXy2BNvyeyziqQLmzlYewDtSgKRiwGGxwWLVus0XB/esvPXu6uq5rt27HgADRxvwPui6rExpbcCTbvgnnzTTK3Ffq4qM4XdwQgp+rrxVM7ZWkETH4zua6u75I7/N12uvGKmaoppk76MPBeC+AYgGveMNFnxEJaZsaPLA3cTRQNAGrM9NDjsRJ3E1EhBfOjGOmCcY7Ad3Myd3l9g10v/5TmuZPL2xx9bIz+662k5e0a5hLEknYLHwKYGKOw0CclwAow38L9eXL15831vE4za2uVEMz2oAVpIX0pLCH6tqUaXa6ymg09GyyvnlWiGt9rEE+UYCWT6zBROihqKcytHDupPD9XJzFkBGYn3YNFm9GnkcRMffTsKBrjdNGGUoZZ0eEcajDE9JVXYAb0n5pXSXhTPsz++toMLZOyjd+E5JkAJyCuvbJI7vvuoTIVry9R7HJs2+mKUrDZsMAzsVZLES/4848qNG5c2nAoYbDNtQ/gV+m0+XlCMorkcS81keK/hhJsBb9yeEq+cflFGHvEJJzl+tlu+fNfrKhpnup6lN73IuVz2tc+D27mFndlEvECAOyht4mPYBIOfTCO9GuLPJKSot3RkqrlcLtm5Y7/cdvtjUjksF+AYEsHOm0GAkTIIhpV4yunPv3zDhiUts2Z93gnJgM0YvGTYA+8BCE4tX4CZ1uibVn2hDqHhTZYZ6zYc/gDaperq13fONDbYI/dbdWOLUX7QibUOS3625FVl5F1cFew1Bxpu+8PWQVW+BFkxufqT7jL7e/pUr4ONl91Wj0tAhHajoaFFfv7/H8MlU4qKPVhhxkZA2qn+C82QBTAceCfTwx//dMVHNm/+aagauSmAQjV1SqWPHmncWTTrrLn3zkjGkvcgJX8+0xh4yhe04Nvslcyg3lGW7KMd1hq40O0lKOte7pLrPzVcbrnpQhh5vvcKnJlpOqsJNYYEBJYS0sf1rKqD+kppIROEkWNbcu9f5Y/LN8s5Z5dKawuCxIHBIA2QlsOrpAzz37ftXPJ1u8P5ENXlij6DGkAflbJUVuYqvQHSt0Z/c/Wtmzb//UsX6Hrq4xDJZ3Vsn3M4vIbD8CIxjHQeWZfeGVcY7VVGsirvT38ybfZ9pDpgAvK89wfkkfsPyRPPbOLNyvD2qeuRxuD/r3ImwGD7lAwyxZNPrAUYG+ScWQDjCJaABwKDW4rxigrGarpm3nYMjBrQ8vTAIJVOwNnsBLYlXWZedO94CEg1DPNFMJJnY1KVGJtfw+A4Qfs/owHByMEKmMydPY599unD2vb6V8Oy8DvT5JLqKWoradpw4Gb7FjMZQvf0IPtsokcng/nBJYFVz78qd/5whZw1rQgeFQHv905eMg2dT5ek2g2XccPWt5Y8ademVhmcW9tv6+kLg5mZNn/+Mn25si+KgdWt1dWrHZ2ybRTOTE4lzZnwU2ZCpUwFMCOQm8T+AxhdCg45GgARsDRGR78cGwOHYcGXwIM1b0Xlgxfky5yZZVAnfKsCqitBhEGONqi2MgCl7z+pA9hGeVRcz3/tld2yZu0heFR5ypviEHthnT1WiAUeHpPU6+6A64ZNm36FiFUxbHadkxpLX5UHA8ix+2pq9FmPlxsbxuSbfIHlsQv2tyuu+Lm7OeIcD29mOrJCsxB9ASRrAqZZipwDLLYiPMCBBCmQKEmcD/ECObBzD9s5tRassh2qxXZWbqNk4RKp1YwvW/Hhs0NHhRbfT7VoUl4QkOIyj/KmsoDIJjD6h4JKMxc8r7unzLj0G2DOVHUfaxmnOpLs+04OkOw7wdHz5y/Xt23bplzl2ilT1FtGe1TBj1kfWVxkdiSm4JVK08HsZ8Ftxf+molWC/sWakUkDggbAg0DxA48TdkRDPKe25quozOzaBwlpg1+I1SiLj4mqoZ/K+NMcANcRuakEXn7Chz7ThV+APr0xmkguEWAVQpP1bqfjO5u237uC9ejWno4nle6rz8PRkfR59aRPQoJmlRsdJTHdfbDVqq2lq3zMBmWaO7f616PCyTj+ywLHVMAANWdOBB2GK5D4hC85UgkHFQyGmAxLsqlWEYdt8CyIRjFTxOVPkFBVVWdsIOlssC4uZXrmUek/nAG5AYTyS3g3KykxwW3KcTCPQDJeQ4LzkY99suwPNTWcx+ed86XNXH4GjHf2iLK/9xhq9oUz893SqqsXGW97C4xkpFUr7CpPbdhwSx8+uqXNuejBCmy/Ho2M+QTIxng8Sj0W5ByBREGRGW4sTLbuztEc2HirSk8aK4AURoTIxsgmdGYW9m3Zk7VBxV9KpVhR1G8BHnXwZrchTnoFKfO1W7fe81amBTtB+AvGY+9oyR7jO9rR0cbTduhIkE+SH5BRcnFyzRr7f0I4Wif9Bc6E62BzR0n4yJ5SibdUJFM6tl1bZSB6iaWZyLdIHiTJi4dGg/gegArCe3D0AAIEZzSS6MQRXpGO/5rKxHIW/osEZObx6cJexnYIGP7DT0cTqhyGZjqId2UccrlmHurFMPqoUZ9xzdkfSryTUpE97/9+QLJ7t78rL462KFRcCf2NrTzNB8z+1F3v28m506aVB7q6OvzbtjVZU8YVB/DKLmdDXWtnwO82gyW+SFPTESzvzUr0InbvptK/qx2jRo1CWito7d5dCGk+XuX2c+MZOf1uAKSfidTo1dWiNxdP0UPN2/Tk7lrN4ykz3e4G2KYq6PMaenm2fuqnhf5PzzdmYQNotGoYsvP7kb0PqbYrKgpT2JJzGu323+Ngr7yLARlwChh3DSSrVmtursKnVo/FytRcQFQtFuvAOe5Px9qBuxBZ+sNWMDjMKi6utZYvrwKIC/FR1U8R0AHHNnRxiAJDFBiiwBAFhigwRIEhCgxRYIgCQxQYosAQBYYoMESB9wwF/gsc+ixo/FlZCQAAAABJRU5ErkJggg==
+    mediatype: image/png
+  install:
+    spec:
+      deployments:
+      - name: kubestone-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: kubestone-controller-manager
+          template:
+            metadata:
+              labels:
+                control-plane: kubestone-controller-manager
+            spec:
+              containers:
+              - command:
+                - /manager
+                image: xridge/kubestone:v0.4.0
+                name: kubestone
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+              serviceAccount: kubestone-operator
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - endpoints
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - drills
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - drills/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - drills/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - fios
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - fios/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - fios/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - iopings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - iopings/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - iopings/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - iperf3s
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - iperf3s/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - iperf3s/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - pgbenches
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - pgbenches/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - pgbenches/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - qperves
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - qperves/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - qperves/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - sysbenches
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - sysbenches/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perf.kubestone.xridge.io
+          resources:
+          - sysbenches/status
+          verbs:
+          - get
+          - patch
+          - update
+        serviceAccountName: kubestone-operator
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - performance
+  - benchmark
+  - sysbench
+  - fio
+  - ioping
+  - iperf
+  - drill
+  - pgbench
+  - qperf
+  - sparkbench
+  labels:
+    alm-owner-kubestone: kubestone
+    alm-status-descriptors: kubestone.v0.4.0
+  links:
+  - name: Kubestone
+    url: https://kubestone.io
+  maintainers:
+  - email: info@xridge.io
+    name: xridge.io
+  maturity: alpha
+  provider:
+    name: xridge.io
+  selector:
+    matchLabels:
+      alm-owner-kubestone: kubestone
+  version: 0.4.0
