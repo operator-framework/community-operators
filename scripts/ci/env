@@ -2,6 +2,7 @@
 
 export $(grep -v '^MAKE' /tmp/env.conf)
 
+
 for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
   . "$f"
 done
@@ -53,9 +54,13 @@ export CSV_FILE="$(find "$ABS_BUNDLE_PATH" -name "*${OP_VER}.clusterserviceversi
 
 if [[ -f $CSV_FILE ]]; then
 
+  if [[ "$INSTALL_MODE" == "" ]]; then
+    export INSTALL_MODE="$(python3 /scripts/lib-python/files/detect_install_mode.py --csvfile "$CSV_FILE")"  
+  fi
+
   export CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
   export CHANNEL_NAME="$(python3 /scripts/lib-python/cluster/get_operator_channel.py -p "$PKG_FILE" -c "$CSV_NAME")"
-  cat "$PKG_FILE"
+  
   set +u
   if [[ "$REG_IMAGE" ]]; then
     export OP_REGISTRY_IMAGE="${REG_IMAGE}"
