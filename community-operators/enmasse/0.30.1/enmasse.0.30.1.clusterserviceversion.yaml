@@ -1,0 +1,1267 @@
+#! validate-crd: deploy/chart/templates/0000_30_02-clusterserviceversion.crd.yaml
+#! parse-kind: ClusterServiceVersion
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: enmasse.0.30.1
+  namespace: placeholder
+  annotations:
+    categories: "Streaming & Messaging"
+    certified: "false"
+    description: EnMasse provides messaging as a managed service on Kubernetes
+    containerImage: quay.io/enmasse/controller-manager:0.30.1
+    createdAt: 2019-02-19T00:00:00Z
+    capabilities: Seamless Upgrades
+    repository: https://github.com/EnMasseProject/enmasse
+    support: EnMasse
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "StandardInfraConfig",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {
+            "broker": {
+              "resources": {
+                "memory": "1Gi",
+                "storage": "5Gi"
+              },
+              "addressFullPolicy": "FAIL"
+            },
+            "router": {
+              "linkCapacity": 50,
+              "resources": {
+                "memory": "512Mi"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "BrokeredInfraConfig",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {
+            "broker": {
+              "resources": {
+                "memory": "4Gi"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta2",
+          "kind": "AddressPlan",
+          "metadata": {
+            "name": "standard-small-queue"
+          },
+          "spec": {
+            "addressType": "queue",
+            "shortDescription": "Small Queue",
+            "resources": {
+              "router": 0.01,
+              "broker": 0.1
+            }
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta2",
+          "kind": "AddressSpacePlan",
+          "metadata": {
+            "name": "standard-small"
+          },
+          "spec": {
+            "addressSpaceType": "standard",
+            "infraConfigRef": "default",
+            "shortDescription": "Small Address Space Plan",
+            "resourceLimits": {
+              "router": 1.0,
+              "broker": 2.0,
+              "aggregate": 2.0
+            },
+            "addressPlans": [
+              "standard-small-queue"
+            ]
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "AuthenticationService",
+          "metadata": {
+            "name": "standard-authservice"
+          },
+          "spec": {
+            "type": "standard",
+            "standard": {
+              "storage": {
+                "claimName": "standard-authservice",
+                "deleteClaim": true,
+                "size": "1Gi",
+                "type": "persistent-claim"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "enmasse.io/v1beta1",
+          "kind": "AddressSpace",
+          "metadata": {
+            "name": "myspace"
+          },
+          "spec": {
+            "plan": "standard-small",
+            "type": "standard"
+          }
+        },
+        {
+          "apiVersion": "enmasse.io/v1beta1",
+          "kind": "Address",
+          "metadata": {
+            "name": "myspace.myqueue"
+          },
+          "spec": {
+            "address": "myqueue",
+            "plan": "standard-small-queue",
+            "type": "queue"
+          }
+        },
+        {
+          "apiVersion": "user.enmasse.io/v1beta1",
+          "kind": "MessagingUser",
+          "metadata": {
+            "name": "myspace.user"
+          },
+          "spec": {
+            "authentication": {
+              "password": "ZW5tYXNzZQ==",
+              "type": "password"
+            },
+            "authorization": [
+              {
+                "addresses": [
+                  "myqueue"
+                ],
+                "operations": [
+                  "send",
+                  "recv"
+                ]
+              }
+            ],
+            "username": "user"
+          }
+        },
+        {
+          "apiVersion": "admin.enmasse.io/v1beta1",
+          "kind": "ConsoleService",
+          "metadata": {
+            "name": "console"
+          },
+          "spec": {}
+        },
+        {
+          "apiVersion": "iot.enmasse.io/v1alpha1",
+          "kind": "IoTConfig",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {
+            "adapters": {
+              "mqtt": {
+                "endpoint": {
+                  "secretNameStrategy": {
+                    "secretName": "iot-mqtt-adapter-tls"
+                  }
+                }
+              }
+            },
+            "services": {
+              "deviceRegistry": {
+                "file": {
+                  "numberOfDevicesPerTenant": 1000
+                }
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "enmasse.io/v1beta1",
+          "kind": "AddressSpaceSchema",
+          "metadata": {
+            "name": "undefined"
+          },
+          "spec": {}
+        },
+        {
+          "apiVersion": "iot.enmasse.io/v1alpha1",
+          "kind": "IoTProject",
+          "metadata": {
+            "name": "iot"
+          },
+          "spec": {
+            "downstreamStrategy": {
+              "managedStrategy": {
+                "addressSpace": {
+                  "name": "iot",
+                  "plan": "standard-unlimited"
+                },
+                "addresses": {
+                  "command": {
+                    "plan": "standard-small-anycast"
+                  },
+                  "event": {
+                    "plan": "standard-small-queue"
+                  },
+                  "telemetry": {
+                    "plan": "standard-small-anycast"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+
+spec:
+  maturity: beta
+  displayName: EnMasse
+  description: |
+    **EnMasse** provides messaging as a managed service on Kubernetes.
+    With EnMasse, administrators can configure a cloud-native,
+    multi-tenant messaging service either in the cloud or on premise.
+    Developers can provision messaging using the EnMasse Console.
+    Multiple development teams can provision the brokers and queues from the
+    console, without requiring each team to install, configure, deploy,
+    maintain, or patch any software. 
+
+    **The core capabilities include:**
+
+      * **Built-in authentication and authorization** - Use the built-in authentication service or
+        plug in your own authentication service for authentication and
+        authorization of messaging clients.
+
+      * **Self-service messaging for applications** - The service administrator deploys
+        and manages the messaging infrastructure, while applications can request
+        messaging resources regardless of the messaging infrastructure.
+
+      * **Support for a wide variety of messaging patterns** - Choose between
+        JMS-style messaging with strict guarantees, or messaging that supports
+        a larger number of connections and higher throughput.
+
+    ## Post-installation tasks
+
+    To fully use EnMasse, you need to create a few
+    infrastructure components after the installation, including:
+
+      * An authentication service
+      * Infrastructure configuration for the standard and brokered address space
+      * Address and address space plans
+      * (Optional) Create RBAC roles to allow users to self-manage addresses and
+        address spaces.
+
+    For a complete overview of how to configure EnMasse, see
+    [Configuring EnMasse](https://enmasse.io/documentation/).
+
+    ### Quickstart infrastructure configuration
+
+    If you simply want to get started quickly, you can import the following
+    YAML by saving the content to a file and apply it by running the 
+    `oc apply -f <file>` command. You can also split the content (at the `---` marker)
+    and import the single YAML document using the Web UI: 
+
+    ~~~yaml
+    ---
+    apiVersion: admin.enmasse.io/v1beta1
+    kind: StandardInfraConfig
+    metadata:
+      name: default
+    ---
+    apiVersion: admin.enmasse.io/v1beta2
+    kind: AddressPlan
+    metadata:
+      name: standard-small-queue
+    spec:
+      addressType: queue
+      resources:
+        router: 0.01
+        broker: 0.1
+    ---
+    apiVersion: admin.enmasse.io/v1beta2
+    kind: AddressSpacePlan
+    metadata:
+      name: standard-small
+    spec:
+      addressSpaceType: standard
+      infraConfigRef: default
+      addressPlans:
+      - standard-small-queue
+      resourceLimits:
+        router: 2.0
+        broker: 3.0
+        aggregate: 4.0
+    ---
+    apiVersion: admin.enmasse.io/v1beta1
+    kind: AuthenticationService
+    metadata:
+      name: standard-authservice
+    spec:
+      type: standard
+      standard:
+        storage:
+          claimName: standard-authservice
+          deleteClaim: true
+          size: 1Gi
+          type: persistent-claim
+    ~~~
+
+    ### Creating infrastructure using the Web UI
+
+    You must create a new instance of each of the following custom resources. You can
+    use the example data directly, which is provided when using the
+    Web UI:
+
+      * *Authentication Service* – Create an authentication service.
+      * *Brokered Infra Config* – Create the broker infrastructure configuration.
+      * *Standard Infra Config* – Create the standard infrastructure
+        configuration.
+
+    You must also create at least one address space plan and one address plan.
+
+    *Note*: The name of the address space plan and address plan is required
+    later when creating new addresses. Some examples use specific plan
+    names, which might not be available in your environment. You can
+    create those plans, or edit the examples to use different plan names.
+
+    ## Configuration for messaging tenants
+
+    While service administrators perform the infrastructure configuration, the following
+    resources are for the actual users of the system, the messaging tenants.
+
+    You need to create those resources to satisfy your particular use case.
+
+      * *Address space* – A container for addresses
+      * *Address* – A messaging address (address, topic, queue, and so on)
+      * *Messaging user* – Manages access to an address
+
+    ## Enabling the IoT messaging layer (tech-preview)
+
+    EnMasse contains an IoT messaging layer, which is not enabled
+    by default. You may enable it by creating an `IoTConfig` resource, in the
+    namespace of the EnMasse installation. The name of the resource
+    must be `default`.
+
+    You can then create resources of the type `IoTProject`, which allow you to
+    register and connect devices via HTTP, MQTT, Sigfox and LoRaWAN.
+
+    *Note:* The default `IoTConfig` example uses the "file based" device registry.
+    It allows you to quicky evaluate the IoT layer. However you must not use this
+    in any productive environment.
+
+    *Note:* The default `IoTConfig` examples configures the MQTT adapter with an
+    explicit TLS key/certificate stored in the secret `iot-mqtt-adapter-tls`. You
+    must provide this secret, under the configured name, in order for the
+    MQTT protocol adapter to pick it up.
+
+    *Note*: The `IoTProject` examples assume that you have deployed the example
+    plans. If you did not deploy the example plans, or changed their names, you
+    must adapt the names in the IoT examples as well.
+
+    For more information on the IoT layer, see: [Getting Started with Internet of Things (IoT) on EnMasse](${EVAL_IOT_DOC_URL})
+
+  version: 0.30.1
+  keywords: ["messaging", "amqp", "iot", "mqtt"]
+  icon:
+    - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNzlweCIgaGVpZ2h0PSI3OXB4IiB2aWV3Qm94PSIwIDAgNzkgNzkiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDQyICgzNjc4MSkgLSBodHRwOi8vd3d3LmJvaGVtaWFuY29kaW5nLmNvbS9za2V0Y2ggLS0+CiAgICA8dGl0bGU+dmVyc2lvbnM8L3RpdGxlPgogICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+CiAgICA8ZGVmcz48L2RlZnM+CiAgICA8ZyBpZD0iUGFnZS0xIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgICAgICA8ZyBpZD0idmVyc2lvbnMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0zMDguMDAwMDAwLCAtNzIuMDAwMDAwKSI+CiAgICAgICAgICAgIDxlbGxpcHNlIGlkPSJDb21iaW5lZC1TaGFwZS1Db3B5LTIiIGZpbGw9IiMwMDQ5OUUiIGN4PSIzNDcuNSIgY3k9IjExMS41IiByeD0iMjQuNSIgcnk9IjI0LjUiPjwvZWxsaXBzZT4KICAgICAgICAgICAgPHBhdGggZD0iTTMzOSwxMDIuNjkxMDE0IEMzMzksMTAyLjY5MTAxNCAzNDIuNjkwMjE1LDk0LjQxMDUzMjMgMzUwLjIwNTY1MSwxMDAuOTM1OTEyIEwzNTEuMDE1Njk5LDEwMS43NDU5NTkgQzM1MS4wMTU2OTksMTAxLjc0NTk1OSAzNTIuNzI1Nzk4LDEwMy41MDEwNjEgMzUzLjQ0NTg0LDEwMy41MDEwNjEgQzM1NC4xNjU4ODIsMTAzLjUwMTA2MSAzNTQuMjU1ODg3LDEwMy40MTEwNTYgMzU1Ljk2NTk4NiwxMDEuNzAwOTU2IEMzNTcuNjc2MDg2LDk5Ljk5MDg1NjggMzU3LjQwNjA3LDEwMC4wMzU4NTkgMzU5Ljg4MTIxNCw5Ny43ODU3Mjg2IEMzNjIuMzU2MzU4LDk1LjUzNTU5NzcgMzY1LjY3MTUyMSw5My45MzA1MzQ0IDM2NS42NzE1MjEsOTMuOTMwNTM0NCBDMzY1LjY3MTUyMSw5My45MzA1MzQ0IDM2Ny4yOTE2MTUsOTIuOTEwNDE1MSAzNzAuMjYxNzg4LDkyLjE2MDQwMTUgQzM3My4yMzE5Niw5MS40MTAzODc5IDM3Ny40MDk3MzMsOTAuNjUyODEzOSAzODIsOTEuMTcwMzQ0IEMzODIsOTEuMTcwMzQ0IDM4MC4xMzIzOTEsOTIuMjUwNDA2NyAzNzcuOTI3MjYzLDk4Ljk1NTc5NjYgQzM3NS43MjIxMzUsMTA1LjY2MTE4NiAzNzQuNTA3MDY0LDEwNy43MzEzMDcgMzc0LjUwNzA2NCwxMDcuNzMxMzA3IEMzNzQuNTA3MDY0LDEwNy43MzEzMDcgMzcxLjg1MTkxLDExMy4zNTY2MzQgMzY1LjQ2MTUzOCwxMTQuNTcxNzA0IEMzNjUuNDYxNTM4LDExNC41NzE3MDQgMzY4LjY1NjcyNCwxMTguMzk2OTI3IDM3OS45OTczODQsMTE3LjEzNjg1NCBDMzc5Ljk5NzM4NCwxMTcuMTM2ODU0IDM1OC4wODExMDksMTMxLjE3NzY3IDM0OC4yNzA1MzksMTE0Ljg0MTcyIEMzNDguMDQ4OTQ2LDExNC4zNDQyNjEgMzQ1Ljg0OTM5OCwxMTAuMDI1NDUgMzQ1LjMwMDM2NiwxMDguMjExMzA1IEMzNDQuNjEwMjk2LDEwNS45MzEyMDIgMzQ0LjMwOTEzOSwxMDUuMTI1Mzg1IDM0My4yOTAyNzksMTA0LjE2MTA2OSBDMzQwLjc3MDEzMywxMDEuNzc1OTMxIDMzOSwxMDIuNjkxMDE0IDMzOSwxMDIuNjkxMDE0IiBpZD0iRmlsbC0xLUNvcHktNyIgZmlsbD0iIzc1QTBEMyI+PC9wYXRoPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+
+      mediatype: image/svg+xml
+  maintainers:
+  - name: EnMasse
+    email: enmasse@redhat.com
+  provider:
+    name: EnMasse
+  labels:
+    app: enmasse
+  replaces: enmasse.0.29.1
+  selector:
+    matchLabels:
+      app: enmasse
+  links:
+  - name: GitHub
+    url: https://github.com/EnMasseProject/enmasse
+  - name: Documentation
+    url: https://enmasse.io/documentation
+
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: true
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+      - serviceAccountName: enmasse-operator
+        rules:
+        - apiGroups: [ "apps" ]
+          resources: [ "deployments" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch", "delete" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps", "secrets", "persistentvolumeclaims", "services" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch", "delete" ]
+        - apiGroups: [ "", "route.openshift.io" ]
+          resources: [ "routes", "routes/custom-host", "routes/status"]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "apps.openshift.io" ]
+          resources: [ "deploymentconfigs"]
+          verbs: [  "get", "list", "watch" ]
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "authenticationservices", "authenticationservices/finalizers", "consoleservices", "consoleservices/finalizers" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch" ]
+        - apiGroups: [ "iot.enmasse.io" ]
+          resources: [ "iotconfigs", "iotconfigs/finalizers", "iotconfigs/status" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch" ]
+      - serviceAccountName: address-space-controller
+        rules:
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "addressplans", "addressspaceplans", "brokeredinfraconfigs", "standardinfraconfigs", "authenticationservices", "consoleservices"]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "pods" ]
+          verbs: [ "get", "list" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps", "configmaps/finalizers" ]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "" ]
+          resources: [ "events" ]
+          verbs: [ "create", "update", "patch", "get", "list" ]
+        - apiGroups: [ "" ]
+          resources: [ "services", "secrets", "persistentvolumeclaims" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "networking.k8s.io", "extensions" ]
+          resources: [ "networkpolicies" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "route.openshift.io", "" ]
+          resources: [ "routes", "routes/custom-host", "routes/status" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "apps", "extensions" ]
+          resources: [ "statefulsets", "deployments", "replicasets" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+      - serviceAccountName: address-space-admin
+        rules:
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "addressplans", "addressspaceplans", "brokeredinfraconfigs", "standardinfraconfigs", "authenticationservices", "consoleservices"]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "pods", "secrets" ]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps", "configmaps/finalizers" ]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "" ]
+          resources: [ "events" ]
+          verbs: [ "create", "update", "patch", "get", "list" ]
+        - apiGroups: [ "" ]
+          resources: [ "persistentvolumeclaims", "services" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+        - apiGroups: [ "apps" ]
+          resources: [ "statefulsets", "deployments" ]
+          verbs: [ "create", "update", "patch", "get", "list", "delete" ]
+      - serviceAccountName: api-server
+        rules:
+        - apiGroups: [ "" ]
+          resources: [ "services", "secrets" ]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps", "configmap/finalizers" ]
+          verbs: [ "create", "update", "patch", "get", "list", "watch", "delete" ]
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "addressspaceplans", "addressplans", "standardinfraconfigs", "brokeredinfraconfigs", "authenticationservices", "consoleservices"]
+          verbs: [ "get", "list", "watch" ]
+      clusterPermissions:
+      - serviceAccountName: standard-authservice
+        rules:
+        - apiGroups: [ "authentication.k8s.io" ]
+          resources: [ "tokenreviews" ]
+          verbs: [ "create" ]
+      - serviceAccountName: enmasse-operator
+        rules:
+        - apiGroups: [ "oauth.openshift.io" ]
+          resources: [ "oauthclients" ]
+          verbs: [ "create", "get", "update", "list", "watch" ]
+      - serviceAccountName: api-server
+        rules:
+        - apiGroups: [ "authentication.k8s.io" ]
+          resources: [ "tokenreviews" ]
+          verbs: [ "create" ]
+        - apiGroups: [ "authorization.k8s.io" ]
+          resources: [ "subjectaccessreviews" ]
+          verbs: [ "create" ]
+        - apiGroups: [ "" ]
+          resources: [ "configmaps" ]
+          resourceNames: [ "extension-apiserver-authentication" ]
+          verbs: [ "get" ]
+      - serviceAccountName: iot-operator
+        rules:
+        - apiGroups: [ "enmasse.io" ]
+          resources: [ "addressspaces", "addresses" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch", "delete" ]
+        - apiGroups: [ "user.enmasse.io" ]
+          resources: [ "messagingusers" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch", "delete" ]
+        - apiGroups: [ "iot.enmasse.io" ]
+          resources: [ "iotprojects", "iotprojects/finalizers", "iotprojects/status" ]
+          verbs: [ "get", "list", "watch", "update", "create", "patch", "delete" ]
+      - serviceAccountName: iot-device-registry
+        rules:
+        - apiGroups: [ "authentication.k8s.io" ]
+          resources: [ "tokenreviews" ]
+          verbs: [ "create" ]
+        - apiGroups: [ "authorization.k8s.io" ]
+          resources: [ "subjectaccessreviews" ]
+          verbs: [ "create" ]
+        - apiGroups: [ "iot.enmasse.io" ]
+          resources: [ "iotprojects" ]
+          verbs: [ "get", "list", "watch" ]
+      deployments:
+      - name: enmasse-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: enmasse
+              name: enmasse-operator
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                name: enmasse-operator
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              serviceAccountName: enmasse-operator
+              containers:
+              - name: controller
+                image: quay.io/enmasse/controller-manager:0.30.1
+                imagePullPolicy: IfNotPresent
+                env:
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: OPERATOR_NAME
+                  value: "enmasse-operator"
+                - name: IMAGE_PULL_POLICY
+                  value: "IfNotPresent"
+                - name: CONTROLLER_DISABLE_ALL
+                  value: "true"
+                - name: CONTROLLER_ENABLE_IOT_CONFIG
+                  value: "true"
+                - name: CONTROLLER_ENABLE_AUTHENTICATION_SERVICE
+                  value: "true"
+                - name: CONTROLLER_MANAGER_IMAGE
+                  value: quay.io/enmasse/controller-manager:0.30.1
+                - name: IOT_AUTH_SERVICE_IMAGE
+                  value: quay.io/enmasse/iot-auth-service:0.30.1
+                - name: IOT_DEVICE_REGISTRY_FILE_IMAGE
+                  value: quay.io/enmasse/iot-device-registry-file:0.30.1
+                - name: IOT_GC_IMAGE
+                  value: 
+                - name: IOT_HTTP_ADAPTER_IMAGE
+                  value: quay.io/enmasse/iot-http-adapter:0.30.1
+                - name: IOT_MQTT_ADAPTER_IMAGE
+                  value: quay.io/enmasse/iot-mqtt-adapter:0.30.1
+                - name: IOT_TENANT_SERVICE_IMAGE
+                  value: quay.io/enmasse/iot-tenant-service:0.30.1
+                - name: IOT_PROXY_CONFIGURATOR_IMAGE
+                  value: quay.io/enmasse/iot-proxy-configurator:0.30.1
+                - name: ROUTER_IMAGE
+                  value: quay.io/interconnectedcloud/qdrouterd:1.9.0
+                - name: NONE_AUTHSERVICE_IMAGE
+                  value: quay.io/enmasse/none-authservice:0.30.1
+                - name: KEYCLOAK_IMAGE
+                  value: quay.io/enmasse/keycloak-openshift:4.8.3.Final
+                - name: KEYCLOAK_PLUGIN_IMAGE
+                  value: quay.io/enmasse/keycloak-plugin:0.30.1
+                - name: CONTROLLER_ENABLE_CONSOLE_SERVICE
+                  value: "true"
+                - name: CONSOLE_INIT_IMAGE
+                  value: "quay.io/enmasse/console-init:0.30.1"
+                - name: CONSOLE_PROXY_OPENSHIFT_IMAGE
+                  value: "openshift/oauth-proxy:latest"
+                - name: CONSOLE_PROXY_KUBERNETES_IMAGE
+                  value: "quay.io/pusher/oauth2_proxy:latest"
+                - name: CONSOLE_HTTPD_IMAGE
+                  value: "quay.io/enmasse/console-httpd:0.30.1"
+      - name: user-api-server
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: enmasse
+              component: user-api-server
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                component: user-api-server
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              containers:
+              - env:
+                - name: JAVA_OPTS
+                  value: -verbose:gc -Xlog:gc*
+                - name: CERT_DIR
+                  value: /api-server-cert
+                - name: ENABLE_RBAC
+                  value: "true"
+                - name: APISERVER_CLIENT_CA_CONFIG_NAME
+                  value: extension-apiserver-authentication
+                - name: APISERVER_CLIENT_CA_CONFIG_NAMESPACE
+                  value: kube-system
+                image: quay.io/enmasse/api-server:0.30.1
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                name: api-server
+                ports:
+                - containerPort: 8080
+                  name: http
+                - containerPort: 8443
+                  name: https
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 512Mi
+                volumeMounts:
+                - mountPath: /api-server-cert
+                  name: apiservice-cert
+                  readOnly: true
+              serviceAccountName: api-server
+
+      - name: api-server
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: enmasse
+              component: api-server
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                component: api-server
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              containers:
+              - env:
+                - name: JAVA_OPTS
+                  value: -verbose:gc -Xlog:gc*
+                - name: CERT_DIR
+                  value: /api-server-cert
+                - name: ENABLE_RBAC
+                  value: "true"
+                - name: APISERVER_CLIENT_CA_CONFIG_NAME
+                  value: extension-apiserver-authentication
+                - name: APISERVER_CLIENT_CA_CONFIG_NAMESPACE
+                  value: kube-system
+                - name: APISERVER_ROUTE_NAME
+                  value: restapi
+                - name: STANDARD_AUTHSERVICE_CONFIG_NAME
+                  value: keycloak-config
+                - name: STANDARD_AUTHSERVICE_CREDENTIALS_SECRET_NAME
+                  value: keycloak-credentials
+                - name: STANDARD_AUTHSERVICE_CERT_SECRET_NAME
+                  value: standard-authservice-cert
+                image: quay.io/enmasse/api-server:0.30.1
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                name: api-server
+                ports:
+                - containerPort: 8080
+                  name: http
+                - containerPort: 8443
+                  name: https
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 512Mi
+                volumeMounts:
+                - mountPath: /api-server-cert
+                  name: apiservice-cert
+                  readOnly: true
+              serviceAccountName: api-server
+      - name: address-space-controller
+        spec:
+          replicas: 1
+          strategy:
+            type: RollingUpdate
+          selector:
+            matchLabels:
+              app: enmasse
+              name: address-space-controller
+          template:
+            metadata:
+              labels:
+                app: enmasse
+                name: address-space-controller
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 1
+                      preference:
+                        matchExpressions:
+                          - key: node-role.enmasse.io/operator-infra
+                            operator: In
+                            values:
+                              - "true"
+              containers:
+              - env:
+                - name: JAVA_OPTS
+                  value: -verbose:gc
+                - name: ENABLE_EVENT_LOGGER
+                  value: "true"
+                - name: EXPOSE_ENDPOINTS_BY_DEFAULT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: exposeEndpointsByDefault
+                      name: address-space-controller-config
+                      optional: true
+                - name: ENVIRONMENT
+                  valueFrom:
+                    configMapKeyRef:
+                      key: environment
+                      name: address-space-controller-config
+                      optional: true
+                - name: TEMPLATE_DIR
+                  value: /opt/templates
+                - name: RESOURCES_DIR
+                  value: /opt
+                - name: STANDARD_AUTHSERVICE_CONFIG_NAME
+                  value: keycloak-config
+                - name: STANDARD_AUTHSERVICE_CREDENTIALS_SECRET_NAME
+                  value: keycloak-credentials
+                - name: STANDARD_AUTHSERVICE_CERT_SECRET_NAME
+                  value: standard-authservice-cert
+                - name: WILDCARD_ENDPOINT_CERT_SECRET
+                  valueFrom:
+                    configMapKeyRef:
+                      key: wildcardEndpointCertSecret
+                      name: address-space-controller-config
+                      optional: true
+                - name: RESYNC_INTERVAL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: resyncInterval
+                      name: address-space-controller-config
+                      optional: true
+                - name: RECHECK_INTERVAL
+                  valueFrom:
+                    configMapKeyRef:
+                      key: recheckInterval
+                      name: address-space-controller-config
+                      optional: true
+                - name: IMAGE_PULL_POLICY
+                  value: IfNotPresent
+                - name: ROUTER_IMAGE
+                  value: quay.io/interconnectedcloud/qdrouterd:1.9.0
+                - name: STANDARD_CONTROLLER_IMAGE
+                  value: quay.io/enmasse/standard-controller:0.30.1
+                - name: AGENT_IMAGE
+                  value: quay.io/enmasse/agent:0.30.1
+                - name: BROKER_IMAGE
+                  value: quay.io/enmasse/artemis-base:2.10.1
+                - name: BROKER_PLUGIN_IMAGE
+                  value: quay.io/enmasse/broker-plugin:0.30.1
+                - name: TOPIC_FORWARDER_IMAGE
+                  value: quay.io/enmasse/topic-forwarder:0.30.1
+                - name: MQTT_GATEWAY_IMAGE
+                  value: quay.io/enmasse/mqtt-gateway:0.30.1
+                - name: MQTT_LWT_IMAGE
+                  value: quay.io/enmasse/mqtt-lwt:0.30.1
+                image: quay.io/enmasse/address-space-controller:0.30.1
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                name: address-space-controller
+                ports:
+                - containerPort: 8080
+                  name: http
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: http
+                    scheme: HTTP
+                resources:
+                  limits:
+                    memory: 512Mi
+                  requests:
+                    memory: 256Mi
+              serviceAccountName: address-space-controller
+  apiservicedefinitions:
+    owned:
+    - group: enmasse.io
+      version: v1beta1
+      kind: AddressSpace 
+      name: addressspaces
+      displayName: Address Space
+      description: A group of messaging addresses that can be accessed via the same endpoint
+      deploymentName: api-server
+      containerPort: 8443
+      specDescriptors:
+        - description: The address space type.
+          displayName: Type
+          path: type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:text'
+        - description: The address space plan.
+          displayName: Plan
+          path: plan
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:text'
+      statusDescriptors:
+        - description: Address space ready.
+          displayName: Ready
+          path: isReady
+          x-descriptors:
+            - 'urn:alm:descriptor:text'
+    - group: enmasse.io
+      version: v1beta1
+      kind: Address
+      name: addresses
+      displayName: Address
+      description: A messaging address that can be used to send/receive messages to/from
+      deploymentName: api-server
+      containerPort: 8443
+      specDescriptors:
+        - description: The address type.
+          displayName: Type
+          path: type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:text'
+        - description: The address plan.
+          displayName: Plan
+          path: plan
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:text'
+      statusDescriptors:
+        - description: Address ready.
+          displayName: Ready
+          path: isReady
+          x-descriptors:
+            - 'urn:alm:descriptor:text'
+        - description: Address phase
+          displayName: Phase
+          path: phase
+          x-descriptors:
+            - 'urn:alm:descriptor:text'
+    - group: enmasse.io
+      version: v1beta1
+      kind: AddressSpaceSchema
+      name: addressspaceschemas
+      displayName: AddressSpaceSchema
+      description: A resource representing the available schema of plans and authentication services
+      deploymentName: api-server
+      containerPort: 8443
+    - group: user.enmasse.io
+      version: v1beta1
+      kind: MessagingUser
+      name: messagingusers
+      displayName: Messaging User
+      description: A messaging user that can connect to an Address Space
+      deploymentName: user-api-server
+      containerPort: 8443
+      specDescriptors:
+        - description: The user name.
+          displayName: Username
+          path: username
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:text'
+        - description: The authentication type
+          displayName: Authentication type
+          path: authentication.type
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:text'
+        - description: The password
+          displayName: Password
+          path: authentication.password
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:text'
+  customresourcedefinitions:
+    owned:
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: StandardInfraConfig
+        name: standardinfraconfigs.admin.enmasse.io
+        displayName: Standard Infra Config
+        description: Infrastructure configuration template for the standard address space type
+        specDescriptors:
+          - description: The minimal number of AMQP router replicas to create.
+            displayName: Minimum Router Replicas
+            path: router.minReplicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - description: The link capacity of AMQP producer links attached to the routers.
+            displayName: Link capacity
+            path: router.linkCapacity
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The amount of memory to configure for AMQP router pods.
+            displayName: Router Memory
+            path: router.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The amount of memory to configure for message brokers.
+            displayName: Broker Memory
+            path: broker.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The amount of storage to configure for message brokers.
+            displayName: Broker Storage
+            path: broker.resources.storage
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The storage class name to use for message broker persistent volumes.
+            displayName: Broker Storage Class
+            path: broker.storageClassName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The policy to apply when message queues are full.
+            displayName: Broker Address Full Policy
+            path: broker.addressFullPolicy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The amount of memory to configure for the admin operator.
+            displayName: Admin Memory
+            path: admin.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: BrokeredInfraConfig
+        name: brokeredinfraconfigs.admin.enmasse.io
+        displayName: Brokered Infra Config
+        description: Infrastructure configuration template for the brokered address space type
+        specDescriptors:
+          - description: The amount of memory to configure for message brokers.
+            displayName: Broker Memory
+            path: broker.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The amount of storage to configure for message brokers.
+            displayName: Broker Storage
+            path: broker.resources.storage
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The storage class name to use for message broker persistent volumes.
+            displayName: Broker Storage Class
+            path: broker.storageClassName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The policy to apply when message queues are full.
+            displayName: Broker Address Full Policy
+            path: broker.addressFullPolicy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The amount of memory to configure for the admin operator.
+            displayName: Admin Memory
+            path: admin.resources.memory
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - group: admin.enmasse.io
+        version: v1beta2
+        kind: AddressPlan
+        name: addressplans.admin.enmasse.io
+        displayName: Address Plan
+        description: Plan describing the resource usage of a given address type
+        specDescriptors:
+          - description: The name to be displayed in the console UI.
+            displayName: Display Name
+            path: displayName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The description to be shown in the console UI.
+            displayName: Short Description
+            path: shortDescription
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The broker resource usage.
+            displayName: Broker Usage
+            path: resources.broker
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The router resource usage.
+            displayName: Router Usage
+            path: resources.router
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - group: admin.enmasse.io
+        version: v1beta2
+        kind: AddressSpacePlan
+        name: addressspaceplans.admin.enmasse.io
+        displayName: Address Space Plan
+        description: Plan describing the capabilities and resource limits of a given address space type
+        specDescriptors:
+          - description: The name to be displayed in the console UI.
+            displayName: Display Name
+            path: displayName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The reference to the infrastructure config used by this plan.
+            displayName: InfraConfig Reference
+            path: infraConfigRef
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The description to be shown in the console UI.
+            displayName: Short Description
+            path: shortDescription
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The quota for broker resources
+            displayName: Broker Quota
+            path: resourceLimits.broker
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The quota for router resources
+            displayName: Router Quota
+            path: resourceLimits.router
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: The aggregate quota for all resources
+            displayName: Aggregate Quota
+            path: resourceLimits.aggregate
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: AuthenticationService
+        name: authenticationservices.admin.enmasse.io
+        displayName: Authentication Service
+        description: Authentication service configuration available to address spaces.
+        specDescriptors:
+          - description: The type of authentication service
+            displayName: Type
+            path: type
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - group: admin.enmasse.io
+        version: v1beta1
+        kind: ConsoleService
+        name: consoleservices.admin.enmasse.io
+        displayName: Console Service
+        description: Console Service Singleton for deploying global console.
+        specDescriptors:
+          - description: The discovery Metadata URL
+            displayName: Discovery Metadata URL
+            path: discoveryMetadataUrl
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: Console certificate secret name
+            displayName: Console certificate secret name
+            path: certificateSecret.name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: OAUTH Client Secret Name
+            displayName: OAUTH Client Secret Name
+            path: oauthClientSecret.name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: Scope
+            displayName: Scope
+            path: scope
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: Host to use for ingress
+            displayName: Host
+            path: host
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+
+      - group: iot.enmasse.io
+        version: v1alpha1
+        kind: IoTConfig
+        name: iotconfigs.iot.enmasse.io
+        displayName: IoT Config
+        description: IoT Infrastructure Configuration Singleton
+        specDescriptors:
+
+          # HTTP adapter
+
+          - description: The number of replicas for the HTTP protocol adapter
+            displayName: HTTP adapter replicas
+            path: adapters.http.replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+
+          # MQTT adapter
+
+          - description: The number of replicas for the MQTT protocol adapter
+            displayName: MQTT adapter replicas
+            path: adapters.mqtt.replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+
+          # Sigfox adapter
+
+          - description: The number of replicas for the Sigfox protocol adapter
+            displayName: Sigfox adapter replicas
+            path: adapters.sigfox.replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+
+          # LoRaWAN adapter
+
+          - description: The number of replicas for the LoRaWAN protocol adapter
+            displayName: LoRaWAN adapter replicas
+            path: adapters.lorawan.replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+
+          # Services
+
+          - description: The number of replicas for the device registry
+            displayName: Device registry replicas
+            path: services.deviceRegistry.replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+
+          - description: The number of replicas for the tenant service
+            displayName: Tenant service replicas
+            path: services.tenant.replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+
+          - description: The number of replicas for the authentication service
+            displayName: Authentication service replicas
+            path: services.authentication.replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+
+        statusDescriptors:
+
+          - description: State of the IoT infrastructure.
+            displayName: State
+            path: state
+            x-descriptors:
+              - 'urn:alm:descriptor:io.kubernetes.phase'
+
+          - description: URL of the Device registry endpoint.
+            displayName: Device Registry Endpoint
+            path: services.deviceRegistry.endpoint.uri
+            x-descriptors:
+              - 'urn:alm:descriptor:org.w3:link'
+
+          - description: URL of the HTTP Protocol adapter endpoint.
+            displayName: HTTP Adapter endpoint
+            path: adapters.http.endpoint.uri
+            x-descriptors:
+              - 'urn:alm:descriptor:org.w3:link'
+
+          - description: URL of the LoRaWAN Protocol adapter endpoint.
+            displayName: LoRaWAN Adapter endpoint
+            path: adapters.lorawan.endpoint.uri
+            x-descriptors:
+              - 'urn:alm:descriptor:org.w3:link'
+
+          - description: URL of the Sigfox Protocol adapter endpoint.
+            displayName: Sigfox Adapter endpoint
+            path: adapters.sigfox.endpoint.uri
+            x-descriptors:
+              - 'urn:alm:descriptor:org.w3:link'
+
+          - description: URL of the MQTT Protocol adapter endpoint.
+            displayName: MQTT Adapter endpoint
+            path: adapters.mqtt.endpoint.uri
+            x-descriptors:
+              - 'urn:alm:descriptor:org.w3:link'
+
+      - group: iot.enmasse.io
+        version: v1alpha1
+        kind: IoTProject
+        name: iotprojects.iot.enmasse.io
+        displayName: IoT Project
+        description: An IoT project instance
+
+        statusDescriptors:
+          - description: The name of the tenant, when used in context of IoT functionality.
+            displayName: IoT tenant name
+            path: tenantName
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+
+          - description: Conditions
+            displayName: Conditions
+            path: conditions
+            x-descriptors:
+              - 'urn:alm:descriptor:io.kubernetes.conditions'
+
+          - description: The phase of the project.
+            displayName: Phase
+            path: phase
+            x-descriptors:
+              - 'urn:alm:descriptor:io.kubernetes.phase'
+          - description: Description of the project phase.
+            displayName: Reason
+            path: phaseReason
+            x-descriptors:
+              - 'urn:alm:descriptor:io.kubernetes.phase:reason'
