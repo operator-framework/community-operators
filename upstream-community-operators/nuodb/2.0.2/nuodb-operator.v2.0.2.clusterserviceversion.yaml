@@ -1,0 +1,425 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [{
+         "apiVersion": "nuodb.com/v2alpha1",
+         "kind": "Nuodb",
+         "metadata": {
+            "name": "nuodb"
+         },
+         "spec": {
+            "dbAvailability" : "manual",
+            "storageMode" : "ephemeral",
+            "insightsEnabled" : true,
+            "adminCount" : 1,
+            "adminStorageSize" : "5G",
+            "adminStorageClass" : "local-disk",
+            "dbName" : "test1",
+            "dbUser" : "dba",
+            "dbPassword" : "secret",
+            "smMemory" : "2Gi",
+            "smCount" : 1,
+            "smCpu" : "1",
+            "smStorageSize" : "20G",
+            "smStorageClass" : "local-disk",
+            "engineOptions" : "",
+            "teCount" : 1,
+            "teMemory" : "2Gi",
+            "teCpu" : "1",
+            "apiServer" : "https://domain:8888",
+            "container" : "nuodb/nuodb-ce:latest"
+         }
+      },
+      {
+         "apiVersion": "nuodb.com/v2alpha1",
+         "kind": "NuodbYcsbWl",
+         "metadata": {
+            "name": "nuodbycsbwl"
+         },
+         "spec": {
+            "dbName": "test1",
+            "ycsbWorkloadCount": 1,
+            "ycsbLoadName": "ycsb-load",
+            "ycsbWorkload": "b",
+            "ycsbLbPolicy": "",
+            "ycsbNoOfProcesses": 2,
+            "ycsbNoOfRows": 10000,
+            "ycsbNoOfIterations": 0,
+            "ycsbOpsPerIteration": 10000,
+            "ycsbMaxDelay": 240000,
+            "ycsbDbSchema": "User1",
+            "ycsbContainer": "nuodb/ycsb:latest"
+         }
+      },
+      {
+         "apiVersion": "nuodb.com/v2alpha1",
+         "kind": "NuodbInsightsServer",
+         "metadata": {
+            "name": "insightsserver"
+         },
+         "spec": {
+            "elasticVersion": "7.3.0",
+            "elasticNodeCount": 1,
+            "kibanaVersion": "7.3.0",
+            "kibanaNodeCount": 1
+         }
+      }]
+    categories: "Database,OpenShift Optional"
+    capabilities: "Basic Install"
+    certified: "true"
+    containerImage: quay.io/nuodb/nuodb-operator:v2.0.2
+    createdAt: 2019-06-06T12:59:59Z
+    description: This Operator will deploy the Community Edition of NuoDB
+    repository: https://github.com/nuodb/nuodb-operator
+    support: NuoDB, Inc.
+  name: nuodb-operator.v2.0.2
+  namespace: "nuodb"
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - description: Represents a NuoDB instance
+        displayName: NuoDB Server
+        kind: Nuodb
+        name: nuodbs.nuodb.com
+        resources:
+          - kind: ReplicaSet
+            name: ""
+            version: apps/v1
+          - kind: StatefulSet
+            name: ""
+            version: apps/v1
+          - kind: Pod
+            name: ""
+            version: v1
+          - kind: Service
+            name: ""
+            version: v1
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: ConfigMap
+            name: ""
+            version: v1
+          - kind: nuodbs
+            name: ""
+            version: v2alpha1
+        specDescriptors:
+          - description: The desired number of member pods for the deployment
+            displayName: Size
+            path: replicaCount
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - description: Number of admin service pods
+            displayName: AdminCount
+            path: adminCount
+          - description: Admin persistent storage class name
+            displayName: AdminStorageClass
+            path: adminStorageClass
+          - description: Admin service log volume size (GB) example
+            displayName: AdminStorageSize
+            path: adminStorageSize
+          - description: Load balancer service URL
+            displayName: ApiServer
+            path: apiServer
+          - description: NuoDB fully qualified image name 
+            displayName: Container
+            path: container
+          - description: Availability requirement for this database
+            displayName: DbAvailability
+            path: dbAvailability
+          - description: NuoDB Database name
+            displayName: DbName
+            path: dbName
+          - description: NuoDB Database password 
+            displayName: DbPassword
+            path: dbPassword
+          - description: NuoDB Database User
+            displayName: DbUser
+            path: dbUser
+          - description: Additional "nuodb" engine options 
+            displayName: EngineOptions
+            path: engineOptions
+          - description: Opt-in to NuoDB Insights
+            displayName: Enable Insights
+            path: insightsEnabled
+          - description: Number of SM service pods
+            displayName: SmCount
+            path: smCount
+          - description: NuoDB Storage Manager CPU Limit
+            displayName: SM CPU
+            path: smCpu
+          - description: SM memory (in GB) 
+            displayName: SM Memory
+            path: smMemory
+          - description: SM persistent storage class name
+            displayName: SmStorageClass
+            path: smStorageClass
+          - description: Storage manager (SM) volume size (GB)
+            displayName: SmStorageSize
+            path: smStorageSize
+          - description: NuoDB pod storage mode
+            displayName: StorageMode
+            path: storageMode
+          - description: Number of transaction engines (TE) nodes
+            displayName: TeCount
+            path: teCount
+          - description: NuoDB Transaction Engine CPU Limit
+            displayName: TE CPU
+            path: teCpu
+          - description: TE memory (in GB)
+            displayName: TeMemory
+            path: teMemory
+        statusDescriptors:
+          - description: AdminHealth of the NuoDB Domain
+            displayName: Admin Health
+            path: adminHealth
+          - description: TeHealth of the NuoDB Domain
+            displayName: Te Health
+            path: teHealth
+          - description: SmHealth of the NuoDB Domain
+            displayName: Sm Health
+            path: smHealth
+          - description: ControllerVersion of the NuoDB Domain
+            displayName: Controller Version
+            path: controllerVersion
+          - description: DomainHealth of the NuoDB Domain
+            displayName: Domain Health
+            path: domainHealth
+          - description: The current status of the application.
+            displayName: Status
+            path: phase
+            x-descriptors:
+            - urn:alm:descriptor:io.kubernetes.phase
+          - description: Explanation for the current status of the application.
+            displayName: Status Details
+            path: reason
+            x-descriptors:
+            - urn:alm:descriptor:io.kubernetes.phase:reason   
+        version: v2alpha1
+      - description: Represents a YCSB instance
+        displayName: YCSB Server
+        kind: NuodbYcsbWl
+        name: nuodbycsbwls.nuodb.com
+        resources:
+          - kind: ReplicaSet
+            name: ""
+            version: apps/v1
+          - kind: StatefulSet
+            name: ""
+            version: apps/v1
+          - kind: Pod
+            name: ""
+            version: v1
+          - kind: Service
+            name: ""
+            version: v1
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: ConfigMap
+            name: ""
+            version: v1
+        specDescriptors:
+          - description: The desired number of member pods for the deployment
+            displayName: Size
+            path: ycsbDbSchema
+          - description: Name of an existing load-balancer policy, that has already been created using the 'nuocmd set load-balancer' command.
+            displayName: YCSB load-balancer policy
+            path: ycsbLbPolicy
+          - description: YCSB workload pod name
+            displayName: YCSB Name
+            path: ycsbLoadName
+          - description: YCSB maximum workload delay in milliseconds (Default is 4 minutes)
+            displayName: Max Delay
+            path: ycsbMaxDelay
+          - description: YCSB number of iterations
+            displayName: Number of Iterations
+            path: ycsbNoOfIterations
+          - description: Number of concurrent YCSB processes that will be started in each YCSB pod
+            displayName: Number of YCSB processes
+            path: ycsbNoOfProcesses
+          - description: YCSB number of initial rows in table
+            displayName: Number of rows
+            path: ycsbNoOfRows
+          - description: Number of YCSB SQL operations to perform in each iteration.
+            displayName: Ops per Iteration
+            path: ycsbOpsPerIteration
+          - description: YCSB Workload, Valid values are a-f. 
+            displayName: YCSB Workload
+            path: ycsbWorkload
+        statusDescriptors:
+          - description: The current status of the application.
+            displayName: Status
+            path: phase
+            x-descriptors:
+            - urn:alm:descriptor:io.kubernetes.phase
+          - description: Explanation for the current status of the application.
+            displayName: Status Details
+            path: reason
+            x-descriptors:
+            - urn:alm:descriptor:io.kubernetes.phase:reason
+        version: v2alpha1
+      - description: Represents a NuoDB Insights instance
+        displayName: NuoDb Insights Server
+        kind: NuodbInsightsServer
+        name: nuodbinsightsservers.nuodb.com
+        resources:
+          - kind: ReplicaSet
+            name: ""
+            version: apps/v1
+          - kind: StatefulSet
+            name: ""
+            version: apps/v1
+          - kind: Pod
+            name: ""
+            version: v1
+          - kind: Service
+            name: ""
+            version: v1
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: ConfigMap
+            name: ""
+            version: v1
+        specDescriptors:
+          - description: ElasticSearch version to be used
+            displayName: elasticVersion
+            path: elasticVersion
+          - description: The number of ElasticSearch nodes
+            displayName: elasticNodeCount
+            path: elasticNodeCount
+          - description: Kibana Version
+            displayName: kibanaVersion
+            path: kibanaVersion
+          - description: Kibana Node count
+            displayName: kibanaNodeCount
+            path: kibanaNodeCount
+        statusDescriptors:
+          - description: The current status of the application.
+            displayName: Status
+            path: phase
+            x-descriptors:
+            - urn:alm:descriptor:io.kubernetes.phase
+          - description: Explanation for the current status of the application.
+            displayName: Status Details
+            path: reason
+            x-descriptors:
+            - urn:alm:descriptor:io.kubernetes.phase:reason
+        version: v2alpha1
+  minKubeVersion: "v1.12.0"
+  description: |
+    The NuoDB Kubernetes Operator deploys the NuoDB database on OpenShift  3.11 or greater. It also supports either ephemeral or persistent storage options with configurations to run NuoDB Insights, a visual database monitoring Web UI, and start a sample application (ycsb) to quickly generate a configurable SQL workload against the database.  See: [NuoDb's github] (https://github.com/nuodb/nuodb-operator) for requirements.
+  displayName: NuoDB Operator
+  icon:
+    - base64data: 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
+      mediatype: "image/jpeg"
+  install:
+    spec:
+      deployments:
+        - name: nuodb-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: nuodb-operator
+            template:
+              metadata:
+                labels:
+                  name: nuodb-operator
+              spec:
+                containers:
+                  - name: nuodb-operator
+                    image: quay.io/nuodb/nuodb-operator:v2.0.2
+                    imagePullPolicy: Always
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: "nuodb-operator"
+                restartPolicy: Always
+                terminationGracePeriodSeconds: 5
+                serviceAccountName: nuodb-operator
+      permissions:
+        - rules:
+          - apiGroups:
+            - nuodb.com
+            resources:
+            - "*"
+            verbs:
+            - "*"
+          - apiGroups:
+            - ""
+            resources:
+            - pods
+            - services
+            - endpoints
+            - persistentvolumeclaims
+            - events
+            - configmaps
+            - secrets
+            - replicationcontrollers
+            - bindings/finalizers
+            verbs:
+            - "*"
+          - apiGroups:
+            - apps
+            resources:
+            - deployments
+            - daemonsets
+            - replicasets
+            - statefulsets
+            verbs:
+            - "*"
+          - apiGroups:
+            - route.openshift.io
+            resources:
+            - routes
+            verbs:
+            - '*'
+          serviceAccountName: nuodb-operator
+      clusterPermissions:
+        - rules:
+          - verbs:
+            - use
+            apiGroups:
+            - security.openshift.io
+            resources:
+            - securitycontextconstraints
+            resourceNames:
+            - anyuid
+          serviceAccountName: default
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  keywords:
+    - database
+    - sql
+  links:
+    - name: NuoDB CE
+      url: 'https://www.nuodb.com/dev-center/community-edition-download'
+    - name: NuoDB Documentation
+      url: 'https://doc.nuodb.com'
+  maintainers:
+    - email: tgates@nuodb.com
+      name: NuoDB, Inc.
+  maturity: alpha
+  provider:
+    name: NuoDB, Inc.
+  version: 2.0.2
