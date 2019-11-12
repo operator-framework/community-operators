@@ -17,11 +17,9 @@ install:
 - scripts/ci/install-deps $DISTRO_TYPE
 
 before_script:
-- eval $(scripts/ci/operators-env) && scripts/ci/verify-operator
 - sudo minikube start --memory=4096 --vm-driver=none --kubernetes-version="v1.14.0" --extra-config=apiserver.v=10
 - sudo chown -R $USER ${HOME}/.{mini,}kube
 - kubectl config use-context minikube
-- scripts/ci/install-olm-local
 
 jobs:
   include:
@@ -34,7 +32,7 @@ jobs:
       if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -q '\.yaml'; then \
         OPERATORS_UPSTREAM="upstream-community-operators/jaeger:$(yq r --tojson upstream-community-operators/jaeger/jaeger.package.yaml "channels" \
         | jq ".[] | .currentCSV" | sort -V | tail -1 | sed -E 's/"[a-zA-Z\-]+\.?v?([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?)"/\1/')" \
-        scripts/ci/test-pr $DISTRO_TYPE && exit 0
+        docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}:${PWD} quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="/upstream-community-operators/jaeger" CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
       fi
-    # operators-env exports variables containing all operators to be tested.
-    - eval $(scripts/ci/operators-env) && scripts/ci/test-pr $DISTRO_TYPE
+    docker pull quay.io/operator-framework/operator-testing
+    eval(scripts/ci/operators-env) && docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}:${PWD} quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="${CI_PROJECT_DIR}/${OP_PATH}" CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
