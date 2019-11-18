@@ -2,6 +2,8 @@
 
 set -e
 set -xuv
+trap 'echo "line ${LINENO}: OP_PATH is $OP_PATH"' DEBUG
+
 # Exports a variable containing a space-delimited list of each operator
 # with changes in a PR and the latest CSV version for that operator in the form:
 # "xxxxx-operators/operator1:v0.0.1 xxxxx-operators/operator2:v0.0.1"
@@ -23,9 +25,8 @@ for op_distro in "${!OP_TYPES[@]}"; do
   OP_TYPE_VAR="OPERATORS_${op_distro^^}"
   declare $OP_TYPE_VAR=""
   for op_type in ${OP_TYPES[$op_distro]}; do
-#******************************************************************debug
-    for file in $(git diff master --name-only|tail -1 2>&1); do
-#    for file in $(git diff master --name-only 2>&1); do
+#    for file in $(git diff master --name-only|tail -1 2>&1); do
+    for file in $(git diff master --name-only 2>&1); do
       # Run on operator packages with file deletions but still exist.
       if [[ ! -e "$file" && ! -d "$(dirname "$file")" ]]; then
         continue
