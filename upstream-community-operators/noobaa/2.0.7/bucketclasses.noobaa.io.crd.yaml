@@ -1,16 +1,13 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: backingstores.noobaa.io
+  creationTimestamp: null
+  name: bucketclasses.noobaa.io
 spec:
   additionalPrinterColumns:
-  - JSONPath: .spec.type
-    description: Type
-    name: Type
-    type: string
-  - JSONPath: .spec.bucketName
-    description: Bucket Name
-    name: Bucket-Name
+  - JSONPath: .spec.placementPolicy
+    description: Placement
+    name: Placement
     type: string
   - JSONPath: .status.phase
     description: Phase
@@ -21,10 +18,10 @@ spec:
     type: date
   group: noobaa.io
   names:
-    kind: BackingStore
-    listKind: BackingStoreList
-    plural: backingstores
-    singular: backingstore
+    kind: BucketClass
+    listKind: BucketClassList
+    plural: bucketclasses
+    singular: bucketclass
   scope: Namespaced
   subresources:
     status: {}
@@ -42,45 +39,44 @@ spec:
             submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
+          description: Standard object metadata.
           type: object
         spec:
+          description: Specification of the desired behavior of the noobaa BucketClass.
           properties:
-            bucketName:
-              type: string
-            s3Options:
-              description: S3Options specifies client options for the backing store
+            placementPolicy:
+              description: PlacementPolicy specifies the placement policy for the
+                bucket class
               properties:
-                endpoint:
-                  description: Endpoint is the S3 endpoint to use
-                  type: string
-                region:
-                  description: Region is the AWS region
-                  type: string
-                s3ForcePathStyle:
-                  description: S3ForcePathStyle forces the client to send the bucket
-                    name in the path aka path-style rather than as a subdomain of
-                    the endpoint.
-                  type: boolean
-                signatureVersion:
-                  description: SignatureVersion specifies the client signature version
-                    to use when signing requests.
-                  type: string
-                sslDisabled:
-                  description: SSLDisabled allows to disable SSL and use plain http
-                  type: boolean
+                tiers:
+                  description: Tiers is an ordered list of tiers to use. The model
+                    is a waterfall - push to first tier by default, and when no more
+                    space spill "cold" storage to next tier.
+                  items:
+                    properties:
+                      backingStores:
+                        description: BackingStores is an unordered list of backing
+                          store names. The meaning of the list depends on the placement.
+                        items:
+                          type: string
+                        type: array
+                      placement:
+                        description: Placement specifies the type of placement for
+                          the tier If empty it should have a single backing store.
+                        enum:
+                        - Spread
+                        - Mirror
+                        type: string
+                    type: object
+                  type: array
+              required:
+              - tiers
               type: object
-            secret:
-              description: Secret refers to a secret that provides the credentials
-              type: object
-            type:
-              description: Type
-              type: string
           required:
-          - type
-          - bucketName
-          - secret
+          - placementPolicy
           type: object
         status:
+          description: Most recently observed status of the noobaa BackingStore.
           properties:
             conditions:
               description: Conditions is a list of conditions related to operator
@@ -113,16 +109,19 @@ spec:
                 is in its lifecycle
               type: string
             relatedObjects:
-              description: RelatedObjects is a list of objects that are "interesting"
-                or related to this operator.
+              description: RelatedObjects is a list of objects related to this operator.
               items:
                 type: object
               type: array
-          required:
-          - phase
           type: object
   version: v1alpha1
   versions:
   - name: v1alpha1
     served: true
     storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

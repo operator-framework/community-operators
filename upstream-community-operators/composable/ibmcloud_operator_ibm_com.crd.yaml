@@ -1,0 +1,87 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: composables.ibmcloud.ibm.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    name: State
+    type: string
+  - JSONPath: .spec.template.metadata.name
+    name: Resource Name
+    type: string
+  - JSONPath: .spec.template.kind
+    name: Resource Kind
+    type: string
+  - JSONPath: .spec.template.apiVersion
+    name: Resource apiVersion
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: ibmcloud.ibm.com
+  names:
+    kind: Composable
+    plural: composables
+    shortNames:
+    - comp
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Composable represents a composable resource that can wrap any resource
+        (native kubernetes or CRDs) to allow it to be dynamically configurable
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ComposableSpec defines the desired state of Composable
+          properties:
+            template:
+              description: Template defines the underlying object
+              type: object
+          required:
+          - template
+          type: object
+        status:
+          description: ComposableStatus defines the observed state of Composable
+          properties:
+            message:
+              description: Message - provides human readable explanation of the Composable
+                status
+              type: string
+            state:
+              description: State shows the composable object state
+              enum:
+              - Failed
+              - Pending
+              - Online
+              type: string
+          type: object
+      required:
+      - metadata
+      - spec
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

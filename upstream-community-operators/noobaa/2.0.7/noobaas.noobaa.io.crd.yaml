@@ -1,15 +1,12 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  creationTimestamp: null
   name: noobaas.noobaa.io
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.phase
-    description: Phase
-    name: Phase
-    type: string
   - JSONPath: .status.services.serviceMgmt.nodePorts
-    description: Mgmt Endpoints
+    description: Management Endpoints
     name: Mgmt-Endpoints
     type: string
   - JSONPath: .status.services.serviceS3.nodePorts
@@ -19,6 +16,10 @@ spec:
   - JSONPath: .status.actualImage
     description: Actual Image
     name: Image
+    type: string
+  - JSONPath: .status.phase
+    description: Phase
+    name: Phase
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
@@ -53,9 +54,36 @@ spec:
         spec:
           description: Specification of the desired behavior of the noobaa system.
           properties:
+            affinity:
+              description: Affinity (optional) passed through to noobaa's pods
+              type: object
             coreResources:
               description: CoreResources (optional) overrides the default resource
                 requirements for the server container
+              type: object
+            dbImage:
+              description: DBImage (optional) overrides the default image for the
+                db container
+              type: string
+            dbResources:
+              description: DBResources (optional) overrides the default resource requirements
+                for the db container
+              type: object
+            dbStorageClass:
+              description: DBStorageClass (optional) overrides the default cluster
+                StorageClass for the database volume. For the time being this field
+                is immutable and can only be set on system creation. This affects
+                where the system stores its database which contains system config,
+                buckets, objects meta-data and mapping file parts to storage locations.
+                +immutable
+              type: string
+            dbVolumeResources:
+              description: 'DBVolumeResources (optional) overrides the default PVC
+                resource requirements for the database volume. For the time being
+                this field is immutable and can only be set on system creation. This
+                is because volume size updates are only supported for increasing the
+                size, and only if the storage class specifies `allowVolumeExpansion:
+                true`, +immutable'
               type: object
             image:
               description: Image (optional) overrides the default image for the server
@@ -65,25 +93,24 @@ spec:
               description: ImagePullSecret (optional) sets a pull secret for the system
                 image
               type: object
-            mongoImage:
-              description: MongoImage (optional) overrides the default image for the
-                mongodb container
+            pvPoolDefaultStorageClass:
+              description: PVPoolDefaultStorageClass (optional) overrides the default
+                cluster StorageClass for the pv-pool volumes. This affects where the
+                system stores data chunks (encrypted). Updates to this field will
+                only affect new pv-pools, but updates to existing pools are not supported
+                by the operator.
               type: string
-            mongoResources:
-              description: MongoResources (optional) overrides the default resource
-                requirements for the mongodb container
-              type: object
-            storageClassName:
-              description: StorageClassName (optional) overrides the default StorageClass
-                for the PVC that the operator creates, this affects where the system
-                stores its database which contains system config, buckets, objects
-                meta-data and mapping file parts to storage locations.
-              type: string
+            tolerations:
+              description: Tolerations (optional) passed through to noobaa's pods
+              items:
+                type: object
+              type: array
           type: object
         status:
           description: Most recently observed status of the noobaa system.
           properties:
             accounts:
+              description: Accounts reports accounts info for the admin account
               properties:
                 admin:
                   properties:
@@ -140,12 +167,12 @@ spec:
                 system
               type: string
             relatedObjects:
-              description: RelatedObjects is a list of objects that are "interesting"
-                or related to this operator.
+              description: RelatedObjects is a list of objects related to this operator.
               items:
                 type: object
               type: array
             services:
+              description: Services reports addresses for the services
               properties:
                 serviceMgmt:
                   properties:
@@ -178,8 +205,8 @@ spec:
                         type: string
                       type: array
                     nodePorts:
-                      description: NodePorts are the most basic network available
-                        it uses the networks available on the hosts of kubernetes
+                      description: NodePorts are the most basic network available.
+                        NodePorts use the networks available on the hosts of kubernetes
                         nodes. This generally works from within a pod, and from the
                         internal network of the nodes, but may fail from public network.
                         https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
@@ -187,8 +214,8 @@ spec:
                         type: string
                       type: array
                     podPorts:
-                      description: 'PodPorts are the second most basic network address
-                        every pod has an IP in the cluster and the pods network is
+                      description: 'PodPorts are the second most basic network address.
+                        Every pod has an IP in the cluster and the pods network is
                         a mesh so the operator running inside a pod in the cluster
                         can use this address. Note: pod IPs are not guaranteed to
                         persist over restarts, so should be rediscovered. Note2: when
@@ -229,8 +256,8 @@ spec:
                         type: string
                       type: array
                     nodePorts:
-                      description: NodePorts are the most basic network available
-                        it uses the networks available on the hosts of kubernetes
+                      description: NodePorts are the most basic network available.
+                        NodePorts use the networks available on the hosts of kubernetes
                         nodes. This generally works from within a pod, and from the
                         internal network of the nodes, but may fail from public network.
                         https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
@@ -238,8 +265,8 @@ spec:
                         type: string
                       type: array
                     podPorts:
-                      description: 'PodPorts are the second most basic network address
-                        every pod has an IP in the cluster and the pods network is
+                      description: 'PodPorts are the second most basic network address.
+                        Every pod has an IP in the cluster and the pods network is
                         a mesh so the operator running inside a pod in the cluster
                         can use this address. Note: pod IPs are not guaranteed to
                         persist over restarts, so should be rediscovered. Note2: when
@@ -253,16 +280,15 @@ spec:
               - serviceMgmt
               - serviceS3
               type: object
-          required:
-          - observedGeneration
-          - phase
-          - actualImage
-          - accounts
-          - services
-          - readme
           type: object
   version: v1alpha1
   versions:
   - name: v1alpha1
     served: true
     storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
