@@ -56,6 +56,7 @@ where *my-operator* is the name of your Operator. If you don't have this format 
 ### Kubernetes cluster
 For "upstream-community" operators targeting Kubernetes and [OperatorHub.io](https://operatorhub.io):
 * A running Kubernetes cluster; [minikube](https://kubernetes.io/docs/setup/minikube/) is the simplest approach
+
 For "community" operators targeting OCP/OKD and OperatorHub on OpenShift:
 * either a running Kubernetes cluster; [minikube](https://kubernetes.io/docs/setup/minikube/) is the simplest approach
 * or access to a running OpenShift 4 cluster, use [try.openshift.com](https://try.openshift.com/) to get a cluster on an AWS environment within ~30 mins
