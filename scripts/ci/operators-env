@@ -22,24 +22,24 @@ for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
 done
 
 # Remove duplicates.
-declare -A SEEN
+#declare -A SEEN
 for op_distro in "${!OP_TYPES[@]}"; do
   OP_TYPE_VAR="OPERATORS_${op_distro^^}"
   declare $OP_TYPE_VAR=""
   for op_type in ${OP_TYPES[$op_distro]}; do
 #    for file in $(git diff master --name-only --no-pager 2>&1); do
-    for file in $(git diff master --name-only 2>&1); do
+    for file in $(git diff master --name-only); do
       # Run on operator packages with file deletions but still exist.
       if [[ ! -e "$file" && ! -d "$(dirname "$file")" ]]; then
         continue
       fi
       if echo "$file" | grep -q "^$op_type"; then
         OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
-        if [[ -n "${SEEN[$OP_PATH]}" ]]; then
-          continue
-        fi
+#        if [[ -n "${SEEN[$OP_PATH]}" ]]; then
+#          continue
+#        fi
         echo $OP_PATH
-        SEEN[$OP_PATH]="seen"
+#        SEEN[$OP_PATH]="seen"
         PKG_FILE="$(find "$OP_PATH" -name "*.package.yaml" -print -quit)"
         # Get latest CSV version for the changed operator.
         OP_VER="$(yq r --tojson "$PKG_FILE" "channels" \
