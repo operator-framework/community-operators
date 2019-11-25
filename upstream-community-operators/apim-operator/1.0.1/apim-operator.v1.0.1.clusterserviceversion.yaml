@@ -1,0 +1,275 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: apim-operator.v1.0.1
+  namespace: placeholder
+  annotations:
+    alm-examples: >-
+      [{"apiVersion":"wso2.com/v1alpha1","kind":"API","metadata":{"name":"petstore"},"spec":{"definition":{"configmapName":"petstore-swagger","type":"swagger"},"interceptorConfName":"","mode":"privateJet","override":true,"replicas":1,"updateTimeStamp":""}},{"apiVersion":"wso2.com/v1alpha1","kind":"API","metadata":{"name":"test-api-publisher","namespace":"wso2-system"},"spec":{"definition":{"configmapName":"test-publish","type":"swagger"},"replicas":1}},{"apiVersion":"wso2.com/v1alpha1","kind":"Security","metadata":{"name":"jwt-security"},"spec":{"type":"JWT","issuer":"https://localhost:9443/jwt/token","audience":"https://localhost:9443/jwt/token","certificate":"wso2am300-secret"}},{"apiVersion":"wso2.com/v1alpha1","kind":"RateLimiting","metadata":{"name":"app1"},"spec":{"type":"application","description":"Allow
+      4 requests per
+      minute","timeUnit":"min","unitTime":1,"requestCount":{"limit":4}}},{"apiVersion":"wso2.com/v1alpha1","kind":"TargetEndpoint","metadata":{"name":"helloworld-sidecar","labels":{"app":"app2"}},"spec":{"protocol":"http","port":8080,"deploy":{"name":"helloworldservice","dockerImage":"lakwarus/helloworld:v1","count":2},"mode":"sidecar"}}]
+    categories: 'Developer Tools,      Monitoring,    Cloud Provider'
+    certified: 'false'
+    description: >-
+      API Operator provides a fully automated experience for cloud-native API
+      management of microservices
+    containerImage: 'wso2/k8s-api-operator:1.0.1'
+    support: ''
+    capabilities: Seamless Upgrades
+    repository: 'https://github.com/wso2/k8s-apim-operator'
+    createdAt: 2019-11-21T16:00:00.000Z
+spec:
+  displayName: API Operator for Kubernetes
+  description: "## Introduction\nAs microservices are increasingly being deployed on Kubernetes, the need to expose these microservices as well documented, easy to consume, managed APIs is becoming important to develop great applications. The API operator for Kubernetes makes APIs a first-class citizen in the Kubernetes ecosystem. Similar to deploying microservices, you can now use this operator to deploy APIs for individual microservices or compose several microservices into individual APIs. With this users will be able to expose their microservice as managed API in Kubernetes environment without any additional work.\n![](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/docs/images/API-K8s-Operator.png)\n## About this Operator\nAPI Operator provides a fully automated experience for cloud-native API management. A user can expose an already deployed microservice as an API using the API Operator by providing the API definition of the particular microservice.\n\nOnce the API is deployed, it will be deployed as a managed API. Also you will be able to add business plans and security schemes to your micro-services using the available CRDs.\n\nFurther, by integrating with an API portal it can provide additional features, such as distributed throttling, token generation, token revocation and monitor statistics using dashboard.\n![](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/docs/images/overview.png)\n## Prerequisites\n- [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)\n\n- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/)   \n - Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**\n\n- An account in DockerHub or private docker registry\n- [API controller](https://github.com/wso2/product-apim-tooling/releases/) \n\n\n## Using the API Operator\n\n### Step 1: Configure API Controller\n\n- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/) or from [GitHub]((https://github.com/wso2/product-apim-tooling/releases/)\n\n- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool\n\n- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.\n\nYou can find available operations using the below command.\n```\n>> apictl --help\n```\nBy default API controller does not support kubectl command. \nSet the API Controller’s mode to Kubernetes to be compatible with kubectl commands\n\n```\n>> apictl set --mode k8s \n```\n\n### Step 2: Install API Operator Configurations\n\n* Deploy the controller level configurations **[IMPORTANT]**\n* Clone the [k8s-apim-operator repository](https://github.com/wso2/k8s-apim-operator.git)  \n\n    When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.\n    \n    1. Open **apim-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.\n            \n        ```\n        #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username\n        dockerRegistry: <username-docker-registry>\n        ```\n        \n    2. Open **apim-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. <br>\n        Enter the base 64 encoded username and password of the Docker-Hub account \n        \n        ```\n        data:\n         username: ENTER YOUR BASE64 ENCODED USERNAME\n         password: ENTER YOUR BASE64 ENCODED PASSWORD\n        ```\n        Once you done with the above configurations, execute the following command to deploy controller configurations.\n\n        ```\n        >> kubectl apply -f apim-operator/controller-configs/\n        \n        configmap/controller-config created\n        configmap/apim-config created\n        security.wso2.com/default-security-jwt created\n        secret/wso2am300-secret created\n        configmap/docker-secret-mustache created\n        secret/docker-secret created\n        configmap/dockerfile-template created\n        configmap/mgw-conf-mustache created\n        ```\n\n### Step 3: Expose the sample microservice as a managed API\n\nLet’s deploy an API for our microservice.\nThe Open API definition of an example API can be found [here](https://github.com/wso2/k8s-apim-operator/blob/master/scenarios/scenario-2/swagger.yaml)\n\nThe endpoint of our microservice is referred in the API definition.\n\n- Deploy the API using the following command\n\n    ```\n    >> apictl add api -n \"api_name\" --from-file=\"location to the Open API definition\" \n    ```\n\t Optional Parameters:\n    --replicas=3          Number of replicas\n    --namespace=wso2      Namespace to deploy the API\n    --overwrite=true\t  Overwrite the docker image creation for already created docker image\n    \n    **_Note:_** Namespace and replicas are optional parameters. If they are not provided, the default namespace will be used and 1 replica will be created. \n\t\t\n    ```\n        apictl add api -n petstore-api --from-file=swagger.yaml\n    ``` \n    - Output:\n    ```\n        creating configmap with swagger definition\n        configmap/petstore-api-swagger created\n        api.wso2.com/petstore-api created\n    ```\n    \n- Get available API <br /> \n    ```\n        apictl get apis\n    ```\n    - Output:\n    ```    \n        NAME          AGE\n        petstore-api   5m\n    ```\n\n    When you deploy the API, it will first run the Kaniko job. This basically builds the docker image of the API and pushes it to Docker-Hub. \n\n    Once the Kaniko job is completed, it will deploy the managed API for your microservice.\n\n- Verify the API deployment\n\n    If you list down the pods immediately after the add API command you will only see the pod related to Kaniko job. Once it is completed you will see the deployed API. If you are on Minikube, this might take several minutes.\n\n    ```\n    >> kubectl get pods \n    \n    Output:\n    NAME                                   READY   STATUS    RESTARTS   AGE\n    petstore-api-kaniko-fxvkt              1/1     Running   0          45s\n    ```\n\n    If you execute the same command after sometime you will see the managed API has been deployed after the Kaniko job.\n\n    ```\n    >> kubectl get pods \n    \n    Output:\n    NAME                                   READY   STATUS    RESTARTS   AGE\n    petstore-api-6957fc89d6-kn9sp          1/1     Running   0          21s\n    ```\n\n- Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)\n    ```\n    >> kubectl get services \n    \n    Output:\n    NAME               TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                         AGE\n    online-store       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s\n    ```\n\n**You now have a microgateway deployed in Kubernetes that runs your API for the microservice.**\n- You can see petstore service has been exposed as a managed API.\n- Get the external IP of the managed API's service OR minikube ip and nodeport related to 9095 if you are using minikube\n\n- Invoking the API <br />\n    ```\n       TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjMsInV1aWQiOm51bGx9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06MzIwMDFcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6e30sImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6IjNGSWlUM1R3MWZvTGFqUTVsZjVVdHVTTWpsUWEiLCJleHAiOjM3MTk3Mzk4MjYsImlhdCI6MTU3MjI1NjE3OSwianRpIjoiZDI3N2VhZmUtNTZlOS00MTU2LTk3NzUtNDQwNzA3YzFlZWFhIn0.W0N9wmCuW3dxz5nTHAhKQ-CyjysR-fZSEvoS26N9XQ9IOIlacB4R5x9NgXNLLE-EjzR5Si8ou83mbt0NuTwoOdOQVkGqrkdenO11qscpBGCZ-Br4Gnawsn3Yw4a7FHNrfzYnS7BZ_zWHPCLO_JqPNRizkWGIkCxvAg8foP7L1T4AGQofGLodBMtA9-ckuRHjx3T_sFOVGAHXcMVwpdqS_90DeAoT4jLQ3darDqSoE773mAyDIRz6CAvNzzsWQug-i5lH5xVty2kmZKPobSIziAYes-LPuR-sp61EIjwiKxnUlSsxtDCttKYHGZcvKF12y7VF4AqlTYmtwYSGLkXXXw\n    ```\n   \n    ```\n        curl -X GET \"https://<external IP of LB service>:9095/petstore/v1/pet/55\" -H \"accept: application/xml\" -H \"Authorization:Bearer $TOKEN\" -k\n    ```\n    - Once you execute the above command, it will call to the managed API (petstore-api), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.\n    ```\n        <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Pet><category><id>55</id><name>string</name></category><id>55</id><name>SRC_TIME_SIZE</name><photoUrls><photoUrl>string</photoUrl></photoUrls><status>available</status><tags><tag><id>55</id><name>string</name></tag></tags></Pet>\n    ```\n    \n\n- Delete the  API <br /> \n    - Following command will delete all the artifacts created with this API including pods, deployment and services.\n    ```\n        apictl delete api petstore-api\n    ```\n    -  Output:\n    ```\n        api.wso2.com \"petstore-api\" deleted\n    ```\n\t\t\n**Please refer the [documentation](https://github.com/wso2/k8s-apim-operator/tree/master/docs) for further details**\n\n\n\n\n\n"
+  maturity: stable
+  version: 1.0.1
+  minKubeVersion: 1.12.0
+  keywords:
+    - API
+    - ManagedAPI
+    - APIManagement
+    - Cloud-native
+    - security
+    - ratelimiting
+    - analytics
+  maintainers:
+    - name: Developer Mailing List
+      email: dev@wso2.org
+    - name: User Mailing List
+      email: user@wso2.org
+  provider:
+    name: WSO2
+  labels: {}
+  selector:
+    matchLabels: {}
+  links:
+    - name: Documentation
+      url: 'https://github.com/wso2/k8s-apim-operator/tree/v1.0.1/docs'
+    - name: Quick Start Guide
+      url: 'https://github.com/wso2/k8s-apim-operator/tree/v1.0.1#quick-start-guide'
+    - name: Web page
+      url: 'https://wso2.com/api-management/'
+    - name: Slack channel
+      url: 'http://bit.ly/332VYeC'
+  icon:
+    - base64data: >-
+        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
+      mediatype: image/jpeg
+  customresourcedefinitions:
+    owned:
+      - name: apis.wso2.com
+        displayName: API
+        kind: API
+        version: v1alpha1
+        description: >-
+          API holds API-related information. You can see the API definition and
+          data structure for API here. API takes the Swagger definition as a
+          configMap along with replica count and micro-gateway deployment mode. 
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+        specDescriptors: []
+        statusDescriptors: []
+      - name: securities.wso2.com
+        displayName: Security
+        kind: Security
+        version: v1alpha1
+        description: >-
+          Security holds security-related information. You can see the API
+          definition and data structure for Security` here. Security supports
+          different security types: basic-auth, OAuth2, JWT, etc. The following
+          YAML shows a sample payload for Security with JWT.
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+        specDescriptors: []
+        statusDescriptors: []
+      - name: ratelimitings.wso2.com
+        displayName: RateLimiting
+        kind: RateLimiting
+        version: v1alpha1
+        description: >-
+          RateLimiting holds rate-limiting related information. You can see the
+          API definition and data structure for RateLimiting here. 
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+        specDescriptors: []
+        statusDescriptors: []
+      - name: targetendpoints.wso2.com
+        displayName: TargetEndpoint
+        kind: TargetEndpoint
+        version: v1alpha1
+        description: >-
+          TargetEndpoint holds endpoint related information. You can see the API
+          definition and data for TargetEndpoint here.
+
+
+          API gateway can be deployed in three patterns: shared, private-jet,
+          and sidecar.
+
+
+          If your backend is already running and you need to expose it via a
+          microgateway, you can define the target URL in the Swagger itself.
+
+
+          If your backend service is not running, but you plan to run it in the
+          same Kubernetes cluster, you can use TargetEndpoint with its relevant
+          Docker image.
+
+
+          Then APIM Operator will spin-up the corresponding Kubernetes
+          deployment for the defined backend service itself with the
+          microgateway.
+
+
+          In shared and private-jet mode, the backend can be running in separate
+          PODs, but in sidecar mode, the gateway will run in the same POD
+          adjacent to the backend service.
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+        specDescriptors: []
+        statusDescriptors: []
+    required: []
+  install:
+    strategy: deployment
+    spec:
+      permissions: []
+      clusterPermissions:
+        - serviceAccountName: apim-operator
+          rules:
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+                - services
+                - endpoints
+                - persistentvolumeclaims
+                - events
+                - configmaps
+                - secrets
+              verbs:
+                - '*'
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - '*'
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - apim-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - wso2.com
+              resources:
+                - '*'
+                - ratelimitings
+                - targetendpoints
+                - securities
+              verbs:
+                - '*'
+            - apiGroups:
+                - batch
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - autoscaling
+              resources:
+                - '*'
+              verbs:
+                - '*'
+      deployments:
+        - name: apim-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: apim-operator
+            template:
+              metadata:
+                labels:
+                  name: apim-operator
+              spec:
+                serviceAccountName: apim-operator
+                containers:
+                  - name: apim-operator
+                    image: 'wso2/k8s-api-operator:1.0.1'
+                    command:
+                      - apim-operator
+                    imagePullPolicy: Always
+                    env:
+                      - name: WATCH_NAMESPACE
+                        value: ''
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: apim-operator
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: true
