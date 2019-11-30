@@ -1,0 +1,455 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"kind":"NooBaa","apiVersion":"noobaa.io/v1alpha1","metadata":{"name":"noobaa","creationTimestamp":null,"labels":{"app":"noobaa"}},"spec":{},"status":{}},{"kind":"BackingStore","apiVersion":"noobaa.io/v1alpha1","metadata":{"name":"aws1","creationTimestamp":null,"labels":{"app":"noobaa"},"finalizers":["noobaa.io/finalizer"]},"spec":{"type":"aws-s3","awsS3":{"targetBucket":"noobaa-aws1","secret":{"name":"backing-store-secret-aws1"}}},"status":{}},{"kind":"BucketClass","apiVersion":"noobaa.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null,"labels":{"app":"noobaa"}},"spec":{"placementPolicy":{"tiers":[{"backingStores":["aws1"]}]}},"status":{}}]'
+    capabilities: Basic Install
+    categories: Storage,Big Data
+    certified: "false"
+    containerImage: noobaa/noobaa-operator:2.0.7
+    createdAt: "2019-07-08T13:10:20.940Z"
+    description: NooBaa is an object data service for hybrid and multi cloud environments.
+    repository: https://github.com/noobaa/noobaa-operator
+    support: Red Hat
+  creationTimestamp: null
+  name: noobaa-operator.v2.0.7
+  namespace: my-noobaa-operator
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: A NooBaa system - Create this to start
+      displayName: NooBaa
+      kind: NooBaa
+      name: noobaas.noobaa.io
+      resources:
+      - kind: Service
+        name: services
+        version: v1
+      - kind: Secret
+        name: secrets
+        version: v1
+      - kind: ConfigMap
+        name: configmaps
+        version: v1
+      - kind: StatefulSet
+        name: statefulsets.apps
+        version: v1
+      specDescriptors:
+      - description: image
+        displayName: image
+        path: image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: dbImage
+        displayName: dbImage
+        path: dbImage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: coreResources
+        displayName: coreResources
+        path: coreResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: dbResources
+        displayName: dbResources
+        path: dbResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: dbVolumeResources
+        displayName: dbVolumeResources
+        path: dbVolumeResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: dbStorageClass
+        displayName: dbStorageClass
+        path: dbStorageClass
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: pvPoolDefaultStorageClass
+        displayName: pvPoolDefaultStorageClass
+        path: pvPoolDefaultStorageClass
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: tolerations
+        displayName: tolerations
+        path: tolerations
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Tolerations
+      - description: imagePullSecret
+        displayName: imagePullSecret
+        path: imagePullSecret
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      version: v1alpha1
+    - description: Storage target spec such as aws-s3, s3-compatible, PV's and more.
+        Used in BacketClass to construct data placement policies.
+      displayName: BackingStore
+      kind: BackingStore
+      name: backingstores.noobaa.io
+      resources:
+      - kind: Service
+        name: services
+        version: v1
+      - kind: Secret
+        name: secrets
+        version: v1
+      - kind: ConfigMap
+        name: configmaps
+        version: v1
+      - kind: StatefulSet
+        name: statefulsets.apps
+        version: v1
+      version: v1alpha1
+    - description: Storage policy spec  tiering, mirroring, spreading. Combines BackingStores.
+        Referenced by ObjectBucketClaims.
+      displayName: BucketClass
+      kind: BucketClass
+      name: bucketclasses.noobaa.io
+      resources:
+      - kind: Service
+        name: services
+        version: v1
+      - kind: Secret
+        name: secrets
+        version: v1
+      - kind: ConfigMap
+        name: configmaps
+        version: v1
+      - kind: StatefulSet
+        name: statefulsets.apps
+        version: v1
+      version: v1alpha1
+    required:
+    - description: Claim a bucket just like claiming a PV. Automate you app bucket
+        provisioning by creating OBC with your app deployment. A secret and configmap
+        (name=claim) will be created with access details for the app pods.
+      displayName: ObjectBucketClaim
+      kind: ObjectBucketClaim
+      name: objectbucketclaims.objectbucket.io
+      resources:
+      - kind: Service
+        name: services
+        version: v1
+      - kind: Secret
+        name: secrets
+        version: v1
+      - kind: ConfigMap
+        name: configmaps
+        version: v1
+      - kind: StatefulSet
+        name: statefulsets.apps
+        version: v1
+      version: v1alpha1
+    - description: Used under-the-hood. Created per ObjectBucketClaim and keeps provisioning
+        information.
+      displayName: ObjectBucket
+      kind: ObjectBucket
+      name: objectbuckets.objectbucket.io
+      resources:
+      - kind: Service
+        name: services
+        version: v1
+      - kind: Secret
+        name: secrets
+        version: v1
+      - kind: ConfigMap
+        name: configmaps
+        version: v1
+      - kind: StatefulSet
+        name: statefulsets.apps
+        version: v1
+      version: v1alpha1
+  description: "The noobaa operator creates and reconciles a NooBaa system in a Kubernetes/Openshift
+    cluster.\n\nNooBaa provides an S3 object-store service abstraction and data placement
+    policies to create hybrid and multi cloud data solutions.\n\nFor more information
+    on using NooBaa refer to [Github](https://github.com/noobaa/noobaa-core) / [Website](https://www.noobaa.io)
+    / [Articles](https://noobaa.desk.com). \n\n## How does it work?\n\n- The operator
+    deploys the noobaa core pod and two services - Mgmt (UI/API) and S3 (object-store).\n-
+    Both services require credentials which you will get from a secret that the operator
+    creates - use describe noobaa to locate it.\n- The service addresses will also
+    appear in the describe output - pick the one that is suitable for your client:\n
+    \   - minikube - use the NodePort address.\n    - remote cluster - probably need
+    one of the External addresses.\n    - connect an application on the same cluster
+    - use Internal DNS (though any address should work)\n    \n- Feel free to email
+    us or open github issues on any question.\n\n## Getting Started\n\n### Notes:\n-
+    The following instructions are for **minikube** but it works on any Kubernetes/Openshift
+    clusters.\n- This will setup noobaa in the **my-noobaa-operator** namespace.\n-
+    You will need **jq**, **curl**, **kubectl** or **oc**, **aws-cli**.\n\n### 1.
+    Install OLM (if you don't have it already):\n```\ncurl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/install.sh
+    | bash -s 0.10.0\n```\n\n### 2. Install noobaa-operator:\n```\nkubectl create
+    -f https://operatorhub.io/install/noobaa-operator.yaml\n```\nWait for it to be
+    ready:\n```\nkubectl wait pod -n my-noobaa-operator -l noobaa-operator --for=condition=ready\n```\n\n###
+    3. Create noobaa system:\n```\ncurl -sL https://operatorhub.io/api/operator?packageName=noobaa-operator
+    | \n    jq '.operator.customResourceDefinitions[0].yamlExample | .metadata.namespace=\"my-noobaa-operator\"'
+    |\n    kubectl create -f -\n```\nWait for it to be ready:\n```\nkubectl wait pod
+    -n my-noobaa-operator -l noobaa-core --for=condition=ready\nkubectl get noobaa
+    -n my-noobaa-operator -w\n# NAME     PHASE   MGMT-ENDPOINTS                  S3-ENDPOINTS
+    \                   IMAGE                    AGE\n# noobaa   **Ready**   [https://192.168.64.12:31121]
+    \  [https://192.168.64.12:32557]   noobaa/noobaa-core:4.0   19m\n```\n\n### 4.
+    Get system information to your shell:\n```\nNOOBAA_SECRET=$(kubectl get noobaa
+    noobaa -n my-noobaa-operator -o json | jq -r '.status.accounts.admin.secretRef.name'
+    )\nNOOBAA_MGMT=$(kubectl get noobaa noobaa -n my-noobaa-operator -o json | jq
+    -r '.status.services.serviceMgmt.nodePorts[0]' )\nNOOBAA_S3=$(kubectl get noobaa
+    noobaa -n my-noobaa-operator -o json | jq -r '.status.services.serviceS3.nodePorts[0]'
+    )\nNOOBAA_ACCESS_KEY=$(kubectl get secret $NOOBAA_SECRET -n my-noobaa-operator
+    -o json | jq -r '.data.AWS_ACCESS_KEY_ID|@base64d')\nNOOBAA_SECRET_KEY=$(kubectl
+    get secret $NOOBAA_SECRET -n my-noobaa-operator -o json | jq -r '.data.AWS_SECRET_ACCESS_KEY|@base64d')\n```\n\n###
+    5. Connect to Mgmt UI:\n```\n# show email/password from the secret:\nkubectl get
+    secret $NOOBAA_SECRET -n my-noobaa-operator -o json | jq '.data|map_values(@base64d)'\n\n#
+    open mgmt UI login:\nopen $NOOBAA_MGMT\n```\n\n### 6. Connect to S3 with aws-cli:\n```\nalias
+    s3='AWS_ACCESS_KEY_ID=$NOOBAA_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$NOOBAA_SECRET_KEY
+    aws --endpoint $NOOBAA_S3 --no-verify-ssl s3'\ns3 ls\ns3 sync /var/log/ s3://first.bucket\ns3
+    ls s3://first.bucket\n```\n"
+  displayName: NooBaa Operator
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAIAAAD2HxkiAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA25pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpBNjQyRDdGQUIxMDkxMUU0QURFMENEMjA1QUJCMENEMyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDoxOTA3OEQwNDAyRjAxMUU1QjdFQkI4RTFBMzY3NkQxRiIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDoxOTA3OEQwMzAyRjAxMUU1QjdFQkI4RTFBMzY3NkQxRiIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCAoV2luZG93cykiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5NWU4ZDg3YS1mNGU4LTRlMTYtOGIwYi1hZGIzYzY2OThkOGUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6QTY0MkQ3RkFCMTA5MTFFNEFERTBDRDIwNUFCQjBDRDMiLz4gPC9yZGY6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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - noobaa.io
+          resources:
+          - '*'
+          - noobaas
+          - backingstores
+          - bucketclasses
+          - noobaas/finalizers
+          - backingstores/finalizers
+          - bucketclasses/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - objectbucket.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: noobaa
+      deployments:
+      - name: noobaa-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              noobaa-operator: deployment
+          strategy: {}
+          template:
+            metadata:
+              creationTimestamp: null
+              labels:
+                app: noobaa
+                noobaa-operator: deployment
+            spec:
+              containers:
+              - env:
+                - name: OPERATOR_NAME
+                  value: noobaa-operator
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                image: noobaa/noobaa-operator:2.0.7
+                name: noobaa-operator
+                resources:
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+              serviceAccountName: noobaa
+      permissions:
+      - rules:
+        - apiGroups:
+          - noobaa.io
+          resources:
+          - '*'
+          - noobaas
+          - backingstores
+          - bucketclasses
+          - noobaas/finalizers
+          - backingstores/finalizers
+          - bucketclasses/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          - prometheusrules
+          verbs:
+          - get
+          - create
+          - update
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - apps
+          resourceNames:
+          - noobaa-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - cloudcredential.openshift.io
+          resources:
+          - credentialsrequests
+          verbs:
+          - get
+          - create
+          - update
+          - list
+          - watch
+        - apiGroups:
+          - ceph.rook.io
+          resources:
+          - cephobjectstores
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ceph.rook.io
+          resources:
+          - cephobjectstoreusers
+          verbs:
+          - get
+          - create
+          - update
+          - list
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - get
+          - create
+          - update
+          - list
+          - watch
+        serviceAccountName: noobaa
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - noobaa
+  - kubernetes
+  - openshift
+  - cloud
+  - hybrid
+  - multi
+  - data
+  - storage
+  - s3
+  - tiering
+  - mirroring
+  labels:
+    app: noobaa
+  links:
+  - name: Github
+    url: https://github.com/noobaa/noobaa-core
+  - name: Website
+    url: https://www.noobaa.io
+  - name: Articles
+    url: https://noobaa.desk.com
+  maintainers:
+  - email: gmargali@redhat.com
+    name: Guy Margalit
+  - email: etamir@redhat.com
+    name: Eran Tamir
+  - email: nbecker@redhat.com
+    name: Nimrod Becker
+  maturity: alpha
+  minKubeVersion: 1.10.0
+  provider:
+    name: NooBaa
+  version: 2.0.7
+status:
+  certsLastUpdated: null
+  certsRotateAt: null
+  lastTransitionTime: null
+  lastUpdateTime: null

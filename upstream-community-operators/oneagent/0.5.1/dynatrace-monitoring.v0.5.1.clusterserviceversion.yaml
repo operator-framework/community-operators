@@ -1,0 +1,316 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [{
+       "apiVersion": "dynatrace.com/v1alpha1",
+       "kind": "OneAgent",
+       "metadata": {
+          "name": "oneagent",
+          "namespace": "dynatrace"
+       },
+       "spec": {
+          "apiUrl": "https://ENVIRONMENTID.live.dynatrace.com/api",
+          "skipCertCheck": false,
+          "tokens": "",
+          "nodeSelector": {},
+          "tolerations": [
+             {
+                "effect": "NoSchedule",
+                "key": "node-role.kubernetes.io/master",
+                "operator": "Exists"
+             }
+          ],
+          "image": "",
+          "args": [
+             "APP_LOG_CONTENT_ACCESS=1"
+          ],
+          "env": []
+       }
+      }]
+    capabilities: Deep Insights
+    categories: "Monitoring,Logging & Tracing,OpenShift Optional"
+    certified: "false"
+    containerImage: quay.io/dynatrace/dynatrace-oneagent-operator:v0.5.1
+    createdAt: 2019-09-08T12:15:00Z
+    description: Install full-stack monitoring of Kubernetes clusters with the Dynatrace OneAgent.
+    support: Dynatrace
+    repository: https://github.com/Dynatrace/dynatrace-oneagent-operator
+  name: dynatrace-monitoring.v0.5.1
+  namespace: "placeholder"
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Dyantrace OneAgent for full-stack monitoring
+      displayName: Dynatrace OneAgent
+      kind: OneAgent
+      name: oneagents.dynatrace.com
+      resources:
+      - kind: DaemonSet
+        name: ""
+        version: v1beta2
+      - kind: Pod
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Credentials for the OneAgent to connect back to Dynatrace.
+        displayName: API and PaaS Tokens
+        path: tokens
+        x-descriptors:
+          - urn:alm:descriptor:io.kubernetes:Secret
+      - description:
+          Location of the Dynatrace API to connect to, including your specific
+          environment ID
+        displayName: API URL
+        path: apiUrl
+        x-descriptors:
+          - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Specifies if certificate checks should be skipped.
+        displayName: Skip Certificate Check
+        path: skipCertCheck
+        x-descriptors:
+          - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Node selector for where pods should be scheduled.
+        displayName: Node Selector
+        path: nodeSelector
+        x-descriptors:
+          - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: The Dynatrace installer container image.
+        displayName: Image
+        path: image
+        x-descriptors:
+          - urn:alm:descriptor:com.tectonic.ui:text
+      - description:
+          Automatically create Istio objects for egress communication to
+          the Dynatrace environment from the OneAgent.
+        displayName: Enable Istio automatic management
+        path: enableIstio
+        x-descriptors:
+          - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Define resources requests and limits for single Pods.
+        displayName: Resource Requirements
+        path: resources
+        x-descriptors:
+          - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      statusDescriptors:
+      - description: Dynatrace version being used.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+      - description: The timestamp when the instance was last updated.
+        displayName: Last Updated
+        path: updatedTimestamp
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+      version: v1alpha1
+  description: |
+    The Dynatrace OneAgent Operator allows users to easily deploy full-stack monitoring for [Kubernetes clusters](https://www.dynatrace.com/technologies/kubernetes-monitoring/). The Dynatrace OneAgent automatically monitors the workload running in containers down to the code and request level.
+
+    ### Installing the OneAgent
+    Once you've installed the Operator, you can create OneAgent custom resources to monitor your environment.
+
+    First, please add a Secret within the Project you've deployed the Dynatrace Operator to, which would contain your API and PaaS tokens. Create tokens of type *Dynatrace API* (`API_TOKEN`) and *Platform as a Service* (`PAAS_TOKEN`) and use their values in the following commands respectively.
+
+    For assistance please refer to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-user-generated-access-tokens).
+
+    ``` $ oc -n <project> create secret generic oneagent --from-literal="apiToken=API_TOKEN" --from-literal="paasToken=PAAS_TOKEN" ```
+
+    You may update this Secret at any time to rotate the tokens.
+
+    Then please add an OneAgent object in the Project where the Operator has been deployed, configured to your needs.
+
+    ### Required Parameters
+    * `apiUrl` - provide the URL to the API of your Dynatrace environment. In Dynatrace SaaS it will look like `https://<ENVIRONMENTID>.live.dynatrace.com/api` . In Dynatrace Managed like `https://<YourDynatraceServerURL>/e/<ENVIRONMENTID>/api` .
+
+    ### Advanced Options
+    * **Image Override** - use a copy of the OneAgent container image from a registry other than Docker's or Red Hat's
+    * **NodeSelectors** - select a subset of your cluster's nodes to run the Dynatrace OneAgent on, based on labels
+    * **Tolerations** - add specific tolerations to the agent so that it can monitor all of the nodes in your cluster; we include the default toleration so that Dynatrace OneAgent also monitors the master nodes
+    * **Priority Class Name** - define the priorityClassName for OneAgent pods
+    * **Environment variables** - define environment variables for the OneAgent container
+    * **Disable Certificate Checking** - disable any certificate validation that may interact poorly with proxies with in your cluster
+    * **Disable OneAgent Update** - disable the Operator's auto-update feature for OneAgent pods
+    * **Enable Istio Auto-config** - automatically create Istio objects for egress communication to the Dynatrace environment from the OneAgent
+
+    For a complete list of supported parameters please consult the [Operator Deploy Guide](https://www.dynatrace.com/support/help/shortlink/kubernetes-deploy).
+  displayName: Dynatrace OneAgent
+  icon:
+  - base64data: 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
+    mediatype: "image/png"
+  install:
+    spec:
+      deployments:
+      - name: dynatrace-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: dynatrace-oneagent-operator
+          template:
+            metadata:
+              labels:
+                dynatrace: operator
+                name: dynatrace-oneagent-operator
+                operator: oneagent
+            spec:
+              containers:
+              - command:
+                - dynatrace-oneagent-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                image: quay.io/dynatrace/dynatrace-oneagent-operator:v0.5.1
+                imagePullPolicy: Always
+                name: dynatrace-oneagent-operator
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 128Mi
+                  requests:
+                    cpu: 100m
+                    memory: 64Mi
+              nodeSelector:
+                beta.kubernetes.io/os: linux
+              serviceAccountName: dynatrace-oneagent-operator
+      permissions:
+      - serviceAccountName: dynatrace-oneagent-operator
+        rules:
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - oneagents
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - oneagents/finalizers
+          - oneagents/status
+          verbs:
+          - update
+        - apiGroups:
+          - networking.istio.io
+          resources:
+          - serviceentries
+          - virtualservices
+          verbs:
+          - get
+          - list
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - policy
+          resources:
+          - podsecuritypolicies
+          resourceNames:
+          - dynatrace-oneagent-operator
+          verbs:
+          - use
+      - serviceAccountName: dynatrace-oneagent
+        rules:
+        - apiGroups:
+          - policy
+          resources:
+          - podsecuritypolicies
+          resourceNames:
+          - dynatrace-oneagent
+          verbs:
+          - use
+      clusterPermissions:
+      - serviceAccountName: dynatrace-oneagent-operator
+        rules:
+        - apiGroups:
+          - "" # "" indicates the core API group
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+          - watch
+    strategy: deployment
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: true
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: false
+  keywords:
+  - monitoring
+  - dynatrace
+  - oneagent
+  links:
+  - name: Operator Deploy Guide
+    url: https://www.dynatrace.com/support/help/shortlink/kubernetes-deploy
+  - name: Kubernetes Monitoring Info
+    url: https://www.dynatrace.com/technologies/kubernetes-monitoring
+  maintainers:
+  - email: support@dynatrace.com
+    name: Dynatrace LLC
+  maturity: alpha
+  provider:
+    name: Dynatrace LLC
+  replaces: dynatrace-monitoring.v0.4.2
+  version: 0.5.1
+  minKubeVersion: 1.11.0
