@@ -65,6 +65,7 @@ The following repositories are used throughout the process and should be cloned 
 * [operator-marketplace](https://github.com/operator-framework/operator-marketplace)
 * [operator-courier](https://github.com/operator-framework/operator-courier)
 * [operator-lifecycle-manager](https://github.com/operator-framework/operator-lifecycle-manager)
+
 For simplicity, the following commands will clone all of the repositories above:
 ```
 git clone https://github.com/operator-framework/operator-marketplace.git
@@ -86,8 +87,8 @@ pip3 install operator-courier
 ```
 #### Quay Login
 In order to test the Operator installation flow, store your Operator bundle on [quay.io](https://quay.io). You can easily create an account and use the free tier (public repositories only). To upload your Operator to quay.io a token is needed. This only needs to be done once and can be saved locally. The `operator-courier` repository has a script to retrieve the token:
-```
-./operator-courier/scripts/get-quay-token
+```console
+$ ./operator-courier/scripts/get-quay-token
 Username: johndoe
 Password:
 {"token": "basic abcdefghijkl=="}
@@ -155,7 +156,7 @@ kubectl apply -f operator-marketplace/deploy/upstream/
 ### 4. Create the OperatorSource
 An `OperatorSource` object is used to define the external datastore we are using to store operator bundles. More information including example can be found in the documentation included in the `operator-marketplace` [repository](https://github.com/operator-framework/operator-marketplace#operatorsource).
 **Replace** `johndoe` in `metadata.name` and `spec.registryNamespace` with your quay.io username in the example below and save it to a file called `operator-source.yaml`.
-```
+```yaml
 apiVersion: operators.coreos.com/v1
 kind: OperatorSource
 metadata:
@@ -171,14 +172,14 @@ Now add the source to the cluster:
 kubectl apply -f operator-source.yaml
 ```
 The `operator-marketplace` controller should successfully process this object:
-```
-kubectl get operatorsource johndoe-operators -n marketplace
+```console
+$ kubectl get operatorsource johndoe-operators -n marketplace
 NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME  PUBLISHER   STATUS      MESSAGE                                       AGE
 johndoe-operators   appregistry   https://quay.io/cnr   johndoe                 Succeeded   The object has been successfully reconciled   30s
 ```
 Additionally, a `CatalogSource` is created in the `marketplace` namespace:
-```
-kubectl get catalogsource -n marketplace
+```console
+$ kubectl get catalogsource -n marketplace
 NAME                           NAME        TYPE   PUBLISHER   AGE
 johndoe-operators              Custom      grpc   Custom      3m32s
 [...]
@@ -186,8 +187,8 @@ johndoe-operators              Custom      grpc   Custom      3m32s
 ### 5. View Available Operators
 Once the `OperatorSource` and `CatalogSource` are deployed, the following command can be used to list the available operators (until an operator is pushed into quay, this list will be empty):
 > The command below assumes `johndoe-operators` as the name of the `OperatorSource` object. Adjust accordingly.
-```
-kubectl get opsrc johndoe-operators -o=custom-columns=NAME:.metadata.name,PACKAGES:.status.packages -n marketplace
+```console
+$ kubectl get opsrc johndoe-operators -o=custom-columns=NAME:.metadata.name,PACKAGES:.status.packages -n marketplace
 NAME                PACKAGES
 johndoe-operators   my-operator
 ```
@@ -196,7 +197,7 @@ An `OperatorGroup` is used to denote which namespaces your Operator should be wa
 Its configuration depends on whether your Operator supports watching its own namespace, a single namespace or all namespaces (as indicated by `spec.installModes` in the CSV).
 Create the following file as  `operator-group.yaml` if your Operator supports watching its own or a single namespace.
 If your Operator supports watching all namespaces you can leave the property `spec.targetNamespace` present but empty. This will create an `OperatorGroup` that instructs the Operator to watch all namespaces.
-```
+```yaml
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
 metadata:
@@ -212,7 +213,7 @@ kubectl apply -f operator-group.yaml
 ```
 ### 7. Create a Subscription
 The last piece ties together all of the previous steps. A `Subscription` is created to the operator. Save the following to a file named: `operator-subscription.yaml`:
-```
+```yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
@@ -231,8 +232,8 @@ kubectl apply -f operator-subscription.yaml
 ```
 ### 8. Verify Operator health
 Watch your Operator being deployed by OLM from the catalog source created by Operator Marketplace with the following command:
-```
-kubectl get clusterserviceversion -n marketplace
+```console
+$ kubectl get clusterserviceversion -n marketplace
 NAME                 DISPLAY       VERSION   REPLACES   PHASE
 my-operator.v1.0.0   My Operator   1.0.0                Succeeded
 ```
@@ -247,7 +248,7 @@ On OpenShift Container Platform and OKD 4.1 or newer `operator-marketplace` and 
 ### 1. Create the OperatorSource
 An `OperatorSource` object is used to define the external datastore we are using to store operator bundles. More information including example can be found in the documentation included in the `operator-marketplace` [repository](https://github.com/operator-framework/operator-marketplace#operatorsource).
 **Replace** `johndoe` in `metadata.name` and `spec.registryNamespace` with your quay.io username in the example below and save it to a file called `operator-source.yaml`.
-```
+```yaml
 apiVersion: operators.coreos.com/v1
 kind: OperatorSource
 metadata:
@@ -265,8 +266,8 @@ Create the object:
 oc apply -f operator-source.yaml
 ```
 Check if the `OperatorSource` was processed correctly:
-```
-oc get operatorsource johndoe-operators -n openshift-marketplace
+```console
+$ oc get operatorsource johndoe-operators -n openshift-marketplace
 NAME                TYPE          ENDPOINT              REGISTRY   DISPLAYNAME            PUBLISHER   STATUS      MESSAGE                                       AGE
 johndoe-operators   appregistry   https://quay.io/cnr   johndoe    John Doe's Operators   John Doe    Succeeded   The object has been successfully reconciled   30s
 ```
