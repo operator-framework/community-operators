@@ -1,0 +1,87 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: wavefrontcollectors.wavefront.com
+spec:
+  group: wavefront.com
+  names:
+    kind: WavefrontCollector
+    listKind: WavefrontCollectorList
+    plural: wavefrontcollectors
+    singular: wavefrontcollector
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            configName:
+              description: The name of the config map providing the configuration
+                for the collector instance. If empty, a default name of "collectorName-config"
+                is assumed.
+              type: string
+            daemon:
+              description: Whether to deploy the collector as a daemonset. False will
+                roll out as a deployment.
+              type: boolean
+            enableAutoUpgrade:
+              description: If set to true, Collector pods will be upgraded automatically
+                in case new minor upgrade version is available. For pinning Collector
+                to a specific version, you will need to set this option to false.
+                We support only minor version Auto Upgrades.
+              type: boolean
+            enableDebug:
+              description: Whether to enable debug logging and profiling
+              type: boolean
+            env:
+              description: List of environment variables to set for the Collector
+                containers.
+              items:
+                type: object
+              type: array
+            image:
+              description: Defaults to wavefronthq/wavefront-kubernetes-collector:latest
+              type: string
+            openshift:
+              description: Set to true when running collector in Openshift platform.
+              type: boolean
+            resources:
+              description: Compute resources required by the Collector containers.
+              type: object
+            tolerations:
+              description: Tolerations for the collector pods
+              items:
+                type: object
+              type: array
+            useOpenshiftDefaultConfig:
+              description: If set to true, Collector will use default config bundled
+                in the image else it will use the config from ConfigName.
+              type: boolean
+          type: object
+        status:
+          properties:
+            updatedTimestamp:
+              format: date-time
+              type: string
+            version:
+              type: string
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
