@@ -2,12 +2,12 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    app.kubernetes.io/instance: ssco-csiscaleoperators.scale.ibm.com
-    app.kubernetes.io/managed-by: operator
-    app.kubernetes.io/name: spectrum-scale-csi-operator
-  name: csiscaleoperators.scale.ibm.com
+    app.kubernetes.io/instance: ibm-spectrum-scale-csi-operator
+    app.kubernetes.io/managed-by: ibm-spectrum-scale-csi-operator
+    app.kubernetes.io/name: ibm-spectrum-scale-csi-operator
+  name: csiscaleoperators.csi.ibm.com
 spec:
-  group: scale.ibm.com
+  group: csi.ibm.com
   names:
     kind: CSIScaleOperator
     listKind: CSIScaleOperatorList
@@ -36,28 +36,9 @@ spec:
             attacher:
               description: Attacher image for csi (actually attaches to the storage).
               type: string
-
-            spectrumScale: 
-              description: Image name for the csi spectrum scale plugin container.
-              type: string
-
-            provisioner:
-              description: Provisioner image for csi (actually issues provision requests).
-              type: string
-
-            driverRegistrar:
-              description: Sidecar container image for the csi spectrum scale plugin pods.
-              type: string
-
-            scaleHostpath:
-              description: The path to the gpfs file system mounted on the host machine.
-              type: string
-
             attacherNodeSelector:
               description: Node selector for attacher sidecar.
-              type: array
               items:
-                type: object
                 properties:
                   key:
                     description: Key for node selector.
@@ -65,42 +46,67 @@ spec:
                   value:
                     description: Value for key.
                     type: string
-
-            provisionerNodeSelector:
-              description: Node selector for provisioner sidecar.
-              type: array
-              items:
                 type: object
-                properties:
-                  key:
-                    description: Key for node selector.
-                    type: string
-                  value:
-                    description: Value for key.
-                    type: string
-
-            pluginNodeSelector:
-              description: Node selector for SpectrumScale CSI Plugin.
               type: array
+            clusters:
+              description: A collection of gpfs cluster properties for the csi driver
+                to mount.
               items:
-                type: object
                 properties:
-                  key:
-                    description: Key for node selector.
+                  cacert:
+                    description: A string specifying a cacert resource name.
                     type: string
-                  value:
-                    description: Value for key.
+                  id:
+                    description: The cluster id of the gpfs cluster specified (mandatory).
                     type: string
-
-            secretCounter:
-              description: An internal counter used by the operator to trigger reloads on secret change.
-              type: integer
-
+                  primary:
+                    description: The primary file system for the GPFS cluster.
+                    properties:
+                      inodeLimit:
+                        description: Inode limit for Primary Fileset.
+                        type: string
+                      primaryFs:
+                        description: The name of the primary filesystem.
+                        type: string
+                      primaryFset:
+                        description: The name of the primary fileset, created in primaryFs.
+                        type: string
+                      remoteCluster:
+                        description: Remote cluster ID.
+                        type: string
+                      remoteFs:
+                        description: Filesystem name on remote cluster.
+                        type: string
+                    type: object
+                  restApi:
+                    description: A collection of targets for REST calls.
+                    items:
+                      properties:
+                        guiHost:
+                          description: The hostname of the REST server.
+                          type: string
+                        guiPort:
+                          description: The port number running the REST server.
+                          type: integer
+                      type: object
+                    type: array
+                  secrets:
+                    description: A string specifying a secret resource name.
+                    type: string
+                  secureSslMode:
+                    description: Require a secure SSL connection to connect to GPFS.
+                    type: boolean
+                type: object
+              required:
+              - id
+              type: array
+            driverRegistrar:
+              description: Sidecar container image for the csi spectrum scale plugin
+                pods.
+              type: string
             nodeMapping:
               description: Mapping of K8s node with SpectrumScale node.
-              type: array
               items:
-                type: object
                 properties:
                   k8sNode:
                     description: K8s node name.
@@ -108,71 +114,47 @@ spec:
                   spectrumscaleNode:
                     description: SpectrumScale node name.
                     type: string
-
-            clusters:
-              description: A collection of gpfs cluster properties for the csi driver to mount.
-              required:
-              - id
-              type: array
-              items:
                 type: object
+              type: array
+            pluginNodeSelector:
+              description: Node selector for SpectrumScale CSI Plugin.
+              items:
                 properties:
-                  id:
-                    description: The cluster id of the gpfs cluster specified (mandatory).
+                  key:
+                    description: Key for node selector.
                     type: string
-
-                  primary:
-                    description: The primary file system for the GPFS cluster.
-                    type: object
-                    properties:
-                      primaryFs:
-                        description: The name of the primary filesystem.
-                        type: string
-
-                      primaryFset:
-                        description: The name of the primary fileset, created in primaryFs.
-                        type: string
-
-                      inodeLimit:
-                        description: Inode limit for Primary Fileset.
-                        type: string
-
-                      remoteCluster:
-                        description: Remote cluster ID.
-                        type: string
-
-                      remoteFs:
-                        description: Filesystem name on remote cluster.
-                        type: string
-
-                  cacert: 
-                    description: A string specifying a cacert resource name.
+                  value:
+                    description: Value for key.
                     type: string
-
-                  restApi:
-                    description: A collection of targets for REST calls.
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        guiHost:
-                          description: The hostname of the REST server.
-                          type: string
-
-                        guiPort:
-                          description: The port number running the REST server.
-                          type: integer
-
-                  secrets:
-                    description: A string specifying a secret resource name.
+                type: object
+              type: array
+            provisioner:
+              description: Provisioner image for csi (actually issues provision requests).
+              type: string
+            provisionerNodeSelector:
+              description: Node selector for provisioner sidecar.
+              items:
+                properties:
+                  key:
+                    description: Key for node selector.
                     type: string
-
-                  secureSslMode:
-                    description: Require a secure SSL connection to connect to GPFS.
-                    type: boolean
-
+                  value:
+                    description: Value for key.
+                    type: string
+                type: object
+              type: array
+            scaleHostpath:
+              description: The path to the gpfs file system mounted on the host machine.
+              type: string
+            secretCounter:
+              description: An internal counter used by the operator to trigger reloads
+                on secret change.
+              type: integer
+            spectrumScale:
+              description: Image name for the csi spectrum scale plugin container.
+              type: string
           required:
-            - scaleHostpath
+          - scaleHostpath
           type: object
         status:
           properties:
@@ -187,8 +169,8 @@ spec:
               type: array
           type: object
       type: object
-  version: v1alpha1
+  version: v1
   versions:
-  - name: v1alpha1
+  - name: v1
     served: true
     storage: true
