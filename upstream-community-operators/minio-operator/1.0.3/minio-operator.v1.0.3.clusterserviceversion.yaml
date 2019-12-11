@@ -32,11 +32,11 @@ metadata:
             "name": "minio"
           },
           "spec": {
-            "replicas": "4",
+            "replicas": 4,
             "credsSecret": {
               "name": "minio-creds-secret"
             },
-            "requestAutoCert": "false"
+            "requestAutoCert": false
           }
         }
       ]
@@ -78,7 +78,6 @@ spec:
 
   maturity: stable
   version: 1.0.3
-  replaces: ''
   minKubeVersion: 1.14.0
   keywords:
     - Object Storage
@@ -158,10 +157,38 @@ spec:
   install:
     strategy: deployment
     spec:
+      clusterPermissions:
+        - serviceAccountName: minio-operator-sa
+          rules:
+          - apiGroups:
+              - ""
+            resources:
+              - secrets
+              - services
+            verbs:
+              - list
+              - watch
+              - get
+          - apiGroups:
+              - apps
+            resources:
+              - statefulsets
+            verbs:
+              - list
+              - watch
+              - get
+          - apiGroups:
+            - miniocontroller.min.io
+            resources:
+              - minioinstances
+            verbs:
+              - list
+              - watch
+              - get
       permissions:
         - serviceAccountName: minio-operator-sa
           rules:
-            - apiGroups: 
+            - apiGroups:
               - ""
               resources:
                 - namespaces
@@ -175,7 +202,7 @@ spec:
                 - create
                 - list
                 - patch
-            - apiGroups: 
+            - apiGroups:
               - "apps"
               resources:
                 - statefulsets
@@ -185,7 +212,7 @@ spec:
                 - list
                 - patch
                 - watch
-            - apiGroups: 
+            - apiGroups:
               - "certificates.k8s.io"
               resources:
                 - certificatesigningrequests
@@ -205,13 +232,13 @@ spec:
               verbs:
                 - create
                 - delete
-            - apiGroups: 
+            - apiGroups:
               - "miniocontroller.min.io"
               resources:
                 - '*'
               verbs:
                 - '*'
-            - apiGroups: 
+            - apiGroups:
               - "min.io"
               resources:
                 - '*'
