@@ -91,7 +91,7 @@ There is one CSV per version of your Operator alongside the CRDs, stored in `bun
 
 A `bundle` represents a released version of your Operator. It is a sub-directory in the `package` directory named after the semantic version of your Operator which contains the  `CustomResourceDefinitions` `ClusterServiceVersion`.
 
-Each released version of your Operator gets a `bundle` directory. The `bundle` directory names correspond the [semantic version](https://semver.org) of your Operator as defined in `spec.version` inside the CSV. The version should also be reflected in the CSV file name for ease of use. It is advised that the `spec.name` field in the CSV is also the same as the package name. Follow the example bloew, assuming your Operator package is called `my-operator`: 
+Each released version of your Operator gets a `bundle` directory. The `bundle` directory names correspond the [semantic version](https://semver.org) of your Operator as defined in `spec.version` inside the CSV. The version should also be reflected in the CSV file name for ease of use. It is advised that the `spec.name` field in the CSV is also the same as the package name. Follow the example below, assuming your Operator package is called `my-operator`: 
 
 ```sh
 $ tree my-operator/
