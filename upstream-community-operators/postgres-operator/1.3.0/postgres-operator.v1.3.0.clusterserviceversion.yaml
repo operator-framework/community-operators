@@ -18,24 +18,27 @@ metadata:
       \                \"aws_region\": \"eu-central-1\"\n            },\n        \
       \    \"debug\": {\n                \"debug_logging\": true,\n              \
       \  \"enable_database_access\": true\n            },\n            \"docker_image\"\
-      : \"registry.opensource.zalan.do/acid/spilo-11:1.5-p9\",\n            \"etcd_host\"\
-      : \"\",\n            \"kubernetes\": {\n                \"cluster_domain\":\
+      : \"registry.opensource.zalan.do/acid/spilo-cdp-12:1.6-p16\",\n            \"etcd_host\"\
+      : \"\",\n            \"enable_crd_validation\": true,\n            \"enable_shm_volume\"\
+      : true,\n            \"kubernetes\": {\n                \"cluster_domain\":\
       \ \"cluster.local\",\n                \"cluster_labels\": {\n              \
       \      \"application\": \"spilo\"\n                },\n                \"cluster_name_label\"\
-      : \"cluster-name\",\n                \"enable_pod_antiaffinity\": false,\n \
-      \               \"oauth_token_secret_name\": \"postgresql-operator\",\n    \
-      \            \"pdb_name_format\": \"postgres-{cluster}-pdb\",\n            \
-      \    \"pod_antiaffinity_topology_key\": \"kubernetes.io/hostname\",\n      \
-      \          \"pod_management_policy\": \"ordered_ready\",\n                \"\
-      pod_role_label\": \"spilo-role\",\n                \"pod_service_account_name\"\
+      : \"cluster-name\",\n                \"enable_init_containers\": true,\n   \
+      \             \"enable_pod_antiaffinity\": false,\n                \"enable_pod_disruption_budget\"
+      : true,\n                \"enable_sidecars\": true,\n                \"master_pod_move_timeout\"
+      : \"20m\",\n                \"oauth_token_secret_name\": \"postgresql-operator\"
+      ,\n                \"pdb_name_format\": \"postgres-{cluster}-pdb\",\n      \
+      \          \"pod_antiaffinity_topology_key\": \"kubernetes.io/hostname\",\n\
+      \                \"pod_management_policy\": \"ordered_ready\",\n           \
+      \     \"pod_role_label\": \"spilo-role\",\n                \"pod_service_account_name\"\
       : \"operator\",\n                \"pod_terminate_grace_period\": \"5m\",\n \
       \               \"secret_name_template\": \"{username}.{cluster}.credentials.{tprkind}.{tprgroup}\"\
-      ,\n                \"spilo_privileged\": false\n            },\n           \
-      \ \"load_balancer\": {\n                \"enable_master_load_balancer\": false,\n\
-      \                \"enable_replica_load_balancer\": false,\n                \"\
-      master_dns_name_format\": \"{cluster}.{team}.{hostedzone}\",\n             \
-      \   \"replica_dns_name_format\": \"{cluster}-repl.{team}.{hostedzone}\"\n  \
-      \          },\n            \"logging_rest_api\": {\n                \"api_port\"\
+      ,\n                \"spilo_privileged\": false,\n                \"watched_namespaces\"
+      : \"*\"\n            },\n            \"load_balancer\": {\n                \
+      \"enable_master_load_balancer\": false,\n                \"enable_replica_load_balancer\"
+      : false,\n                \"master_dns_name_format\": \"{cluster}.{team}.{hostedzone}\"
+      ,\n                \"replica_dns_name_format\": \"{cluster}-repl.{team}.{hostedzone}\"
+      \n            },\n            \"logging_rest_api\": {\n                \"api_port\"\
       : 8008,\n                \"cluster_history_entries\": 1000,\n              \
       \  \"ring_log_lines\": 100\n            },\n            \"logical_backup\":\
       \ {\n                \"logical_backup_docker_image\": \"registry.opensource.zalan.do/acid/logical-backup\"\
@@ -66,13 +69,13 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: 'false'
-    containerImage: registry.opensource.zalan.do/acid/postgres-operator:v1.2.0
+    containerImage: registry.opensource.zalan.do/acid/postgres-operator:v1.3.0
     createdAt: 2019-07-24 10:30:00
     description: Postgres operator creates and manages PostgreSQL clusters running
       in Kubernetes.
     repository: https://github.com/zalando/postgres-operator
     support: Zalando SE
-  name: postgres-operator.v1.2.0
+  name: postgres-operator.v1.3.0
   namespace: placeholder
 spec:
   customresourcedefinitions:
@@ -165,7 +168,7 @@ spec:
                 name: postgres-operator
             spec:
               containers:
-              - image: registry.opensource.zalan.do/acid/postgres-operator:v1.2.0
+              - image: registry.opensource.zalan.do/acid/postgres-operator:v1.3.0
                 imagePullPolicy: IfNotPresent
                 name: postgres-operator
                 resources:
@@ -174,7 +177,7 @@ spec:
                     memory: 500Mi
                   requests:
                     cpu: 500m
-                    memory: 250Mi
+                    memory: 256Mi
                 terminationMessagePath: /dev/termination-log
                 terminationMessagePolicy: File
               dnsPolicy: ClusterFirst
@@ -351,7 +354,8 @@ spec:
   minKubeVersion: 1.10.0
   provider:
     name: Zalando SE
+  replaces: postgres-operator.v1.2.0
   selector:
     matchLabels:
       name: postgres-operator
-  version: 1.2.0
+  version: 1.3.0
