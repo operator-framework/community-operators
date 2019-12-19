@@ -1,0 +1,294 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: noobaas.noobaa.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.services.serviceMgmt.nodePorts
+    description: Management Endpoints
+    name: Mgmt-Endpoints
+    type: string
+  - JSONPath: .status.services.serviceS3.nodePorts
+    description: S3 Endpoints
+    name: S3-Endpoints
+    type: string
+  - JSONPath: .status.actualImage
+    description: Actual Image
+    name: Image
+    type: string
+  - JSONPath: .status.phase
+    description: Phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: noobaa.io
+  names:
+    kind: NooBaa
+    listKind: NooBaaList
+    plural: noobaas
+    shortNames:
+    - nb
+    singular: noobaa
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          description: Standard object metadata.
+          type: object
+        spec:
+          description: Specification of the desired behavior of the noobaa system.
+          properties:
+            affinity:
+              description: Affinity (optional) passed through to noobaa's pods
+              type: object
+            coreResources:
+              description: CoreResources (optional) overrides the default resource
+                requirements for the server container
+              type: object
+            dbImage:
+              description: DBImage (optional) overrides the default image for the
+                db container
+              type: string
+            dbResources:
+              description: DBResources (optional) overrides the default resource requirements
+                for the db container
+              type: object
+            dbStorageClass:
+              description: DBStorageClass (optional) overrides the default cluster
+                StorageClass for the database volume. For the time being this field
+                is immutable and can only be set on system creation. This affects
+                where the system stores its database which contains system config,
+                buckets, objects meta-data and mapping file parts to storage locations.
+                +immutable
+              type: string
+            dbVolumeResources:
+              description: 'DBVolumeResources (optional) overrides the default PVC
+                resource requirements for the database volume. For the time being
+                this field is immutable and can only be set on system creation. This
+                is because volume size updates are only supported for increasing the
+                size, and only if the storage class specifies `allowVolumeExpansion:
+                true`, +immutable'
+              type: object
+            image:
+              description: Image (optional) overrides the default image for the server
+                container
+              type: string
+            imagePullSecret:
+              description: ImagePullSecret (optional) sets a pull secret for the system
+                image
+              type: object
+            pvPoolDefaultStorageClass:
+              description: PVPoolDefaultStorageClass (optional) overrides the default
+                cluster StorageClass for the pv-pool volumes. This affects where the
+                system stores data chunks (encrypted). Updates to this field will
+                only affect new pv-pools, but updates to existing pools are not supported
+                by the operator.
+              type: string
+            tolerations:
+              description: Tolerations (optional) passed through to noobaa's pods
+              items:
+                type: object
+              type: array
+          type: object
+        status:
+          description: Most recently observed status of the noobaa system.
+          properties:
+            accounts:
+              description: Accounts reports accounts info for the admin account
+              properties:
+                admin:
+                  properties:
+                    secretRef:
+                      type: object
+                  required:
+                  - secretRef
+                  type: object
+              required:
+              - admin
+              type: object
+            actualImage:
+              description: ActualImage is set to report which image the operator is
+                using
+              type: string
+            conditions:
+              description: Conditions is a list of conditions related to operator
+                reconciliation +patchMergeKey=type +patchStrategy=merge
+              items:
+                properties:
+                  lastHeartbeatTime:
+                    format: date-time
+                    type: string
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - type
+                - status
+                - lastHeartbeatTime
+                - lastTransitionTime
+                type: object
+              type: array
+            observedGeneration:
+              description: ObservedGeneration is the most recent generation observed
+                for this noobaa system. It corresponds to the CR generation, which
+                is updated on mutation by the API Server.
+              format: int64
+              type: integer
+            phase:
+              description: Phase is a simple, high-level summary of where the System
+                is in its lifecycle
+              type: string
+            readme:
+              description: Readme is a user readable string with explanations on the
+                system
+              type: string
+            relatedObjects:
+              description: RelatedObjects is a list of objects related to this operator.
+              items:
+                type: object
+              type: array
+            services:
+              description: Services reports addresses for the services
+              properties:
+                serviceMgmt:
+                  properties:
+                    externalDNS:
+                      description: ExternalDNS are external public addresses for the
+                        service
+                      items:
+                        type: string
+                      type: array
+                    externalIP:
+                      description: ExternalIP are external public addresses for the
+                        service LoadBalancerPorts such as AWS ELB provide public address
+                        and load balancing for the service IngressPorts are manually
+                        created public addresses for the service https://kubernetes.io/docs/concepts/services-networking/service/#external-ips
+                        https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+                        https://kubernetes.io/docs/concepts/services-networking/ingress/
+                      items:
+                        type: string
+                      type: array
+                    internalDNS:
+                      description: InternalDNS are internal addresses of the service
+                        inside the cluster
+                      items:
+                        type: string
+                      type: array
+                    internalIP:
+                      description: InternalIP are internal addresses of the service
+                        inside the cluster https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+                      items:
+                        type: string
+                      type: array
+                    nodePorts:
+                      description: NodePorts are the most basic network available.
+                        NodePorts use the networks available on the hosts of kubernetes
+                        nodes. This generally works from within a pod, and from the
+                        internal network of the nodes, but may fail from public network.
+                        https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+                      items:
+                        type: string
+                      type: array
+                    podPorts:
+                      description: 'PodPorts are the second most basic network address.
+                        Every pod has an IP in the cluster and the pods network is
+                        a mesh so the operator running inside a pod in the cluster
+                        can use this address. Note: pod IPs are not guaranteed to
+                        persist over restarts, so should be rediscovered. Note2: when
+                        running the operator outside of the cluster, pod IP is not
+                        accessible.'
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                serviceS3:
+                  properties:
+                    externalDNS:
+                      description: ExternalDNS are external public addresses for the
+                        service
+                      items:
+                        type: string
+                      type: array
+                    externalIP:
+                      description: ExternalIP are external public addresses for the
+                        service LoadBalancerPorts such as AWS ELB provide public address
+                        and load balancing for the service IngressPorts are manually
+                        created public addresses for the service https://kubernetes.io/docs/concepts/services-networking/service/#external-ips
+                        https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+                        https://kubernetes.io/docs/concepts/services-networking/ingress/
+                      items:
+                        type: string
+                      type: array
+                    internalDNS:
+                      description: InternalDNS are internal addresses of the service
+                        inside the cluster
+                      items:
+                        type: string
+                      type: array
+                    internalIP:
+                      description: InternalIP are internal addresses of the service
+                        inside the cluster https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+                      items:
+                        type: string
+                      type: array
+                    nodePorts:
+                      description: NodePorts are the most basic network available.
+                        NodePorts use the networks available on the hosts of kubernetes
+                        nodes. This generally works from within a pod, and from the
+                        internal network of the nodes, but may fail from public network.
+                        https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+                      items:
+                        type: string
+                      type: array
+                    podPorts:
+                      description: 'PodPorts are the second most basic network address.
+                        Every pod has an IP in the cluster and the pods network is
+                        a mesh so the operator running inside a pod in the cluster
+                        can use this address. Note: pod IPs are not guaranteed to
+                        persist over restarts, so should be rediscovered. Note2: when
+                        running the operator outside of the cluster, pod IP is not
+                        accessible.'
+                      items:
+                        type: string
+                      type: array
+                  type: object
+              required:
+              - serviceMgmt
+              - serviceS3
+              type: object
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

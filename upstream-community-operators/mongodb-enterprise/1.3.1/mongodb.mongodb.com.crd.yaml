@@ -1,0 +1,300 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: mongodb.mongodb.com
+spec:
+  group: mongodb.com
+  version: v1
+  scope: Namespaced
+  names:
+    kind: MongoDB
+    plural: mongodb
+    shortNames:
+    - mdb
+    singular: mongodb
+  additionalPrinterColumns:
+    - name: Type
+      type: string
+      description: "The type of MongoDB deployment. One of 'ReplicaSet', 'ShardedCluster' and 'Standalone'."
+      JSONPath: .spec.type
+    - name: State
+      type: string
+      description: The current state of the MongoDB deployment.
+      JSONPath: .status.phase
+    - name: Version
+      type: string
+      description: The version of MongoDB.
+      JSONPath: .spec.version
+    - name: Age
+      type: date
+      description: The time since the MongoDB resource was created.
+      JSONPath: .metadata.creationTimestamp
+  validation: # there are 3 possible schemas, ReplicaSet, ShardedCluster and Standalone
+    openAPIV3Schema:
+      oneOf:
+      - properties: # Standalone schema
+          spec:
+            properties:
+              credentials:
+                type: string
+              project:
+                type: string
+                description: "DEPRECATED The name of a configMap in the same namespace"
+              opsManager:
+                properties:
+                  configMapRef:
+                    properties:
+                      name:
+                        type: string
+              cloudManager:
+                properties:
+                  configMapRef:
+                    properties:
+                      name:
+                        type: string
+              version:
+                type: string
+                pattern: "^[0-9]+.[0-9]+.[0-9]+(-.+)?$"
+              logLevel:
+                type: string
+                enum: ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+              type:
+                type: string
+                pattern: "^Standalone$"
+              security:
+                type: object
+                properties:
+                  authentication:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      modes:
+                        type: array
+                        items:
+                          type: string
+                          enum: ["SCRAM", "X509"]
+                      ignoreUnknownUsers:
+                        type: boolean
+                  tls:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      ca:
+                        type: string
+              connectivity:
+                not:
+                  required: ["replicaSetHorizons"]
+              additionalMongodConfig:
+                properties:
+                  net:
+                    properties:
+                      ssl:
+                        properties:
+                          mode:
+                            type: string
+                            enum: ["disabled", "allowSSL", "preferSSL", "requireSSL", "allowTLS", "preferTLS", "requireTLS"]
+              exposedExternally:
+                type: boolean
+            anyOf:
+              - required: [project]
+              - required: [opsManager]
+              - required: [cloudManager]
+            required:
+            - credentials
+            - version
+            - type
+      - properties: # ReplicaSet schema
+          spec:
+            properties:
+              members:
+                maximum: 50
+                minimum: 1
+                type: integer
+              credentials:
+                type: string
+              project:
+                type: string
+                description: "DEPRECATED The name of a configMap in the same namespace"
+              opsManager:
+                properties:
+                  configMapRef:
+                    properties:
+                      name:
+                        type: string
+              cloudManager:
+                properties:
+                  configMapRef:
+                    properties:
+                      name:
+                        type: string
+              version:
+                type: string
+                pattern: "^[0-9]+.[0-9]+.[0-9]+(-.+)?$"
+              logLevel:
+                type: string
+                enum: ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+              type:
+                type: string
+                pattern: "^ReplicaSet$"
+              security:
+                type: object
+                properties:
+                  authentication:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      modes:
+                        type: array
+                        items:
+                          type: string
+                          enum: ["SCRAM", "X509"]
+                      internalCluster:
+                        type: string
+                        enum: ["X509"]
+                      ignoreUnknownUsers:
+                        type: boolean
+                  tls:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      ca:
+                        type: string
+                  clusterAuthenticationMode:
+                    # Warning: please refer to the documentation before enabling X509 in your MongoDB resource.
+                    # https://docs.mongodb.com/kubernetes-operator/
+                    type: string
+                    enum: ["x509"]
+              connectivity:
+                properties:
+                  replicaSetHorizons:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties:
+                        type: string
+              additionalMongodConfig:
+                properties:
+                  net:
+                    properties:
+                      ssl:
+                        properties:
+                          mode:
+                            type: string
+                            enum: ["disabled", "allowSSL", "preferSSL", "requireSSL", "allowTLS", "preferTLS", "requireTLS"]
+              exposedExternally:
+                type: boolean
+            anyOf:
+              - required: [project]
+              - required: [opsManager]
+              - required: [cloudManager]
+            required:
+            - credentials
+            - version
+            - type
+            - members
+            # TODO: add validation for OpsManager or Cloud Manager being required
+      - properties:
+          spec:
+            properties: # ShardedCluster schema
+              configServerCount:
+                maximum: 50
+                minimum: 1
+                type: integer
+              mongodsPerShardCount:
+                maximum: 50
+                minimum: 1
+                type: integer
+              mongosCount:
+                minimum: 1
+                type: integer
+              shardCount:
+                minimum: 1
+                type: integer
+              credentials:
+                type: string
+              project:
+                type: string
+                description: "DEPRECATED The name of a configMap in the same namespace"
+              opsManager:
+                properties:
+                  configMapRef:
+                    properties:
+                      name:
+                        type: string
+              cloudManager:
+                properties:
+                  configMapRef:
+                    properties:
+                      name:
+                        type: string
+              version:
+                type: string
+                pattern: "^[0-9]+.[0-9]+.[0-9]+(-.+)?$"
+              logLevel:
+                type: string
+                enum: ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+              type:
+                type: string
+                pattern: "^ShardedCluster$"
+              security:
+                type: object
+                properties:
+                  authentication:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      modes:
+                        type: array
+                        items:
+                          type: string
+                          enum: ["SCRAM", "X509"]
+                      internalCluster:
+                        type: string
+                        enum: ["X509"]
+                      ignoreUnknownUsers:
+                        type: boolean
+                  tls:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      ca:
+                        type: string
+                  clusterAuthenticationMode:
+                    # Warning: please refer to the documentation before enabling X509 in your MongoDB resource.
+                    # https://docs.mongodb.com/kubernetes-operator/
+                    type: string
+                    enum: ["x509"]
+              connectivity:
+                not:
+                  required: ["replicaSetHorizons"]
+              additionalMongodConfig:
+                properties:
+                  net:
+                    properties:
+                      ssl:
+                        properties:
+                          mode:
+                            type: string
+                            enum: ["disabled", "allowSSL", "preferSSL", "requireSSL", "allowTLS", "preferTLS", "requireTLS"]
+              exposedExternally:
+                type: boolean
+            anyOf:
+              - required: [project]
+              - required: [opsManager]
+              - required: [cloudManager]
+            required:
+            - credentials
+            - version
+            - type
+            - shardCount
+            - mongodsPerShardCount
+            - mongosCount
+            - configServerCount
+

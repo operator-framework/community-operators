@@ -1,0 +1,123 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: wavefrontproxies.wavefront.com
+spec:
+  group: wavefront.com
+  names:
+    kind: WavefrontProxy
+    listKind: WavefrontProxyList
+    plural: wavefrontproxies
+    singular: wavefrontproxy
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            additionalPorts:
+              description: The comma separated list of ports that need to be opened
+                on Proxy Pod and Services. Needs to be explicitly specified when using
+                "Advanced" configuration.
+              type: string
+            advanced:
+              description: The name of the config map providing the advanced configurations
+                for the Wavefront proxy.
+              type: string
+            enableAutoUpgrade:
+              description: If set to true, Proxy pods will be upgraded automatically
+                in case new minor upgrade version is available. For pinning Proxy
+                to a specific version, you will need to set this option to false.
+                We support only minor version Auto Upgrades.
+              type: boolean
+            histogramDistPort:
+              description: The port to listen on for Wavefront histogram distribution
+                formatted data. This is usually 40000
+              format: int32
+              type: integer
+            image:
+              description: The WavefrontProxy image to use. Defaults to wavefronthq/proxy:latest
+              type: string
+            jaegerPort:
+              description: The port to listen on for Jaeger Thrift formatted data.
+                Defaults to none. This is usually 30001
+              format: int32
+              type: integer
+            metricPort:
+              description: The port number the proxy will listen on for metrics in
+                Wavefront data format. This is usually port 2878 by default.
+              format: int32
+              type: integer
+            openshift:
+              description: Set to true when running proxy in Openshift platform.
+              type: boolean
+            preprocessor:
+              description: The name of the config map providing the preprocessor rules
+                for the Wavefront proxy.
+              type: string
+            size:
+              description: The no. of replicas for Wavefront Proxy. Defaults to 1
+              format: int32
+              type: integer
+            storageClaimName:
+              description: The name of the storage claim to be used for creating proxy
+                buffers directory. This is applicable only in an Openshift environment.
+              type: string
+            token:
+              description: Wavefront API Token.
+              type: string
+            tracePort:
+              description: The port to listen on for Wavefront trace formatted data.
+                Defaults to none. This is usually 30000
+              format: int32
+              type: integer
+            traceSamplingDuration:
+              description: When this is set to a value greater than 0, spans that
+                are greater than or equal to this value will be sampled.
+              format: double
+              type: number
+            traceSamplingRate:
+              description: Sampling rate to apply to tracing spans sent to the proxy.
+                This rate is applied to all data formats the proxy is listening on.
+                Value should be between 0.0 and 1.0.  Default is 1.0
+              format: double
+              type: number
+            url:
+              description: Wavefront URL (cluster).
+              type: string
+            zipkinPort:
+              description: The port to listen on for Zipkin formatted data. Defaults
+                to none. This is usually 9411
+              format: int32
+              type: integer
+          required:
+          - url
+          - token
+          type: object
+        status:
+          properties:
+            updatedTimestamp:
+              format: date-time
+              type: string
+            version:
+              type: string
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

@@ -1,0 +1,334 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: akka-cluster-operator.v0.2.0
+  namespace: placeholder
+  annotations:
+    capabilities: Seamless Upgrades
+    categories: Application Runtime
+    certified: 'false'
+    containerImage: 'lightbend-docker-registry.bintray.io/lightbend/akkacluster-operator:v0.2.0'
+    createdAt: '2019-06-28T15:23:00Z'
+    description: Run Akka Cluster applications on Kubernetes.
+    repository: https://github.com/lightbend/akka-cluster-operator
+    support: 'Lightbend, Inc.'
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "app.lightbend.com/v1alpha1",
+          "kind": "AkkaCluster",
+          "metadata": {
+            "name": "akka-cluster-demo"
+          },
+          "spec": {
+            "replicas": 3,
+            "template": {
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "lightbend-docker-registry.bintray.io/lightbend/akka-cluster-demo:1.0.2",
+                    "readinessProbe": {
+                      "httpGet": {
+                        "path": "/ready",
+                        "port": "management"
+                      },
+                      "periodSeconds": 10,
+                      "failureThreshold": 10,
+                      "initialDelaySeconds": 20
+                    },
+                    "livenessProbe": {
+                      "httpGet": {
+                        "path": "/alive",
+                        "port": "management"
+                      },
+                      "periodSeconds": 10,
+                      "failureThreshold": 10,
+                      "initialDelaySeconds": 20
+                    },
+                    "ports": [
+                      {
+                        "name": "http",
+                        "containerPort": 8080
+                      },
+                      {
+                        "name": "remoting",
+                        "containerPort": 2552
+                      },
+                      {
+                        "name": "management",
+                        "containerPort": 8558
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - kind: AkkaCluster
+        name: akkaclusters.app.lightbend.com
+        version: v1alpha1
+        description: An example Akka Cluster app that provides cluster visualization.
+        displayName: Akka Cluster
+        resources:
+          - kind: ServiceAccount
+            version: v1
+          - kind: Role
+            version: v1
+          - kind: RoleBinding
+            version: v1
+          - kind: Deployment
+            version: v1
+          - kind: ReplicaSet
+            version: v1
+          - kind: Pods
+            version: v1
+        specDescriptors:
+          - description: 'The desired number of pod instances in the Akka Cluster'
+            displayName: 'Replica Count'
+            path: replicas
+          - description: 'The template used to form the cluster'
+            displayName: 'Template'
+            path: template
+        statusDescriptors:
+          - description: The desired number of pod instances in the Akka Cluster
+            displayName: Replica Count
+            path: replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+          - description: The template used to form the cluster
+            displayName: Template
+            path: template
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - description: Information on the cluster
+            displayName: Cluster
+            path: cluster
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - description: The last time the status changed
+            displayName: Last Update
+            path: lastUpdate
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - description: 'The host of the (host,port) pair used to obtain the cluster status'
+            displayName: Management Host
+            path: managementHost
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - description: 'The port of the (host,port) pair used to obtain the cluster status'
+            displayName: Management Port
+            path: managementPort
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+  description: |
+    The Akka Cluster Operator allows you to manage applications designed for
+    [Akka Cluster](https://doc.akka.io/docs/akka/current/common/cluster.html).
+    Clustering with [Akka](https://doc.akka.io/docs/akka/current/guide/introduction.html) provides a
+    fault-tolerant, decentralized, peer-to-peer based cluster
+    for building stateful, distributed applications with no single point of failure.
+    Developers should use Akka Management v1.x or newer, with both Bootstrap and HTTP modules enabled.
+    When deploying using the Akka Cluster Operator, only the `management port` needs to be defined.
+    Defaults are provided by the Operator for all other required configuration.
+    The Akka Cluster Operator provides scalability control and membership status information
+    for deployed applications using Akka Cluster. As part of supervising membership of running clusters,
+    this Operator creates a pod-listing ServiceAccount, Role, and RoleBinding suitable for
+    each application. See the project [Readme](https://github.com/lightbend/akka-cluster-operator/blob/master/README.md)
+    for more information and details.
+    This is an incubating project in alpha version.
+  displayName: Akka Cluster Operator
+  icon: # Akka icon from https://www.lightbend.com/brand
+    - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NTggMjcwIj48dGl0bGU+YWtrYS1mdWxsLWNvbG9yPC90aXRsZT48ZyBpZD0iYWtrYS1mdWxsLWNvbG9yIj48cGF0aCBkPSJNMzQ5LjY0LDEwNS40NlY5My4zNGgxOS45MnY1OC40NGMwLDcuMTMsMS42Niw5Ljc5LDYuMTQsOS43OSwxLjE3LDAsMi42Ni0uMTcsNC4xNS0uMzN2MTYuMWEyOC43MSwyOC43MSwwLDAsMS05Ljc5LDEuMzNjLTQuODEsMC04LjYzLS44My0xMS42Mi0yLjY2YTE1LjQxLDE1LjQxLDAsMCwxLTYuODEtMTAuMTJDMzQ1LjgyLDE3NC42OCwzMzYuMiwxNzksMzIyLjkyLDE3OUEzOS43NCwzOS43NCwwLDAsMSwyOTMsMTY2LjM4Yy04LTguNDYtMTItMTguNzUtMTItMzEuMnM0LTIyLjc1LDEyLTMxLjA1YTM5Ljc3LDM5Ljc3LDAsMCwxLDI5Ljg4LTEyLjYxQzMzNi4zNiw5MS41MiwzNDYuNDksOTcuNDksMzQ5LjY0LDEwNS40NlptLTYsNDhhMjQuNDIsMjQuNDIsMCwwLDAsNy40Ny0xOC4yNiwyNC4zOSwyNC4zOSwwLDAsMC03LjQ3LTE4LjI2LDI0Ljc5LDI0Ljc5LDAsMCwwLTE4LjEtNy4zMSwyNCwyNCwwLDAsMC0xNy43Niw3LjMxYy00LjY1LDQuODEtNywxMS03LDE4LjI2czIuMzIsMTMuNDQsNywxOC4yNmEyNCwyNCwwLDAsMCwxNy43Niw3LjNBMjQuODIsMjQuODIsMCwwLDAsMzQzLjY3LDE1My40NFoiIGZpbGw9IiMwYjU1NjciLz48cGF0aCBkPSJNMzg4LjQ4LDE3N1Y2MS4zMWgxOS43NnY2Ny41NmwzMC44Ny0zNS41M0g0NjJsLTMyLjcsMzcuMzVMNDY1LjUxLDE3N0g0NDIuOTNsLTI2LjM5LTMzLjctOC4zLDkuM1YxNzdaIiBmaWxsPSIjMGI1NTY3Ii8+PHBhdGggZD0iTTQ3MC44MiwxNzdWNjEuMzFoMTkuNzV2NjcuNTZsMzAuODgtMzUuNTNoMjIuOTFsLTMyLjcsMzcuMzVMNTQ3Ljg0LDE3N0g1MjUuMjdsLTI2LjQtMzMuNy04LjMsOS4zVjE3N1oiIGZpbGw9IiMwYjU1NjciLz48cGF0aCBkPSJNNjA3Ljg3LDEwNS40NlY5My4zNGgxOS45MnY1OC40NGMwLDcuMTMsMS42Niw5Ljc5LDYuMTQsOS43OSwxLjE3LDAsMi42Ni0uMTcsNC4xNS0uMzN2MTYuMWEyOC43MSwyOC43MSwwLDAsMS05Ljc5LDEuMzNjLTQuODEsMC04LjYzLS44My0xMS42Mi0yLjY2YTE1LjQxLDE1LjQxLDAsMCwxLTYuODEtMTAuMTJjLTUuODEsOC43OS0xNS40MywxMy4xMS0yOC43MSwxMy4xMWEzOS43NCwzOS43NCwwLDAsMS0yOS44OC0xMi42MmMtOC04LjQ2LTEyLTE4Ljc1LTEyLTMxLjJzNC0yMi43NSwxMi0zMS4wNWEzOS43NywzOS43NywwLDAsMSwyOS44OC0xMi42MUM1OTQuNTksOTEuNTIsNjA0LjcyLDk3LjQ5LDYwNy44NywxMDUuNDZabS02LDQ4YTI0LjQyLDI0LjQyLDAsMCwwLDcuNDctMTguMjYsMjQuMzksMjQuMzksMCwwLDAtNy40Ny0xOC4yNiwyNC43OSwyNC43OSwwLDAsMC0xOC4xLTcuMzFBMjQsMjQsMCwwLDAsNTY2LDExNi45MmMtNC42NSw0LjgxLTcsMTEtNywxOC4yNnMyLjMyLDEzLjQ0LDcsMTguMjZhMjQsMjQsMCwwLDAsMTcuNzYsNy4zQTI0LjgyLDI0LjgyLDAsMCwwLDYwMS45LDE1My40NFoiIGZpbGw9IiMwYjU1NjciLz48cGF0aCBkPSJNMjMwLjI2LDIxMi44MmMzNS44OCwyOC42Nyw1OC45MS01NywxLjc0LTcyLjgyLTQ4LTEzLjI5LTk2LjMzLDkuNS0xNDQuNjYsNjIuNzRDODcuMzQsMjAyLjc0LDE3Ni42NywxNzAsMjMwLjI2LDIxMi44MloiIGZpbGw9IiMwYjU1NjciLz48cGF0aCBkPSJNODguMDgsMjAyYzM0LjQxLTM1LjY5LDkxLjY0LTc1LjUzLDE0NC45LTYwLjc1QTQ2LjA5LDQ2LjA5LDAsMCwxLDI1OS45LDE2MC42TDIwOS40OCw1OC43OGMtNy4yLTExLjQ2LTI1LjU4LTkuMTUtMzUuOTUtLjI2TDQwLjI5LDE3MC4wN2EyNy40LDI3LjQsMCwwLDAtMS41Niw0MC4xNWwwLDBhMjcuNCwyNy40LDAsMCwwLDM2LjUxLDJMODguMTQsMjAyWiIgZmlsbD0iIzE1YTljZSIvPjwvZz48L3N2Zz4=
+      mediatype: image/svg+xml
+  install:
+    spec:
+      deployments:
+        - name: akka-cluster-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: akka-cluster-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: akka-cluster-operator
+              spec:
+                containers:
+                  - command:
+                      - akka-cluster-operator
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: akka-cluster-operator
+                    image: lightbend-docker-registry.bintray.io/lightbend/akkacluster-operator:v0.2.0
+                    imagePullPolicy: Always
+                    name: akka-cluster-operator
+                    resources: {}
+                serviceAccountName: akka-cluster-operator
+      permissions:
+        - serviceAccountName: akka-cluster-operator
+          rules:
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+                - services
+                - endpoints
+                - persistentvolumeclaims
+                - events
+                - configmaps
+                - secrets
+                - serviceaccounts
+              verbs:
+                - '*'
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - '*'
+            - apiGroups:
+                - ''
+              resources:
+                - namespaces
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - '*'
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - akka-cluster-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - app.lightbend.com
+              resources:
+                - '*'
+              verbs:
+                - '*'
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - services
+                - endpoints
+                - persistentvolumeclaims
+                - events
+                - configmaps
+                - secrets
+                - serviceaccounts
+              verbs:
+                - "*"
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - "*"
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - "*"
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - akka-cluster-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - app.lightbend.com
+              resources:
+                - "*"
+              verbs:
+                - "*"
+          serviceAccountName: akka-cluster-operator
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  keywords:
+    - Akka
+    - Akka Cluster
+    - Lightbend
+  labels:
+    Name: akka-cluster-operator
+  maturity: alpha
+  minKubeVersion: 1.11.0
+  provider:
+    name: 'Lightbend, Inc.'
+  maintainers:
+    - name: 'Lightbend, Inc.'
+      email: info@lightbend.com
+  links:
+    - name: Intro to Akka
+      url: https://doc.akka.io/docs/akka/current/guide/introduction.html
+    - name: Intro to Akka Cluster
+      url: https://doc.akka.io/docs/akka/current/common/cluster.html
+    - name: Akka Cluster demo application
+      url: https://github.com/lightbend/akka-java-cluster-openshift
+    - name: Deploying a Lagom application to OpenShift
+      url: https://developer.lightbend.com/guides/openshift-deployment/lagom/index.html
+  version: 0.2.0
+  replaces: akka-cluster-operator.v0.0.1

@@ -1,0 +1,354 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "org.eclipse.che/v1",
+          "kind": "CheCluster",
+          "metadata": {
+             "name": "eclipse-che"
+          },
+          "spec": {
+            "k8s": {
+                "ingressDomain": "",
+                "tlsSecretName": ""
+              },
+             "server": {
+                "cheImageTag": "",
+                "devfileRegistryImage": "",
+                "pluginRegistryImage": "",
+                "tlsSupport": false,
+                "selfSignedCert": false
+             },
+             "database": {
+                "externalDb": false,
+                "chePostgresHostName": "",
+                "chePostgresPort": "",
+                "chePostgresUser": "",
+                "chePostgresPassword": "",
+                "chePostgresDb": ""
+             },
+             "auth": {
+                "identityProviderImage": "",
+                "externalIdentityProvider": false,
+                "identityProviderURL": "",
+                "identityProviderRealm": "",
+                "identityProviderClientId": ""
+             },
+             "storage": {
+                "pvcStrategy": "per-workspace",
+                "pvcClaimSize": "1Gi",
+                "preCreateSubPaths": true
+             }
+          }
+        }
+      ]
+    capabilities: Seamless Upgrades
+    categories: Developer Tools
+    certified: "false"
+    containerImage: quay.io/eclipse/che-operator:7.4.0
+    createdAt: "2019-11-07T17:01:08Z"
+    description: A Kube-native development solution that delivers portable and collaborative
+      developer workspaces.
+    repository: https://github.com/eclipse/che-operator
+    support: Eclipse Foundation
+  name: eclipse-che.v7.4.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Eclipse Che cluster with DB and Auth Server
+      displayName: Eclipse Che Cluster
+      kind: CheCluster
+      name: checlusters.org.eclipse.che
+      specDescriptors:
+      - description: TLS routes
+        displayName: TLS Mode
+        path: server.tlsSupport
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      statusDescriptors:
+      - description: Ingress to access Eclipse Che
+        displayName: Eclipse Che URL
+        path: cheURL
+        x-descriptors:
+        - urn:alm:descriptor:org.w3:link
+      - description: Ingress to access Keycloak Admin Console
+        displayName: Keycloak Admin Console URL
+        path: keycloakURL
+        x-descriptors:
+        - urn:alm:descriptor:org.w3:link
+      - description: Eclipse Che server version
+        displayName: Eclipse Che version
+        path: cheVersion
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The current status of the application
+        displayName: Status
+        path: cheClusterRunning
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.phase
+      - description: Reason of the current status
+        displayName: Reason
+        path: reason
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Message explaining the current status
+        displayName: Message
+        path: message
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Link providing help related to the current status
+        displayName: Help link
+        path: helpLink
+        x-descriptors:
+        - urn:alm:descriptor:org.w3:link
+      version: v1
+  description: |
+    A collaborative Kubernetes-native development solution that delivers Kubernetes workspaces and in-browser IDE for rapid cloud application development.
+    This operator installs PostgreSQL, Keycloak, Registries and the Eclipse Che server, as well as configures all these services.
+    ## Prerequisites
+    - Operator Lifecycle Manager (OLM) needs to be installed.
+    - Kubernetes Platform. For OpenShift, the installation is directly made from OperatorHub UI in the admin console.
+
+    OLM installation can be checked by running the command:
+    ```
+    $ kubectl get pods --all-namespaces | grep olm
+    olm             catalog-operator-7b8cd7f8bf-2v7zj                       1/1     Running   0          10m
+    olm             olm-operator-5c5c798cd5-s6ll5                           1/1     Running   0          10m
+    olm             olm-operators-fm5wc                                     1/1     Running   0          10m
+    olm             operatorhubio-catalog-d78km                             1/1     Running   0          10m
+    olm             packageserver-5c5f64947b-trghp                          1/1     Running   0          9m56s
+    olm             packageserver-5c5f64947b-zqvxg                          1/1     Running   0          9m56s
+    ```
+
+    ## How to Install
+    Install `Eclipse Che Operator` by following instructions in top right button `Install`.
+
+    A new pod che-operator is created in `my-eclipse-che` namespace
+
+    ```
+    $ kubectl get pods --all-namespaces | grep my-eclipse-che
+    my-eclipse-che   che-operator-554c564476-fl98z                           1/1     Running   0          13s
+    ```
+
+    The operator is now providing new Custom Resources Definitions: `checluster.org.eclipse.che`
+
+    Create a new Eclipse Che instance by creating a new CheCluster resource:
+
+    On the bottom of this page, there is a section `Custom Resource Definitions` with `Eclipse Che Cluster` name.
+
+    Click on `View YAML Example` *Link* and copy the content to a new file named `my-eclipse-che.yaml`
+    **Important!** Make sure you provide **K8s.ingressDomain** which is a global ingress domain of your k8s cluster, for example, `gcp.my-ide.cloud`
+    Create the new CheCluster by creating the resource in the `my-eclipse-che` namespace :
+    ```
+    $ kubectl create -f my-eclipse-che.yaml -n my-eclipse-che
+    ```
+    ***important:*** The operator is only tracking resources in its own namespace. If CheCluster is not created in this namespace it's ignored.
+    The operator will now create pods for Eclipse Che. The deployment status can be tracked by looking at the Operator logs by using the command:
+    ```
+    $ kubectl logs -n my-eclipse-che che-operator-554c564476-fl98z
+    ```
+    ***important:*** pod name is different on each installation
+
+    When all Eclipse Che containers are running, the Eclipse Che URL is printed
+
+
+    Eclipse Che URL can be tracked by searching for available trace:
+    ```
+    $ kubectl logs -f -n my-eclipse-che che-operator-7b6b4bcb9c-m4m2m | grep "Eclipse Che is now available"
+    time="2019-08-01T13:31:05Z" level=info msg="Eclipse Che is now available at: http://che-my-eclipse-che.gcp.my-ide.cloud"
+    ```
+    When Eclipse Che is ready, the Eclipse Che URL is displayed in CheCluster resource in `status` section
+    ```
+    $ kubectl describe checluster/eclipse-che -n my-eclipse-che
+    ```
+
+    ```
+    Status:
+      Che Cluster Running:           Available
+      Che URL:                       http://che-my-eclipse-che.gcp.my-ide.cloud
+      Che Version:                   7.0.0
+      ...
+    ```
+
+    By opening this URL in a web browser, Eclipse Che is ready to use.
+    ## Defaults
+    By default, the operator deploys Eclipse Che with:
+    * Bundled PostgreSQL and Keycloak
+    * Per-Workspace PVC strategy
+    * Auto-generated passwords
+    * HTTP mode (non-secure ingresses)
+    ## Installation Options
+    Eclipse Che operator installation options include:
+    * Connection to external database and Keycloak
+    * Configuration of default passwords and object names
+    * TLS mode
+    * PVC strategy (once shared PVC for all workspaces, PVC per workspace, or PVC per volume)
+    * Authentication options
+    ### External Database and Keycloak
+    To instruct the operator to skip deploying PostgreSQL and Keycloak and connect to an existing DB and Keycloak instead:
+    * set respective fields to `true` in a custom resource spec
+    * provide the operator with connection and authentication details:
+      ```
+      externalDb: true
+      chePostgresHostname: 'yourPostgresHost'
+      chePostgresPort: '5432'
+      chePostgresUser: 'myuser'
+      chePostgresPassword: 'mypass'
+      chePostgresDb: 'mydb'
+      externalIdentityProvider: true
+      identityProviderURL: 'https://my-keycloak.com'
+      identityProviderRealm: 'myrealm'
+      identityProviderClientId: 'myClient'
+      ```
+    ### TLS Mode
+    To activate TLS mode, set the respective field in the CR spec to `true` (in the `server` block):
+    ```
+    tlsSupport: true
+    ```
+    You will also need to provide name of tls secret that will be used for Eclipse Che and workspaces ingresses:
+    ```
+    tlsSecretName: 'my-ingress-tls-secret'
+    ```
+  displayName: Eclipse Che
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      deployments:
+      - name: che-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: che-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: che-operator
+            spec:
+              containers:
+              - command:
+                - /usr/local/bin/che-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: che-operator
+                image: quay.io/eclipse/che-operator:7.4.0
+                imagePullPolicy: IfNotPresent
+                name: che-operator
+                ports:
+                - containerPort: 60000
+                  name: metrics
+                resources: {}
+              restartPolicy: Always
+              serviceAccountName: che-operator
+              terminationGracePeriodSeconds: 5
+      permissions:
+      - rules:
+        - apiGroups:
+          - extensions
+          resources:
+          - ingresses
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - serviceaccounts
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - pods/exec
+          - pods/log
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - org.eclipse.che
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: che-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - eclipse che
+  - workspaces
+  - devtools
+  - developer
+  - ide
+  - java
+  links:
+  - name: Product Page
+    url: http://www.eclipse.org/che
+  - name: Documentation
+    url: https://www.eclipse.org/che/docs
+  - name: Operator GitHub Repo
+    url: https://github.com/eclipse/che-operator
+  maintainers:
+  - email: dfestal@redhat.com
+    name: David Festal
+  maturity: stable
+  provider:
+    name: Eclipse Foundation
+  replaces: eclipse-che.v7.3.1
+  version: 7.4.0

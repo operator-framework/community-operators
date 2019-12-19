@@ -2,6 +2,7 @@
 
 export $(grep -v '^MAKE' /tmp/env.conf)
 
+
 for f in "$(cd "$(dirname ${BASH_SOURCE[0]})/.." && pwd)"/lib/*; do
   . "$f"
 done
@@ -37,7 +38,7 @@ export CR_DIR="${DEPLOY_DIR}/crs"
 mkdir -p "$ABS_BUNDLE_PATH"
 mkdir -p "$CR_DIR"
 # Organize expected dir structure for the registry image build.
-operator-courier nest "${OP_PATH}" "${DEPLOY_DIR}/${PKG_NAME}"
+operator-courier nest "${OP_PATH}" "${DEPLOY_DIR}/${PKG_NAME}" 2> /dev/null
 pushd "$DEPLOY_DIR" >/dev/null
 # Set PKG_FILE again with the nested path.
 export PKG_FILE="$(find "$DEPLOY_DIR" -name "*.package.yaml" -print -quit)"
@@ -50,10 +51,22 @@ export OP_REGISTRY_IMAGE="quay.io/operatorframework/${PKG_NAME}:${OP_VER}-regist
 export SECRET_FILE="${DEPLOY_DIR}/scorecard.secret.yaml"
 
 export CSV_FILE="$(find "$ABS_BUNDLE_PATH" -name "*${OP_VER}.clusterserviceversion.yaml" -print -quit)"
-export CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
-export CHANNEL_NAME="$(get_channel_name "$PKG_FILE" "$CSV_NAME")"
 
-set +u
-if [[ "$REG_IMAGE" ]]; then
-  export OP_REGISTRY_IMAGE="${REG_IMAGE}"
+if [[ -f $CSV_FILE ]]; then
+
+  if [[ "$INSTALL_MODE" == "" ]]; then
+    export INSTALL_MODE="$(python3 /scripts/lib-python/files/detect_install_mode.py --csvfile "$CSV_FILE")"  
+  fi
+
+  export CSV_NAME="$(yq r "$CSV_FILE" "metadata.name")"
+  export CHANNEL_NAME="$(python3 /scripts/lib-python/cluster/get_operator_channel.py -p "$PKG_FILE" -c "$CSV_NAME")"
+  
+  set +u
+  if [[ "$REG_IMAGE" ]]; then
+    export OP_REGISTRY_IMAGE="${REG_IMAGE}"
+  fi
+else 
+  >&2 echo "CSV file for version ${OP_VER} not found test cannot continue"
+
+  exit 1;
 fi

@@ -1,0 +1,191 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [{"apiVersion": "ibmcloud.ibm.com/v1alpha1", "kind": "Composable", "metadata": {"name": "comp"}, "spec": {"template": {"apiVersion": "ibmcloud.ibm.com/v1alpha1", "kind": "Service"}}}]
+    capabilities: Basic Install
+    categories: Cloud Provider
+    certified: 'false'
+    containerImage: cloudoperators/composable-controller:0.1.3
+    createdAt: '2019-11-16T20:39:31Z'
+    description: Operator that can wrap any resource to make it dynamically configurable
+    repository: https://github.com/IBM/composable
+    support: IBM
+  name: composable-operator.v0.1.3
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Overlay operator that allows its underlying object to be dynamically
+        configurable
+      displayName: Composable
+      kind: Composable
+      name: composables.ibmcloud.ibm.com
+      resources:
+      - kind: Secret
+        version: v1
+      - kind: ConfigMap
+        version: v1
+      - kind: Composable
+        version: v1alpha1
+      specDescriptors:
+      - description: Template is the underlying object managed by the Composable
+        displayName: Template
+        path: template
+        x-descriptors:
+        - urn:alm:descriptor:text
+      statusDescriptors:
+      - description: Detailed message on current status
+        displayName: Message
+        path: message
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Current state for the composable
+        displayName: State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1alpha1
+  description: "Kubernetes object specifications often require constant values for\
+    \ their fields. When deploying an entire application with many different resources,\
+    \ this limitation often results in the need for staged deployments, because some\
+    \ resources have to be deployed first in order to determine what data to provide\
+    \ for the specifications of dependent resources. This undermines the declarative\
+    \ nature of Kubernetes object specification and requires workflows, manual step-by-step\
+    \ instructions and/or brittle automated scripts for the deployment of applications\
+    \ as a whole.\nThe Composable operator alleviates this problem by wrapping any\
+    \ resource (native Kubernetes or CRD instance) and allowing it to be specified\
+    \ with references to fields of other objects. These references are resolved dynamically\
+    \ by the Compsable controller when the data becomes available. This allows the\
+    \ yaml for the entire application to be deployed at once regardless of dependencies,\
+    \ and leverages Kubernetes native mechanisms to stage the deployment of different\
+    \ resources. \nFor example, consider a Knative KafkaSource resource:\n\n    apiVersion:\
+    \ sources.eventing.knative.dev/v1alpha1\n    kind: KafkaSource\n    metadata:\n\
+    \      name: kafka-source\n    spec:\n      consumerGroup: knative-group\n   \
+    \   bootstrapServers: my-cluster-kafka-bootstrap.kafka:9092,my-cluster0-kafka-bootstrap.kafka:9093\n\
+    \      topics: knative-demo-topic\n    sink:\n      apiVersion: serving.knative.dev/v1\n\
+    \      kind: Service\n      name: event-display\n      \nThe KafkaSource resource\
+    \ requires a field bootstrapServers whose value can only be known if a Kafka service\
+    \ has already been deployed successfully. So one must first deploy Kafka, obtain\
+    \ this data, then create the above yaml and deploy it.\n \nWith the Composable\
+    \ operator, this yaml can be deployed at the same time as the rest of the application,\
+    \ as follows:\n\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: Composable\n\
+    \    metadata:\n      name: kafka-source\n    spec:\n      template:\n       \
+    \ apiVersion: sources.eventing.knative.dev/v1alpha1\n        kind: KafkaSource\n\
+    \        metadata:\n          name: kafka-source\n        spec:\n          consumerGroup:\
+    \ knative-group\n          bootstrapServers:\n            getValueFrom:\n    \
+    \          kind: Secret\n              name: my-kafka-binding\n              path:\
+    \ '{.data.kafka_brokers_sasl}'\n              format-transformers:\n         \
+    \     - \"Base64ToString\" \n              - \"JsonToObject\"\n              -\
+    \ \"ArrayToCSString\"\n          topics: knative-demo-topic\n          sink:\n\
+    \            apiVersion: serving.knative.dev/v1\n            kind: Service\n \
+    \           name: event-display\n            \nWith Composable as the wrapper\
+    \ object, the field `bootstrapServers` can be specified with a reference `getValueFrom`\
+    \ to another object, in this case a secret named `my-kafka-binding` that contains\
+    \ binding information for the Kafka service (created by a different operator).\
+    \ When the Composable object is deployed, the Composable controller tries to resolve\
+    \ this value and keeps trying if the secret has not been created yet. Once the\
+    \ secret is created and the data becomes available, the Composable operator then\
+    \ deploys the underlying object.\n \nOften there is data formatting mismatch between\
+    \ a source and a referencing field, so Composable also provides a series of handy\
+    \ data transformers that can be piped together in order to obtain the correct\
+    \ format. In this case, the base64 secret data is first decoded  to obtain a Json\
+    \ string, which is then parsed producing an array of urls. Finally this array\
+    \ is transformed into a comma-separated string.\n \nThe Composable operator allows\
+    \ all yamls of an application to be deployed at once, in one step, by supporting\
+    \ cross-resource references that are resolved dynamically, and leverages native\
+    \ Kubernetes mechanisms to stage the deployment of a collection of resources.\n\
+    \ \nThe Composable Operator is currently in preview. It will get updated as we\
+    \ release new versions of the [upstream repository](https://github.com/IBM/composable).\n\
+    ## Requirements\nThe operator can be installed on any OLM-enabled Kubernetes cluster\
+    \ with version >= 1.11. \n## Using the Composable Operator\nFor additional configuration\
+    \ options, samples and more information on using the operator, consult  the [Composable\
+    \ Operator documentation](https://github.com/IBM/composable).\n"
+  displayName: Composable
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - ibmcloud.ibm.com
+          resources:
+          - composables/status
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        serviceAccountName: composable-operator
+      deployments:
+      - name: composable-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: composable-operator
+          strategy:
+            rollingUpdate:
+              maxSurge: 25%
+              maxUnavailable: 25%
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                app: composable-operator
+            spec:
+              containers:
+              - command:
+                - ./manager
+                image: cloudoperators/composable-controller:0.1.3
+                imagePullPolicy: Always
+                name: composable
+              serviceAccountName: composable-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - IBM
+  - Cloud
+  labels:
+    name: composable-operator
+  links:
+  - name: Composable Operator
+    url: https://github.com/IBM/composable
+  maintainers:
+  - email: dettori@us.ibm.com
+    name: Paolo Dettori
+  - email: luan@us.ibm.com
+    name: Laura Zaihua Luan
+  - email: roytman@il.ibm.com
+    name: Alexey Roytman
+  - email: tardieu@us.ibm.com
+    name: Olivier Tardieu
+  - email: mvaziri@us.ibm.com
+    name: Mandana Vaziri
+  maturity: alpha
+  provider:
+    name: IBM
+  selector:
+    matchLabels:
+      name: composable-operator
+  version: 0.1.3
