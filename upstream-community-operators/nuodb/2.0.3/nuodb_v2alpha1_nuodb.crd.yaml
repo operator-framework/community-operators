@@ -1,0 +1,207 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: nuodbs.nuodb.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.adminHealth
+    name: Admin
+    type: string
+  - JSONPath: .status.smHealth
+    name: SM
+    type: string
+  - JSONPath: .status.teHealth
+    name: TE
+    type: string
+  - JSONPath: .status.domainHealth
+    name: Domain
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
+    type: string
+  - JSONPath: .status.controllerVersion
+    name: ControllerVersion
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: nuodb.com
+  names:
+    categories:
+    - nuodb
+    kind: Nuodb
+    listKind: NuodbList
+    plural: nuodbs
+    shortNames:
+    - nuodb
+    singular: nuodb
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            adminCount:
+              description: 'adminCount Number of admin service pods. Requires 1 server
+                available for each Admin Service example: adminCount: 1'
+              format: int32
+              type: integer
+            adminStorageClass:
+              description: 'adminStorageClass Admin persistent storage class name
+                example: adminStorageClass: glusterfs-storage'
+              type: string
+            adminStorageSize:
+              description: 'adminStorageSize Admin service log volume size (GB) example:
+                adminStorageSize: 5G'
+              type: string
+            apiServer:
+              description: 'apiServer Load balancer service URL.  hostname:port (or
+                LB address) for nuoadmin process to connect to. Example: apiServer:
+                https://domain:8888'
+              type: string
+            container:
+              description: 'container NuoDB fully qualified image name (FQIN) for
+                the Docker image to use container: "registry.connect.redhat.com/nuodb/nuodb-ce:latest"
+                Example: container: nuodb/nuodb-ce:latest'
+              type: string
+            dbAvailability:
+              description: 'dbAvailability  Availability requirement for this database.  Values
+                are:  single-instance - The operator manages a single instance of
+                each NuoDB                   component (Admin, SM, TE).  In the event
+                that one                   component goes down or becomes unavailable,
+                the                   operator will automatically replace the failed
+                component.                   This is the most resource friendly option
+                for applications                   that can tolerate a brief outage.  multiple-instance
+                - The operator manages multiple instances of each                     NuoDB
+                component (Admin, SM, TE).  high-availability - The operator will
+                maximize performance and reliability.  manual - The operator will
+                enforce custom provided Admin, SM, TE instance counts.  The default
+                is: "high-availability"'
+              type: string
+            dbName:
+              description: 'dbName NuoDB Database name.  must consist of lowercase
+                alphanumeric characters ''[a-z0-9]+'' example: dbName: test'
+              type: string
+            dbPassword:
+              description: 'dbPassword Database password Example: dbPassword: secret'
+              type: string
+            dbUser:
+              description: 'dbUser Name of Database user example: dbUser: dba'
+              type: string
+            engineOptions:
+              description: 'engineOptions Additional "nuodb" engine options Format:
+                <option> <value> <option> <value> ... Example: engineOptions: ""'
+              type: string
+            insightsEnabled:
+              description: 'insightsEnabled Use to control Insights Opt In.  Insights
+                provides database monitoring.  Set to "true" to activate or "false"
+                to deactivate example: insightsEnabled: false'
+              type: boolean
+            smCount:
+              description: 'smCount Number of SM service pods. Requires 1 SM available
+                for each NuoDB Database example: smCount: 1'
+              format: int32
+              type: integer
+            smCpu:
+              description: 'smCpu SM CPU cores to request example: smCpu: 1'
+              type: string
+            smMemory:
+              description: 'smMemory SM memory example: smMemory: 2Gi'
+              type: string
+            smStorageClass:
+              description: 'smStorageClass SM persistent storage class name Example:
+                smStorageClass: local-disk'
+              type: string
+            smStorageSize:
+              description: 'smStorageSize Storage manager (SM) volume size (GB) Example:
+                smStorageSize: 20G'
+              type: string
+            storageMode:
+              description: 'storageMode Run NuoDB using a persistent, local, disk
+                volume "persistent" or volatile storage "ephemeral".  Must be set
+                to one of those values. example: storageMode: persistent'
+              type: string
+            teCount:
+              description: 'teCount Number of transaction engines (TE) nodes. Limit
+                is 3 in CE version of NuoDB Example: teCount: 1'
+              format: int32
+              type: integer
+            teCpu:
+              description: 'teCpu TE CPU cores to request Example: teCpu: 1'
+              type: string
+            teMemory:
+              description: 'teMemory TE memory Example: teMemory: 2Gi'
+              type: string
+          required:
+          - adminCount
+          - adminStorageClass
+          - adminStorageSize
+          - apiServer
+          - container
+          - dbAvailability
+          - dbName
+          - dbPassword
+          - dbUser
+          - engineOptions
+          - insightsEnabled
+          - smCount
+          - smCpu
+          - smMemory
+          - smStorageClass
+          - smStorageSize
+          - storageMode
+          - teCount
+          - teCpu
+          - teMemory
+          type: object
+        status:
+          properties:
+            adminHealth:
+              description: AdminHealth of the NuoDB Domain
+              type: string
+            adminReadyCount:
+              description: Admin Node Ready Count
+              format: int32
+              type: integer
+            controllerVersion:
+              description: ControllerVersion is the version of the controller that
+                last updated the NuoDB Domain
+              type: string
+            domainHealth:
+              description: DomainHealth of the NuoDB Domain
+              type: string
+            phase:
+              description: Orchestration phase of the NuoDB Domain
+              type: string
+            smHealth:
+              description: SM Health of the NuoDB Domain
+              type: string
+            smReadyCount:
+              description: SM Node Ready Count
+              format: int32
+              type: integer
+            teHealth:
+              description: TE Health of the NuoDB Domain
+              type: string
+            teReadyCount:
+              description: TE Node Ready Count
+              format: int32
+              type: integer
+          type: object
+  version: v2alpha1
+  versions:
+  - name: v2alpha1
+    served: true
+    storage: true
