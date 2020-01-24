@@ -5,7 +5,6 @@ MAKEFLAGS+ = --no-print-directory
 OP_PATH=''
 OP_CHANNEL=''
 NAMESPACE=''
-INSTALL_MODE=''
 OK=\033[0;32m
 WARN=\033[0;33m
 ERR=\033[0;31m
