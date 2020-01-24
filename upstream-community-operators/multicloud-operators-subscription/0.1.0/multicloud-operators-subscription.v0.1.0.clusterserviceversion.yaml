@@ -8,10 +8,11 @@ metadata:
           "apiVersion": "app.ibm.com/v1alpha1",
           "kind": "Subscription",
           "metadata": {
-            "name": "sub-nginx"
+            "name": "sub-nginx",
+            "namespace": "my-operator"
           },
           "spec": {
-            "channel": "dev/dev-helmrepo",
+            "channel": "my-operator/dev-helmrepo",
             "name": "nginx-ingress",
             "placement": {
               "local": false
@@ -20,12 +21,12 @@ metadata:
               "version": "=1.26.1"
             },
             "packageOverrides": [
-              { 
+              {
                 "packageName": "nginx-ingress",
                 "packageOverrides": [
                   {
                     "path": "spec.values",
-                    "value": "defaultBackend:\nreplicaCount: 3"
+                    "value": "defaultBackend:\n  replicaCount: 3\n"
                   }
                 ]
               }
@@ -37,40 +38,32 @@ metadata:
           "kind": "Channel",
           "metadata": {
             "name": "dev-helmrepo",
-            "namespace": "dev"
+            "namespace": "my-operator"
           },
           "spec": {
             "type": "HelmRepo",
-            "pathname": "http://kubernetes-charts.storage.googleapis.com/",
-            "configRef": {
-              "name": "skip-cert-verify",
-              "apiVersion": "v1",
-              "kind": "ConfigMap"
-            }
+            "pathname": "http://kubernetes-charts.storage.googleapis.com/"
           }
         },
         {
           "apiVersion": "app.ibm.com/v1alpha1",
           "kind": "HelmRelease",
           "metadata": {
-            "name": "nginx-ingress-simple-default",
-            "namespace": "default"
+            "name": "nginx-ingress-sub-nginx-my-operator",
+            "namespace": "my-operator"
           },
           "spec": {
             "chartName": "nginx-ingress",
-            "configMapRef": {
-              "name": "skip-cert-verify",
-              "apiVersion": "v1",
-              "kind": "ConfigMap"
-            },
             "releaseName": "nginx-ingress",
             "source": {
               "helmRepo": {
-                "urls": ["https://kubernetes-charts.storage.googleapis.com/nginx-ingress-1.26.1.tgz"]
+                "urls": [
+                  "https://kubernetes-charts.storage.googleapis.com/nginx-ingress-1.26.1.tgz"
+                ]
               },
               "type": "helmrepo"
             },
-            "values": "defaultBackend:\n  replicaCount: 3\n",
+            "values": "defaultBackend:\n  replicaCount: 3",
             "version": "1.26.1"
           }
         },
