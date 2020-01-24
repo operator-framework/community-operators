@@ -1,5 +1,5 @@
 .PHONY: help
-SDK_VER="v0.14.0"
+SDK_VER="v0.12.0"
 KUBE_VER="v1.14.0"
 MAKEFLAGS+ = --no-print-directory
 OP_PATH=''
