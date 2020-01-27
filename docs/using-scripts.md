@@ -22,6 +22,8 @@ The `Makefile` supports two test modes. Both have these supported options:
 
 ` OP_PATH ` - relative path to your operator (required)
 
+` DISABLE_PODMAN ` - by default podman is used on linux bases machines if you want force to use docker add `DISABLE_PODMAN=1` to test command
+
 ` OP_VER ` - version of operator (if not provided the latest will be determined from your `package.yaml`)
 
 ` OP_CHANNEL ` - channel of operator if is not provided it will be parsed by operator package yaml or use the default ones
