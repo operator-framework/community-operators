@@ -55,3 +55,94 @@ Operators submitted to the `community-operators/` directory are tested against a
 [operatorsource-cr-example]:https://github.com/operator-framework/operator-marketplace/blob/master/deploy/examples/community.operatorsource.cr.yaml
 [marketplace-private-repo]:https://github.com/operator-framework/operator-marketplace/blob/master/docs/how-to-authenticate-private-repositories.md
 [marketplace-install]:https://github.com/operator-framework/operator-marketplace#installing-an-operator-using-marketplace
+
+
+## Testing your operator by CI
+If you want test your operator by CI, you have two option in all supported CI. Test it against minikube or your own cluster by providing kubeconfig 
+
+### Supported CI
+ 
+ - [Travis](#travis)
+ - [Gitlab](#gitlab)
+ - [Jenkins](#jenkins)
+ 
+### Travis
+
+#### Minikube
+
+Setting up travis ci against minikube have minimal setup you need copy `.travis.yml` from [.travis.yml](./ci-templates/.travis.yml) 
+to your repository and setup `OP_PATH` variable inside the script to make sure that point to your operator manifests.
+
+#### Existing cluster
+
+For setting up travis against existing cluster you need provide your `KUBECONFIG` encoded by base64 to your travis env variables
+and copy [.travis_with_kubeconfig.yml](./ci-templates/.travis_with_kubeconfig.yml) to your repository as `.travis.yml` and also need configure `OP_PATH` 
+to make sure that point to your operator manifests
+
+### Gitlab
+
+#### Minikube
+
+##### Requirements
+standalone ci runner installed and registered by guide: 
+- [install](https://docs.gitlab.com/runner/install/)
+- [register](https://docs.gitlab.com/runner/register/index.html)
+
+on VM you have to install:
+- [docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
+  - add privilages to manage docker ` sudo usermod -aG docker gitlab-runner`
+- install virutalbox and change vm-driver to virtual box or allow gitlab runner the priviliges by:
+  - `sudo usermod -a -G sudo gitlab-runner`
+  - `sudo visudo` and add line on end `gitlab-runner ALL=(ALL) NOPASSWD: ALL (This is required only if you using minikube)
+
+Setting up travis ci against minikube have minimal setup you need copy `.gitlab-ci.yml` from [.gitlab-ci.yml](./ci-templates/.gitlab-ci.yml) 
+to your repository and setup `OP_PATH` variable inside the script to make sure that point to your operator manifests.
+
+#### Existing cluster
+
+##### Requirements
+Make sure that your runner can use docker
+
+For setting up travis against existing cluster you need provide your `KUBECONFIG` encoded by base64 to your gitlab CI/CD variables
+and copy [.gitlab-ci.yml](./ci-templates/.gitlab-ci_with_kubeconfig.yml) to your repository as `.gitlab-ci.yml` and also need configure `OP_PATH` 
+to make sure that point to your operator manifests
+
+
+### Jenkins
+
+#### Minikube
+
+##### Requirements
+on VM you have to install:
+
+(https://docs.docker.com/install/linux/docker-ce/ubuntu/)[docker]
+
+add privilages to manage docker sudo usermod -aG docker jenkins
+
+Also you need install minikube:
+
+```
+ curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
+ chmod +x minikube && mv minikube /usr/bin/
+```
+and need add to suders file line: (Or you can use virutalbox or KVM2 as virtualization driver without sudo)
+```
+jenkins hostname = (root) NOPASSWD: /usr/bin/minikube
+```
+
+
+Setting up travis ci against minikube have minimal setup you need copy `Jenkinsfile` from [Jenkinsfile](./ci-templates/Jenkinsfile) 
+to your repository and setup `OP_PATH` variable inside the script to make sure that point to your operator manifests.
+
+#### Existing cluster
+
+##### Requirements
+on VM you have to install:
+
+(https://docs.docker.com/install/linux/docker-ce/ubuntu/)[docker]
+
+add privilages to manage docker sudo usermod -aG docker jenkins
+
+For setting up travis against existing cluster you need provide your `KUBECONFIG` encoded by base64 to your Jenkins env variables
+and copy [Jenkinsfile](./ci-templates/Jenkinsfile_with_kubeconfig) to your repository as `Jenkinsfile` and also need configure `OP_PATH` 
+to make sure that point to your operator manifests

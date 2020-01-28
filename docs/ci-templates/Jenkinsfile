@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+    environment {
+       OP_PATH = 'operator'
+       INSTALL_MODE = ''
+    }
+
+    stages {
+        stage('Test') {
+            steps {
+                /* `make check` returns non-zero on test failures,
+                * using `true` to allow the Pipeline to continue nonetheless
+                */
+                sh 'mkdir -p /root/.kube && echo ${KUBECONFIG} | base64 -d > /root/.kube/config && export KUBECONFIG=/root/.kube/config'
+                sh 'sudo docker pull quay.io/operator-framework/operator-testing'
+                sh 'sudo docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}:${PWD} quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="${WORKSPACE}/${OP_PATH}" CLEAN_MODE=NORMAL INSTALL_MODE=${INSTALL_MODE} VERBOSE=1'
+            }
+        }
+    }
+}
