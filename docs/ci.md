@@ -76,7 +76,7 @@ to your repository and setup `OP_PATH` variable inside the script to make sure t
 #### Existing cluster
 
 For setting up travis against existing cluster you need provide your `KUBECONFIG` encoded by base64 to your travis env variables
-and copy [.travis_with_kubeconfig.yml](./ci-templates/.travis_with_kubeconfig.yml) to your repository as `.travis.yml` and also need configure `OP_PATH` 
+and copy [.travis.yml](./ci-templates/.travis_with_kubeconfig.yml) to your repository as `.travis.yml` and also need configure `OP_PATH` 
 to make sure that point to your operator manifests
 
 ### Gitlab
@@ -115,7 +115,7 @@ to make sure that point to your operator manifests
 ##### Requirements
 on VM you have to install:
 
-(https://docs.docker.com/install/linux/docker-ce/ubuntu/)[docker]
+[docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
 
 add privilages to manage docker sudo usermod -aG docker jenkins
 
@@ -139,7 +139,7 @@ to your repository and setup `OP_PATH` variable inside the script to make sure t
 ##### Requirements
 on VM you have to install:
 
-(https://docs.docker.com/install/linux/docker-ce/ubuntu/)[docker]
+[docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
 
 add privilages to manage docker sudo usermod -aG docker jenkins
 

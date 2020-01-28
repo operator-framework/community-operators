@@ -1,0 +1,28 @@
+dist: xenial
+language: python
+os: linux
+sudo: required
+
+if: branch = master
+
+python:
+- "3.6"
+
+env:
+- CHANGE_MINIKUBE_NONE_USER=true DISTRO_TYPE=upstream
+- OP_PATH=operator
+
+install:
+- scripts/ci/install-deps $DISTRO_TYPE
+
+before_script:
+- sudo minikube start --memory=4096 --vm-driver=none --extra-config=apiserver.v=10
+- sudo chown -R $USER ${HOME}/.{mini,}kube
+- kubectl config use-context minikube
+
+jobs:
+  include:
+  - name: Scorecard on minikube
+    script:
+    - docker pull quay.io/operator-framework/operator-testing
+    - eval $(scripts/ci/operators-env) && docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="${OP_PATH}" CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
