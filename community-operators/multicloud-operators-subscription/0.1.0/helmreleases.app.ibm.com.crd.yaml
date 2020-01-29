@@ -1,0 +1,100 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: helmreleases.app.ibm.com
+spec:
+  group: app.ibm.com
+  names:
+    kind: HelmRelease
+    listKind: HelmReleaseList
+    plural: helmreleases
+    singular: helmrelease
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            chartName:
+              description: ChartName is the name of the chart within the repo
+              type: string
+            configMapRef:
+              description: Configuration parameters to access the helm-repo defined
+                in the CatalogSource
+              type: object
+            releaseName:
+              description: ReleaseName is the Name of the release given to Tiller.
+                Defaults to namespace-name. Must not be changed after initial object
+                creation.
+              type: string
+            secretRef:
+              description: Secret to use to access the helm-repo defined in the CatalogSource.
+              type: object
+            source:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+                Source holds the url toward the helm-chart'
+              properties:
+                github:
+                  properties:
+                    branch:
+                      type: string
+                    chartPath:
+                      type: string
+                    urls:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                helmRepo:
+                  properties:
+                    urls:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type:
+                  type: string
+              type: object
+            values:
+              description: Values is a string containing (unparsed) YAML values
+              type: string
+            version:
+              description: Version is the chart version
+              type: string
+          type: object
+        status:
+          properties:
+            lastUpdate:
+              format: date-time
+              type: string
+            message:
+              type: string
+            phase:
+              type: string
+            reason:
+              type: string
+          required:
+          - lastUpdate
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

@@ -21,19 +21,16 @@ fi
 # CR.
 >&2 echo "Running scorecard trough all CR"
 
-for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
-  >&2 echo -e "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$cr_file""
-  >&2 operator-sdk scorecard \
-    --cr-manifest "$cr_file" \
-    --crds-dir "$ABS_BUNDLE_PATH" \
-    --olm-deployed \
-    --csv-path "$CSV_FILE" \
-    --namespace "$NAMESPACE" \
-    --init-timeout 60 \
-    --proxy-image "$SC_PROXY_IMAGE" \
-    --kubeconfig "$KUBECONFIG" \
-    --verbose
+for config_file in $(find "/tmp/scorecard-bundles" -name "*.bundle.yaml" -print); do
+  >&2 echo -e "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$config_file""
 
+  if ! $(>&2 operator-sdk scorecard -o text --config "$config_file" --kubeconfig "$KUBECONFIG" --verbose --selector="test in (checkspectest,writingintocrshaseffecttest)"); then
+    echo "FATAL ERROR"
+    exit 1
+  fi
+  if ! $(>&2 operator-sdk scorecard -o text --config "$config_file" --kubeconfig "$KUBECONFIG" --verbose --selector="test in (checkstatustest)"); then
+    echo "WARNING"
+  fi 
   # If scorecard errors out, print out operator logs
   if [[ $? != 0 ]]; then
     >&2 echo "\nFAIL: Scorecard test errored out. Printing operator state:"
@@ -44,7 +41,6 @@ for cr_file in $(find "$CR_DIR" -name "*.cr.yaml" -print -quit); do
     echo "PASS: Scorecard test passed"
   fi
 done
-echo "$CLEAN_MODE"
 
 if [[ "$CLEAN_MODE" == "NORMAL" || "$CLEAN_MODE" == "FORCE" ]]; then
   echo "Printing operator logs"; get_operator_logs "$CSV_NAME" "$NAMESPACE"

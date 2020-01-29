@@ -1,0 +1,219 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apimanagers.apps.3scale.net
+spec:
+  group: apps.3scale.net
+  names:
+    kind: APIManager
+    listKind: APIManagerList
+    plural: apimanagers
+    singular: apimanager
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            apicast:
+              properties:
+                image:
+                  type: string
+                managementAPI:
+                  type: string
+                openSSLVerify:
+                  type: boolean
+                productionSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+                registryURL:
+                  type: string
+                responseCodes:
+                  type: boolean
+                stagingSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+              type: object
+            appLabel:
+              type: string
+            backend:
+              properties:
+                cronSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+                image:
+                  type: string
+                listenerSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+                redisImage:
+                  type: string
+                workerSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+              type: object
+            highAvailability:
+              properties:
+                enabled:
+                  type: boolean
+              type: object
+            imageStreamTagImportInsecure:
+              type: boolean
+            resourceRequirementsEnabled:
+              type: boolean
+            system:
+              properties:
+                appSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+                database:
+                  properties:
+                    mysql:
+                      description: Union type. Only one of the fields can be set
+                      properties:
+                        image:
+                          type: string
+                      type: object
+                    postgresql:
+                      properties:
+                        image:
+                          type: string
+                      type: object
+                  type: object
+                fileStorage:
+                  properties:
+                    amazonSimpleStorageService:
+                      properties:
+                        awsBucket:
+                          type: string
+                        awsCredentialsSecret:
+                          properties:
+                            name:
+                              type: string
+                          type: object
+                        awsRegion:
+                          type: string
+                      required:
+                      - awsBucket
+                      - awsRegion
+                      - awsCredentialsSecret
+                      type: object
+                    persistentVolumeClaim:
+                      description: Union type. Only one of the fields can be set.
+                      properties:
+                        storageClassName:
+                          type: string
+                      type: object
+                  type: object
+                image:
+                  type: string
+                memcachedImage:
+                  type: string
+                redisImage:
+                  type: string
+                sidekiqSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+              type: object
+            tenantName:
+              type: string
+            wildcardDomain:
+              type: string
+            zync:
+              properties:
+                appSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+                image:
+                  type: string
+                postgreSQLImage:
+                  type: string
+                queSpec:
+                  properties:
+                    replicas:
+                      format: int64
+                      type: integer
+                  type: object
+              type: object
+          required:
+          - wildcardDomain
+          type: object
+        status:
+          properties:
+            conditions:
+              items:
+                properties:
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - type
+                - status
+                type: object
+              type: array
+            deployments:
+              properties:
+                ready:
+                  description: Deployments are ready to serve requests
+                  items:
+                    type: string
+                  type: array
+                starting:
+                  description: Deployments are starting, may or may not succeed
+                  items:
+                    type: string
+                  type: array
+                stopped:
+                  description: Deployments are not starting, unclear what next step
+                    will be
+                  items:
+                    type: string
+                  type: array
+              type: object
+          required:
+          - deployments
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
