@@ -20,10 +20,9 @@ install:
 
 before_script:
 - eval $(scripts/ci/operators-env) && scripts/ci/verify-operator
-- sudo minikube start --memory=4096 --vm-driver=none --extra-config=apiserver.v=10
+- sudo minikube start --memory=4096 --vm-driver=none  --kubernetes-version="v1.15.0" --extra-config=apiserver.v=4
 - sudo chown -R $USER ${HOME}/.{mini,}kube
 - kubectl config use-context minikube
-- scripts/ci/install-olm-local
 
 jobs:
   include:
@@ -34,9 +33,9 @@ jobs:
     # the jaeger operator as an operator to test script correctness.
     - |-
       if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -q '\.yaml'; then \
-        OPERATORS_UPSTREAM="upstream-community-operators/jaeger:$(yq r --tojson upstream-community-operators/jaeger/jaeger.package.yaml "channels" \
+        OPERATORS_UPSTREAM="upstream-community-operators/aqua:$(yq r --tojson upstream-community-operators/aqua/aqua-operator.package.yaml "channels" \
         | jq ".[] | .currentCSV" | sort -V | tail -1 | sed -E 's/"[a-zA-Z\-]+\.?v?([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?)"/\1/')" \
-        docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="/upstream-community-operators/jaeger" CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
+        docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="/upstream-community-operators/aqua" CLEAN_MODE=FORCE INSTALL_MODE='' VERBOSE=1
       fi
     - docker pull quay.io/operator-framework/operator-testing
-    - eval $(scripts/ci/operators-env) && echo "${OP_PATH}" && docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="${OP_PATH}" CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
+    - eval $(scripts/ci/operators-env) && echo "${OP_PATH}" && docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="${OP_PATH}" CLEAN_MODE=FORCE INSTALL_MODE='' VERBOSE=1
