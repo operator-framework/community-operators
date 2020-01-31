@@ -1,0 +1,842 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: postgresoperator.v4.2.1
+  annotations:
+    certified: "false"
+    support: crunchydata.com
+    categories: Database
+    capabilities: Auto Pilot
+    description: Enterprise open source PostgreSQL-as-a-Service
+    createdAt: 2019-12-31 19:40Z
+    containerImage: crunchydata/postgres-operator:centos7-4.2.1
+    repository: https://github.com/CrunchyData/postgres-operator
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "crunchydata.com/v1",
+          "kind": "Pgcluster",
+          "metadata": {
+            "labels": {
+              "archive": "false"
+            },
+            "name": "example"
+          },
+          "spec": {
+            "PrimaryStorage": {
+              "accessmode": "ReadWriteOnce",
+              "size": "1G",
+              "storageclass": "standard",
+              "storagetype": "dynamic"
+            },
+            "ccpimage": "crunchy-postgres-ha",
+            "ccpimagetag": "centos7-12.1-4.2.1",
+            "clustername": "example",
+            "database": "example",
+            "exporterport": "9187",
+            "name": "example",
+            "pgbadgerport": "10000",
+            "port": "5432",
+            "primarysecretname": "example-primaryuser",
+            "rootsecretname": "example-postgresuser",
+            "userlabels": {
+              "archive": "false"
+            },
+            "usersecretname": "example-primaryuser"
+          }
+        },
+        {
+          "apiVersion": "crunchydata.com/v1",
+          "kind": "Pgreplica",
+          "metadata": {
+            "name": "example"
+          },
+          "spec": {},
+          "status": {}
+        },
+        {
+          "apiVersion": "crunchydata.com/v1",
+          "kind": "Pgpolicy",
+          "metadata": {
+            "name": "example"
+          },
+          "spec": {},
+          "status": {}
+        },
+        {
+          "apiVersion": "crunchydata.com/v1",
+          "kind": "Pgtask",
+          "metadata": {
+            "name": "example"
+          },
+          "spec": {}
+        },
+        {
+          "apiVersion": "crunchydata.com/v1",
+          "kind": "Pgbackup",
+          "metadata": {
+            "name": "example"
+          },
+          "spec": {},
+          "status": {}
+        }
+      ]
+spec:
+  displayName: Crunchy PostgreSQL for OpenShift
+  provider:
+    name: Crunchy Data
+  keywords:
+  - postgres
+  - postgresql
+  - database
+  - sql
+  - operator
+  - crunchy data
+  description: |-
+    Crunchy PostgreSQL for OpenShift lets you run your own production-grade PostgreSQL-as-a-Service on OpenShift!
+
+    Powered by the Crunchy [PostgreSQL Operator](https://github.com/CrunchyData/postgres-operator), Crunchy PostgreSQL
+    for OpenShift automates and simplifies deploying and managing open source PostgreSQL clusters on OpenShift by providing the
+    essential features you need to keep your PostgreSQL clusters up and running, including:
+
+    - **PostgreSQL Cluster Provisioning**: [Create, Scale, & Delete PostgreSQL clusters with ease][provisioning],
+    while fully customizing your Pods and PostgreSQL configuration!
+    - **High-Availability**: Safe, automated failover backed by a [distributed consensus based high-availability solution][high-availability].
+    Uses [Pod Anti-Affinity][anti-affinity] to help resiliency; you can configure how aggressive this can be!
+    Failed primaries automatically heal, allowing for faster recovery time. You can even create regularly scheduled
+    backups as well and set your backup retention policy
+    - **Disaster Recovery**: Backups and restores leverage the open source [pgBackRest][] utility
+    and [includes support for full, incremental, and differential backups as well as efficient delta restores][disaster-recovery].
+    Set how long you want your backups retained for. Works great with very large databases!
+    - **Monitoring**: Track the health of your PostgreSQL clusters using the open source [pgMonitor][] library.
+    - **Clone**: Create new clusters from your existing clusters with a simple [`pgo clone`][pgo-clone] command.
+    - **Full Customizability**: Crunchy PostgreSQL for OpenShift makes it easy to get your own PostgreSQL-as-a-Service up and running on
+    and lets make further enhancements to customize your deployments, including:
+      - Selecting different storage classes for your primary, replica, and backup storage
+      - Select your own container resources class for each PostgreSQL cluster deployment; differentiate between resources applied for primary and replica clusters!
+      - Use your own container image repository, including support `imagePullSecrets` and private repositories
+      - Bring your own trusted certificate authority (CA) for use with the Operator API server
+      - Override your PostgreSQL configuration for each cluster
+
+    and much more!
+
+    [anti-affinity]: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+    [disaster-recovery]: https://access.crunchydata.com/documentation/postgres-operator/latest/architecture/disaster-recovery/
+    [high-availability]: https://access.crunchydata.com/documentation/postgres-operator/latest/architecture/high-availability/
+    [pgo-clone]: https://access.crunchydata.com/documentation/postgres-operator/latest/pgo-client/reference/pgo_clone/
+    [provisioning]: https://access.crunchydata.com/documentation/postgres-operator/latest/architecture/provisioning/
+
+    [pgBackRest]: https://www.pgbackrest.org
+    [pgMonitor]: https://github.com/CrunchyData/pgmonitor
+
+    ## Before You Begin
+
+    There are several manual steps that the cluster administrator must perform prior to installing the operator. The
+    operator must be provided with an initial configuration to run in the cluster, as well as certificates and
+    credentials that need to be generated.
+
+    Start by cloning the operator repository locally.
+
+    ```
+    git clone -b v4.2.1 https://github.com/CrunchyData/postgres-operator.git
+    cd postgres-operator
+    ```
+
+    ### PostgreSQL Operator Configuration
+
+    Edit `conf/postgres-operator/pgo.yaml` to configure the operator deployment. Look over all of the options and make any
+    changes necessary for your environment.
+
+    #### Image
+
+    Update the `CCPImageTag` tag to configure the PostgreSQL image being used, updating for the version of PostgreSQL as needed.
+
+    ```
+    CCPImageTag:  centos7-12.1-4.2.1
+    ```
+
+    #### Storage
+
+    Configure the backend storage for the Persistent Volumes used by each PostgreSQL cluster. Depending on the type of persistent
+    storage you wish to make available, adjust the `StorageClass` as necessary. For example, to deploy on AWS using `gp2`, you
+    would set the following:
+
+    ```
+    storageos:
+      AccessMode:  ReadWriteOnce
+      Size:  1G
+      StorageType:  dynamic
+      StorageClass:  gp2
+      Fsgroup:  26
+    ```
+
+    Once the storage backend is defined, enable the new storage option as needed.
+
+    ```
+    PrimaryStorage: storageos
+    ReplicaStorage: storageos
+    BackrestStorage: storageos
+    ```
+
+    ### Certificates
+
+    You will need to either generate new TLS certificates or use existing certificates for the operator API.
+
+    You can generate new self-signed certificates using scripts in the operator repository.
+
+    ```
+    export PGOROOT=$(pwd)
+    cd $PGOROOT/deploy
+    $PGOROOT/deploy/gen-api-keys.sh
+    $PGOROOT/deploy/gen-sshd-keys.sh
+    cd $PGOROOT
+    ```
+
+    ### Configuration and Secrets
+
+    Once the configuration changes have been updated and certificates are in place, we can save the information to the cluster.
+
+    Create the pgo namespace if it does not exist already. This single namespace is where the operator should be deployed to. PostgreSQL clusters will also be deployed here.
+
+    ```
+    oc create namespace pgo
+    ```
+
+    Create the `pgo-backrest-repo-config` Secret that is used by the operator.
+
+    ```
+    oc create secret generic -n pgo pgo-backrest-repo-config \
+      --from-file=config=$PGOROOT/conf/pgo-backrest-repo/config \
+      --from-file=sshd_config=$PGOROOT/conf/pgo-backrest-repo/sshd_config \
+      --from-file=aws-s3-credentials.yaml=$PGOROOT/conf/pgo-backrest-repo/aws-s3-credentials.yaml \
+      --from-file=aws-s3-ca.crt=$PGOROOT/conf/pgo-backrest-repo/aws-s3-ca.crt
+    ```
+
+    Create the `pgo-auth-secret` Secret that is used by the operator.
+
+    ```
+    oc create secret generic -n pgo pgo-auth-secret \
+      --from-file=server.crt=$PGOROOT/conf/postgres-operator/server.crt \
+      --from-file=server.key=$PGOROOT/conf/postgres-operator/server.key
+    ```
+
+    Install the bootstrap credentials:
+
+    ```
+    $PGOROOT/deploy/install-bootstrap-creds.sh
+    ```
+
+    Install the security context constraint for OpenShift:
+
+    ```
+    oc create -f $PGOROOT/deploy/pgo-scc.yaml
+    ```
+
+    Remove existing credentials for pgo-apiserver TLS REST API, if they exist.
+
+    ```
+    oc delete secret -n pgo tls pgo.tls
+    ```
+
+    Create credentials for pgo-apiserver TLS REST API
+    ```
+    oc create secret -n pgo tls pgo.tls \
+      --key=$PGOROOT/conf/postgres-operator/server.key \
+      --cert=$PGOROOT/conf/postgres-operator/server.crt
+    ```
+
+    Create the `pgo-config` ConfigMap that is used by the operator.
+
+    ```
+    oc create configmap -n pgo pgo-config \
+      --from-file=$PGOROOT/conf/postgres-operator
+    ```
+
+    Once these resources are in place, the operator can be installed into the cluster.
+
+    ## After You Install
+
+    Once the operator is installed in the cluster, you will need to perform several steps to enable usage.
+
+    ### Service
+
+    ```
+    oc expose deployment -n pgo postgres-operator --type=LoadBalancer
+    ```
+
+    For the pgo client to communicate with the operator, it needs to know where to connect.
+    Export the service URL as `PGO_APISERVER_URL` in the shell.
+
+    ```
+    export PGO_APISERVER_URL=https://<url of exposed service>:8443
+    ```
+
+    ### Security
+
+    When postgres operator deploys, it creates a set of certificates the pgo client will need to communicate.
+
+    ### Client Certificates
+
+    Copy the client certificates from the apiserver to the local environment - we use /tmp for this example.
+
+    ```
+    oc cp <pgo-namespace>/<postgres-operator-pod>:/tmp/server.key /tmp/server.key -c apiserver
+    oc cp <pgo-namespace>/<postgres-operator-pod>:/tmp/server.crt /tmp/server.crt -c apiserver
+    ```
+
+    Configure the shell for the pgo command line to use the certificates
+
+    ```
+    export PGO_CA_CERT=/tmp/server.crt
+    export PGO_CLIENT_CERT=/tmp/server.crt
+    export PGO_CLIENT_KEY=/tmp/server.key
+    ```
+  version: 4.2.1
+  links:
+  - name: Crunchy Data
+    url: https://www.crunchydata.com/
+  - name: Documentation
+    url: https://access.crunchydata.com/documentation/postgres-operator/
+  maintainers:
+  - name: Crunchy Data
+    email: info@crunchydata.com
+  minKubeVersion: 1.11.0
+  replaces: postgresoperator.v4.2.0
+  maturity: stable
+  labels:
+    alm-owner-enterprise-app: postgres-operator
+    alm-status-descriptors: postgres-operator.v4.2.1
+  customresourcedefinitions:
+    owned:
+    - description: Represents a Postgres primary cluster member
+      displayName: Postgres Primary Cluster Member
+      kind: Pgcluster
+      name: pgclusters.crunchydata.com
+      resources:
+      - kind: Deployment
+        version: v1
+      - kind: ReplicaSet
+        version: v1
+      - kind: Pod
+        version: v1
+      - kind: Service
+        version: v1
+      specDescriptors:
+      - description: The Crunchy PostgreSQL image to use. Possible values are "crunchy-postgres-ha"
+          and "crunchy-postgres-gis-ha"
+        displayName: PostgreSQL Image
+        path: ccpimage
+        value: crunchy-postgres-ha
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The tag of the PostgreSQL image to use. Example is "centos7-12.1-4.2.1"
+        displayName: PostgreSQL Image Tag
+        path: ccpimagetag
+        value: centos7-12.1-4.2.1
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name that is assigned to this specific PostgreSQL cluster
+        displayName: PostgreSQL Cluster name
+        path: clustername
+        value: hippo
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name of the initial database to be created inside of the
+          PostgreSQL cluster, e.g. "hippo"
+        displayName: Initial PostgreSQL database name
+        path: database
+        value: hippo
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The port to use for the PostgreSQL metrics exporter used for
+          cluster monitoring, e.g. "9187"
+        displayName: PostgreSQL Monitor Port
+        path: exporterport
+        value: 9187
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: The name of the CRD entry. Should match the PostgreSQL Cluster
+          name
+        displayName: PostgreSQL CRD name
+        path: name
+        value: hippo
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The port to use for the pgBadger PostgreSQL query analysis service,
+          e.g. "10000"
+        displayName: pgBadger Port
+        path: pgbadgerport
+        value: 10000
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: The port to use for the PostgreSQL cluster, e.g. "5432"
+        displayName: PostgreSQL Port
+        path: port
+        value: 5432
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: The name of the Secret that contains the PostgreSQL superuser
+          credentials
+        displayName: PostgreSQL superuser credentials
+        path: rootsecretname
+        value: hippo-postgres-secret
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name of the Secret that contains the credentials used for
+          managing cluster instance authentication, e.g. connections for replicas
+        displayName: PostgreSQL support service credentials
+        path: primarysecretname
+        value: hippo-primaryuser-secret
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name of the Secret that contains the PostgreSQL user credentials
+          for logging into the PostgreSQL cluster
+        displayName: PostgreSQL user credentials
+        path: usersecretname
+        value: hippo-testuser-secret
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Attributes that help set the primary storage of a PostgreSQL
+          cluster
+        displayName: PostgreSQL Primary Storage
+        path: PrimaryStorage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:PrimaryStorage
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: Contains the name of the PostgreSQL cluster to associate with
+          this storage. Should match the Cluster name
+        displayName: PostgreSQL Primary Storage Name
+        path: PrimaryStorage.name
+        value: hippo
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:PrimaryStorage
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Contains the storage class used for the primary PostgreSQL instance
+          of the cluster
+        displayName: PostgreSQL Primary StorageClass
+        path: PrimaryStorage.storageclass
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:PrimaryStorage
+        - urn:alm:descriptor:io.kubernetes:StorageClass
+      - description: The access mode for the storage class, e.g. "ReadWriteOnce"
+        displayName: PostgreSQL Primary StorageClass Access Mode
+        path: PrimaryStorage.accessmode
+        value: ReadWriteOnce
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:PrimaryStorage
+        - urn:alm:descriptor:com.tectonic.ui:select:ReadWriteOnce
+        - urn:alm:descriptor:com.tectonic.ui:select:ReadWriteMany
+      - description: The size of the PVC that will store the data for the primary
+          PostgreSQL instance, e.g. "1G"
+        displayName: PostgreSQL Primary Data PVC Size
+        path: PrimaryStorage.size
+        value: 1G
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:PrimaryStorage
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Deprecated
+        displayName: Deprecated
+        path: status
+        value: ""
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: A set of labels that help the PostgreSQL Operator manage a PostgreSQL
+          cluster
+        displayName: User defined labels
+        path: userlabels
+        value: '{}'
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      statusDescriptors:
+      - description: Outputs a human readable message of the status of if the PostgreSQL
+          cluster initialization
+        displayName: Initialization Message
+        path: message
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: Outputs the state of if the PostgreSQL cluster was initialized
+        displayName: Initialization State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1
+    - description: Represents a Postgres replica cluster member
+      displayName: Postgres Replica Cluster Member
+      kind: Pgreplica
+      name: pgreplicas.crunchydata.com
+      resources:
+      - kind: Deployment
+        version: v1
+      - kind: ReplicaSet
+        version: v1
+      - kind: Pod
+        version: v1
+      - kind: Service
+        version: v1
+      specDescriptors:
+      - description: The desired number of member Pods for the deployment.
+        displayName: Size
+        path: size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      version: v1
+    - description: Represents a Postgres sql policy
+      displayName: Postgres SQL Policy
+      kind: Pgpolicy
+      name: pgpolicies.crunchydata.com
+      resources:
+      - kind: Pgpolicy
+        version: v1
+      specDescriptors:
+      - description: The pgpolicy name.
+        displayName: Name
+        path: name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The pgpolicy sql.
+        displayName: SQL
+        path: sql
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      version: v1
+    - description: Represents a Postgres workflow task
+      displayName: Postgres workflow task
+      kind: Pgtask
+      name: pgtasks.crunchydata.com
+      resources:
+      - kind: Pgtask
+        version: v1
+      specDescriptors:
+      - description: The pgtask name.
+        displayName: Name
+        path: name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The pgtask type.
+        displayName: TaskType
+        path: tasktype
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      statusDescriptors:
+      - description: Message
+        displayName: Message
+        path: message
+        x-descriptors:
+        - urn:alm:descriptor:text
+      - description: State
+        displayName: State
+        path: state
+        x-descriptors:
+        - urn:alm:descriptor:text
+      version: v1
+    - description: Represents a Postgres backup task
+      displayName: Postgres backup task
+      kind: Pgbackup
+      name: pgbackups.crunchydata.com
+      resources:
+      - kind: Pgbackup
+        version: v1
+      specDescriptors:
+      - description: The pgbackup name.
+        displayName: Name
+        path: name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The pgbackup status.
+        displayName: BackupStatus
+        path: backupstatus
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      version: v1
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: true
+  - type: MultiNamespace
+    supported: true
+  - type: AllNamespaces
+    supported: false
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: postgres-operator
+        rules:
+        - verbs:
+          - '*'
+          apiGroups:
+          - '*'
+          resources:
+          - namespaces
+          - serviceaccounts
+          - roles
+          - rolebindings
+        - verbs:
+          - list
+          - get
+          apiGroups:
+          - '*'
+          resources:
+          - nodes
+          - storageclasses
+      permissions:
+      - serviceAccountName: postgres-operator
+        rules:
+        - verbs:
+          - '*'
+          apiGroups:
+          - crunchydata.com
+          resources:
+          - pgclusters
+          - pgpolicies
+          - pgtasks
+          - pgbackups
+          - pgreplicas
+        - verbs:
+          - '*'
+          apiGroups:
+          - apps
+          resources:
+          - deployments
+        - verbs:
+          - '*'
+          apiGroups:
+          - ""
+          resources:
+          - secrets
+          - pods
+          - configmaps
+          - pods/exec
+          - pods/log
+          - services
+          - replicasets
+          - endpoints
+          - persistentvolumeclaims
+        - verbs:
+          - get
+          - list
+          apiGroups:
+          - ""
+          resources:
+          - nodes
+          - storageclasses
+        - verbs:
+          - '*'
+          apiGroups:
+          - batch
+          resources:
+          - jobs
+      deployments:
+      - name: postgres-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: postgres-operator
+              vendor: crunchydata
+          template:
+            metadata:
+              labels:
+                name: postgres-operator
+                vendor: crunchydata
+            spec:
+              serviceAccountName: postgres-operator
+              containers:
+              - name: apiserver
+                image: crunchydata/pgo-apiserver:centos7-4.2.1
+                imagePullPolicy: IfNotPresent
+                ports:
+                - containerPort: 8443
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8443
+                    scheme: HTTPS
+                  initialDelaySeconds: 15
+                  periodSeconds: 5
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8443
+                    scheme: HTTPS
+                  initialDelaySeconds: 15
+                  periodSeconds: 5
+                env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: PGO_INSTALLATION_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: PGO_OPERATOR_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: CRUNCHY_DEBUG
+                  value: "true"
+                - name: EVENT_ADDR
+                  value: localhost:4150
+                - name: PORT
+                  value: "8443"
+                - name: CCP_IMAGE_PREFIX
+                  value: crunchydata
+                - name: CCP_IMAGE_TAG
+                  value: centos7-12.1-4.2.1
+                - name: PGO_IMAGE_PREFIX
+                  value: crunchydata
+                - name: PGO_IMAGE_TAG
+                  value: centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST
+                  value: crunchydata/pgo-backrest:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST_REPO
+                  value: crunchydata/pgo-backrest-repo:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST_REPO_SYNC
+                  value: crunchydata/pgo-backrest-repo-sync:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST_RESTORE
+                  value: crunchydata/pgo-backrest-restore:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_CLIENT
+                  value: crunchydata/pgo-client:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_LOAD
+                  value: crunchydata/pgo-load:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_RMDATA
+                  value: crunchydata/pgo-rmdata:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_SQL_RUNNER
+                  value: crunchydata/pgo-sqlrunner:centos7-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_ADMIN
+                  value: crunchydata/crunchy-admin:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_BACKREST_RESTORE
+                  value: crunchydata/crunchy-backrest-restore:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_COLLECT
+                  value: crunchydata/crunchy-collect:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_GRAFANA
+                  value: crunchydata/crunchy-grafana:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGBADGER
+                  value: crunchydata/crunchy-pgbadger:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGBENCH
+                  value: crunchydata/crunchy-pgbench:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGBOUNCER
+                  value: crunchydata/crunchy-pgbouncer:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGDUMP
+                  value: crunchydata/crunchy-pgdump:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGRESTORE
+                  value: crunchydata/crunchy-pgrestore:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_POSTGRES_HA
+                  value: crunchydata/crunchy-postgres-ha:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_POSTGRES_GIS_HA
+                  value: crunchydata/crunchy-postgres-gis-ha:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PROMETHEUS
+                  value: crunchydata/crunchy-prometheus:centos7-12.1-4.2.1
+              - name: operator
+                image: crunchydata/postgres-operator:centos7-4.2.1
+                imagePullPolicy: IfNotPresent
+                env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: PGO_INSTALLATION_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: PGO_OPERATOR_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: CRUNCHY_DEBUG
+                  value: "true"
+                - name: EVENT_ADDR
+                  value: localhost:4150
+                - name: CCP_IMAGE_PREFIX
+                  value: crunchydata
+                - name: CCP_IMAGE_TAG
+                  value: centos7-12.1-4.2.1
+                - name: PGO_IMAGE_PREFIX
+                  value: crunchydata
+                - name: PGO_IMAGE_TAG
+                  value: centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST
+                  value: crunchydata/pgo-backrest:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST_REPO
+                  value: crunchydata/pgo-backrest-repo:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST_REPO_SYNC
+                  value: crunchydata/pgo-backrest-repo-sync:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_BACKREST_RESTORE
+                  value: crunchydata/pgo-backrest-restore:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_CLIENT
+                  value: crunchydata/pgo-client:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_LOAD
+                  value: crunchydata/pgo-load:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_RMDATA
+                  value: crunchydata/pgo-rmdata:centos7-4.2.1
+                - name: RELATED_IMAGE_PGO_SQL_RUNNER
+                  value: crunchydata/pgo-sqlrunner:centos7-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_ADMIN
+                  value: crunchydata/crunchy-admin:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_BACKREST_RESTORE
+                  value: crunchydata/crunchy-backrest-restore:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_COLLECT
+                  value: crunchydata/crunchy-collect:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_GRAFANA
+                  value: crunchydata/crunchy-grafana:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGBADGER
+                  value: crunchydata/crunchy-pgbadger:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGBENCH
+                  value: crunchydata/crunchy-pgbench:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGBOUNCER
+                  value: crunchydata/crunchy-pgbouncer:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGDUMP
+                  value: crunchydata/crunchy-pgdump:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PGRESTORE
+                  value: crunchydata/crunchy-pgrestore:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_POSTGRES_HA
+                  value: crunchydata/crunchy-postgres-ha:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_POSTGRES_GIS_HA
+                  value: crunchydata/crunchy-postgres-gis-ha:centos7-12.1-4.2.1
+                - name: RELATED_IMAGE_CRUNCHY_PROMETHEUS
+                  value: crunchydata/crunchy-prometheus:centos7-12.1-4.2.1
+              - name: scheduler
+                image: crunchydata/pgo-scheduler:centos7-4.2.1
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  exec:
+                    command:
+                    - bash
+                    - -c
+                    - test -n "$(find /tmp/scheduler.hb -newermt '61 sec ago')"
+                    failureThreshold: 2
+                    initialDelaySeconds: 60
+                    periodSeconds: 60
+                env:
+                - name: PGO_INSTALLATION_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: PGO_OPERATOR_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: CRUNCHY_DEBUG
+                  value: "true"
+                - name: EVENT_ADDR
+                  value: localhost:4150
+                - name: TIMEOUT
+                  value: "3600"
+              - name: event
+                image: crunchydata/pgo-event:centos7-4.2.1
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  httpGet:
+                    path: /ping
+                    port: 4151
+                  initialDelaySeconds: 15
+                  periodSeconds: 5
+                env:
+                - name: TIMEOUT
+                  value: "3600"
+  icon:
+  - mediatype: image/png
+    base64data: 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
