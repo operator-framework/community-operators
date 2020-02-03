@@ -227,7 +227,7 @@ metadata:
   namespace: marketplace
 spec:
   channel: <channel-name>
-  name: my-operator
+  name: my-operator-package-name
   source: johndoe-operators
   sourceNamespace: marketplace
 ```
