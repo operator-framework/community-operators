@@ -1,0 +1,295 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "wavefront.com/v1alpha1",
+          "kind": "WavefrontProxy",
+          "metadata": {
+            "name": "wavefront-proxy",
+            "namespace": "wavefront"
+          },
+          "spec": {
+            "token": "\u003cTOKEN\u003e",
+            "url": "\u003chttps://YOUR_CLUSTER.wavefront.com/api/\u003e",
+            "image": "wavefronthq/proxy:5.7",
+            "enableAutoUpgrade": true
+          }
+        },
+        {
+          "apiVersion": "wavefront.com/v1alpha1",
+          "kind": "WavefrontCollector",
+          "metadata": {
+            "name": "wavefront-collector",
+            "namespace": "wavefront"
+          },
+          "spec": {
+            "daemon": true,
+            "enableAutoUpgrade": true, 
+            "env": [
+              {
+                "name": "HOST_PROC",
+                "value": "/host/proc"
+              },
+              {
+                "name": "POD_NODE_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "spec.nodeName"
+                  }
+                }
+              },
+              {
+                "name": "POD_NAMESPACE_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              }
+            ],
+            "image": "wavefronthq/wavefront-kubernetes-collector:1.0.3",
+            "tolerations": [
+              {
+                "effect": "NoSchedule",
+                "key": "node.alpha.kubernetes.io/role",
+                "operator": "Exists"
+              },
+              {
+                "effect": "NoSchedule",
+                "key": "node-role.kubernetes.io/master",
+                "operator": "Exists"
+              }
+            ]
+          }
+        }
+      ]
+    capabilities: Seamless Upgrades
+    categories: "Monitoring"
+    description: The Wavefront Operator for Kubernetes supports deploying the Wavefront Collector and the Wavefront Proxy in Kubernetes.
+    containerImage: wavefronthq/wavefront-operator-for-kubernetes:0.1.0-rc2
+    createdAt: 2019-11-29T02:09:59Z
+    support: Wavefront by VMware
+    certified: "true"
+    repository: https://github.com/wavefrontHQ/wavefront-operator
+
+  name: wavefront-operator.v0.1.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: WavefrontProxy
+      description: The Wavefront Proxy is a light-weight Java application that can send your metrics, histograms, and trace data to Wavefront.
+      displayName: Wavefront Proxy
+      name: wavefrontproxies.wavefront.com
+      version: v1alpha1
+    - kind: WavefrontCollector
+      description: The Wavefront Collector for Kubernetes auto-discovers and enables monitoring of Kubernetes, infrastructure, and Kubernetes workloads by sending metrics to Wavefront.
+      displayName: Wavefront Collector
+      name: wavefrontcollectors.wavefront.com
+      version: v1alpha1
+  description: |
+     Wavefront Kubernetes Operator automatically deploys Wavefront Collector for Kubernetes and Wavefront Proxy, enabling developers and Kubernetes operators to get automated observability across the Kubernetes environment, including containerized applications, Kubernetes, and underlying infrastructure. 
+
+     This Operator deploys two Custom Resources Definitions:
+     
+     * **Wavefront Proxy:-** A Wavefront proxy ingests metrics and forwards them to the Wavefront service in a secure, fast, and reliable manner. After you install a proxy in your environment, it can handle thousands of simultaneous clients. Your data collection agents or custom code send data to the proxy, which consolidates points into configurable batches and sends the data to the Wavefront service.
+
+     * **Wavefront Collector:-**  With zero-configuration installation, the Wavefront Collector for Kubernetes auto-discovers and enables monitoring of Kubernetes, infrastructure, and Kubernetes workloads by sending full-stack - Kubernetes clusters, worker nodes, system, Kubernetes and Docker KPI, RED/USE of each layer and custom applications metrics to Wavefront.
+    
+     ### Prerequisite
+     
+     * A Wavefront API token is needed to configure Wavefront Proxy.  Refer [Generating an API Token] (https://docs.wavefront.com/users_account_managing.html#generating-an-api-token) for generating a token.
+     
+     ### Create Wavefront Proxy
+
+     * Download example Wavefront Proxy CR and update below configuration properties in the CR yaml and create Wavefront Proxy.
+
+          * `metadata.namespace` : Wavefront Operator namespace name.
+          * `spec.url`           : Wavefront cluster URL.
+          * `spec.token`         : Wavefront API token.
+
+       ```
+           curl -O https://raw.githubusercontent.com/wavefrontHQ/wavefront-operator/master/deploy/crds/wavefront_proxy_basic_cr.yaml 
+           kubectl create -f wavefront_proxy_basic_cr.yaml
+       ```  
+     
+     ### Create Wavefront Collector
+
+     * Download example Wavefront Collector CR with configMap and update below property in the CR yaml and create Wavefront Collector.
+
+          * `metadata.namespace` : Wavefront Operator namespace name.
+          * `clusterName`        : This is a unique name for the kubernetes cluster. All metrics in Wavefront will receive a `cluster` tag with this value.
+          * `sinks.proxyAddress` : The address for the Wavefront Proxy. The proxy can be anywhere network reachable including outside of the cluster.
+       
+       ```
+           curl -O https://raw.githubusercontent.com/wavefrontHQ/wavefront-operator/master/deploy/crds/wavefront_collector_bundle_cr.yaml
+           kubectl create -f wavefront_collector_bundle_cr.yaml
+       ```
+
+  icon:
+  - base64data: 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
+    mediatype: "image/png"
+  displayName: Wavefront Operator
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          - namespaces
+          - nodes
+          - nodes/stats
+          - pods
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - update
+          - create
+        - apiGroups:
+          - extensions
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+        - nonResourceURLs:
+          - /metrics
+          verbs:
+          - get
+        serviceAccountName: wavefront-collector
+      deployments:
+      - name: wavefront-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: wavefront-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: wavefront-operator
+            spec:
+              containers:
+              - command:
+                - wavefront-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: wavefront-operator
+                image: wavefronthq/wavefront-operator-for-kubernetes:0.1.0-rc2
+                imagePullPolicy: Always
+                name: wavefront-operator
+                resources: {}
+              serviceAccountName: wavefront-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - wavefront-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          verbs:
+          - get
+        - apiGroups:
+          - wavefront.com
+          resources:
+          - '*'
+          - wavefrontproxies
+          - wavefrontcollectors
+          verbs:
+          - '*'
+        serviceAccountName: wavefront-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  keywords: 
+  - monitoring
+  - wavefront
+  - wavefront collector
+  - wavefront proxy
+  maintainers:  
+  - email: support@wavefront.com
+    name: Wavefront by VMware
+  provider: 
+    name: VMware
+  links:
+  - name: Wavefront Operator
+    url: https://github.com/wavefrontHQ/wavefront-operator
+  version: 0.1.0
+
+

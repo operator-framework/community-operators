@@ -1,0 +1,151 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: virtualdatabases.teiid.io
+spec:
+  group: teiid.io
+  names:
+    kind: VirtualDatabase
+    listKind: VirtualDatabaseList
+    plural: virtualdatabases
+    shortNames:
+    - vdb
+    - vdbs
+    singular: virtualdatabase
+  scope: Namespaced
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  validation:
+    openAPIV3Schema:
+      required:
+        - spec
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        status:
+          type: object
+        spec:
+          type: object
+          required:
+            - build
+          properties:
+            runtime:
+              type: object
+              description: The name of the runtime used, defaults to springboot
+              properties:
+                type:
+                  type: string
+                  description: type of runtime
+                version:
+                  type: string
+                  description: version of the runtime
+            replicas:
+              type: integer
+              format: int32
+            exposeVia3scale:
+              type: boolean
+            build:
+              type: object
+              properties:
+                incremental:
+                  type: boolean
+                source:
+                  type: object
+                  properties:
+                    ddl:
+                      type: string
+                      description: Virtual database in DDL as string
+                    maven:
+                      type: string
+                      description: Virtual database in Maven in GAV
+                    dependencies:
+                      type: array
+                      minItems: 0
+                      description: Maven dependencies required for build
+                      items:
+                        type: string
+                        description: maven dependency in GAV format
+                    mavenRepositories:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    openapi:
+                      type: string
+                      description: OpenAPI document, that is implemented through Virtual database procedures
+                s2i:
+                  type: object
+                  properties:
+                    registry:
+                      type: string
+                      description: Registry where the s2i based build image is found for a Java based build. (like quay.io)
+                    imagePrefix:
+                      type: string
+                      description: Prefix for image name. (like fabric8)
+                    imageName:
+                      type: string
+                      description: Name of the s2i based image (s2i-java)
+                    tag:
+                      type: string
+                      description: tag of the image (latest)
+                env:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                    oneOf:
+                      - required:
+                          - value
+                      - required:
+                          - valueFrom
+                    properties:
+                      name:
+                        type: string
+                        description: Name of an environment variable
+                      value:
+                        type: string
+                        description: Value for that environment variable
+                      valueFrom:
+                        type: object
+                        description: Source for the environment variable's value              
+            env:
+              type: array
+              items:
+                type: object
+                required:
+                  - name
+                oneOf:
+                  - required:
+                      - value
+                  - required:
+                      - valueFrom
+                properties:
+                  name:
+                    type: string
+                    description: Name of an environment variable
+                  value:
+                    type: string
+                    description: Value for that environment variable
+                  valueFrom:
+                    type: object
+                    description: Source for the environment variable's value
+            resources:
+              type: object
+              properties:
+                limits:
+                  type: object
+                requests:
+                  type: object

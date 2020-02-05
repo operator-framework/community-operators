@@ -149,8 +149,8 @@ minikube start
 ### 2. Install OLM
 Install OLM into the cluster in the `olm` namespace:
 ```
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.13.0/crds.yaml
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.13.0/olm.yaml
 ```
 ### 3. Install the Operator Marketplace
 Install Operator Marketplace into the cluster in the `marketplace` namespace:
@@ -227,7 +227,7 @@ metadata:
   namespace: marketplace
 spec:
   channel: <channel-name>
-  name: my-operator
+  name: my-operator-package-name
   source: johndoe-operators
   sourceNamespace: marketplace
 ```

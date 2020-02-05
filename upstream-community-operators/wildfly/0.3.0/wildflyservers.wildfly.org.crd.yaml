@@ -1,0 +1,163 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: wildflyservers.wildfly.org
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.replicas
+    name: Replicas
+    type: integer
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: wildfly.org
+  names:
+    kind: WildFlyServer
+    listKind: WildFlyServerList
+    plural: wildflyservers
+    shortNames:
+    - wfly
+    singular: wildflyserver
+  scope: Namespaced
+  subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            applicationImage:
+              description: ApplicationImage is the name of the application image to
+                be deployed
+              type: string
+            configMaps:
+              description: ConfigMaps is a list of ConfigMaps in the same namespace
+                as the WildFlyServer object, which shall be mounted into the WildFlyServer
+                Pods. The ConfigMaps are mounted into /etc/configmaps/<configmap-name>.
+              items:
+                type: string
+              minItems: 1
+              type: array
+            disableHTTPRoute:
+              description: DisableHTTPRoute disables the creation a route to the HTTP
+                port of the application service (false if omitted)
+              type: boolean
+            env:
+              description: Env contains environment variables for the containers running
+                the WildFlyServer application
+              items:
+                type: object
+              minItems: 1
+              type: array
+            replicas:
+              description: Replicas is the desired number of replicas for the application
+              format: int32
+              minimum: 0
+              type: integer
+            secrets:
+              description: Secrets is a list of Secrets in the same namespace as the
+                WildFlyServer object, which shall be mounted into the WildFlyServer
+                Pods. The Secrets are mounted into /etc/secrets/<secret-name>.
+              items:
+                type: string
+              minItems: 1
+              type: array
+            serviceAccountName:
+              type: string
+            sessionAffinity:
+              description: SessionAffinity defines if connections from the same client
+                ip are passed to the same WildFlyServer instance/pod each time (false
+                if omitted)
+              type: boolean
+            standaloneConfigMap:
+              properties:
+                key:
+                  description: Key of the config map whose value is the standalone
+                    XML configuration file ("standalone.xml" if omitted)
+                  type: string
+                name:
+                  type: string
+              required:
+              - name
+              type: object
+            storage:
+              description: StorageSpec defines specific storage required for the server
+                own data directory. If omitted, an EmptyDir is used (that will not
+                persist data across pod restart).
+              properties:
+                emptyDir:
+                  type: object
+                volumeClaimTemplate:
+                  description: VolumeClaimTemplate defines the template to store WildFlyServer
+                    standalone data directory. The name of the template is derived
+                    from the WildFlyServer name.  The corresponding volume will be
+                    mounted in ReadWriteOnce access mode. This template should be
+                    used to specify specific Resources requirements in the template
+                    spec.
+                  type: object
+              type: object
+          required:
+          - applicationImage
+          - replicas
+          type: object
+        status:
+          properties:
+            hosts:
+              items:
+                type: string
+              type: array
+            pods:
+              items:
+                properties:
+                  name:
+                    type: string
+                  podIP:
+                    type: string
+                  state:
+                    description: Represent the state of the Pod, it is used especially
+                      during scale down.
+                    enum:
+                    - ACTIVE
+                    - SCALING_DOWN_RECOVERY_INVESTIGATION
+                    - SCALING_DOWN_RECOVERY_DIRTY
+                    - SCALING_DOWN_CLEAN
+                    type: string
+                required:
+                - name
+                - podIP
+                - state
+                type: object
+              type: array
+            replicas:
+              description: Replicas is the actual number of replicas for the application
+              format: int32
+              type: integer
+            scalingdownPods:
+              description: Represents the number of pods which are in scaledown process
+                what particular pod is scaling down can be verified by PodStatus  Read-only.
+              format: int32
+              type: integer
+          required:
+          - replicas
+          - scalingdownPods
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
