@@ -1,0 +1,156 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: embercsis.ember-csi.io
+  namespace: ember-csi
+spec:
+  group: ember-csi.io
+  names:
+    kind: EmberCSI
+    listKind: EmberCSIList
+    plural: embercsis
+    singular: embercsi
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: EmberCSI is the Schema for the embercsis API
+      properties:
+        spec:
+          description: EmberCSISpec defines the desired state of EmberCSI
+          properties:
+            config:
+              properties:
+                envVars:
+                  properties:
+                    CSI_MODE:
+                      type: string
+                    X_CSI_BACKEND_CONFIG:
+                      type: object
+                    X_CSI_EMBER_CONFIG:
+                      type: object
+                    X_CSI_PERSISTENCE_CONFIG:
+                      type: object
+                  required:
+                  - X_CSI_BACKEND_CONFIG
+                  - X_CSI_EMBER_CONFIG
+                  type: object
+                sysFiles:
+                  properties:
+                    key:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - key
+                  - name
+                  type: object
+              required:
+              - envVars
+              type: object
+            image:
+              type: string
+            nodeSelector:
+              additionalProperties:
+                type: string
+              anyOf:
+              - type: nullable
+              - type: object
+            tolerations:
+              anyOf:
+              - type: nullable
+              - type: array
+                items:
+                  description: The pod this Toleration is attached to tolerates any
+                    taint that matches the triple <key,value,effect> using the matching
+                    operator <operator>.
+                  properties:
+                    effect:
+                      description: Effect indicates the taint effect to match. Empty
+                        means match all taint effects. When specified, allowed values
+                        are NoSchedule, PreferNoSchedule and NoExecute.
+                      type: string
+                    key:
+                      description: Key is the taint key that the toleration applies
+                        to. Empty means match all taint keys. If the key is empty, operator
+                        must be Exists; this combination means to match all values and
+                        all keys.
+                      type: string
+                    operator:
+                      description: Operator represents a key's relationship to the value.
+                        Valid operators are Exists and Equal. Defaults to Equal. Exists
+                        is equivalent to wildcard for value, so that a pod can tolerate
+                        all taints of a particular category.
+                      type: string
+                    tolerationSeconds:
+                      description: TolerationSeconds represents the period of time the
+                        toleration (which must be of effect NoExecute, otherwise this
+                        field is ignored) tolerates the taint. By default, it is not
+                        set, which means tolerate the taint forever (do not evict).
+                        Zero and negative values will be treated as 0 (evict immediately)
+                        by the system.
+                      format: int64
+                      type: integer
+                    value:
+                      description: Value is the taint value the toleration matches to.
+                        If the operator is Exists, the value should be empty, otherwise
+                        just a regular string.
+                      type: string
+                  type: object
+            topologies:
+              anyOf:
+              - type: nullable
+              - type: array
+                items:
+                  properties:
+                    nodes:
+                      description: Node Hostname with its allowed topology
+                      items:
+                        description: A node selector requirement is a selector that
+                          contains values, a key, and an operator that relates the key
+                          and values.
+                        properties:
+                          key:
+                            description: The label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: Represents a key's relationship to a set of
+                              values. Valid operators are In, NotIn, Exists, DoesNotExist.
+                              Gt, and Lt.
+                            type: string
+                          values:
+                            description: An array of string values. If the operator
+                              is In or NotIn, the values array must be non-empty. If
+                              the operator is Exists or DoesNotExist, the values array
+                              must be empty. If the operator is Gt or Lt, the values
+                              array must have a single element, which will be interpreted
+                              as an integer. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - key
+                        - operator
+                        type: object
+                      type: array
+                    topology:
+                      additionalProperties:
+                        type: string
+                      description: Key-value pairs corresponding to the NodeName
+                      type: object
+                  type: object
+          type: object
+        status:
+          description: EmberCSIStatus defines the observed state of EmberCSI
+          properties:
+            version:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file'
+              type: string
+          required:
+          - version
+          type: object
+      type: object
+  version: v1alpha1
