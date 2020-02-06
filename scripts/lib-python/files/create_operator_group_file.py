@@ -43,7 +43,7 @@ def main(argv):
 
         if im['type'] == 'AllNamespaces' and im['supported'] and installmode == 'AllNamespaces':
             catalogsource = {
-                'apiVersion': 'operators.coreos.com/v1alpha2',
+                'apiVersion': 'operators.coreos.com/v1',
                 'kind': 'OperatorGroup',
                 'metadata': {
                     'name': "{}-og".format(op_name),
@@ -57,7 +57,7 @@ def main(argv):
 
         elif installmode != 'AllNamespaces':
             catalogsource = {
-                'apiVersion': 'operators.coreos.com/v1alpha2',
+                'apiVersion': 'operators.coreos.com/v1',
                 'kind': 'OperatorGroup',
                 'metadata': {
                     'name': "{}-og".format(op_name),
