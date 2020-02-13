@@ -1,0 +1,416 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    capabilities: Basic Install
+    categories: Chaos Engineering
+    containerImage: chaosbladeio/chaosblade-operator:0.5.1
+    createdAt: 2020-02-11T15:40:00Z
+    certified: "false"
+    support: chaosblade.io
+    repository: https://github.com/chaosblade-io/chaosblade-operator
+    description: A chaos engineering operator for cloud-native on Kubernetes environments.
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "chaosblade.io/v1alpha1",
+          "kind": "ChaosBlade",
+          "metadata": {
+            "name": "delay-pod-network-by-names"
+          },
+          "spec": {
+            "experiments": [
+              {
+                "scope": "pod",
+                "target": "network",
+                "action": "delay",
+                "desc": "delay pod network by names",
+                "matchers": [
+                  {
+                    "name": "names",
+                    "value": [
+                      "redis-slave-674d68586-jnf7f"
+                    ]
+                  },
+                  {
+                    "name": "namespace",
+                    "value": [
+                      "default"
+                    ]
+                  },
+                  {
+                    "name": "local-port",
+                    "value": [
+                      "6379"
+                    ]
+                  },
+                  {
+                    "name": "interface",
+                    "value": [
+                      "eth0"
+                    ]
+                  },
+                  {
+                    "name": "time",
+                    "value": [
+                      "3000"
+                    ]
+                  },
+                  {
+                    "name": "offset",
+                    "value": [
+                      "1000"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+  name: chaosblade-operator.v0.5.1
+  namespace: kube-system
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - description: Chaos engineering experiment definition
+        displayName: ChaosBlade
+        kind: ChaosBlade
+        name: chaosblades.chaosblade.io
+        version: v1alpha1
+  description: >
+    ## Introduction
+    Chaosblade Operator is a chaos experiments injection tool for cloud-native on kubernetes platform. By defining Kubernetes CRD to manage chaos experiments, each experiment has a very clear execution status. The tool has the characteristics of simple deployment, convenient execution, standardized implementation, and rich experiments. The chaos experimental model in chaosblade is well integrated with Kubernetes, which can realize the reuse of experiments such as basic resources, application services, and containers on the Kubernetes platform, which facilitates the expansion of resource experiments under Kubernetes, and can be executed uniformly through chaosblade cli tool.
+
+    ## Supported experiments (continuously adding ...)
+    The current experimental scenarios involve resources including Node, Pod, and Container. The specific supported experimental scenarios are as follows:
+    * Node:
+        * CPU: specify CPU usage
+        * Network: specify network card, port, IP, etc. packet delay, packet loss, packet blocking, packet duplication, packet re-ordering, packet corruption, etc.
+        * Process: specify process Hang, kill process, etc.
+        * Disk: specify the directory disk occupation, disk IO read and write load, etc.
+        * Memory: specify memory usage
+    * Pod:
+        * Network: specify network card, port, IP, etc. packet delay, packet loss, packet blocking, packet duplication, packet re-ordering, packet corruption, etc.
+        * Disk: specify the directory disk occupation, disk IO read and write load, etc.
+        * Memory: specify memory usage
+        * Pod: kill pod
+    * Container:
+        * CPU: specify CPU usage
+        * Network: specify network card, port, IP, etc. packet delay, packet loss, packet blocking, packet duplication, packet re-ordering, packet corruption, etc.
+        * Process: specify process Hang, kill process, etc.
+        * Disk: specify the directory disk occupation, disk IO read and write load, etc.
+        * Memory: specify memory usage
+        * Container: remove container
+
+    ## Install and uninstall
+    Chaosblade operator can be installed through kubectl or helm, the installation method is as follows:
+
+    Note: For the following `VERSION`, please use the latest version number instead
+
+    ### Helm v2
+    * Download the latest `chaosblade-operator-VERSION-v2.tgz` package at [Release](https://github.com/chaosblade-io/chaosblade-operator/releases)
+    * Install using `helm install --namespace kube-system --name chaosblade-operator chaosblade-operator-VERSION-v2.tgz`
+    * Use `kubectl get pod -l part-of=chaosblade -n kube-system` to check the installation status of the Pod. If both are running, the installation was successful
+    * Use the following command to uninstall, pay attention to the execution order:
+    ```shell script
+    kubectl delete crd chaosblades.chaosblade.io
+    helm del --purge chaosblade-operator
+    ```
+    ### Helm v3
+    * Download the latest `chaosblade-operator-VERSION-v3.tgz` package at [Release](https://github.com/chaosblade-io/chaosblade-operator/releases)
+    * Use `helm install chaosblade-operator chaosblade-operator-VERSION-v3.tgz --namespace kube-system` command to install
+    * Use `kubectl get pod -l part-of=chaosblade -n kube-system` to check the installation status of the Pod. If both are running, the installation was successful
+    * Use the following command to uninstall, pay attention to the execution order:
+    ```shell script
+    kubectl delete crd chaosblades.chaosblade.io
+    helm uninstall chaosblade-operator -n kube-system
+    ```
+    ### Kubectl
+    * Download the latest `chaosblade-operator-yaml-VERSION.tar.gz` package at [Release](https://github.com/chaosblade-io/chaosblade-operator/releases)
+    * After decompression, execute `kubectl apply -f chaosblade-operator-yaml-VERSION/` installation
+    * Use `kubectl get pod -l part-of=chaosblade -n kube-system` to check the installation status of the Pod. If both are running, the installation was successful
+    * Use the following command to uninstall, pay attention to the execution order:
+    ```shell script
+    kubectl delete crd chaosblades.chaosblade.io
+    kubectl delete -f chaosblade-operator-yaml-VERSION/
+    ```
+
+    ## How to use
+    You can run chaos experiments after installing the chaosblade operator. There are three ways to execute chaos experiments:
+    * By configuring yaml file, use kubectl to execute
+    * Executed using chaosblade cli tool
+    * Use Kubernetes API to execute by writing code
+
+    The following uses a specific case to illustrate the use of chaosblade-operator: simulate cn-hangzhou.192.168.0.205 node local port 40690 60% network packet loss.
+
+    ### By configuring the yaml file, use kubectl to execute
+    ```
+    apiVersion: chaosblade.io/v1alpha1
+    kind: ChaosBlade
+    metadata:
+      name: loss-node-network-by-names
+    spec:
+      experiments:
+        - scope: node
+          target: network
+          action: loss
+          desc: "node network loss"
+          matchers:
+            - name: names
+              value: ["cn-hangzhou.192.168.0.205"]
+            - name: percent
+              value: ["60"]
+            - name: interface
+              value: ["eth0"]
+            - name: local-port
+              value: ["40690"]
+    ```
+    Execute experiment：
+    ```
+    kubectl apply -f loss-node-network-by-names.yaml
+    ```
+    Query the experimental status, the returned information is as follows (spec and other contents are omitted):
+    ```
+    ~ » kubectl get blade loss-node-network-by-names -o json
+    {
+      "apiVersion": "chaosblade.io/v1alpha1",
+      "kind": "ChaosBlade",
+      "metadata": {
+        "creationTimestamp": "2019-11-04T09:56:36Z",
+        "finalizers": [
+          "finalizer.chaosblade.io"
+        ],
+        "generation": 1,
+        "name": "loss-node-network-by-names",
+        "resourceVersion": "9262302",
+        "selfLink": "/apis/chaosblade.io/v1alpha1/chaosblades/loss-node-network-by-names",
+        "uid": "63a926dd-fee9-11e9-b3be-00163e136d88"
+      },
+      "status": {
+        "expStatuses": [
+        {
+          "action": "loss",
+          "resStatuses": [
+          {
+            "id": "057acaa47ae69363",
+            "kind": "node",
+            "name": "cn-hangzhou.192.168.0.205",
+            "nodeName": "cn-hangzhou.192.168.0.205",
+            "state": "Success",
+            "success": true,
+            "uid": "e179b30d-df77-11e9-b3be-00163e136d88"
+          }
+          ],
+          "scope": "node",
+          "state": "Success",
+          "success": true,
+          "target": "network"
+        }
+        ],
+        "phase": "Running"
+      }
+    }
+    ```
+    From the above, you can clearly see the running status of the chaos experiment. Run the following command to stop the experiment:
+    ```
+    kubectl delete -f loss-node-network-by-names.yaml
+    ```
+    Or delete this blade resource directly:
+    ```
+    kubectl delete blade loss-node-network-by-names
+    ```
+    You can also edit the yaml file to update the content of the experiment and the chaosblade operator will complete the update of the experiment. See more examples: [Examples](https://github.com/chaosblade-io/chaosblade-operator/tree/master/examples)
+
+    ### Execute with chaosblade cli tool
+    ```
+    blade create k8s node-network loss --percent 60 --interface eth0 --local-port 40690 --names cn-hangzhou.192.168.0.205 --kubeconfig config
+    ```
+    If the execution fails, a detailed error message is returned; if the execution is successful, the experiment UID is returned:
+    ```
+    {"code":200,"success":true,"result":"e647064f5f20953c"}
+    ```
+    You can query the status of the experiment with the following command:
+    ```
+    blade query k8s create e647064f5f20953c --kubeconfig config
+
+    {
+      "code": 200,
+      "success": true,
+      "result": {
+        "uid": "e647064f5f20953c",
+        "success": true,
+        "error": "",
+        "statuses": [
+        {
+          "id": "fa471a6285ec45f5",
+          "uid": "e179b30d-df77-11e9-b3be-00163e136d88",
+          "name": "cn-hangzhou.192.168.0.205",
+          "state": "Success",
+          "kind": "node",
+          "success": true,
+          "nodeName": "cn-hangzhou.192.168.0.205"
+        }
+        ]
+      }
+    }
+    ```
+    Destroy experiment:
+    ```
+    blade destroy e647064f5f20953c
+    ```
+    In addition to the above two methods, you can also use the kubernetes client-go api for execution. For details, please refer to: [executor.go](https://github.com/chaosblade-io/chaosblade/blob/master/exec/kubernetes/executor.go) code implementation.
+
+    [Chinese documentation](https://chaosblade-io.gitbook.io/chaosblade-help-zh-cn/blade-create-k8s)
+
+    ## Questions & Suggestions
+    If you encounter problems during installation and use, or suggestions and new features, all projects (including other projects) can be submitted to [Github Issues](https://github.com/chaosblade-io/chaosblade/issues)
+
+    You can also contact us via:
+    * Dingding group: 23177705
+    * Gitter room: [chaosblade community](https://gitter.im/chaosblade-io/community)
+    * Email: chaosblade.io.01@gmail.com
+    * Twitter: [chaosblade.io](https://twitter.com/ChaosbladeI)
+
+    ## Contributions
+    We welcome every issue and PR. Even a punctuation mark, how to participate in the contribution please read the project contributing document, or contact us through the above method.
+
+    ## Open source license
+    Chaosblade-operator is licensed under the Apache 2.0 license.
+
+  displayName: Chaosblade Operator
+  icon:
+    - base64data: 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**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
+      mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - pods/exec
+                - services
+                - endpoints
+                - persistentvolumeclaims
+                - persistentvolumes
+                - events
+                - configmaps
+                - secrets
+                - namespaces
+                - nodes
+              verbs:
+                - '*'
+            - apiGroups:
+                - extensions
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - ingresses
+              verbs:
+                - '*'
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - '*'
+            - apiGroups:
+                - chaosblade.io
+              resources:
+                - chaosblades
+                - chaosblades/status
+              verbs:
+                - '*'
+          serviceAccountName: chaosblade
+      deployments:
+        - name: chaosblade-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: chaosblade-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: chaosblade-operator
+              spec:
+                containers:
+                  - args:
+                      - --blade-version=0.5.0
+                      - --image-repo=chaosbladeio/chaosblade-tool
+                      - --pull-policy=IfNotPresent
+                      - --namespace=kube-system
+                    command:
+                      - chaosblade-operator
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: chaosblade-operator
+                    image: chaosbladeio/chaosblade-operator:0.5.1
+                    imagePullPolicy: IfNotPresent
+                    name: chaosblade-operator
+                    resources: {}
+                serviceAccountName: chaosblade
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  keywords:
+    - chaosblade
+    - cloud native
+    - kubernetes
+    - open source
+    - chaos engineering
+  maturity: alpha
+  labels:
+    alm-owner-etcd: chaosblade-operator
+    operated-by: chaosblade-operator
+  selector:
+    matchLabels:
+      alm-owner-etcd: chaosblade-operator
+      operated-by: chaosblade-operator
+  links:
+    - name: ChaosBlade
+      url: https://github.com/chaosblade-io
+    - name: Chaosblade CLI
+      url: https://github.com/chaosblade-io/chaosblade
+    - name: Chaosblade for Basic Resource
+      url: https://github.com/chaosblade-io/chaosblade-exec-os
+    - name: Chaosblade for Docker
+      url: https://github.com/chaosblade-io/chaosblade-exec-docker
+    - name: Chaosblade for Java
+      url: https://github.com/chaosblade-io/chaosblade-exec-jvm
+    - name: Chaosblade for C++
+      url: https://github.com/chaosblade-io/chaosblade-exec-cplus
+    - name: Chaosblade for Kubernetes
+      url: https://github.com/chaosblade-io/chaosblade-operator
+    - name: Documentation(Chinese)
+      url: https://chaosblade-io.gitbook.io/chaosblade-help-zh-cn
+  maintainers:
+    - email: chaosblade.io.01@gmail.com
+      name: ChaosBlade Community
+  minKubeVersion: 1.12.0
+  provider:
+    name: Alibaba Cloud
+  version: 0.5.1
