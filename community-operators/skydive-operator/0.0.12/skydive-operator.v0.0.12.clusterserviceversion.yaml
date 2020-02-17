@@ -1,0 +1,432 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: skydive-operator.v0.0.12
+  namespace: placeholder
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "charts.helm.k8s.io/v1alpha1",
+          "kind": "NetflowCollector",
+          "metadata": {
+            "name": "netflow-collector"
+          },
+          "spec": {
+            "exporter": {
+              "enabled": true,
+              "store": {
+                "bucket": "default",
+                "objectPrefix": "default"
+              },
+              "write": {
+                "s3": {
+                  "use_api_key": false,
+                  "access_key": "admin",
+                  "secret_key": "admin1234",
+                  "api_key": "",
+                  "installLocalMinio": true,
+                  "endpoint": "http://localhost:9000",
+                  "region": "default"
+                }
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "charts.helm.k8s.io/v1alpha1",
+          "kind": "Skydive",
+          "metadata": {
+            "name": "skydive"
+          },
+          "spec": {
+            "agent": {
+              "topology": {
+                "probes": "ovsdb docker runc"
+              }
+            },
+            "analyzer": {
+              "topology": {
+                "fabric": "TOR1-\u003e*[Type=host]/eth0"
+              }
+            },
+            "arch": {
+              "amd64": "2 - No preference",
+              "ppc64le": "2 - No preference",
+              "s390x": "2 - No preference"
+            },
+            "dataVolume": {
+              "existingClaimName": "",
+              "name": "datavolume",
+              "size": "10Gi",
+              "storageClassName": ""
+            },
+            "elasticsearch": {
+              "image": {
+                "repository": "elastic/elasticsearch",
+                "tag": "5.5.1"
+              }
+            },
+            "env": [],
+            "etcd": {
+              "port": 12379
+            },
+            "exporter": {
+              "enabled": false,
+              "env": [
+                {
+                  "name": "SKYDIVE_LOGGING_LEVEL",
+                  "value": "INFO"
+                },
+                {
+                  "name": "SKYDIVE_FLOW_UPDATE",
+                  "value": "30"
+                },
+                {
+                  "name": "SKYDIVE_ANALYZER_STARTUP_CAPTURE_GREMLIN",
+                  "value": "G.V().has('Name', NE('lo'))"
+                },
+                {
+                  "name": "SKYDIVE_ANALYZER_STARTUP_CAPTURE_BPF",
+                  "value": "not (tcp dst port 8082)"
+                },
+                {
+                  "name": "SKYDIVE_FLOW_DEFAULT_LAYER_KEY_MODE",
+                  "value": "L3"
+                },
+                {
+                  "name": "SKYDIVE_ANALYZER_STARTUP_CAPTURE_TYPE",
+                  "value": "pcap"
+                },
+                {
+                  "name": "SKYDIVE_AGENT_CAPTURE_SYN",
+                  "value": "True"
+                }
+              ],
+              "env_exporter": [
+                {
+                  "name": "SKYDIVE_PIPELINE_STORE_BUFFERED_MAX_FLOWS_PER_OBJECT",
+                  "value": "60000"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_STORE_BUFFERED_MAX_SECONDS_PER_OBJECT",
+                  "value": "60"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_STORE_BUFFERED_MAX_FLOW_ARRAY_SIZE",
+                  "value": "100000"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_STORE_BUFFERED_MAX_SECONDS_PER_STREAM",
+                  "value": "86400"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_CLASSIFY_TYPE",
+                  "value": "subnet_autodiscovery"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_CLASSIFY_CLUSTER_NET_MASKS",
+                  "value": "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_MANGLE_TYPE",
+                  "value": "none"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_FILTER_EXCLUDED_TAGS",
+                  "value": "other"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_ENCODE_TYPE",
+                  "value": "secadvisor"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_COMPRESS_TYPE",
+                  "value": "gzip"
+                }
+              ],
+              "image": {
+                "repository": "quay.io/sacloud/skydive-exporter",
+                "tag": 5
+              },
+              "store": {
+                "bucket": "default",
+                "buffered": {
+                  "max_flows_per_object": 60000
+                },
+                "objectPrefix": "default"
+              },
+              "write": {
+                "s3": {
+                  "use_api_key": false,
+                  "access_key": "admin",
+                  "secret_key": "admin1234",
+                  "api_key": "",
+                  "iam_endpoint": "https://iam.cloud.ibm.com/identity/token",
+                  "installLocalMinio": true,
+                  "endpoint": "http://localhost:9000",
+                  "region": "default"
+                }
+              }
+            },
+            "image": {
+              "imagePullPolicy": "IfNotPresent",
+              "repository": "skydive/skydive",
+              "secretName": "",
+              "tag": "0.24.0"
+            },
+            "nameOverride": "skydive",
+            "persistence": {
+              "enabled": false,
+              "useDynamicProvisioning": false
+            },
+            "resources": {
+              "limits": {
+                "cpu": "2000m",
+                "memory": "8192Mi"
+              },
+              "requests": {
+                "cpu": "100m",
+                "memory": "512Mi"
+              }
+            },
+            "service": {
+              "name": "skydive",
+              "port": 8082,
+              "type": "NodePort"
+            },
+            "storage": {
+              "elasticsearch": {
+                "host": "127.0.0.1",
+                "port": 9200
+              },
+              "flows": {
+                "indexEntriesLimit": 10000,
+                "indicesToKeep": 10
+              },
+              "topology": {
+                "indexEntriesLimit": 10000,
+                "indicesToKeep": 10
+              }
+            }
+          }
+        }
+      ]
+    categories: 'Security, Networking, Monitoring'
+    certified: 'false'
+    createdAt: 'Jan 14, 2020 11:40 am'
+    description: >-
+      Skydive is an open source real-time network topology and protocols
+      analyzer, that can be used also as a netflow collector.
+    containerImage: 'quay.io/sacloud/skydive-op:v0.0.7'
+    support: 'Skydive Community'
+    capabilities: Basic Install
+    repository: 'https://github.com/skydive-project/skydive-operator'
+spec:
+  displayName: skydive-operator
+  description: |
+    Skydive is an open source real-time network topology and protocols analyzer. It aims to provide a comprehensive way of understanding what is happening in the network infrastructure. It can be used as netflow collector.
+  maturity: beta
+  version: 0.0.12
+  replaces: skydive-operator.v0.0.1
+  minKubeVersion: '1.10.0'
+  keywords: []
+  maintainers:
+    - name: 'Skydive Community'
+      email: 'jenny.lerner@il.ibm.com'
+  provider:
+    name: 'Skydive Community'
+  labels: {}
+  selector:
+    matchLabels: {}
+  links:
+    - name: skyDive
+      url: 'https://github.com/skydive-project/skydive'
+  icon:
+    - base64data: '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'
+      mediatype: 'image/png'
+  customresourcedefinitions:
+    owned:
+      - name: netflowcollectors.charts.helm.k8s.io
+        displayName: Skydive netflow collector
+        kind: NetflowCollector
+        version: v1alpha1
+        description: Skydive netflow collector
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+        specDescriptors: []
+        statusDescriptors: []
+      - name: skydives.charts.helm.k8s.io
+        displayName: Skydive
+        kind: Skydive
+        version: v1alpha1
+        description: Skydive
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+        specDescriptors: []
+        statusDescriptors: []
+    required: []
+  install:
+    strategy: deployment
+    spec:
+      permissions: []
+      clusterPermissions:
+        - serviceAccountName: skydive-operator
+          rules:
+            - apiGroups:
+                - ''
+              resources:
+                - namespaces
+              verbs:
+                - get
+            - apiGroups:
+                - ''
+              resources:
+                - configmaps
+                - secrets
+              verbs:
+                - '*'
+            - apiGroups:
+                - networking.k8s.io
+              resources:
+                - networkpolicies
+              verbs:
+                - '*'
+            - apiGroups:
+                - ''
+              resources:
+                - configmaps
+                - pods
+                - secrets
+                - serviceaccounts
+                - services
+              verbs:
+                - '*'
+            - apiGroups:
+                - extensions
+              resources:
+                - daemonsets
+                - deployments
+                - ingresses
+                - podsecuritypolicies
+              verbs:
+                - '*'
+            - apiGroups:
+                - apps
+              resources:
+                - statefulsets
+                - deployments
+                - daemonsets
+              verbs:
+                - '*'
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - skydive-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+              verbs:
+                - get
+            - apiGroups:
+                - charts.helm.k8s.io
+              resources:
+                - '*'
+                - netflowcollectors
+              verbs:
+                - '*'
+            - apiGroups:
+                - policy
+              resources:
+                - podsecuritypolicies
+              verbs:
+                - '*'
+            - apiGroups:
+                - rbac.authorization.k8s.io
+                - roles.rbac.authorization.k8s.io
+                - authorization.k8s.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - batch
+              resources:
+                - jobs
+              verbs:
+                - '*'
+      deployments:
+        - name: skydive-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: skydive-operator
+            template:
+              metadata:
+                labels:
+                  name: skydive-operator
+              spec:
+                serviceAccountName: skydive-operator
+                containers:
+                  - name: skydive-operator
+                    image: 'quay.io/sacloud/skydive-op:v0.0.7'
+                    imagePullPolicy: Always
+                    env:
+                      - name: WATCH_NAMESPACE
+                        value: ''
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: skydive-operator
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: false
+    - type: AllNamespaces
+      supported: false
