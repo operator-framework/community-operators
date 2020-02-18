@@ -1,7 +1,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: skydive-operator.v0.0.1
+  name: skydive-operator.v0.0.12
   namespace: placeholder
   annotations:
     alm-examples: |-
@@ -30,10 +30,6 @@ metadata:
                   "region": "default"
                 }
               }
-            },
-            "image": {
-              "repository": "cognetive/skydive",
-              "tag": "2019.10.15___12.24"
             }
           }
         },
@@ -123,11 +119,35 @@ metadata:
                 {
                   "name": "SKYDIVE_PIPELINE_STORE_BUFFERED_MAX_SECONDS_PER_STREAM",
                   "value": "86400"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_CLASSIFY_TYPE",
+                  "value": "subnet_autodiscovery"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_CLASSIFY_CLUSTER_NET_MASKS",
+                  "value": "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_MANGLE_TYPE",
+                  "value": "none"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_FILTER_EXCLUDED_TAGS",
+                  "value": "other"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_ENCODE_TYPE",
+                  "value": "secadvisor"
+                },
+                {
+                  "name": "SKYDIVE_PIPELINE_COMPRESS_TYPE",
+                  "value": "gzip"
                 }
               ],
               "image": {
-                "repository": "docker.io/bluesecure/skydive-exporter",
-                "tag": 1
+                "repository": "quay.io/sacloud/skydive-exporter",
+                "tag": 5
               },
               "store": {
                 "bucket": "default",
@@ -138,10 +158,11 @@ metadata:
               },
               "write": {
                 "s3": {
-                  "use_api_key": true,
+                  "use_api_key": false,
                   "access_key": "admin",
                   "secret_key": "admin1234",
                   "api_key": "",
+                  "iam_endpoint": "https://iam.cloud.ibm.com/identity/token",
                   "installLocalMinio": true,
                   "endpoint": "http://localhost:9000",
                   "region": "default"
@@ -197,23 +218,24 @@ metadata:
     description: >-
       Skydive is an open source real-time network topology and protocols
       analyzer, that can be used also as a netflow collector.
-    containerImage: ''
-    support: ''
+    containerImage: 'quay.io/sacloud/skydive-op:v0.0.7'
+    support: 'Skydive Community'
     capabilities: Basic Install
-    repository: ''
+    repository: 'https://github.com/skydive-project/skydive-operator'
 spec:
   displayName: skydive-operator
   description: |
     Skydive is an open source real-time network topology and protocols analyzer. It aims to provide a comprehensive way of understanding what is happening in the network infrastructure. It can be used as netflow collector.
-  maturity: alpha
-  version: 0.0.1
-  minKubeVersion: ''
+  maturity: beta
+  version: 0.0.12
+  replaces: skydive-operator.v0.0.1
+  minKubeVersion: '1.10.0'
   keywords: []
   maintainers:
-    - name: 'IBM'
+    - name: 'Skydive Community'
       email: 'jenny.lerner@il.ibm.com'
   provider:
-    name: Skydive Community
+    name: 'Skydive Community'
   labels: {}
   selector:
     matchLabels: {}
@@ -249,7 +271,7 @@ spec:
         displayName: Skydive
         kind: Skydive
         version: v1alpha1
-        description: SkyDive
+        description: Skydive
         resources:
           - version: v1
             kind: Deployment
@@ -316,6 +338,7 @@ spec:
               resources:
                 - statefulsets
                 - deployments
+                - daemonsets
               verbs:
                 - '*'
             - apiGroups:
@@ -387,7 +410,7 @@ spec:
                 serviceAccountName: skydive-operator
                 containers:
                   - name: skydive-operator
-                    image: 'quay.io/sacloud/skydive-op:v0.0.2'
+                    image: 'quay.io/sacloud/skydive-op:v0.0.7'
                     imagePullPolicy: Always
                     env:
                       - name: WATCH_NAMESPACE
