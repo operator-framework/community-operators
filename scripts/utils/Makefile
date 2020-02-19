@@ -1,11 +1,10 @@
 .PHONY: help
-SDK_VER="v0.12.0"
+SDK_VER="v0.14.0"
 KUBE_VER="v1.14.0"
 MAKEFLAGS+ = --no-print-directory
 OP_PATH=''
 OP_CHANNEL=''
 NAMESPACE=''
-INSTALL_MODE=''
 OK=\033[0;32m
 WARN=\033[0;33m
 ERR=\033[0;31m
