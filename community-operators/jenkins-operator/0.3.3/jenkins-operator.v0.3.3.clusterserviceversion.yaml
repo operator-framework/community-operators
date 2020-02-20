@@ -28,6 +28,13 @@ metadata:
             "configurations":null,
             "secret":{"name":""}
           },
+          "roles":[
+            {
+              "apiGroup": "rbac.authorization.k8s.io",
+              "kind": "ClusterRole",
+              "name": "edit"
+            }
+          ],
           "master":{
             "basePlugins":[
               {"name":"kubernetes","version":"1.18.3"},
@@ -92,10 +99,10 @@ metadata:
     certified: "false"
     containerImage: quay.io/redhat-developer/openshift-jenkins-operator:latest
     description: >-
-      Kubernetes native operator which fully manages Jenkins on Kubernetes.
+      Kubernetes native operator which fully manages Jenkins on Openshift.
     repository: https://github.com/redhat-developer/jenkins-operator
     support: Red Hat
-  name: jenkins-operator.v0.3.0
+  name: jenkins-operator.v0.3.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -128,7 +135,8 @@ spec:
   description: |+
     ##What's the Jenkins Operator?
     
-    Jenkins operator is a Kubernetes native operator which fully manages Jenkins on Kubernetes. It was built with immutability and declarative configuration as code in mind.
+    Jenkins Operator is a Kubernetes native operator which fully manages Jenkins on Openshift. It was built with immutability and declarative configuration as code in mind.
+    It is meant to replace the Jenkins on Openshift Template as the primary source of deploying Jenkins on Openshift (https://github.com/openshift/jenkins) while also easing the Operational work necessary to manage the Jenkins Instance(s) on an Openshift Cluster.
 
 
     Out of the box it provides:
@@ -208,90 +216,87 @@ spec:
         - apiGroups:
           - ""
           resources:
-          - services
-          - configmaps
-          - secrets
+            - services
+            - configmaps
+            - secrets
+            - serviceaccounts
           verbs:
-          - get
-          - create
-          - update
-          - list
-          - watch
+            - get
+            - create
+            - update
+            - list
+            - watch
         - apiGroups:
-          - apps
+            - apps
           resources:
-          - deployments
-          - daemonsets
-          - replicasets
-          - statefulsets
+            - deployments
+            - daemonsets
+            - replicasets
+            - statefulsets
           verbs:
-          - '*'
+            - '*'
         - apiGroups:
-          - ""
+            - rbac.authorization.k8s.io
           resources:
-          - serviceaccounts
+            - roles
+            - rolebindings
           verbs:
-          - create
+            - create
+            - update
+            - list
+            - watch
         - apiGroups:
-          - rbac.authorization.k8s.io
+            - ""
           resources:
-          - roles
-          - rolebindings
+            - pods/portforward
           verbs:
-          - create
-          - update
+            - create
         - apiGroups:
-          - ""
+            - ""
           resources:
-          - pods/portforward
+            - pods/log
           verbs:
-          - create
+            - get
+            - list
+            - watch
         - apiGroups:
-          - ""
+            - ""
           resources:
-          - pods/log
+            - pods
+            - pods/exec
           verbs:
-          - get
-          - list
-          - watch
+            - "*"
         - apiGroups:
-          - ""
+            - ""
           resources:
-          - pods
-          - pods/exec
+            - events
           verbs:
-          - '*'
+            - watch
+            - list
+            - create
+            - patch
         - apiGroups:
-          - ""
-          resources:
-          - events
-          verbs:
-          - watch
-          - list
-          - create
-          - patch
-        - apiGroups:
-          - apps
+            - apps
           resourceNames:
-          - jenkins-operator
+            - jenkins-operator
           resources:
-          - deployments/finalizers
+            - deployments/finalizers
           verbs:
-          - update
+            - update
         - apiGroups:
-          - jenkins.io
+            - jenkins.io
           resources:
-          - '*'
+            - '*'
           verbs:
-          - '*'
+            - '*'
         - apiGroups:
-          - ""
+            - ""
           resources:
-          - persistentvolumeclaims
+            - persistentvolumeclaims
           verbs:
-          - get
-          - list
-          - watch
+            - get
+            - list
+            - watch
         serviceAccountName: jenkins-operator
     strategy: deployment
   installModes:
@@ -323,4 +328,4 @@ spec:
     name: Red Hat
   replaces: jenkins-operator.v0.2.2
   selector: {}
-  version: 0.3.0
+  version: 0.3.3
