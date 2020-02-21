@@ -1,0 +1,200 @@
+#! parse-kind: ClusterServiceVersion
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: kiosk-operator.v1.0.0
+  namespace: kiosk
+  annotations:
+    olm.skipRange: '>=0.0.0 <1.0.0'
+    capabilities: Seamless Upgrades
+    description: Run Kiosk Containers with noVNC
+    categories: 'OpenShift Optional'
+    containerImage: quay.io/jmontleon/kiosk-operator-container:latest
+    createdAt: 2020-02-19T20:29:00Z
+    repository: https://github.com/jmontleon/kiosk-operator
+    alm-examples: |-
+      [
+        {
+            "apiVersion": "kiosk.openshift.io/v1alpha1",
+            "kind": "Kiosk",
+            "metadata": {
+              "name": "fedora-xfce",
+              "namespace": "kiosk"
+            },
+            "spec": {
+              "additional_playbook_url": "",
+              "base_name": "fedora-xfce",
+              "count": 1,
+              "desktop": "Xfce",
+              "distribution": "fedora",
+              "distribution_release": "31",
+              "passwd": "password",
+              "persistent_home": false,
+              "persistent_home_delete_protection": true,
+              "persistent_home_size": "5Gi",
+              "resolution": "1024x768",
+              "shell": "bash"
+            }
+        }
+      ]
+    certified: "false"
+    support: Jason Montleon
+spec:
+  relatedImages:
+  - name: fedora-kiosk
+    image: quay.io/jmontleon/fedora-kiosk:31
+  - name: kiosk-client
+    image: quay.io/jmontleon/kiosk-client:latest
+  displayName: Kiosk Operator
+  description: |
+    The Kiosk Operator for OpenShift enables running Kiosk Containers
+  keywords: ['kiosk']
+
+  maintainers:
+  - name: Jason Montleon
+    email: jmontleo@redhat.com
+
+  provider:
+    name: Jason Montleon
+
+  links:
+  - name: Kiosk Operator
+    url: https://github.com/jmontleon/kiosk-operator
+
+  labels:
+    alm-status-descriptors: kiosk-operator.v1.0.0
+    alm-owner-prometheus: kiosk-operator
+
+  selector:
+    matchLabels:
+      alm-owner-prometheus: kiosk-operator
+
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: false
+
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+      - serviceAccountName: kiosk-operator
+        rules:
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - replicasets
+          verbs:
+          - '*'
+        - apiGroups:
+          - kiosk.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resourceNames:
+          - kiosk-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+      deployments:
+      - name: kiosk-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: kiosk-operator
+          template:
+            metadata:
+              labels:
+                app: kiosk-operator
+            spec:
+              serviceAccount: kiosk-operator
+              containers:
+              - name: ansible
+                image: quay.io/jmontleon/kiosk-operator-container:latest
+                command:
+                - /usr/local/bin/ao-logs
+                - /tmp/ansible-operator/runner
+                - stdout
+                imagePullPolicy: Always
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+                  readOnly: true
+              - name: operator
+                image: quay.io/jmontleon/kiosk-operator-container:latest
+                imagePullPolicy: Always
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+                env:
+                - name: OPERATOR_NAME
+                  value: kiosk-operator
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              volumes:
+              - name: runner
+                emptyDir: {}
+  maturity: alpha
+  version: 1.0.0
+  customresourcedefinitions:
+    owned:
+    - name: kiosks.kiosk.openshift.io
+      version: v1alpha1
+      kind: Kiosk
+      displayName: Kiosk
+      description: A Kiosk Deployment
+      resources:
+      - kind: Service
+        version: v1
+      - kind: Deployment
+        version: apps/v1
+      - kind: Route
+        version: route.openshift.io/v1
