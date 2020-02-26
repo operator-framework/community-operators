@@ -61,7 +61,13 @@ Considerations for on-cluster behavior
 
 * Operators should update according to semver and should be updated frequently.
 
-* Operators need to support updating managed applications (Operands) that were set up by an older version of the Operator. There are multiple models for this (_citation needed_).
+* Operators need to support updating managed applications (Operands) that were set up by an older version of the Operator. There are multiple models for this:
+
+  * **operator fan-out** - where the operator allows the user to specify the version in the custom resource.
+
+  * **single version** - where the operator is tied to the version of the operand.
+
+  * **hybrid approach** - where the operator is tied to a range of versions, and the user can select some level of the version.
 
 * An Operator should not deploy another Operator - an additional component on cluster should take care of this (OLM).
 
