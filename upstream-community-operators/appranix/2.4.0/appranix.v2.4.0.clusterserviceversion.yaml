@@ -1,0 +1,222 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: appranix.v2.4.0
+  namespace: placeholder
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "aps.appranix.com/v1",
+          "kind": "BackupStorageLocation",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {
+            "provider": "gcp",
+            "objectStorage": {
+              "bucket": "aps-bucket-store"
+            }
+          }
+        },
+        {
+          "apiVersion": "aps.appranix.com/v1",
+          "kind": "VolumeSnapshotLocation",
+          "metadata": {
+            "name": "gcp-default"
+          },
+          "spec": {
+            "provider": "gcp"
+          }
+        }
+      ]
+    capabilities: Seamless Upgrades
+    categories: Monitoring
+    certified: 'true'
+    containerImage: 'gcr.io/appranix-public-cr/dev/aps/apx-operator:2.4'
+    createdAt: 2020-02-10T13:27:50+05:30
+    support: Appranix
+    repository: https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/appranix
+    description: >-
+      The Appranix operator enables you to back up and restore your
+      Kubernetes/OpenShift cluster resources and persistent volumes.
+spec:
+  # apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - displayName: BackupStorageLocation
+        name: backupstoragelocations.aps.appranix.com
+        group: aps.appranix.com
+        kind: BackupStorageLocation
+        version: v1
+        description: >-
+          BackupStorageLocation represents a storage bucket in a supported cloud
+          provider.
+        specDescriptors:
+          - description: 'The bucket vendor can be gcp or aws. Default is gcp.'
+            displayName: Bucket Service Provider/Vendor
+            path: provider
+          - description: 'Name of bucket. Required to store all backed up cluster
+              manifests.'
+            displayName: Bucket name
+            path: objectStorage.bucket
+        statusDescriptors: []
+        resources:
+          - version: v1
+            kind: Deployment
+            name: An OpenShift/Kubernetes Deployment
+          - version: v1
+            kind: Service
+            name: An OpenShift/Kubernetes Service
+          - version: v1
+            kind: ReplicaSet
+            name: An OpenShift/Kubernetes ReplicaSet
+          - version: v1
+            kind: Pod
+            name: An OpenShift/Kubernetes Pod
+          - version: v1
+            kind: Secret
+            name: An OpenShift/Kubernetes Secret
+          - version: v1
+            kind: ConfigMap
+            name: An OpenShift ConfigMap
+      - displayName: VolumeSnapshotLocation
+        name: volumesnapshotlocations.aps.appranix.com
+        group: aps.appranix.com
+        kind: VolumeSnapshotLocation
+        version: v1
+        description: >-
+          VolumeSnapshotLocation is a location where Appranix stores volume
+          snapshots.
+        specDescriptors:
+          - description: 'The bucket vendor can be gcp or aws. Default is gcp.'
+            displayName: Bucket Service Provider/Vendor
+            path: provider
+        statusDescriptors: []
+        resources:
+          - version: v1
+            kind: Deployment
+            name: An OpenShift/Kubernetes Deployment
+          - version: v1
+            kind: Service
+            name: An OpenShift/Kubernetes Service
+          - version: v1
+            kind: ReplicaSet
+            name: An OpenShift/Kubernetes ReplicaSet
+          - version: v1
+            kind: Pod
+            name: An OpenShift/Kubernetes Pod
+          - version: v1
+            kind: Secret
+            name: An OpenShift/Kubernetes Secret
+          - version: v1
+            kind: ConfigMap
+            name: An OpenShift/Kubernetes ConfigMap
+    required: []
+  description: "## About this Operator\n\nAppranix helps you to securely backup and restore, perform a disaster\nrecovery and migrate Kubernetes/OpenShift cluster resources and persistent\nvolumes.\n\nThe operator works with Appranix to:\n\n- Install and initiate Appranix controller on your cluster\n\n- Take backups of your cluster and restore it in case of loss.\n\n- Migrate cluster resources to other clusters.\n\n- Replicate your production cluster to development and testing clusters.\n\n## Prerequisites\n\n- A storage bucket in GCP or AWS & credentials to access it\n- Appranix token generated for your cluster from the Appranix console\n- A Configmap and Secret in your cluster for the bucket config and credentials\n\n#### Step 1: Creating a storage bucket\n\nNote: Currently only Google Storage bucket is supported, support for AWS Elastic Bucket Store will be available in a future release.\n\n- You can create a bucket through the GCP console or by running the following command in [Google Cloud Shell](https://cloud.google.com/shell/)\n\n```shell\nAX_CPS_BUCKET_NAME=<bucket_name>\ngsutil mb -b on gs://$AX_CPS_BUCKET_NAME/\ngcloud iam service-accounts create appranix --display-name \"Appranix service account\"\nAX_SERVICE_ACCOUNT_EMAIL=$(gcloud iam service-accounts list --filter=\"displayName:Appranix service account\" --format 'value(email)')\ngsutil iam ch serviceAccount:$AX_SERVICE_ACCOUNT_EMAIL:objectAdmin gs://${AX_CPS_BUCKET_NAME}\ngcloud iam service-accounts keys create ax_service_account.json --iam-account $AX_SERVICE_ACCOUNT_EMAIL\n```\n\n\n#### Step 2: Obtaining the Appranix token for the cluster\n\n- Log in to your Appranix console and create a cluster. After the cluster creation copy the token generated for that cluster.\n\n#### Step 3: Creating the Configmap and Secret in the cluster\n\nA Configmap and Secret which contains the credetianls and bucket configuration has to be created before instaling the operator. It can be done by running the following command against your cluster.\n\nNote: Replace **token**, **bucket_name**, **bucket_provider** accordingly.\n\n\n```shell\nAX_TOKEN=<token>\nAX_CPS_BUCKET_NAME=<bucket_name>\nAX_CPS_BUCKET_PROVIDER=<bucket_provider>\nAX_SERVICE_ACCOUNT=$(cat ax_service_account.json | base64 -w 0)\n# Run only for a Kubernetes cluster\ncurl -Ls -H \"Content-Type: application/json\" https://us-central1-appranix-dev-07.cloudfunctions.net/gen-setup  -d '{\"token\": \"'$AX_TOKEN'\", \"bucket\": \"'$AX_CPS_BUCKET_NAME'\", \"cloud\": \"'$AX_CPS_BUCKET_PROVIDER'\", \"secret\": \"'$AX_SERVICE_ACCOUNT'\"}' | kubectl apply -f -\n# Run only for an OpenShift cluster\ncurl -Ls -H \"Content-Type: application/json\" https://us-central1-appranix-dev-07.cloudfunctions.net/gen-setup  -d '{\"token\": \"'$AX_TOKEN'\", \"bucket\": \"'$AX_CPS_BUCKET_NAME'\", \"cloud\": \"'$AX_CPS_BUCKET_PROVIDER'\", \"secret\": \"'$AX_SERVICE_ACCOUNT'\"}' | oc apply -f -\n```\n\n**After performing the above prerequisites you can proceed to install the Appranix Operator from OperatorHub**"
+  displayName: Appranix APS Operator
+  icon:
+    - mediatype: image/png
+      base64data: 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
+  version: 2.4.0
+  maturity: stable
+  replaces: ax-cps-operator.v2.3.0
+  minKubeVersion: ''
+  provider:
+    name: Appranix, Inc
+  maintainers:
+    - name: Appranix
+      email: support@appranix.com
+  links:
+    - name: Website
+      url: https://www.appranix.com/
+    - name: twitter
+      url: https://twitter.com/AppranixOne/
+    - name: LinkedIn
+      url: https://www.linkedin.com/company/appranix/
+    - name: GitHub Repository
+      url: https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/appranix
+  keywords:
+    - appranix
+    - container protection service
+    - application resilience service
+    - aps
+  labels: {}
+  selector:
+    matchLabels:
+      component: ax-cps-operator
+  install:
+    strategy: deployment
+    spec:
+      deployments:
+        - name: ax-cps-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: ax-cps-operator
+                component: ax-cps-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: ax-cps-operator
+                  component: ax-cps-operator
+              spec:
+                serviceAccountName: ax-cps-account
+                containers:
+                  - name: ax-ansible
+                    image: 'gcr.io/appranix-public-cr/dev/aps/apx-operator:2.4'
+                    imagePullPolicy: Always
+                    command:
+                      - /usr/local/bin/ao-logs
+                      - /tmp/ansible-operator/runner
+                      - stdout
+                    volumeMounts:
+                      - mountPath: /tmp/ansible-operator/runner
+                        name: runner
+                        readOnly: true
+                  - name: ax-operator
+                    image: 'gcr.io/appranix-public-cr/dev/aps/apx-operator:2.4'
+                    imagePullPolicy: Always
+                    volumeMounts:
+                      - mountPath: /tmp/ansible-operator/runner
+                        name: runner
+                    env:
+                      - name: WATCH_NAMESPACE
+                        value: ""
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: "ax-cps-operator"
+                      - name: ANSIBLE_GATHERING
+                        value: explicit
+                      - name: RELATED_IMAGE_PROTECTOR
+                        value: gcr.io/appranix-public-cr/dev/aps/apx-controller:2.4
+                volumes:
+                  - emptyDir: {}
+                    name: runner
+      clusterPermissions:
+        - serviceAccountName: ax-cps-account
+          rules:
+            - apiGroups:
+                - '*'
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - nonResourceURLs:
+                - '*'
+              verbs:
+                - '*'
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: false
+    - type: AllNamespaces
+      supported: false
