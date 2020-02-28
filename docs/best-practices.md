@@ -81,6 +81,8 @@ Considerations for on-cluster behavior
 
 ### Summary:
 
+An Operator...
+
 * Does not run as root
 
 * Does not self-register CRDs
