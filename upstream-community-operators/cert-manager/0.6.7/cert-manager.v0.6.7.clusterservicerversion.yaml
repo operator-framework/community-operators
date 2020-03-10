@@ -1,0 +1,421 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: 
+    capabilities: Basic Install
+    categories: Security
+    certified: 'false'
+    containerImage: quay.io/jetstack/cert-manager-controller:v0.13.0-142-a49c687e21857a
+    createdAt: 2019-05-02 16:12:00
+    description: cert-manager is a Kubernetes addon to automate the management and issuance of TLS certificates from various issuing sources.
+    repository: https://github.com/jetstack/cert-manager
+    support: Jetstack
+    app.kubernetes.io/helm-repo-name: jetstack
+    app.kubernetes.io/helm-repo-url: https://charts.jetstack.io
+    app.kubernetes.io/helm-chart: cert-manager
+    app.kubernetes.io/managed-by: helm
+  name: cert-manager.v0.6.7
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned: []
+    required:
+    - description: CertificateRequest is a type to represent a Certificate Signing.
+      displayName: CertificateRequest
+      kind: CertificateRequest
+      name: certificaterequests.cert-manager.io
+      version: v1alpha2
+    - description: Certificate is a type to represent a Certificate from ACME.
+      displayName: Certificate
+      kind: Certificate
+      name: certificates.cert-manager.io
+      version: v1alpha2
+    - description: Challenge is a type to represent a Challenge request with an ACME.
+      displayName: Challenge
+      kind: Challenge
+      name: challenges.cert-manager.io
+      version: v1alpha2
+    - description: ClusterIssuers is something.
+      displayName: ClusterIssuers
+      kind: ClusterIssuers
+      name: clusterissuers.cert-manager.io
+      version: v1alpha2
+    - description: Issuer is something.
+      displayName: Issuer
+      kind: Issuer
+      name: issuers.cert-manager.io
+      version: v1alpha2
+    - description: Order is a type to represent an Order with an ACME server
+      displayName: Order
+      kind: Order
+      name: orders.acme.cert-manager.io
+      version: v1alpha2
+  description: |-	
+    # cert-manager
+
+    > **This Helm chart is deprecated**.
+    > All future changes to the cert-manager Helm chart should be made in the
+    > [official repository](https://github.com/jetstack/cert-manager/tree/master/deploy).
+    > The latest version of the chart can be found on the [Helm Hub](https://hub.helm.sh/charts/jetstack/cert-manager).
+
+    cert-manager is a Kubernetes addon to automate the management and issuance of
+    TLS certificates from various issuing sources.
+
+    It will ensure certificates are valid and up to date periodically, and attempt
+    to renew certificates at an appropriate time before expiry.
+
+    ## Prerequisites
+
+    - Kubernetes 1.7+
+
+    ## Installing the Chart
+
+    Full installation instructions, including details on how to configure extra
+    functionality in cert-manager can be found in the [getting started docs](https://cert-manager.readthedocs.io/en/latest/getting-started/).
+
+    To install the chart with the release name `my-release`:
+
+    ```console
+    ## IMPORTANT: you MUST install the cert-manager CRDs **before** installing the
+    ## cert-manager Helm chart
+    $ kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml
+
+    ## IMPORTANT: if you are deploying into a namespace that **already exists**,
+    ## you MUST ensure the namespace has an additional label on it in order for
+    ## the deployment to succeed
+    $ kubectl label namespace <deployment-namespace> certmanager.k8s.io/disable-validation="true"
+
+    ## Install the cert-manager helm chart
+    $ helm install --name my-release stable/cert-manager
+    ```
+
+    In order to begin issuing certificates, you will need to set up a ClusterIssuer
+    or Issuer resource (for example, by creating a 'letsencrypt-staging' issuer).
+
+    More information on the different types of issuers and how to configure them
+    can be found in our documentation:
+
+    https://cert-manager.readthedocs.io/en/latest/reference/issuers.html
+
+    For information on how to configure cert-manager to automatically provision
+    Certificates for Ingress resources, take a look at the `ingress-shim`
+    documentation:
+
+    https://cert-manager.readthedocs.io/en/latest/reference/ingress-shim.html
+
+    > **Tip**: List all releases using `helm list`
+
+    ## Upgrading the Chart
+
+    Special considerations may be required when upgrading the Helm chart, and these
+    are documented in our full [upgrading guide](https://cert-manager.readthedocs.io/en/latest/admin/upgrading/index.html).
+    Please check here before perform upgrades!
+
+    ## Uninstalling the Chart
+
+    To uninstall/delete the `my-release` deployment:
+
+    ```console
+    $ helm delete my-release
+    ```
+
+    The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+    ## Configuration
+
+    The following table lists the configurable parameters of the cert-manager chart and their default values.
+
+    | Parameter | Description | Default |
+    | --------- | ----------- | ------- |
+    | `global.imagePullSecrets` | Reference to one or more secrets to be used when pulling images | `[]` |
+    | `image.repository` | Image repository | `quay.io/jetstack/cert-manager-controller` |
+    | `image.tag` | Image tag | `v0.6.2` |
+    | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
+    | `replicaCount`  | Number of cert-manager replicas  | `1` |
+    | `clusterResourceNamespace` | Override the namespace used to store DNS provider credentials etc. for ClusterIssuer resources | Same namespace as cert-manager pod
+    | `leaderElection.Namespace` | Override the namespace used to store the ConfigMap for leader election | Same namespace as cert-manager pod
+    | `extraArgs` | Optional flags for cert-manager | `[]` |
+    | `extraEnv` | Optional environment variables for cert-manager | `[]` |
+    | `rbac.create` | If `true`, create and use RBAC resources | `true` |
+    | `serviceAccount.create` | If `true`, create a new service account | `true` |
+    | `serviceAccount.name` | Service account to be used. If not set and `serviceAccount.create` is `true`, a name is generated using the fullname template |  |
+    | `resources` | CPU/memory resource requests/limits | |
+    | `securityContext.enabled` | Enable security context | `false` |
+    | `securityContext.fsGroup` | Group ID for the container | `1001` |
+    | `securityContext.runAsUser` | User ID for the container | `1001` |
+    | `nodeSelector` | Node labels for pod assignment | `{}` |
+    | `affinity` | Node affinity for pod assignment | `{}` |
+    | `tolerations` | Node tolerations for pod assignment | `[]` |
+    | `ingressShim.defaultIssuerName` | Optional default issuer to use for ingress resources |  |
+    | `ingressShim.defaultIssuerKind` | Optional default issuer kind to use for ingress resources |  |
+    | `ingressShim.defaultACMEChallengeType` | Optional default challenge type to use for ingresses using ACME issuers |  |
+    | `ingressShim.defaultACMEDNS01ChallengeProvider` | Optional default DNS01 challenge provider to use for ingresses using ACME issuers with DNS01 |  |
+    | `podAnnotations` | Annotations to add to the cert-manager pod | `{}` |
+    | `podDnsPolicy` | Optional cert-manager pod [DNS policy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pods-dns-policy) |  |
+    | `podDnsConfig` | Optional cert-manager pod [DNS configurations](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pods-dns-config) |  |
+    | `podLabels` | Labels to add to the cert-manager pod | `{}` |
+    | `priorityClassName`| Priority class name for cert-manager and webhook pods | `""` |
+    | `http_proxy` | Value of the `HTTP_PROXY` environment variable in the cert-manager pod | |
+    | `https_proxy` | Value of the `HTTPS_PROXY` environment variable in the cert-manager pod | |
+    | `no_proxy` | Value of the `NO_PROXY` environment variable in the cert-manager pod | |
+    | `webhook.enabled` | Toggles whether the validating webhook component should be installed | `true` |
+    | `webhook.replicaCount` | Number of cert-manager webhook replicas | `1` |
+    | `webhook.podAnnotations` | Annotations to add to the webhook pods | `{}` |
+    | `webhook.extraArgs` | Optional flags for cert-manager webhook component | `[]` |
+    | `webhook.resources` | CPU/memory resource requests/limits for the webhook pods | |
+    | `webhook.image.repository` | Webhook image repository | `quay.io/jetstack/cert-manager-webhook` |
+    | `webhook.image.tag` | Webhook image tag | `v0.6.2` |
+    | `webhook.image.pullPolicy` | Webhook image pull policy | `IfNotPresent` |
+    | `webhook.caSyncImage.repository` | CA sync image repository | `quay.io/munnerz/apiextensions-ca-helper` |
+    | `webhook.caSyncImage.tag` | CA sync image tag | `v0.1.0` |
+    | `webhook.caSyncImage.pullPolicy` | CA sync image pull policy | `IfNotPresent` |
+
+    Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
+
+    Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
+
+    ```console
+    $ helm install --name my-release -f values.yaml .
+    ```
+    > **Tip**: You can use the default [values.yaml](values.yaml)
+
+    ## Contributing
+
+    This chart is maintained at [github.com/jetstack/cert-manager](https://github.com/jetstack/cert-manager/tree/master/deploy/charts/cert-manager).
+
+  displayName: Cert Manager
+  icon:
+  - base64data: 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 
+    mediatype: image/png
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - cert-manager.io
+          resources:
+          - certificaterequests
+          - certificates
+          - challenges
+          - clusterissuers
+          - issuers
+          - orders
+          verbs:
+          - '*'
+        serviceAccountName: cert-manager
+      permissions:
+      - serviceAccountName: cert-manager-cainjector
+        rules:
+        - apiGroups: ["cert-manager.io"]
+          resources: ["certificates"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: [""]
+          resources: ["secrets"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: [""]
+          resources: ["events"]
+          verbs: ["get", "create", "update", "patch"]
+        - apiGroups: ["admissionregistration.k8s.io"]
+          resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
+          verbs: ["get", "list", "watch", "update"]
+        - apiGroups: ["apiregistration.k8s.io"]
+          resources: ["apiservices"]
+          verbs: ["get", "list", "watch", "update"]
+        - apiGroups: ["apiextensions.k8s.io"]
+          resources: ["customresourcedefinitions"]
+          verbs: ["get", "list", "watch", "update"]
+      - serviceAccountName: cert-manager
+        rules:
+        - apiGroups: [ "admin.enmasse.io" ]
+          resources: [ "addressplans", "addressspaceplans", "brokeredinfraconfigs", "standardinfraconfigs", "authenticationservices", "consoleservices"]
+          verbs: [ "get", "list", "watch" ]
+        - apiGroups: ["cert-manager.io"]
+          resources: ["issuers", "issuers/status"]
+          verbs: ["update"]
+        - apiGroups: ["cert-manager.io"]
+          resources: ["issuers"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: [""]
+          resources: ["secrets"]
+          verbs: ["get", "list", "watch", "create", "update", "delete"]
+        - apiGroups: [""]
+          resources: ["events"]
+          verbs: ["create", "patch"]
+      - serviceAccountName: cert-manager-webhook
+        rules:
+        - apiGroups:
+          - admission.cert-manager.io
+          resources:
+          - certificates
+          - certificaterequests
+          - issuers
+          - clusterissuers
+          verbs:
+          - create
+
+      deployments:
+      - name: cert-manager-cainjector
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: cainjector
+              app.kubernetes.io/name: cainjector
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/managed-by: Helm
+          template:
+            metadata:
+              labels:
+                app: cainjector
+                app.kubernetes.io/name: cainjector
+                app.kubernetes.io/instance: cert-manager
+                app.kubernetes.io/managed-by: Helm
+                helm.sh/chart: cert-manager-v0.13.0-142-a49c687e21857a
+              annotations:
+            spec:
+              serviceAccountName: cert-manager-cainjector
+              containers:
+                - name: cert-manager
+                  image: "quay.io/jetstack/cert-manager-cainjector:v0.13.0-142-a49c687e21857a"
+                  imagePullPolicy: IfNotPresent
+                  args:
+                  - --v=2
+                  - --leader-election-namespace=kube-system
+                  env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  resources:
+                    {}
+      - name: cert-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: cert-manager
+              app.kubernetes.io/name: cert-manager
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/managed-by: Helm
+          template:
+            metadata:
+              labels:
+                app: cert-manager
+                app.kubernetes.io/name: cert-manager
+                app.kubernetes.io/instance: cert-manager
+                app.kubernetes.io/managed-by: Helm
+                helm.sh/chart: cert-manager-v0.13.0-142-a49c687e21857a
+              annotations:
+                prometheus.io/path: "/metrics"
+                prometheus.io/scrape: 'true'
+                prometheus.io/port: '9402'
+            spec:
+              serviceAccountName: cert-manager
+              containers:
+                - name: cert-manager
+                  image: "quay.io/jetstack/cert-manager-controller:v0.13.0-142-a49c687e21857a"
+                  imagePullPolicy: IfNotPresent
+                  args:
+                  - --v=2
+                  - --cluster-resource-namespace=$(POD_NAMESPACE)
+                  - --leader-election-namespace=kube-system
+                  - --webhook-namespace=$(POD_NAMESPACE)
+                  - --webhook-ca-secret=cert-manager-webhook-ca
+                  - --webhook-serving-secret=cert-manager-webhook-tls
+                  - --webhook-dns-names=cert-manager-webhook,cert-manager-webhook.cert-manager,cert-manager-webhook.cert-manager.svc
+                  ports:
+                  - containerPort: 9402
+                    protocol: TCP
+                  env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  resources:
+                    {}
+      - name: cert-manager-webhook
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: webhook
+              app.kubernetes.io/name: webhook
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/managed-by: Helm
+          template:
+            metadata:
+              labels:
+                app: webhook
+                app.kubernetes.io/name: webhook
+                app.kubernetes.io/instance: cert-manager
+                app.kubernetes.io/managed-by: Helm
+                helm.sh/chart: cert-manager-v0.13.0-142-a49c687e21857a
+              annotations:
+            spec:
+              serviceAccountName: cert-manager-webhook
+              containers:
+                - name: cert-manager
+                  image: "quay.io/jetstack/cert-manager-webhook:v0.13.0-142-a49c687e21857a"
+                  imagePullPolicy: IfNotPresent
+                  args:
+                  - --v=2
+                  - --secure-port=10250
+                  - --tls-cert-file=/certs/tls.crt
+                  - --tls-private-key-file=/certs/tls.key
+                  livenessProbe:
+                    httpGet:
+                      path: /livez
+                      port: 6080
+                      scheme: HTTP
+                  readinessProbe:
+                    httpGet:
+                      path: /healthz
+                      port: 6080
+                      scheme: HTTP
+                  env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  resources:
+                    {}
+                  volumeMounts:
+                  - name: certs
+                    mountPath: /certs
+              volumes:
+              - name: certs
+                secret:
+                  secretName: cert-manager-webhook-tls
+
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - cert-manager
+  - kube-lego
+  - letsencrypt
+  - tls
+  labels:
+    alm-owner-cert-manager: cert-manager
+    alm-status-descriptors: cert-manager.v0.13.0
+  links:
+  - name: Cert Manager
+    url: https://github.com/jetstack/cert-manager
+  maintainers:
+  - name: munnerz
+    email: james@jetstack.io
+  maturity: alpha
+  provider:
+    name: Jetstack
+  selector:
+    matchLabels:
+      alm-owner-cert-manager: cert-manager
+  version: 0.6.7
