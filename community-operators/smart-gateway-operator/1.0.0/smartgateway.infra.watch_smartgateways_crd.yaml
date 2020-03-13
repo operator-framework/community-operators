@@ -10,11 +10,11 @@ spec:
     plural: smartgateways
     singular: smartgateway
   scope: Namespaced
-  version: v1alpha1
+  version: v2alpha1
   subresources:
     status: {}
   versions:
-  - name: v1alpha1
+  - name: v2alpha1
     served: true
     storage: true
   validation:
@@ -37,16 +37,32 @@ spec:
             size:
               description: Size sets the number of replicas to create. Defaults to 1.
               type: integer
-            AMQPUrl:
+            amqpUrl:
               description: AMQP1.x listener example 127.0.0.1:5672/collectd/telemetry. Defaults to using
                 'messaging-internal-<name>.<namespace>.src:5672/collectd/telemetry'.
               type: string
+            amqpDataSource:
+              description: The expected data source of the messages received from the address configured in amqpUrl. Available values include 'universal', 'collectd', and 'ceilometer'.
+              type: string
+            useBasicAuth:
+              description: Whether to use basic authentication or not when connecting to ElasticSearch. Default is 'false'
+              type: boolean
             elasticUrl:
               description: URL for ElasticSearch endpoing to connect when the Smart Gateway is operating as an 'events' service type.
-                Defaults to 'elasticsearch.<namespace>.svc:9200'.
+                Defaults to 'elasticsearch-es-http.<namespace>.svc:9200'.
               type: string
+            elasticUser:
+              description: Basic Authentication username for ElasticSearch.
+              type: string
+            elasticPass:
+              description: Basic Authentication password for ElasticSearch.
+              type: string
+            tlsSecretName:
+              description: Name of the Secret object that holds the TLS certificates and key for Elasticsearch.
+                Defaults to 'elasticsearch-es-cert'.
             resetIndex:
               description: Reset the ElasticSearch index on load. Defaults to 'false'.
+              type: boolean
             serviceType:
               description: The service type for this smart gateway. One of 'metrics' or 'events'. Defaults to 'metrics'.
               type: string
@@ -58,16 +74,13 @@ spec:
               type: integer
             cpuStats:
               description: Include CPU usage info in http requests (degrades performance). Defaults to 'false'.
-              type: string
+              type: boolean
             dataCount:
               description: Stop after receiving this many messages in total (-1 forever). Defaults to '-1'.
-              type: string
-            useSample:
-              description: Use sample data instead of AMQP .This will not fetch any data from AMQP. Defaults to 'false'.
-              type: string
+              type: integer
             debug:
               description: Enable verbose debugging statements. Defaults to 'false'.
-              type: string
+              type: boolean
             prefetch:
               description: Number of messages that we can prefetch from AMQP 1.x. By enabling prefetching, the smart gateway won't need to
                 request every message individually from the AMQP bus, resulting in a round trip for every request between sender and receiver.
@@ -76,6 +89,27 @@ spec:
               type: integer
             containerImagePath:
               description: Path to the container image this Operator will deploy. Value is defined as the standard registry/image_name:tag
-                format. Defaults to 'quay.io/redhat-service-assurance/smart-gateway:latest'
+                format.
               type: string
-
+            useTimestamp:
+              description: Use the source timestamp (time when data was collected) rather than let Prometheus write when the data was 
+                scraped for that metric.
+              type: boolean
+        status:
+          description: Status results of an instance of Smart Gateway
+          properties:
+            conditions:
+              description: The resulting conditions when a Smart Gateway is instantiated
+              items:
+                properties:
+                  status:
+                    type: string
+                  type:
+                    type: string
+                  reason:
+                    type: string
+                  lastTransitionTime:
+                    type: string
+                type: object
+              type: array
+          type: object

@@ -1,0 +1,294 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "smartgateway.infra.watch/v2alpha1",
+          "kind": "SmartGateway",
+          "metadata": {
+            "name": "cloud1-events"
+          },
+          "spec": {
+            "debug": false,
+            "prefetch": 0,
+            "resetIndex": false,
+            "serviceType": "events",
+            "size": 1
+          }
+        },
+        {
+          "apiVersion": "smartgateway.infra.watch/v2alpha1",
+          "kind": "SmartGateway",
+          "metadata": {
+            "name": "cloud1-metrics"
+          },
+          "spec": {
+            "debug": false,
+            "prefetch": 15000,
+            "serviceType": "metrics",
+            "size": 1,
+            "useTimestamp": true
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Monitoring
+    certified: "false"
+    containerImage: quay.io/infrawatch/smart-gateway-operator:v1.0.0
+    createdAt: "2019-11-14T14:49:00Z"
+    description: Operator for managing the Smart Gateway Custom Resources, resulting in deployments of the Smart Gateway.
+    repository: https://github.com/infrawatch/smart-gateway-operator
+    support: Red Hat (CloudOps)
+  name: smart-gateway-operator.v1.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Instance of the Smart Gateway
+      displayName: SmartGateway
+      kind: SmartGateway
+      name: smartgateways.smartgateway.infra.watch
+      resources:
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Deployments
+        name: ""
+        version: v1
+      - kind: ReplicaSets
+        name: ""
+        version: v1
+      - kind: Services
+        name: ""
+        version: v1
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: SmartGateways
+        name: ""
+        version: v2alpha1
+      specDescriptors:
+      - description: Number of Smart Gateways to deploy
+        displayName: Size
+        path: size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Location of the AMQP endpoint to connect the Smart Gateway to
+        displayName: AMQP URL
+        path: amqpUrl
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Container image path
+        displayName: Container image path
+        path: containerImagePath
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Number of messages that we can prefetch from AMQP 1.x. By enabling
+          prefetching, the smart gateway won't need to request every message individually
+          from the AMQP bus, resulting in a round trip for every request between sender
+          and receiver. To avoid the round trip for every message, the use of prefetch
+          can be used to allow the receiver to request messages be sent in anticipation
+          of them being sent to us.
+        displayName: Prefetch
+        path: prefetch
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: Use the source timestamp (time when data was collected) rather
+          than let Prometheus write when the data was scraped for that metric.
+        displayName: Use Timestamp
+        path: useTimestamp
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Smart Gateway Service Type
+        displayName: Service Type
+        path: serviceType
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:metrics
+        - urn:alm:descriptor:com.tectonic.ui:select:events
+      - description: Enable additional debugging information to console output
+        displayName: Enable debugging
+        path: debug
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:booleanSwitch
+      statusDescriptors:
+      - description: Conditions provided by deployment
+        displayName: Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+      version: v2alpha1
+  description: |-
+    The Smart Gateway is middleware for OpenShift that takes metrics and events
+    data streams from an AMQP 1.x message bus, and provides a method to having
+    that data stream stored within Prometheus or ElasticSearch.
+
+    ## Core capabilities
+
+    The Smart Gateway provides two modes:
+
+    * metrics: provides an HTTP scrape endpoint for Prometheus
+    * events: writes events directly to an ElasticSearch endpoint
+
+    ## Operator features
+
+    * **Two Service Types** - Supports the `metrics` and `events` service types which defines the type of Smart Gateway to be deployed
+
+    * **Configuration** - Configuration of the Smart Gateway to allow for it to be connected to an AMQP 1.x bus and pointed at the appropriate storage mechanism based on service type.
+
+    ## Before getting started
+
+    1. Ensure an AMQP 1.x bus has been setup (such as AMQ Interconnect)
+    2. If the Smart Gateway is running in events mode, be sure the ElasticSearch Operator and ElasticSearch instance have been pre-deployed.
+  displayName: Smart Gateway Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      deployments:
+      - name: smart-gateway-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: smart-gateway-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: smart-gateway-operator
+            spec:
+              containers:
+              - command:
+                - /usr/local/bin/ao-logs
+                - /tmp/ansible-operator/runner
+                - stdout
+                image: quay.io/infrawatch/smart-gateway-operator:v1.0.0
+                imagePullPolicy: Always
+                name: ansible
+                resources: {}
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+                  readOnly: true
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: smart-gateway-operator
+                - name: ANSIBLE_GATHERING
+                  value: explicit
+                - name: SMARTGATEWAY_IMAGE
+                  value: quay.io/infrawatch/smart-gateway:v2.0.0-beta1
+                image: quay.io/infrawatch/smart-gateway-operator:v1.0.0
+                imagePullPolicy: Always
+                name: operator
+                resources: {}
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+              serviceAccountName: smart-gateway-operator
+              volumes:
+              - emptyDir: {}
+                name: runner
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - extensions
+          resources:
+          - deployments
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - apps
+          resourceNames:
+          - smart-gateway-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - smartgateway.infra.watch
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: smart-gateway-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - servicetelemetry
+  - monitoring
+  - telemetry
+  - notifications
+  - smartgateway
+  labels:
+    name: smart-gateway-operator
+  links:
+  - name: Source Code
+    url: https://github.com/infrawatch/smart-gateway-operator
+  maintainers:
+  - email: support@redhat.com
+    name: Red Hat CloudOps DFG
+  maturity: alpha
+  provider:
+    name: Red Hat, Inc.
+  replaces: smart-gateway-operator.v0.2.0
+  selector:
+    matchLabels:
+      name: smart-gateway-operator
+  version: 1.0.0
