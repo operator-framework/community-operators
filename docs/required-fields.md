@@ -56,6 +56,7 @@ For the best user experience, choose from the following categories:
 | Application Runtime |
 | Big Data |
 | Cloud Provider |
+| Data Protection |
 | Database |
 | Developer Tools |
 | Integration & Delivery |
