@@ -1,0 +1,617 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: kubemq-operator.v0.4.0
+  namespace: placeholder
+  annotations:
+    alm-examples: |-
+      [{
+       	"apiVersion": "core.k8s.kubemq.io/v1alpha1",
+       	"kind": "KubemqCluster",
+       	"metadata": {
+       		"name": "kubemq-cluster",
+       		"labels": {
+       			"kubemq.cluster.name": "kubemq-cluster"
+       		}
+       	},
+       	"spec": {
+       		"replicas": 3
+       	}
+       },
+      {
+       "apiVersion": "core.k8s.kubemq.io/v1alpha1",
+       "kind": "KubemqDashboard",
+       "metadata": {
+       	 "name": "kubemq-dashboard",
+       		"labels": {
+       			"kubemq.cluster.name": "kubemq-cluster"
+       		}
+          },
+       "spec": {
+         "Port": 32000
+       	}
+      }]
+    categories: 'Streaming & Messaging'
+    certified: 'false'
+    createdAt: 2020-03-11T12:00:00.000Z
+    description: KubeMQ is Kubernetes Message Queue Broker
+    containerImage: 'docker.io/kubemq/kubemq-operator:latest'
+    support: support@kubemq.io
+    capabilities: Auto Pilot
+    repository: 'https://github.com/kubemq-io/kubemq-operator'
+spec:
+  apiservicedefinitions: {}
+  description: |-
+    ## What is KubeMQ?
+    Enterprise-grade message queue broker native for Kubernetes. Delivered in a production-ready cluster, and designed for any type of workload.
+    KubeMQ is provided as a small, lightweight Docker container, designed for any workload and architecture running in Kubernetes or any other container orchestration system which support Docker.
+
+    ## Main Features
+    - All-batteries included Messaging Broker for Kubernetes environment
+    - Blazing fast (written in Go), small and lightweight Docker container
+    - Asynchronous and Synchronous messaging with support for  `Exactly One Delivery`, `At Most Once Delivery` and `At Least Once Delivery` models
+    - Supports durable FIFO based Queue, Publish-Subscribe Events, Publish-Subscribe with Persistence (Events Store), RPC Command and Query messaging patterns
+    - Supports gRPC, Rest and WebSocket Transport protocols with TLS support (both RPC and Stream modes)
+    - Authentication and authorisation
+    - No Message broker configuration needed (i.e., queues, exchanges)
+    - Built-in Caching, Metrics, and Tracing
+    - .Net, Java, Python, Go and NodeJS SDKs
+
+    ## Messaging Patterns
+
+    ### Queues
+    KubeMQ supports distributed durable FIFO based queues with the following core features:
+
+    - **Exactly One Delivery** - Only one message guarantee will deliver to the subscriber
+    - **Single and Batch Messages Send and Receive** - Single and multiple messages in one call
+    - **Multicast and routing** - sending to multiple sources in one command
+    - **RPC and Stream Flows** - RPC flow allows an insert and pull messages in one call. Stream flow allows single message consuming in transactional way
+    - **Message Policy** - Each message can be configured with expiration and delay timers. In addition, each message can specify a dead-letter queue for un-processed messages attempts
+    - **Long Polling** - Consumers can wait until a message available in the queue to consume
+    - **Peak Messages** - Consumers can peek into a queue without removing them from the queue
+    - **Ack All Queue Messages** - Any client can mark all the messages in a queue as discarded and will not be available anymore to consume
+    - **Visibility timers** - Consumers can pull a message from the queue and set a timer which will cause the message not be visible to other consumers. This timer can be extended as needed.
+    - **Resend Messages** - Consumers can send back a message they pulled to a new queue or send a modified message to the same queue for further processing.
+
+    ### Pub/Sub
+
+    KubeMQ supports Publish-Subscribe (a.k.a Pub/Sub) messages patterns with the following core features:
+
+    - **Events** -  An asynchronous real-time Pub/Sub pattern.
+    - **Events Store** -An asynchronous Pub/Sub pattern with persistence.
+    - **Grouping** - Load balancing of events between subscribers
+    - **Multicast and routing** - sending to multiple sources in one command
+
+    ### RPC
+    KubeMQ supports CQRS based RPC flows with the following core features:
+
+    - **Commands** -  A synchronous two ways Command pattern for CQRS types of system architecture.
+    - **Query** - A synchronous two ways Query pattern for CQRS types of system architecture.
+    - **Response** - An answer for a Query type RPC call
+    - **Timeout** - Timeout interval is set for each RPC call. Once no response is received within the Timeout interval, RPC call return an error
+    - **Grouping** - Load balancing of RPC calls between receivers
+    - **Caching** - RPC response can be cached for future requests without the need to process again by a receiver
+
+    ## Interfaces
+    - **gRPC** - High performance RPC and streaming framework that can run in any environment, Open source and Cloud Native.
+    - **Rest** - Restful Api with WebSocket support for bi-directional streaming.
+
+    ## SDK
+    - **C#** - C# SDK based on gRPC
+    - **Java** - Java SDK based on gRPC
+    - **Go** - Go SDK based on gRPC
+    - **Python** - Python SDK based on gRPC
+    - **cURL** - cURL SDK based on Rest
+    - **Node** - Node SDK based on gRPC and Rest
+    - **PHP** - PHP SDK based on Rest
+    - **Ruby** - Ruby SDK based on Rest
+    - **jQuery** jQuery SDK based Rest
+
+    ## Observability
+    - **Metrics** - Metrics can be exported to variety of Backends
+
+    ## Configuration
+
+    | Spec               | Field                     | Type/Options                                                 | Description                                                         | Example              |
+    |:-------------------|:--------------------------|:-------------------------------------------------------------|:--------------------------------------------------------------------|:---------------------|
+    | **replicas**       |                           | int                                                          | Desired amount of pods in the cluster                               | 3                    |
+    | **configData**     |                           | yaml/toml                                                    | Load configuration file                                             |                      |
+    | **volume**         |                           |                                                              | **Setting for Persisted Volume**                                    |                      |
+    |                    | size                      | string                                                       | Desired size of Persisted Volume Claim                              | "30Gi"               |
+    | **license**        |                           |                                                              | **Setting for License**                                             |                      |
+    |                    | data                      | string                                                       | Set Licence data key                                                |                      |
+    |                    | token                     | string                                                       | Set License Token                                                   |                      |
+    | **image**          |                           |                                                              | **Setting for Image**                                               |                      |
+    |                    | image                     | string                                                       | Set kubemq server image                                             | docker.io/kubemq/kubemq-uni:latest|
+    |                    | pullPolicy                | Always/IfNotPresent/Never                                    | Set image pull policy                                               | Always               |
+    | **api**            |                           |                                                              | **Setting for Api interface**                                       |                      |
+    |                    | disable                   | bool                                                         | Disable Api interface                                               | false                |
+    |                    | expose                    | ClusterIP/NodePort/LoadBalancer                              | Desired service type                                                | ClusterIP (Default)  |
+    |                    | nodePort                  | int                                                          | Desired port number in NodePort expose type                         | 31000                |
+    | **grpc**           |                           |                                                              | **Setting for gRPC interface**                                      |                      |
+    |                    | disable                   | bool                                                         | Disable gRPC interface                                              |                      |
+    |                    | expose                    | ClusterIP/NodePort/LoadBalancer                              | Desired service type                                                | ClusterIP (Default)  |
+    |                    | nodePort                  | int                                                          | Desired port number in NodePort expose type                         | 31000                |
+    |                    | bufferSize                | int                                                          | set subscribe message / requests buffer size to use on server       | 100                  |
+    |                    | bodyLimit                 | int                                                          | Set Max size of payload in bytes                                    | 1,048,576 (1M bytes) |
+    | **rest**           |                           |                                                              | **Setting for rest interface**                                      |                      |
+    |                    | disable                   | bool                                                         | Disable rest interface                                              |                      |
+    |                    | expose                    | ClusterIP/NodePort/LoadBalancer                              | Desired service type                                                | ClusterIP (Default)  |
+    |                    | nodePort                  | int                                                          | Desired port number in NodePort expose type                         | 31000                |
+    |                    | bufferSize                | int                                                          | set subscribe message / requests buffer size to use on server       | 100                  |
+    |                    | bodyLimit                 | int                                                          | Set Max size of payload in bytes                                    | 1,048,576 (1M bytes) |
+    | **tls**            |                           |                                                              | **Setting for TLS**                                                 |                      |
+    |                    | cert                      | string                                                       | Set tls certification data                                          |                      |
+    |                    | key                       | string                                                       | Set tls private key data                                            |                      |
+    |                    | ca                        | string                                                       | Set tls certification authority  data                               |                      |
+    | **authentication** |                           |                                                              | **Setting for Authentication**                                      |                      |
+    |                    | key                       | string                                                       | Set JWT public key data                                             |                      |
+    |                    | type                      | string HS256/HS384/HS512/RS256/RS384/RS512/ES256/ES384/ES512 | Set JWT public key signing method                                   |                      |
+    | **authorization**  |                           |                                                              | **Setting for Authorization**                                       |                      |
+    |                    | policy                    | string                                                       | Set Authorization policy data                                       |                      |
+    |                    | url                       | string url                                                   | Set Optional authorization server url for policy data               |                      |
+    |                    | autoReload                | int                                                          | Set auto reload policy data from url                                |                      |
+    | **routing**        |                           |                                                              | **Setting for Routing**                                             |                      |
+    |                    | data                      | string                                                       | Set Routing data                                                    |                      |
+    |                    | url                       | string url                                                   | Set Optional routing server url for routing data                    |                      |
+    |                    | autoReload                | int                                                          | Set auto reload data from url                                       |                      |
+    | **store**          |                           |                                                              | **Setting for Store**                                               |                      |
+    |                    | clean                     | bool                                                         | Set clear persistence data on start-up                              | false                |
+    |                    | path                      | string                                                       | Set persistence file path                                           | ./store              |
+    |                    | maxChannels               | int                                                          | Set limit number of persistence channels                            | 0                    |
+    |                    | maxSubscribers            | int                                                          | Set limit of subscribers per channel                                | 0                    |
+    |                    | maxMessages               | int                                                          | Set limit of messages per channel                                   | 0                    |
+    |                    | maxChannelSize            | int                                                          | Set limit size of channel in bytes                                  | 0                    |
+    |                    | messagesRetentionMinutes  | int                                                          | Set message retention time in minutes                               | 1440                 |
+    |                    | purgeInactiveMinutes      | int                                                          | Set time in minutes of channel inactivity to delete                 | 1440                 |
+    | **queue**          |                           |                                                              | **Setting for Queue**                                               |                      |
+    |                    | maxReceiveMessagesRequest | int                                                          | Set max of sending / receiving batch of queue message               | 1024                 |
+    |                    | maxWaitTimeoutSeconds     | int                                                          | Set max expiration allowed for message                              | 3600                 |
+    |                    | maxExpirationSeconds      | int                                                          | Set max expiration allowed for message                              | 43200                |
+    |                    | maxDelaySeconds           | int                                                          | set max delay seconds allowed for message                           | 43200                |
+    |                    | maxReQueues               | int                                                          | Set max retires to receive message before discard                   | 1024                 |
+    |                    | maxVisibilitySeconds      | int                                                          | Set max time of hold received message before returning to queue     | 43200                |
+    |                    | defaultVisibilitySeconds  | int                                                          | Set default time of hold received message before returning to queue | 60                   |
+    |                    | defaultWaitTimeoutSeconds | int                                                          | Set default time to wait for a message in a queue                   | 1                    |
+    | **resource**       |                           |                                                              | **Setting for Resources**                                           |                      |
+    |                    | limitsCpu                 | string                                                       | Set Limits CPU                                                      | 500m                 |
+    |                    | limitsMemory              | string                                                       | Set Limits Memory                                                   | 2Gi                  |
+    |                    | requestsCpu               | string                                                       | Set Requests CPU                                                    | 1                    |
+    |                    | requestsMemory            | string                                                       | Set Requests Memory                                                 | 512M                 |
+    | **nodeSelector**   |                           |                                                              | **Setting for Node Selector**                                       |                      |
+    |                    | keys                      | key/value strings                                            | Set Key Value for node selector                                     |                      |
+    | **health**         |                           |                                                              | **Setting for health prob**                                         |                      |
+    |                    | enabled                   | bool                                                         | Set enable/disable health prob                                      |                      |
+    |                    | initialDelaySeconds       | int                                                          | Set Initial Delay Seconds                                           |                      |
+    |                    | periodSeconds             | int                                                          | Set Period Seconds Interval                                         |                      |
+    |                    | timeoutSeconds            | int                                                          | Set Timeout Seconds                                                 |                      |
+    |                    | successThreshold          | int                                                          | Set Success Threshold                                               |                      |
+    |                    | failureThreshold          | int                                                          | Set Failure Threshold                                               |                      |
+    | **log**            |                           |                                                              | **Setting for log**                                                 |                      |
+    |                    | level                     | int                                                          | Set log level, 1 - debug , 2 - info, 3 - warn, 4 - error, 5 - fatal | 2                    |
+    |                    | file                      | string                                                       | Set log file write path                                             | ./log                |
+  replaces: kubemq-operator.v0.3.1
+  version: 0.4.0
+  displayName: Kubemq Enterprise Operator
+  install:
+    spec:
+      deployments:
+        - name: kubemq-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: kubemq-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: kubemq-operator
+              spec:
+                containers:
+                  - command:
+                      - kubemq-operator
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: RELATED_IMAGE_KUBEMQ_CLUSTER
+                        value: docker.io/kubemq/kubemq-uni:latest
+                      - name: RELATED_IMAGE_PROMETHEUS
+                        value: prom/prometheus
+                      - name: RELATED_IMAGE_GRAFANA
+                        value: grafana/grafana:latest
+                      - name: KUBEMQ_VIEW_DASHBOARD_SOURCE
+                        value: https://raw.githubusercontent.com/kubemq-io/kubemq-dashboard/master/dashboard.json
+                      - name: OPERATOR_NAME
+                        value: kubemq-operator
+                    image: docker.io/kubemq/kubemq-operator:latest
+                    imagePullPolicy: Always
+                    name: kubemq-operator
+                    resources: {}
+                serviceAccountName: kubemq-operator
+      permissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - services
+                - services/finalizers
+                - endpoints
+                - persistentvolumeclaims
+                - events
+                - configmaps
+                - secrets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - kubemq-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+                - deployments
+              verbs:
+                - get
+            - apiGroups:
+                - core.k8s.kubemq.io
+              resources:
+                - '*'
+                - kubemqclusters
+                - kubemqdashboards
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - extensions
+              resources:
+                - ingresses
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - delete
+                - update
+            - apiGroups:
+                - extensions
+              resources:
+                - ingresses/status
+              verbs:
+                - update
+            - apiGroups:
+                - networking.k8s.io
+              resources:
+                - ingresses
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - delete
+                - update
+            - apiGroups:
+                - networking.k8s.io
+              resources:
+                - ingresses/status
+              verbs:
+                - update
+          serviceAccountName: kubemq-operator
+    strategy: deployment
+  crds:
+    owned:
+      - description: kubemqclusters.core.k8s.kubemq.io
+        name: Kubemq Cluster
+        resources:
+           - version: v1
+             kind: Deployment
+           - version: v1
+             kind: Service
+           - version: v1
+             kind: ReplicaSet
+           - version: v1
+             kind: Pod
+           - version: v1
+             kind: Secret
+           - version: v1
+             kind: ConfigMap
+           - version: v1
+             kind: Pod
+      - description: kubemqdashboards.core.k8s.kubemq.io
+        name: Kubemq Dashboard
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: ConfigMap
+          - version: v1
+            kind: Pod
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: true
+  maturity: alpha
+  minKubeVersion: ''
+  keywords:
+    - messaging
+    - queue
+    - broker
+    - pubsub
+    - rpc
+  maintainers:
+    - name: kubemq
+      email: support@kubemq.io
+  provider:
+    name: Kubemq.io
+  labels: {}
+  selector:
+    matchLabels: {}
+  links:
+    - name: Learn more about Kubemq
+      url: 'https://kubemq.io/'
+    - name: Register for free license
+      url: 'https://account.kubemq.io/login/register'
+    - name: Contact Sales
+      url: 'https://kubemq.io/contact-sales/'
+    - name: Documentation
+      url: 'https://docs.kubemq.io/'
+    - name: Get Help
+      url: 'https://kubemq.io/contact-support/'
+  icon:
+    - base64data: >-
+        PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjEuNjUgMTE1LjM2Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6IzAwN2RhNzt9LmNscy0xLC5jbHMtMiwuY2xzLTN7ZmlsbC1ydWxlOmV2ZW5vZGQ7fS5jbHMtMntmaWxsOiNmZmY7fS5jbHMtM3tmaWxsOiM1ZTVmNWY7fTwvc3R5bGU+PC9kZWZzPjx0aXRsZT5rdWJlbXEtbG9nby13aXRoLXRleHQ8L3RpdGxlPjxnIGlkPSJMYXllcl8yIiBkYXRhLW5hbWU9IkxheWVyIDIiPjxnIGlkPSJMYXllcl8xLTIiIGRhdGEtbmFtZT0iTGF5ZXIgMSI+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTYuMjgsNTUuNjRhMTAsMTAsMCwwLDAsMi4yNSwzLjU1bDE3LDIxLjFjNi4yOCw3LjEzLDMuNjcsNi4yNCwxNS44Niw2LjI0SDczLjE5YzQuNTgsMCw2LjMzLjY3LDkuMjEtMiwyLjQ1LTIuMjYsNy4xNC04Ljg1LDkuNzgtMTIsMS42MS0xLjk0LDMuMTQtNCw0LjgzLTYuMDcsMTAuNzYtMTMuMDgsMTAtOC42OCw0LjM1LTMxLjQyQzk2LjksMTcuMTgsOTkuNjksMTcuNiw5MCwxMy4yMUw2Ny42MiwyLjU1Yy04Ljg1LTQtNy4zMS0yLjkzLTE1LjYxLjg5QzQ3LjEzLDUuNjksNDEuNSw4LjE4LDM2LjkyLDEwLjU3UzI1LjI1LDE0LjQzLDIzLjg0LDE5LjNDMjIuNTYsMjMuNzIsMTUuNTYsNTIuOTEsMTYuMjgsNTUuNjRaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNNjIuNzUsMTQuNjNBMzAuNjEsMzAuNjEsMCwwLDEsOTEuNDYsNDMuMzRIODhhMjcsMjcsMCwwLDAtNC4zNC0xM0w3NC4yNyw0MmMtMS43OCwyLjE3LTMuODUsMi43My02LjEzLDItMi40My0uNzktNC4yMS0zLjA5LTYuMjUtNWE3LjY5LDcuNjksMCwwLDEsMS43NC0xbC40LjM2YzEuNDgsMS4zMywzLDMuMzEsNC44OSwzLjg4QTIuNjUsMi42NSwwLDAsMCw3Mi4xLDQxTDgyLjMxLDI4LjVBMjcuMDYsMjcuMDYsMCwwLDAsNjIuNzUsMTguMTFWMTQuNjNabS01LDIzLjdjLTEuNDgsMS4zMy0zLDMuMzEtNC44OSwzLjg4YTIuNTcsMi41NywwLDAsMS0yLS4xMywxMi43NiwxMi43NiwwLDAsMC0uMjQsMkE1LjMzLDUuMzMsMCwwLDAsNTMuNjgsNDRjNC41MS0xLjQ3LDYuNzgtOC4xNSwxMi42Ny03LjY4YTUuNzgsNS43OCwwLDAsMSw1LjEzLDMuOTFsMS41OS0xLjk1YTcuNTUsNy41NSwwLDAsMC02LjI1LTRjLTQuMy0uMjYtNi4wNywxLjQ1LTksNC4xMlptMTQuNDcsNi41MWMwLC4yMSwwLC40MywwLC42NGE2LjU4LDYuNTgsMCwwLDEsLjkyLjU1bC4xMi4wOC4wOS4xLDEuMDgsMS4zYzAtLjI0LjA4LS40OC4xMS0uNzNhMTYuNzcsMTYuNzcsMCwwLDAsMC0zLjYxLDcsNywwLDAsMS0yLjMzLDEuNjdabS0uODgsNS40Ni4wOC4wNkw3Mi44Miw1MmE4LjIyLDguMjIsMCwwLDEtNC45MSwzLjc5LDExLjc5LDExLjc5LDAsMCwxLTMuNi40OGMtMi42Ny0uMTItNC4zNy0xLjcyLTYuNzctNC4wNi0xLjQzLTEuNDEtMy4wOC0zLjY2LTUuMTktMy43M2EzLjE1LDMuMTUsMCwwLDAtMS4zNC4yNywxNi41LDE2LjUsMCwwLDEtLjM4LTIuNjMsNC4zNCw0LjM0LDAsMCwxLDEuNTItLjI4QTUuMDksNS4wOSwwLDAsMSw1NS4yNyw0N2MxLjY4LDEuNDgsMywyLjgyLDQuNDYsNC4xNSwyLjkxLDIuNyw0LjkxLDQuNjYsOS4wNywyLjE4YTYuMTUsNi4xNSwwLDAsMCwyLjU3LTNabS0yNC41MS0uNTlMMzguMjIsNjAuMDZhMjcsMjcsMCwwLDEtNC4zOC0xM0gzMC4zNkEzMC42MSwzMC42MSwwLDAsMCw1OS4wNyw3NS43M1Y3Mi4yNUEyNywyNywwLDAsMSwzOS40OSw2MS44M2w4LjI3LTkuOTNhMTQsMTQsMCwwLDEtLjktMi4xOVptLjY3LTExLjM1YTEyLjk0LDEyLjk0LDAsMCwwLS45LDIuNDlMMzguMTYsMzAuNGEyNi45NCwyNi45NCwwLDAsMC00LjMyLDEyLjk0SDMwLjM2QTMwLjYxLDMwLjYxLDAsMCwxLDU5LjA3LDE0LjYzdjMuNDhBMjcuMTEsMjcuMTEsMCwwLDAsMzkuNDksMjguNTNsOCw5LjgzWm0xMC4zOS0xLjg0YTYuNzYsNi43NiwwLDAsMC0yLjQ2LS4yNGMtNC43LjM4LTYuMTEsNS01Ljg3LDkuNC4xNiwzLC42OCw2LDMuNDMsNy42NSwyLDEuMTgsMy40NywxLjM2LDQuOC45MmEyMC41NCwyMC41NCwwLDAsMCwxLjg0LDEuNTYsNi40OSw2LjQ5LDAsMCwxLTIuMTUuNDcsMTEuNzYsMTEuNzYsMCwwLDEtMy42LS40OGMtMy44OS0xLjA2LTYuMTItNC42OC02LjY0LTktLjczLTYsMS44OS0xMi4yMiw3LjczLTEyLjU3YTksOSwwLDAsMSw0LjcyLjgyLDIyLjQ2LDIyLjQ2LDAsMCwwLTEuOCwxLjQ5Wm0zLjkyLDE0Ljg2LjI1LS4yM2MxLjQzLTEuMzMsMi43OC0yLjY3LDQuNDYtNC4xNWE1LjA3LDUuMDcsMCwwLDEsMy4xMS0xLjE1LDUuMjEsNS4yMSwwLDAsMSwyLjkyLDFMODMuNjEsNjBBMjYuOTEsMjYuOTEsMCwwLDAsODgsNDdoMy40OEEzMC42MSwzMC42MSwwLDAsMSw2Mi43NSw3NS43M1Y3Mi4yNUEyNy4wOCwyNy4wOCwwLDAsMCw4Mi4zNCw2MS44Mkw3Mi4xNyw0OS42NGE0LDQsMCwwLDAtMi43MS0xLjE1Yy0yLjEuMDctMy43NiwyLjMyLTUuMTksMy43M2wtLjU2LjU1QTguOTQsOC45NCwwLDAsMSw2MS44NCw1MS4zOFoiLz48cG9seWdvbiBjbGFzcz0iY2xzLTMiIHBvaW50cz0iMTcuMDkgOTIuNzEgMTIuMSA5Mi43MSA0LjAxIDEwMS43MiA0LjAxIDkyLjcxIDAgOTIuNzEgMCAxMTQuMDIgNC4wMSAxMTQuMDIgNC4wMSAxMDQuNTggMTIuOTMgMTE0LjAyIDE3Ljg4IDExNC4wMiAxNy44OCAxMTMuNzggNy42MyAxMDMuMDMgMTcuMDkgOTIuODMgMTcuMDkgOTIuNzEiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik0xOC43Niw5OXY3Ljg4YzAsNC42NSwyLjYyLDcuMzYsNi4yMSw3LjM2QTYuNjgsNi42OCwwLDAsMCwzMC4wNSwxMTJsLjI0LDJIMzMuNlY5OUgyOS45M3Y3LjY1YTQsNCwwLDAsMS0zLjg0LDQuMjFjLTIuMzcsMC0zLjYyLTEuNzMtMy42Mi00Vjk5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTQ1LjE5LDEwMi4xM2E0LjE0LDQuMTQsMCwwLDEsNC4yNiw0LjM4LDQuMzEsNC4zMSwwLDEsMS04LjYxLDAsNC4yOCw0LjI4LDAsMCwxLDQuMzUtNC4zOFptLTguMy05LjM2VjExNGgzLjQ3TDQwLjYsMTEyYTUuNDcsNS40NywwLDAsMCw0Ljg0LDIuNGM0LjQsMCw3LjcyLTIuOTIsNy43Mi03Ljg1LDAtNS4xNy0zLjI1LTcuODQtNy42My03Ljg0LTEuNTksMC00LjA1Ljg1LTQuOTMsMi40di04LjNaIi8+PHBhdGggY2xhc3M9ImNscy0zIiBkPSJNNzAuNzcsMTA3Ljg1Yy41OC02LjE3LTIuNTYtOS4yOC03LjU3LTkuMjhzLTgsMy4yOS04LDcuODVjMCw0LjgxLDMuMDcsOCw4LjI0LDhBOS4yMiw5LjIyLDAsMCwwLDY5LjkyLDExMmwtMi4zOC0yLjM1YTYuMTMsNi4xMywwLDAsMS00LDEuNGMtMi42MiwwLTQuMjMtMS4zMy00LjQ3LTMuMTlabS0xMS42NS0zLjA3YTQsNCwwLDAsMSw0LjItMi45MmMyLjEzLDAsMy42NSwxLDMuODksMi45MloiLz48cG9seWdvbiBjbGFzcz0iY2xzLTMiIHBvaW50cz0iOTIuNDUgMTE0LjAyIDk2LjQ3IDExNC4wMiA5Ni40NyA5Mi43NyA5MS44NyA5Mi43NyA4NS4yMSAxMDEuOTEgNzguNTUgOTIuNzcgNzMuOTMgOTIuNzcgNzMuOTMgMTE0LjAyIDc3Ljk0IDExNC4wMiA3Ny45NCA5OC41NyA4NC43MyAxMDcuODMgODUuNTIgMTA3LjgzIDkyLjQ1IDk4LjYgOTIuNDUgMTE0LjAyIi8+PHBhdGggY2xhc3M9ImNscy0zIiBkPSJNMTEwLjE4LDkyLjIyYy03LjQ4LDAtMTEsNS41Ni0xMSwxMS4xM3MzLjM4LDExLDExLDExYTExLjA4LDExLjA4LDAsMCwwLDYtMS41OGwyLjU5LDIuNTUsMi44My0yLjgzTDExOS4xMiwxMTBhMTIuMDYsMTIuMDYsMCwwLDAsMi02LjkzYy0uMDktNS40OC0zLjQ0LTEwLjg5LTEwLjkyLTEwLjg5Wm0wLDMuNjJjNSwwLDYuODEsMy43MSw3LDcuMTQuMTUsMy42NS0yLjE2LDcuNy03LDcuNy00LjYyLDAtNi45My0zLjc0LTctNy4yNFMxMDUuMTYsOTUuODQsMTEwLjE4LDk1Ljg0WiIvPjwvZz48L2c+PC9zdmc+
+      mediatype: image/svg+xml
+  customresourcedefinitions:
+    owned:
+      - name: kubemqclusters.core.k8s.kubemq.io
+        displayName: Kubemq Cluster
+        kind: KubemqCluster
+        version: v1alpha1
+        description: Kubemq Cluster
+        resources:
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+          - version: v1
+            kind: StatefulSets
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Deployments
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: ReplicaSets
+          - version: v1
+            kind: Events
+          - version: v1alpha1
+            kind: kubemqdashboards
+          - version: v1alpha1
+            kind: kubemqclusters
+          - version: v1beta1
+            kind: Ingresses
+        specDescriptors:
+          - displayName: Replicas
+            description: The desired number of nodes in the cluster
+            path: replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - displayName: Routing
+            description: Set routing configuration
+            path: routing
+          - displayName: Authorization
+            description: Set authorization configuration
+            path: authorization
+          - displayName: grpc
+            description: Set grpc configuration
+            path: grpc
+          - displayName: License
+            description: Set license configuration
+            path: license
+          - displayName: Notification
+            description: Set notification configuration
+            path: notification
+          - displayName: Store
+            description: Set store configuration
+            path: store
+          - displayName: Tls
+            description: Set tls configuration
+            path: tls
+          - displayName: Gateways
+            description: Set gateways configuration
+            path: gateways
+          - displayName: Log
+            description: Set log configuration
+            path: log
+          - displayName: Health
+            description: Set health configuration
+            path: health
+          - displayName: Resources
+            description: resources tls configuration
+            path: resources
+          - displayName: Volume
+            description: Set volume configuration
+            path: volume
+          - displayName: Authentication
+            description: Set authentication configuration
+            path: authentication
+          - displayName: ConfigData
+            description: Set configData configuration
+            path: configData
+          - displayName: Api
+            description: Set api configuration
+            path: api
+          - displayName: Image
+            description: Set image configuration
+            path: image
+          - displayName: NodeSelectors
+            description: Set nodeSelectors configuration
+            path: nodeSelectors
+          - displayName: Queue
+            description: Set queue configuration
+            path: queue
+          - displayName: Rest
+            description: Set rest configuration
+            path: rest
+        statusDescriptors:
+          - path: api
+            description: Api
+            displayName: Api
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: grpc
+            description: Grpc
+            displayName: Grpc
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: ready
+            description: Ready
+            displayName: Ready
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - path: replicas
+            description: Replicas
+            displayName: Replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - path: rest
+            description: Rest
+            displayName: Rest
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: version
+            description: Version
+            displayName: Version
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: selector
+            description: Selector
+            displayName: Selector
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+      - name: kubemqdashboards.core.k8s.kubemq.io
+        displayName: Kubemq Dashboard
+        kind: KubemqDashboard
+        version: v1alpha1
+        description: Kubemq Cluster Dashboard
+        resources:
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+          - version: v1
+            kind: Deployments
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: ReplicaSets
+          - version: v1
+            kind: Events
+          - version: v1
+            kind: StatefulSets
+          - version: v1alpha1
+            kind: kubemqdashboards
+          - version: v1alpha1
+            kind: kubemqclusters
+          - version: v1beta1
+            kind: Ingresses
+        specDescriptors:
+          - displayName: Port
+            description: Set dashboard port to expose as node port
+            path: port
+          - displayName: Prometheus
+            description: Set prometheus configuration
+            path: prometheus
+          - displayName: Grafana
+            description: Set grafana configuration
+            path: grafana
+        statusDescriptors:
+          - path: status
+            description: Status of deployment
+            displayName: Status
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: address
+            description: Address url of dashboard
+            displayName: Address
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: prometheus_version
+            description: Prometheus Image
+            displayName: Prometheus Image
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: grafana_version
+            description: Grafana Image
+            displayName: Grafana Image
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+    required: []
