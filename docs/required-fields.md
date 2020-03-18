@@ -57,6 +57,7 @@ For the best user experience, choose from the following categories:
 | Big Data |
 | Cloud Provider |
 | Database |
+| Data Protection |
 | Developer Tools |
 | Integration & Delivery |
 | Logging & Tracing |
