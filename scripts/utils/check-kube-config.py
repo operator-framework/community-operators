@@ -23,14 +23,14 @@ class messages:
 def get_kube_config(config_path):
 
     if path.isfile(config_path):
-        print((messages.CONFIG % (bcolors.OK, config_path, bcolors.NC)).expandtabs(49))
         with open(config_path, 'r') as stream:
             try:
                 kube_config = yaml.safe_load(stream)
+                print((messages.CONFIG % (bcolors.OK, config_path, bcolors.NC)).expandtabs(49))
                 return kube_config
             except yaml.YAMLError as exc:
                 print(exc)
-                raise Exception('Not found')
+                raise Exception('Failed to parse YAML')
     print((messages.CONFIG % (bcolors.WARN, 'Not found', bcolors.NC)).expandtabs(49))
 
 
