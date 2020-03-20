@@ -8,7 +8,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   fi
 fi
 
-if [[ -z ${VM_DRIVER+x} ]]; then
+if [[ ! -z ${VM_DRIVER+x} ]]; then
       VM_DRIVER_SWITCH="--vm-driver=${VM_DRIVER}"
   fi
 
@@ -21,10 +21,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 else
   CHANGE_MINIKUBE_NONE_USER=true sudo minikube start ${VM_DRIVER_SWITCH} ${MINIKUBE_KUBE_VERSION} --extra-config=apiserver.v=4
 fi
-
-minikube update-context
-
-JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lcomponent=kube-addon-manager -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-addon-manager to be available"; kubectl get pods --all-namespaces; done
 
 JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
 
