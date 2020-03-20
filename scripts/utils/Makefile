@@ -1,7 +1,4 @@
 .PHONY: help
-SDK_VER="v0.16.0"
-KUBE_VER="v1.14.0"
-OLM_VER="v1.14.1"
 MAKEFLAGS+ = --no-print-directory
 OP_PATH=''
 OP_CHANNEL=''
@@ -11,7 +8,10 @@ WARN=\033[0;33m
 ERR=\033[0;31m
 NC=\033[0m
 force_color_prompt=yes
-VERBOSE=0
+export VERBOSE ?= 0
+export SDK_VER ?= "v0.16.0"
+export KUBE_VER ?= "v1.17.0"
+export OLM_VER ?= "0.14.1"
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -66,7 +66,7 @@ dependencies.install.crictl: ## Install crictl
 	@echo "Installed"
 
 olm.install: ## Install OLM to your cluster
-	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
+	@scripts/ci/run-script "scripts/ci/install-olm" "Install OLM"
 
 operator.registry.build: check_path ## Build registry image
 	@scripts/ci/make-tmp
