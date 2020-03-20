@@ -9,7 +9,7 @@ python:
 - "3.6"
 
 env:
-- CHANGE_MINIKUBE_NONE_USER=true DISTRO_TYPE=upstream KUBE_VER=v1.17.0 SDK_VER=0.16.0 OLM_VER=v0.14.1
+- CHANGE_MINIKUBE_NONE_USER=true DISTRO_TYPE=upstream KUBE_VER=v1.17.0
 
 before_install:
 # check-pr needs to be sourced so it can pass the test early.
@@ -18,24 +18,14 @@ before_install:
 install:
 - scripts/ci/install-deps $DISTRO_TYPE
 
-before_script:
-- eval $(scripts/ci/operators-env) && scripts/ci/verify-operator
-- sudo minikube start --memory=4096 --vm-driver=none  --kubernetes-version="v1.17.0" --extra-config=apiserver.v=4
-- sudo chown -R $USER ${HOME}/.{mini,}kube
-- kubectl config use-context minikube
-
 jobs:
   include:
-  - name: Scorecard on minikube
+  - stage: catalog build
+    name: Test loading the Operator into the Community Catalog
+    install: skip
     script:
-    # Since travis conditionals can't operate on bash scripts, the first script
-    # line will check whether only scripts have been updated, and if so use
-    # the ripsaw operator as an operator to test script correctness.
-    - |-
-      if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep -q '\.yaml'; then \
-        OPERATORS_UPSTREAM="upstream-community-operators/ripsaw:$(yq r --tojson upstream-community-operators/ripsaw/ripsaw.package.yaml "channels" \
-        | jq ".[] | .currentCSV" | sort -V | tail -1 | sed -E 's/"[a-zA-Z\-]+\.?v?([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?)"/\1/')" \
-        docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="/upstream-community-operators/ripsaw" CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
-      fi
-    - docker pull quay.io/operator-framework/operator-testing
-    - eval $(scripts/ci/operators-env) && echo "${OP_PATH}" && docker run -v ${HOME}/.kube/config:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators quay.io/operator-framework/operator-testing  operator.test --no-print-directory OP_PATH="${OP_PATH}" CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
+    - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev . 
+  - stage: operator test
+    name: Test the Operator using operator-sdk running on minikube
+    script: scripts/ci/run-tests.sh
+
