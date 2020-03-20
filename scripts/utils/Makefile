@@ -9,9 +9,9 @@ ERR=\033[0;31m
 NC=\033[0m
 force_color_prompt=yes
 export VERBOSE ?= 0
-export SDK_VER ?= "v0.16.0"
-export KUBE_VER ?= "v1.17.0"
-export OLM_VER ?= "0.14.1"
+export SDK_VER ?= v0.16.0
+export KUBE_VER ?= v1.17.0
+export OLM_VER ?= 0.14.1
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
