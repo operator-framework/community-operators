@@ -1,9 +1,12 @@
 MAKEFLAGS += --no-print-directory
-OP_PATH=''
-CLEAN_MODE=NORMAL
-VM_DRIVER=none
-KUBECONFIG?="${HOME}/.kube/config"
-export KUBE_VER := v1.17.0
+export OP_PATH=''
+export CLEAN_MODE=NORMAL
+export VM_DRIVER=none
+export KUBECONFIG ?= "${HOME}/.kube/config"
+export KUBE_VER := "v1.17.0"
+export OLM_VER := "0.14.1"
+export SDK_VER := "v0.16.0"
+export VERBOSE ?= 0
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -34,7 +37,7 @@ operator.cleanup:
 operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/run-script "docker pull quay.io/operator-framework/operator-testing" "Pulling docker image"
 	@python3 scripts/utils/check-kube-config.py
-	@docker run -v ${KUBECONFIG}:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti quay.io/operator-framework/operator-testing operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE}
+	@docker run -v ${KUBECONFIG}:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -ti quay.io/operator-framework/operator-testing operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE} OLM_VER=${OLM_VER} KUBE_VER=${KUBE_VER}
 
 operator.verify: check_path ## Run only courier
 	@scripts/ci/run-script "docker pull quay.io/operator-framework/operator-testing" "Pulling docker image"
