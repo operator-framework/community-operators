@@ -20,7 +20,8 @@ minikube.start: ## Start local minikube
 
 olm.install: ## Install OLM to your cluster
 	@scripts/ci/run-script "docker pull quay.io/operator-framework/operator-testing" "Pulling docker image"
-	@scripts/ci/run-wrapper "docker run -v ${KUBECONFIG}:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -it quay.io/operator-framework/operator-testing olm.install --no-print-directory"
+	@python3 scripts/utils/check-kube-config.py
+	@docker run -v ${KUBECONFIG}:/root/.kube/config -v ${HOME}/.minikube:${HOME}/.minikube -v ${PWD}/community-operators:/community-operators -v ${PWD}/upstream-community-operators:/upstream-community-operators -it quay.io/operator-framework/operator-testing olm.install --no-print-directory VERBOSE=${VERBOSE}
 
 operator.install:
 	@scripts/ci/run-script "docker pull quay.io/operator-framework/operator-testing" "Pulling docker image"
