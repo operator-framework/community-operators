@@ -14,10 +14,10 @@ class bcolors:
 
 
 class messages:
-    CONFIG = 'Find kube config \t [%s %s %s]'
-    CLUSTER = 'Find kube cluster \t [%s %s %s]'
-    CONTEXT = 'Find kube context \t [%s %s %s]'
-    MASTER = 'Try kube master \t [%s %s %s]'
+    CONFIG = 'Find kube config \t [ %s %s %s ]'
+    CLUSTER = 'Find kube cluster \t [ %s %s %s ]'
+    CONTEXT = 'Find kube context \t [%s %s %s ]'
+    MASTER = 'Try kube master \t [ %s %s %s ]'
 
 
 def get_kube_config(config_path):

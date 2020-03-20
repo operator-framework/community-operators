@@ -1,11 +1,10 @@
 MAKEFLAGS += --no-print-directory
 export OP_PATH=''
 export CLEAN_MODE=NORMAL
-export VM_DRIVER=none
 export KUBECONFIG ?= "${HOME}/.kube/config"
-export KUBE_VER := v1.17.0
-export OLM_VER := 0.14.1
-export SDK_VER := v0.16.0
+export KUBE_VER ?= v1.17.0
+export OLM_VER ?= 0.14.1
+export SDK_VER ?= v0.16.0
 export VERBOSE ?= 0
 
 help:
