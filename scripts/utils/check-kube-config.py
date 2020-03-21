@@ -107,7 +107,7 @@ def main():
         check_availability_of_cluster(cluster_name, kube_config)
         write_context_to_config_file(config_path, kube_context, kube_config)
     except Exception as e:
-        system('make minikube.start')
+        system('make kind.start')
         exit(0)
 
 

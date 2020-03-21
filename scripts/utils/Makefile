@@ -12,6 +12,7 @@ export VERBOSE ?= 0
 export SDK_VER ?= v0.16.0
 export KUBE_VER ?= v1.17.0
 export OLM_VER ?= 0.14.1
+export NO_KIND ?= 0 
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -68,9 +69,9 @@ dependencies.install.crictl: ## Install crictl
 olm.install: ## Install OLM to your cluster
 	@scripts/ci/run-script "scripts/ci/install-olm" "Install OLM"
 
-operator.registry.build: check_path ## Build registry image
+operator.configmap.build: check_path ## Build catalog configmap
 	@scripts/ci/make-tmp
-	@scripts/ci/run-script "scripts/ci/build-registry-image" "Make registry configmap"
+	@scripts/ci/run-script "scripts/ci/build-catalog-configmap" "Make catalog configmap"
 
 operator.install: check_path
 	@scripts/ci/make-tmp
