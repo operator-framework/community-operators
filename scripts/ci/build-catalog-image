@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+
+# This script transforms an operator dir structured in the style of
+# community-operators into one expected by operator-registry, inserts the
+# scorecard proxy container, and proxy kubeconfig secret, volume, and mount
+# into a CSV, creates CR's from CSV metadata, deploys the operator with the
+# OLM in a local cluster, and runs the SDK scorecard against the operator.
+
+set -e
+
+CATALOG_IMAGE=$([[ -z ${NO_KIND+x} || !$NO_KIND ]] && echo "operatorhubio-catalog:temp" || echo "$CATALOG_IMAGE" )
+
+if [ -z "${CATALOG_IMAGE}" ]; then
+    echo "CATALOG_IMAGE not set"
+    exit 1
+fi
+
+docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t ${CATALOG_IMAGE} . 
+
+if [ -z ${NO_KIND+x} ] || [ !$NO_KIND ]  ; then
+    kind load docker-image ${CATALOG_IMAGE} --name operator-test
+else
+    docker push $CATALOG_IMAGE
+fi
