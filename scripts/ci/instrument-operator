@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+cd /
+. /scripts/ci/env
+export_color
+KUBECONFIG=~/.kube/config
+
+set -e
+
+printf "Instrumenting Operator for test %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+
+/scripts/ci/run-script "create_cr_files_from_metadata $CSV_FILE $CR_DIR $NAMESPACE" "    creating CR files"
+
+/scripts/ci/run-script "instrument_operator $CSV_NAME $NAMESPACE $SC_PROXY_IMAGE" "    injecting scorecard proxy"
+
+printf "Instrumenting Operator for test %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
