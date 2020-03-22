@@ -184,7 +184,7 @@ function uninstall_olm() {
 
 
     printf "Uninstall olm %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2;
-    operator-sdk alpha olm uninstall > /dev/null
+    operator-sdk olm uninstall > /dev/null
     printf "Uninstall olm %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
 }
 
@@ -283,4 +283,140 @@ function get_channel_name() {
     echo "No matching channel exists for this CSV in the package file" 1>&2
     exit 1
   fi
+}
+
+function inject_kubeconfig_volume() {
+  local csv_json="$1"
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec"
+  local volume='{
+    "name": "scorecard-kubeconfig",
+    "secret": {
+      "secretName": "scorecard-kubeconfig",
+      "items": [
+        {
+          "key": "kubeconfig",
+          "path": "config"
+        }
+      ]
+    }}'
+
+   echo "$csv_json" | jq "${insert_path} |= . + {volumes: (.volumes + [${volume}] ) }"
+}
+
+function inject_kubeconfig_secret_mount() {
+  local csv_json=$1
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec.containers[]"
+  local volume_mount='{name: "scorecard-kubeconfig", mountPath: "/scorecard-secret"}'
+
+  jq "${insert_path} |= . + {volumeMounts: (.volumeMounts + [${volume_mount}] ) }"  <<< ${csv_json}
+}
+
+function inject_kubeconfig_env_var() {
+  local csv_json=$1
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec.containers[]"
+  local env_var='{name: "KUBECONFIG", value: "/scorecard-secret/config"}'
+
+  jq "${insert_path} |= . + {env: (.env + [${env_var}] ) }"  <<< ${csv_json}
+}
+
+function inject_proxy_container {
+  local csv_json=$1
+  local proxy_image="$2"
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec"
+  local proxy_container='{
+    "name": "scorecard-proxy",
+    "command": [
+      "scorecard-proxy"
+    ],
+    "env": [
+      {
+        "name": "WATCH_NAMESPACE",
+        "valueFrom": null,
+        "fieldRef": {
+          "apiVersion": "v1",
+          "fieldPath": "metadata.namespace"
+        }
+      }
+    ],
+    "image": "'"$proxy_image"'",
+    "imagePullPolicy": "Always",
+    "ports": [
+      {
+        "name": "proxy",
+        "containerPort": 8889
+      }
+    ]
+  }'
+  
+  jq "${insert_path} |= . + {containers: (.containers + [${proxy_container}] ) }"  <<< ${csv_json}
+}
+
+function generate_kubeconfig_secret_file() {
+  local namespace="$1"
+  # Expected proxy url. The proxy is configured to listen on port 8889.
+  local server="localhost:8889"
+  # Username for scorecard namespaced owner reference.
+  local username="$(echo '{"apiVersion":"","kind":"","name":"scorecard","uid":"","Namespace":"'$namespace'"}' | base64 | tr -d \\n)"
+  # Kubeconfig used to communicate with the proxy.
+  local kubeconfig="apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: http://${username}@${server}
+  name: proxy-server
+contexts:
+- context:
+    cluster: proxy-server
+    user: admin/proxy-server
+  name: $namespace/proxy-server
+current-context: $namespace/proxy-server
+preferences: {}
+users:
+- name: admin/proxy-server
+  user:
+    username: $username
+    password: unused"
+  local kubeconfig_base64="$(echo "$kubeconfig" | base64 | tr -d \\n)"
+
+  cat <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scorecard-kubeconfig
+  namespace: $namespace
+  labels:
+    operator: test
+data:
+  kubeconfig: $kubeconfig_base64
+EOF
+}
+
+# Prepares an Operator (CSV) for testing with scorecard
+function instrument_operator() {
+  local csv="$1"
+  local namespace="$2"
+  local scorecard_proxy_image=${3:-"quay.io/operator-framework/scorecard-proxy:master"}
+
+  local secret_yaml="$(generate_kubeconfig_secret_file $namespace)"
+
+  local temp_secret=$(mktemp)
+  echo "$secret_yaml" > $temp_secret
+  kubectl apply -f $temp_secret
+
+  check_csv_passes $csv $namespace
+
+  local csv_json="$(kubectl get csv $csv -n $namespace -o json)"
+  local csv_json="$(inject_kubeconfig_volume "$csv_json")"
+  local csv_json="$(inject_kubeconfig_secret_mount "$csv_json")"
+  local csv_json="$(inject_kubeconfig_env_var "$csv_json")"
+  local csv_json="$(inject_proxy_container "$csv_json" "$scorecard_proxy_image")"
+
+  local temp_csv=$(mktemp)
+  echo "$csv_json" > $temp_csv
+
+  # need to skip validation here because of downwardAPI references in scorecard proxy
+  kubectl apply --validate=false -f $temp_csv
+
+  check_csv_passes $csv $namespace
 }

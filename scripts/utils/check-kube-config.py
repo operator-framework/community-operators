@@ -16,7 +16,7 @@ class bcolors:
 class messages:
     CONFIG = 'Find kube config \t [ %s %s %s ]'
     CLUSTER = 'Find kube cluster \t [ %s %s %s ]'
-    CONTEXT = 'Find kube context \t [%s %s %s ]'
+    CONTEXT = 'Find kube context \t [ %s %s %s ]'
     MASTER = 'Try kube master \t [ %s %s %s ]'
 
 
@@ -41,6 +41,8 @@ def parse_current_context(kube_config):
     selected = 0
     cluster = ''
 
+    options.append('Create a new KIND cluster')
+
     for i in range(len(contexts)):
         context = contexts[i]
         options.append(context.get('name'))
@@ -48,11 +50,15 @@ def parse_current_context(kube_config):
             selected = i
             cluster = context.get('context').get('cluster')
 
-    if len(contexts) > 1:
-        title = 'Please choose your context for testing: '
+    if len(contexts) > 0:
+        title = 'Please choose an existing Kubernetes cluster or create a new one: '
 
         option, index = pick(options, title, indicator='=>', default_index=selected)
         current_context = option
+
+        if index == 0:
+            print((messages.CONTEXT % (bcolors.WARN, 'skipped', bcolors.NC)).expandtabs(49))
+            raise Exception('Skipped')
 
         for i in range(len(contexts)):
             context = contexts[i]
@@ -91,7 +97,7 @@ def check_availability_of_cluster(cluster_name, config):
             server = server.split(':')
     print((messages.MASTER % (bcolors.WARN, '%s:%s' % (server[0], server[1]), bcolors.NC)).expandtabs(49))
 
-    command = 'nc -zvw3 -G 3 %s %s 2> /dev/null' % (server[0], server[1])
+    command = 'nc -zvw3 -G 4 %s %s 2> /dev/null' % (server[0], server[1])
     exit_code = system(command)
     if exit_code > 0:
         print((messages.MASTER % (bcolors.ERR, 'Not responding on %s:%s' % (server[0], server[1]), bcolors.NC)).expandtabs(49))
