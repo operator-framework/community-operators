@@ -112,9 +112,12 @@ def main():
         kube_context, cluster_name = parse_current_context(kube_config)
         check_availability_of_cluster(cluster_name, kube_config)
         write_context_to_config_file(config_path, kube_context, kube_config)
-    except Exception as e:
-        system('make kind.start')
-        exit(0)
+    except Exception:
+        if environ.get('NO_KIND', '0') == '0':
+            system('make kind.start')
+            exit(0)
+        else:
+            exit(1)
 
 
 if __name__ == "__main__":
