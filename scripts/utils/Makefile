@@ -11,6 +11,7 @@ force_color_prompt=yes
 export VERBOSE ?= 0
 export SDK_VER ?= v0.16.0
 export KUBE_VER ?= v1.17.0
+export KIND_VER ?= v0.7.0
 export OLM_VER ?= 0.14.1
 export NO_KIND ?= 0 
 
