@@ -40,7 +40,7 @@ Pulling docker image                              [  Processing  ]
 Using default tag: latest
 latest: Pulling from dmesser/operator-testing
 Digest: sha256:457953575cd7bd2af60e55fb95f0413195e526c3bbe74b6de30faaf2f10a0585
-Status: Image is up to date for quay.io/dmesser/operator-testing:latest
+Status: Image is up to date for quay.io/operator-framework/operator-testing:kind:latest
 Pulling docker image                              [  OK  ]
 Verify operator                                   [  Processing  ]
 WARNING: csv metadata.annotations.certified not defined. [2.0.9/cockroachdb.v2.0.9.clusterserviceversion.yaml]
