@@ -8,6 +8,7 @@ export SDK_VER ?= v0.16.0
 export VERBOSE ?= 0
 export NO_KIND ?= 0
 export KIND_VER ?= v0.7.0
+export OPERATOR_TESTING_IMAGE := quay.io/dmesser/operator-testing:latest
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -32,24 +33,24 @@ minikube.start: ## Start local minikube
 	@scripts/ci/run-script "scripts/ci/start-minikube" "Start minikube"
 
 olm.install: ## Install OLM to your cluster
-	@scripts/ci/run-script "docker pull quay.io/dmesser/operator-testing" "Pulling docker image"
+	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
 	@python3 scripts/utils/check-kube-config.py
-	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:Z -v ${PWD}/community-operators:/community-operators:Z -v ${PWD}/upstream-community-operators:/upstream-community-operators:Z -it quay.io/dmesser/operator-testing olm.install --no-print-directory VERBOSE=${VERBOSE}
+	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:z -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -it ${OPERATOR_TESTING_IMAGE} olm.install --no-print-directory VERBOSE=${VERBOSE}
 
 operator.install:
-	@scripts/ci/run-script "docker pull quay.io/dmesser/operator-testing" "Pulling docker image"
+	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
 	@python3 scripts/utils/check-kube-config.py
-	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:Z -v ${PWD}/community-operators:/community-operators:Z -v ${PWD}/upstream-community-operators:/upstream-community-operators:Z -ti quay.io/dmesser/operator-testing operator.install --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE}
+	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:z -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -ti ${OPERATOR_TESTING_IMAGE} operator.install --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE}
 
 operator.cleanup:
 	@scripts/ci/run-script "scripts/ci/cleanup" "Cleaning"
 
 operator.test: check_path check_kind ## Operator test which run courier and scorecard
-	@scripts/ci/run-script "docker pull quay.io/dmesser/operator-testing" "Pulling docker image"
+	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
 	@python3 scripts/utils/check-kube-config.py
 	@scripts/ci/run-script "scripts/ci/build-catalog-image" "Building catalog image"
-	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:Z -v ${PWD}/community-operators:/community-operators:Z -v ${PWD}/upstream-community-operators:/upstream-community-operators:Z -ti quay.io/dmesser/operator-testing operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE} OLM_VER=${OLM_VER} KUBE_VER=${KUBE_VER} NO_KIND=${NO_KIND} CATALOG_IMAGE=${CATALOG_IMAGE}
+	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:z -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -ti ${OPERATOR_TESTING_IMAGE} operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE} OLM_VER=${OLM_VER} KUBE_VER=${KUBE_VER} NO_KIND=${NO_KIND} CATALOG_IMAGE=${CATALOG_IMAGE}
 
 operator.verify: check_path ## Run only courier
-	@scripts/ci/run-script "docker pull quay.io/dmesser/operator-testing" "Pulling docker image"
-	@docker run -v ${PWD}/community-operators:/community-operators:Z -v ${PWD}/upstream-community-operators:/upstream-community-operators:Z -ti quay.io/dmesser/operator-testing operator.verify --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE}
+	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
+	@docker run -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -ti ${OPERATOR_TESTING_IMAGE} operator.verify --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE}
