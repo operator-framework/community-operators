@@ -31,6 +31,8 @@ You can leverage the `Makefile` at the top-level directory of this repository to
 
 `make operator.test OP_PATH=upstream-community-operators/my-operator`
 
+Tests not passing? Check [here](docs/using-scripts.md#troubleshooting).
+
 ## Preview your Operator on OperatorHub.io
 
 If you are submitting your Operator in the `upstream-community-operators` directory your Operator will appear on OperatorHub.io. You can preview how your Operator would be rendered there by using the [preview tool](https://operatorhub.io/preview).
@@ -48,6 +50,8 @@ Similarly, to update your operator you need to submit a PR with any changes to y
 Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](./docs/ci.md). The pipeline will actually run the same `Makefile` commands you use to test locally.
 
 You can help speed up the review of your PR by testing locally, either [manually](./docs/testing-operators.md) or [using scripts](./docs/using-scripts.md)
+
+Tests not passing? Check [here](docs/using-scripts.md#troubleshooting).
 
 ## Reporting Bugs
 
