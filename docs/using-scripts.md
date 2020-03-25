@@ -137,6 +137,12 @@ Cleaning up namespace                             [  OK  ]
 
 Here are some common scenarios, why your test can fail:
 
+### Failures when linting Operator metadata
+
+`ERROR: metadata.annotations.alm-examples contains invalid json string [1.4.4/my-operator.v1.4.4.clusterserviceversion.yaml]`
+
+The linter checks for valid JSON in `metadata.annotations.alm-examples`. The rest of the CSV is supposed to be YAML.
+
 ### Failures when loading the the Operator into the Community Catalog
 
 `my-operator.v2.1.11 specifies replacement that couldn't be found`
