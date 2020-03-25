@@ -1,0 +1,406 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: aqua-operator.v1.0.1
+  namespace: placeholder
+  annotations:
+    capabilities: Basic Install
+    categories: Security
+    description: The Aqua Security Operator runs within a Openshift cluster and provides a means to deploy and manage Aqua Security cluster and components.
+    certified: "false"
+    containerImage: aquasec/aqua-operator:1.0.1
+    createdAt: 2020-03-25T08:00:00Z
+    support: Aqua Security, Inc.
+    repository: https://github.com/aquasecurity/aqua-operator
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "operator.aquasec.com/v1alpha1",
+          "kind": "AquaCsp",
+          "metadata": {
+            "name": "aqua"
+          },
+          "spec": {
+            "infra": {
+              "platform": "openshift",
+              "requirements": true
+            },
+            "registry": {
+              "url": "registry.aquasec.com",
+              "username": "example@gmail.com",
+              "password": "",
+              "email": "example@gmail.com"
+            },
+            "database": {
+              "replicas": 1,
+              "service": "ClusterIP"
+            },
+            "gateway": {
+              "replicas": 1,
+              "service": "ClusterIP"
+            },
+            "server": {
+              "replicas": 1,
+              "service": "LoadBalancer"
+            },
+            "adminPassword": "Password1",
+            "licenseToken": null
+          }
+        },
+        {
+          "apiVersion": "operator.aquasec.com/v1alpha1",
+          "kind": "AquaDatabase",
+          "metadata": {
+            "name": "aqua"
+          },
+          "spec": {
+            "infra": {
+              "serviceAccount": "aqua-sa",
+              "version": "4.5",
+              "platform": "openshift"
+            },
+            "deploy": {
+              "replicas": 1,
+              "service": "ClusterIP"
+            },
+            "diskSize": 10
+          }
+        },
+        {
+          "apiVersion": "operator.aquasec.com/v1alpha1",
+          "kind": "AquaEnforcer",
+          "metadata": {
+            "name": "aqua"
+          },
+          "spec": {
+            "infra": {
+              "serviceAccount": "aqua-sa",
+              "version": "4.5"
+            },
+            "gateway": {
+              "host": "aqua-gateway-svc",
+              "port": 3622
+            },
+            "token": "token"
+          }
+        },
+        {
+          "apiVersion": "operator.aquasec.com/v1alpha1",
+          "kind": "AquaGateway",
+          "metadata": {
+            "name": "aqua"
+          },
+          "spec": {
+            "infra": {
+              "serviceAccount": "aqua-sa",
+              "version": "4.5"
+            },
+            "common": {
+              "databaseSecret": {
+                "name": "aqua-aqua-db",
+                "key": "password"
+              }
+            },
+            "externalDb": {
+              "host": "aqua-db",
+              "port": 5432,
+              "username": "postgres"
+            },
+            "deploy": {
+              "replicas": 1,
+              "service": "ClusterIP"
+            }
+          }
+        },
+        {
+          "apiVersion": "operator.aquasec.com/v1alpha1",
+          "kind": "AquaScanner",
+          "metadata": {
+            "name": "aqua"
+          },
+          "spec": {
+            "infra": {
+              "serviceAccount": "aqua-sa",
+              "version": "4.5"
+            },
+            "deploy": {
+              "replicas": 1
+            },
+            "login": {
+              "username": "administrator",
+              "password": "Password1",
+              "host": "http://aqua-server:8080"
+            }
+          }
+        },
+        {
+          "apiVersion": "operator.aquasec.com/v1alpha1",
+          "kind": "AquaServer",
+          "metadata": {
+            "name": "aqua"
+          },
+          "spec": {
+            "infra": {
+              "serviceAccount": "aqua-sa",
+              "version": "4.5"
+            },
+            "common": {
+              "databaseSecret": {
+                "name": "aqua-aqua-db",
+                "key": "password"
+              }
+            },
+            "externalDb": {
+              "host": "aqua-db",
+              "port": 5432,
+              "username": "postgres"
+            },
+            "deploy": {
+              "replicas": 1,
+              "service": "LoadBalancer"
+              },
+            "adminPassword": "Password1",
+            "licenseToken": null
+          }
+        }
+      ]
+spec:
+  displayName: Aqua Security Operator
+  version: 1.0.1
+  replaces: aqua-operator.v1.0.0
+  description: |-
+    The Aqua Security Operator runs within an OpenShift cluster and provides a means to deploy and manage the Aqua Security cluster and components :
+    * Server (aka “console”)
+    * Database (for production environments we recommend to use an external database and not the Aqua default database)  
+    * Gateway 
+    * Enforcer (aka “agent”)
+    * Scanner
+    * CSP (package that we recommend to use in non production environments and contains the Server, Database, and Gateway)
+
+    Use the Aqua-Operator to 
+    * Deploy Aqua Security components on OpenShift
+    * Scale up Aqua Security components with extra replicas
+    * Assign metadata tags to Aqua Security components
+    * Automatically scale the number of Aqua scanners based on the number of images in the scan queue
+
+    ## Before You Begin Using the Operator CRDs
+    Obtain access to the Aqua registry - https://www.aquasec.com/about-us/contact-us/
+    You will need to supply two secrets during the installation  
+    * A secret for the Docker registry
+    * A secret for the database
+    You can  list the secrets in the YAML files or you can define secrets in the OpenShift project (see example below) -
+    ```bash
+    oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.com --docker-username=<AQUA_USERNAME> --docker-password=<AQUA_PASSWORD> --docker-email=<user email> -n aqua
+    oc create secret generic aqua-database-password --from-literal=db-password=<password> -n aqua
+    oc secrets add aqua-sa aqua-registry --for=pull -n aqua
+    ```
+
+    ## After the Installation
+    There are multiple options to deploy the Aqua  CSP. You can review the different options in the following [file](https://github.com/aquasecurity/aqua-operator/blob/master/deploy/crds/operator_v1alpha1_aquacsp_cr.yaml).  Note that for production environments we recommend connecting Aqua to an external production grade database. For lab implementations,  you can use the default database  in the installation scripts.
+    Here is an example of a simple installation  - 
+    ```yaml
+    ---
+
+    apiVersion: operator.aquasec.com/v1alpha1
+    kind: AquaCsp
+    metadata:
+      name: aqua
+      namespace: aqua
+    spec:
+      infra:                                    
+          serviceAccount: "aqua-sa"               
+          namespace: "aqua"                       
+          version: "4.6"                          
+          requirements: true                      
+      common:
+          imagePullSecret: "aqua-registry"        # Optional: if already created image pull secret then mention in here
+          dbDiskSize: 10       
+          serverDiskSize: 4   
+      database:                                 
+          replicas: 1                            
+          service: "ClusterIP"                    
+      gateway:                                  
+          replicas: 1                             
+          service: "ClusterIP"                    
+      server:                                   
+          replicas: 1                             
+          service: "NodePort" 
+    ```
+  keywords: ['aqua-security', 'scanning', 'security', 'runtime-security']
+  maintainers:
+  - email: nissim.bitan@aquasec.com
+    name: Nissim Bitan, Aqua Security
+  provider: 
+    name: Aqua Security, Inc.
+  maturity: alpha
+  labels:
+    name: aqua-operator
+  selector:
+    matchLabels:
+      name: aqua-operator
+  links:
+  - name: Aqua Security
+    url: https://www.aquasec.com/
+  - name: Aqua Operator Github
+    url: https://github.com/aquasecurity/aqua-operator
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMiwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMDAgMTAwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+Cgkuc3Qwe2ZpbGw6I0YwREUzNDt9Cgkuc3Qxe2ZpbGw6I0Y5QUU0MTt9Cgkuc3Qye2ZpbGw6Izk5RDVFQjt9Cgkuc3Qze2ZpbGw6IzAyQjBENDt9Cgkuc3Q0e2ZpbGw6I0Y1OTMyMDt9Cgkuc3Q1e2ZpbGw6IzA5ODA5QTt9Cjwvc3R5bGU+CjxnPgoJPHBvbHlnb24gY2xhc3M9InN0MCIgcG9pbnRzPSI1MCwyLjEgMjUuNSwyNi4xIDc0LjUsMjYuMSA3NC41LDIuMSAJIi8+Cgk8cG9seWdvbiBjbGFzcz0ic3QxIiBwb2ludHM9Ijc0LjUsNzMuOSA5OSw1MCA5OSwyNi4xIDc0LjUsMjYuMSAJIi8+Cgk8cG9seWdvbiBjbGFzcz0ic3QyIiBwb2ludHM9IjI1LjUsNzMuOSAyNS41LDk3LjkgNTAsOTcuOSA3NC41LDczLjkgCSIvPgoJPHBvbHlnb24gY2xhc3M9InN0MyIgcG9pbnRzPSIxLDUwIDEsNzMuOSAyNS41LDczLjkgMjUuNSwyNi4xIAkiLz4KCTxyZWN0IHg9Ijc0LjUiIHk9IjIuMSIgY2xhc3M9InN0NCIgd2lkdGg9IjI0LjUiIGhlaWdodD0iMjMuOSIvPgoJPHJlY3QgeD0iMSIgeT0iNzMuOSIgY2xhc3M9InN0NSIgd2lkdGg9IjI0LjUiIGhlaWdodD0iMjMuOSIvPgo8L2c+Cjwvc3ZnPgo=
+    mediatype: image/svg+xml
+  miniKubeVersion: 1.11.0
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: aqua-sa
+        rules:
+        - apiGroups:
+          - "security.openshift.io"
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+          resourceNames:
+          - privileged
+          - hostaccess
+      - serviceAccountName: aqua-operator
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          - nodes
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          - extensions
+          resources:
+          - '*'
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          - podsecuritypolicies
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - operator.aquasec.com
+          resources:
+          - '*'
+          - aquagateways
+          - aquaservers
+          - aquacsps
+          - aquaenforcers
+          - aquascanners
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          - authorization.k8s.io
+          resources:
+          - '*'
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - '*'
+          - podsecuritypolicies
+          verbs:
+          - '*'
+      deployments:
+      - name: aqua-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: aqua-operator 
+          template:
+            metadata:
+              labels:
+                name: aqua-operator
+            spec:
+              serviceAccountName: aqua-operator
+              containers:
+              - name: aqua-operator
+                image: aquasec/aqua-operator:1.0.1
+                imagePullPolicy: Always
+                command:
+                - aqua-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: "aqua-operator"
+                ports:
+                - containerPort: 60000
+                  name: metrics
+  customresourcedefinitions:
+    owned:
+    - kind: AquaCsp
+      name: aquacsps.operator.aquasec.com
+      version: v1alpha1
+      displayName: AquaCsp
+      description: Aqua Security CSP Deployment with Aqua Operator
+    - kind: AquaDatabase
+      name: aquadatabases.operator.aquasec.com
+      version: v1alpha1
+      displayName: AquaDatabase
+      description: Aqua Security Database Deployment with Aqua Operator
+    - kind: AquaEnforcer
+      name: aquaenforcers.operator.aquasec.com
+      version: v1alpha1
+      displayName: AquaEnforcer
+      description: Aqua Security Enforcer Deployment with Aqua Operator
+    - kind: AquaGateway
+      name: aquagateways.operator.aquasec.com
+      version: v1alpha1
+      displayName: AquaGateway
+      description: Aqua Security Gateway Deployment with Aqua Operator
+    - kind: AquaScanner
+      name: aquascanners.operator.aquasec.com
+      version: v1alpha1
+      displayName: AquaScanner
+      description: Aqua Security Scanner Deployment with Aqua Operator
+    - kind: AquaServer
+      name: aquaservers.operator.aquasec.com
+      version: v1alpha1
+      displayName: AquaServer
+      description: Aqua Security Server Deployment with Aqua Operator
