@@ -8,7 +8,7 @@ export SDK_VER ?= v0.16.0
 export VERBOSE ?= 0
 export NO_KIND ?= 0
 export KIND_VER ?= v0.7.0
-export OPERATOR_TESTING_IMAGE := quay.io/dmesser/operator-testing:latest
+export OPERATOR_TESTING_IMAGE := quay.io/operator-framework/operator-testing:latest
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
