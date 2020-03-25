@@ -159,7 +159,7 @@ Explanation: Your Operator claims ownership of a CRD that it does not ship. Chec
 
 `error loading package into db: [FOREIGN KEY constraint failed, no default channel specified for my-operator]`
 
-Explanation: This happens when either your Operator package defines more than one channel in `package.yaml` but does not define `defaultChannel`. Or when the package just defines a single channel (in which case you can omit `defaultChanel`) but the catalog couldn't load the CSV that this channel points to using `currentCSV`.
+Explanation: This happens when either your Operator package defines more than one channel in `package.yaml` but does not define `defaultChannel`. Or when the package just defines a single channel (in which case you can omit `defaultChanel`) but the catalog couldn't load the CSV that this channel points to using `currentCSV`. This can happen when in the CSV the specified name in `metadata.name` is actually different from what `currentCSV` points to.
 
 ### Failures when deploying via OLM
 
