@@ -423,10 +423,10 @@ function instrument_operator() {
 function check_scorecard_presence() {
   local csv="$1"
   local namespace="$2"
-  local retries=30 # 5 minute timeout
+  retries=30 # 5 minute timeout
   
   echo "Check that clusterserviceversion \"$csv\" succeeded applied scorecard-proxy"
-  while [ $retries > 0 ]; do
+  while [ $retries -gt 0 ]; do
       sleep 10 
 
       csv_status=$(kubectl get csv ${csv} --namespace=${namespace} -o json | jq --raw-output .status.phase) 
@@ -448,9 +448,9 @@ function check_scorecard_presence() {
       echo "clusterserviceversion \"$csv\" has scorecard container: $csv_has_scorecard"
       echo "clusterserviceversion \"$csv\" deployments have scorecard container: $csv_deployments_have_scorecard"
 
-      if [ "${csv_status}" == "Succeeded" ] && [ "$csv_has_scorecard" == "True" ] && [ "$csv_deployments_have_scorecard" == "True" ] ; then
+      if [[ "${csv_status}" == "Succeeded" && "$csv_has_scorecard" == "True" && "$csv_deployments_have_scorecard" == "True" ]] ; then
         echo "Clusterserviceversion \"$csv\" successfully applied scorecard-proxy in namespace \"$namespace\""
-        return 0;
+        return 0
       else
         retries=$((retries - 1))
       fi
@@ -462,5 +462,5 @@ function check_scorecard_presence() {
   kubectl get csv ${csv} --namespace=${namespace} -o jsonpath="{$.spec.install.spec.deployments[*].spec.template.spec.containers[?(@.name=='scorecard-proxy')]}"
   # Check operator pod(s) logs
   get_operator_logs "$csv" "$namespace"
-  exit 1  
+  return 1
 }
