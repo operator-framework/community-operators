@@ -177,6 +177,10 @@ Explanation: OLM could not install the Operator's `Deployment` from its CSV befo
 
 Explanation: This happened likely the Operator pod crashed in the middle of the scorecard test suite. For example, when it failed to parse a Custom Resource that scorecard feeds of the list in `metadata.annotations.alm-examples`. OLM will wait for the `Deployment` of the Operator to recover until re-installing the Operator. Re-installation changes the Operator pod's name and hence scorecard fails to reach the logs of scorecard proxy using its old name.
 
+`failed to create cr resource: object is being deleted: someapi.k8s.io "myCRD" already exists:`
+
+Explanation: This can happen when your Operator automatically creates a CR on startup, with the same name of an example for that CR provided in the CSV `metadata.annotations.alm-examples` section. Simply use a different name in the example. Otherwise, your Operator could be slow to delete a CR due to a finalizer.
+
 ## Additional shortcuts
 
 ### Clean up after a failed test
