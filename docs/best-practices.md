@@ -29,6 +29,8 @@ Considerations for operator developers
 
 * When defining CRDs, you should use OpenAPI spec to create a structural schema for your CRDs.
 
+* Operators are instrumented to provide useful, actionable metrics to external systems (e.g. monitoring/alerting platforms).  Minimally, metrics should represent the software's health and key performance indicators, as well as support the creation of [service levels indicators](https://en.wikipedia.org/wiki/Service_level_indicator) such as throughput, latency, availability, errors, capacity, etc.
+
 ### Summary
 
 * One Operator per managed application
@@ -48,6 +50,8 @@ Considerations for operator developers
 * Use semver / observe Kubernetes guidelines on versioning APIs
 
 * Use OpenAPI spec with structural schema on CRDs
+
+* Operators expose metrics to external systems
 
 
 ## Running On-Cluster
