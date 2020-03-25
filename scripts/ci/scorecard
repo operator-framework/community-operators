@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 cd /
 . /scripts/ci/env
+export_color
 KUBECONFIG=~/.kube/config
-declare -A OBJECTS
 
+set -e
+
+declare -A OBJECTS
 OBJECTS=(
   ["catalogsource"]="$(yq r "$CATALOGSOURCE_FILE" "metadata.name")"
   ["subscription"]="$(yq r "$SUBSCRIPTION_FILE" "metadata.name")"
@@ -19,36 +22,35 @@ fi
 # Run scorecard tests on the operator.
 # TODO: run against multiple CR's. Right now the scorecard only works with one
 # CR.
->&2 echo "Running scorecard trough all CR"
+
+printf "Running scorecard trough all supplied CRs %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
 
 for config_file in $(find "/tmp/scorecard-bundles" -name "*.bundle.yaml" -print); do
-  >&2 echo -e "\n\nRunning operator-sdk scorecard against "$CSV_FILE" with "$config_file""
 
-  if ! $(>&2 operator-sdk scorecard -o text --config "$config_file" --kubeconfig "$KUBECONFIG" --verbose --selector="test in (checkspectest,writingintocrshaseffecttest)"); then
-    echo "FATAL ERROR"
-    exit 1
-  fi
-  if ! $(>&2 operator-sdk scorecard -o text --config "$config_file" --kubeconfig "$KUBECONFIG" --verbose --selector="test in (checkstatustest)"); then
-    echo "WARNING"
-  fi 
-  # If scorecard errors out, print out operator logs
+  /scripts/ci/run-script "operator-sdk scorecard -o text --config $config_file --kubeconfig $KUBECONFIG --verbose --selector='test in (checkspectest,writingintocrshaseffecttest)'" "    Running required tests"
+
+  sleep 10
+
+  /scripts/ci/run-script "operator-sdk scorecard -o text --config $config_file --kubeconfig $KUBECONFIG --verbose --selector='test in (checkstatustest)'" "    Running recommended tests" false
+
+  # If non-fatal scorecard errors occured, print out operator logs
   if [[ $? != 0 ]]; then
-    >&2 echo "\nFAIL: Scorecard test errored out. Printing operator state:"
+    >&2 echo "\nWARNING: Some recommended tests failed. Printing operator state:"
     LOG_FILE="${TMP}/info.log"
     log_operator_state $LOG_FILE OBJECTS $NAMESPACE
-     >&2 cat $LOG_FILE
-  else
-    echo "PASS: Scorecard test passed"
+    >&2 cat $LOG_FILE
+
+    >&2 echo "Printing operator logs"; get_operator_logs "$CSV_NAME" "$NAMESPACE"
   fi
 done
 
-if [[ "$CLEAN_MODE" == "NORMAL" || "$CLEAN_MODE" == "FORCE" ]]; then
-  echo "Printing operator logs"; get_operator_logs "$CSV_NAME" "$NAMESPACE"
+printf "Running scorecard trough all supplied CRs %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
 
-  delete_objects_incluster "$DEPLOY_DIR" "$NAMESPACE"
-  delete_objects_incluster "$ABS_BUNDLE_PATH" "$NAMESPACE"
+if [[ "$CLEAN_MODE" == "NORMAL" || "$CLEAN_MODE" == "FORCE" ]]; then
+  /scripts/ci/run-script "delete_objects_incluster $DEPLOY_DIR $NAMESPACE" "Cleaning up Operator resources"
+  /scripts/ci/run-script "delete_objects_incluster $ABS_BUNDLE_PATH $NAMESPACE" "Cleaning up Operator definition"
 fi
 
 if [[ "$CLEAN_MODE" == "NORMAL" ]]; then
-  delete_namespace "$NAMESPACE" "$CLEAN_MODE"
+  /scripts/ci/run-script "delete_namespace $NAMESPACE $CLEAN_MODE" "Cleaning up namespace"
 fi

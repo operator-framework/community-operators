@@ -26,30 +26,25 @@ OBJECTS=(
   ["deployment"]="$DEP_NAME"
 )
 
+printf "Operator Deployment %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+
 if [[ -f "$OPERATOR_GROUP_FILE" ]]; then
-    printf "    Apply OPERATOR GROUP file %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
     OBJECTS+=(["operatorgroup"]="$(yq r "$OPERATOR_GROUP_FILE" "metadata.name")")
 fi
 
-printf "    Applying object to cluster %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
+/scripts/ci/run-script "apply_objects_incluster $DEPLOY_DIR" "    Applying object to cluster"
 
-apply_objects_incluster "$DEPLOY_DIR"
-printf "    Applying object to cluster %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
-
-printf "    Checking subscriptions if passes %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
-# Check that subscription is picked up
-check_subscription_passes "${PKG_NAME}-sub" "$NAMESPACE" "$PKG_NAME"
+/scripts/ci/run-script "check_subscription_passes ${PKG_NAME}-sub $NAMESPACE $PKG_NAME" "    Checking if subscriptions passes"
 
 # Wait for csv, then check that clusterserviceversion has Succeeded
 sleep 6
-printf "    Checking subscriptions if passes %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
 
-printf "    Checking csv if passes %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
-check_csv_passes "$CSV_NAME" "$NAMESPACE" "$INSTALL_MODE"
-printf "    Checking csv if passes %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+/scripts/ci/run-script "check_csv_passes $CSV_NAME $NAMESPACE $INSTALL_MODE" "    Checking if CSV passes"
 
-printf "    Waiting for deployment %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2
-# Wait for the deployment specified in the CSV to rollout successfully.
-wait_on_deployment "$DEP_NAME" "$NAMESPACE"
+/scripts/ci/run-script "sleep 60" "    Ensuring CSV stays alive"
 
-printf "    Waiting for deployment %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
+/scripts/ci/run-script "check_csv_passes $CSV_NAME $NAMESPACE $INSTALL_MODE" "    Checking if CSV stayed alive for 60 secs"
+
+# /scripts/ci/run-script "wait_on_deployment $DEP_NAME $NAMESPACE" "    Waiting for deployment"
+
+printf "Operator Deployment %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
