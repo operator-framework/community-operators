@@ -62,7 +62,7 @@ def main(argv):
                         "bundle": deploy_dir,
                         "proxy-pull-policy": "Never",
                         "csv-path": csv_path,
-                        "init-timeout": 60
+                        "init-timeout": 300
                     }},
                     {"olm": {
                         "olm-deployed": True,
@@ -73,7 +73,7 @@ def main(argv):
                         "proxy-image": proxy_image,
                         "proxy-pull-policy": "Never",
                         "csv-path": csv_path,
-                        "init-timeout": 60
+                        "init-timeout": 300
                     }}
                 ]
             }
