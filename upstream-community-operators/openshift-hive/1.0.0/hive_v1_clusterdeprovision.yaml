@@ -1,0 +1,104 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: clusterdeprovisions.hive.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.infraID
+    name: InfraID
+    type: string
+  - JSONPath: .spec.clusterID
+    name: ClusterID
+    type: string
+  - JSONPath: .status.completed
+    name: Completed
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: hive.openshift.io
+  names:
+    kind: ClusterDeprovision
+    plural: clusterdeprovisions
+    shortNames:
+    - cdr
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            clusterID:
+              description: ClusterID is a globally unique identifier for the cluster
+                to deprovision. It will be used if specified.
+              type: string
+            infraID:
+              description: InfraID is the identifier generated during installation
+                for a cluster. It is used for tagging/naming resources in cloud providers.
+              type: string
+            platform:
+              description: Platform contains platform-specific configuration for a
+                ClusterDeprovision
+              properties:
+                aws:
+                  description: AWS contains AWS-specific deprovision settings
+                  properties:
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the AWS account credentials
+                        to use for deprovisioning the cluster
+                      type: object
+                    region:
+                      description: Region is the AWS region for this deprovisioning
+                      type: string
+                  type: object
+                azure:
+                  description: Azure contains Azure-specific deprovision settings
+                  properties:
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the Azure account credentials
+                        to use for deprovisioning the cluster
+                      type: object
+                  type: object
+                gcp:
+                  description: GCP contains GCP-specific deprovision settings
+                  properties:
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the GCP account credentials
+                        to use for deprovisioning the cluster
+                      type: object
+                    region:
+                      description: Region is the GCP region for this deprovision
+                      type: string
+                  type: object
+              type: object
+          type: object
+        status:
+          properties:
+            completed:
+              description: Completed is true when the uninstall has completed successfully
+              type: boolean
+          type: object
+  version: v1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
