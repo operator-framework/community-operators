@@ -61,7 +61,9 @@ You can either provide an Kubernetes cluster as a testbed via `KUBECONFIG` or `~
 
 For this type of test, additionally the following options exist:
 
-` NO_KIND ` - if set to `1` no attempt to bring up a kind cluster will be made
+` NO_KIND ` - if set to `1` no attempt to bring up a kind cluster will be made. In this case you need to specify `CATALOG_IMAGE`
+
+` CATALOG_IMAGE ` - when `NO_KIND` is set to `1` you need to specify a container registry image location you have push privileges for and from which the image can be pulled again later by OLM without authentication. This parameter is ignored when `NO_KIND` is absent or set to `0` since the catalog image can be loaded directly into a KIND cluster.
 
 ` CLEAN_MODE ` - any of `NORMAL`, `NONE` and `FORCE`. As the test installs OLM components in your Kubernetes cluster this controls the clean up of those. In `NORMAL` clean up will happen if no errors occured. When set to `NONE` clean up is ommitted, when set to `FORCE` clean up will always be done. Default is `NORMAL`.
 
