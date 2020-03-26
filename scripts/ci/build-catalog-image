@@ -9,7 +9,7 @@
 
 set -e
 
-CATALOG_IMAGE=$([[ -z ${NO_KIND+x} || !$NO_KIND ]] && echo "operatorhubio-catalog:temp" || echo "$CATALOG_IMAGE" )
+CATALOG_IMAGE=$([[ -z ${NO_KIND+x} || "$NO_KIND" == "0" || $NO_KIND == 0 ]] && echo "operatorhubio-catalog:temp" || echo "$CATALOG_IMAGE" )
 
 if [ -z "${CATALOG_IMAGE}" ]; then
     echo "CATALOG_IMAGE not set"
@@ -18,7 +18,7 @@ fi
 
 docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t ${CATALOG_IMAGE} . 
 
-if [ -z ${NO_KIND+x} ] || [ !$NO_KIND ]  ; then
+if [[ -z ${NO_KIND+x} || "$NO_KIND" == "0" || $NO_KIND == 0 ]] ; then
     kind load docker-image ${CATALOG_IMAGE} --name operator-test
 else
     docker push $CATALOG_IMAGE
