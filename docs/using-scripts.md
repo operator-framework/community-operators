@@ -12,6 +12,8 @@ You need the following installed on your local machine:
 * make
 * KIND (if no existing Kubernetes cluster is available via `KUBECONFIG` or in `~/.kube/config`)
 
+**Important:** Notice, that this script uses a container to execute the test. Your `KUBECONFIG` will be bind mounted into the container. Therefor not config-helpers or references to files on your host machine are allowed. This is usually the case for `minikube` or GKE clusters.
+
 All further dependencies are encapsulated in a container image that this `Makefile` will execute as a test driver.
 
 ## Available test modes
