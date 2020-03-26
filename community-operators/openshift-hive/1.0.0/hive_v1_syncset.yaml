@@ -1,0 +1,122 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: syncsets.hive.openshift.io
+spec:
+  group: hive.openshift.io
+  names:
+    kind: SyncSet
+    plural: syncsets
+    shortNames:
+    - ss
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            clusterDeploymentRefs:
+              description: ClusterDeploymentRefs is the list of LocalObjectReference
+                indicating which clusters the SyncSet applies to in the SyncSet's
+                namespace.
+              items:
+                type: object
+              type: array
+            patches:
+              description: Patches is the list of patches to apply.
+              items:
+                properties:
+                  apiVersion:
+                    description: APIVersion is the Group and Version of the object
+                      to be patched.
+                    type: string
+                  kind:
+                    description: Kind is the Kind of the object to be patched.
+                    type: string
+                  name:
+                    description: Name is the name of the object to be patched.
+                    type: string
+                  namespace:
+                    description: Namespace is the Namespace in which the object to
+                      patch exists. Defaults to the SyncSet's Namespace.
+                    type: string
+                  patch:
+                    description: Patch is the patch to apply.
+                    type: string
+                  patchType:
+                    description: PatchType indicates the PatchType as "strategic"
+                      (default), "json", or "merge".
+                    type: string
+                type: object
+              type: array
+            resourceApplyMode:
+              description: ResourceApplyMode indicates if the Resource apply mode
+                is "upsert" (default) or "sync". ApplyMode "upsert" indicates create
+                and update. ApplyMode "sync" indicates create, update and delete.
+              type: string
+            resources:
+              description: Resources is the list of objects to sync from RawExtension
+                definitions.
+              items:
+                type: object
+              type: array
+            secretMappings:
+              description: Secrets is the list of secrets to sync along with their
+                respective destinations.
+              items:
+                properties:
+                  sourceRef:
+                    description: SourceRef specifies the name and namespace of a secret
+                      on the management cluster
+                    properties:
+                      name:
+                        description: Name is the name of the secret
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace where the secret lives.
+                          If not present for the source secret reference, it is assumed
+                          to be the same namespace as the syncset with the reference.
+                        type: string
+                    type: object
+                  targetRef:
+                    description: TargetRef specifies the target name and namespace
+                      of the secret on the target cluster
+                    properties:
+                      name:
+                        description: Name is the name of the secret
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace where the secret lives.
+                          If not present for the source secret reference, it is assumed
+                          to be the same namespace as the syncset with the reference.
+                        type: string
+                    type: object
+                type: object
+              type: array
+          required:
+          - clusterDeploymentRefs
+          type: object
+        status:
+          type: object
+  version: v1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
