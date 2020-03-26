@@ -42,7 +42,8 @@ def parse_current_context(kube_config):
     selected = 0
     cluster = ''
 
-    options.append('Create a new KIND cluster')
+    if environ.get('NO_KIND', '0') == '0':
+        options.append('Create a new KIND cluster')
 
     for i in range(len(contexts)):
         context = contexts[i]
@@ -57,7 +58,7 @@ def parse_current_context(kube_config):
         option, index = pick(options, title, indicator='=>', default_index=selected)
         current_context = option
 
-        if index == 0:
+        if index == 0 and environ.get('NO_KIND', '0') == '0':
             print((messages.CONTEXT % (bcolors.WARN, 'skipped', bcolors.NC)).expandtabs(49))
             raise Exception('Skipped')
 
