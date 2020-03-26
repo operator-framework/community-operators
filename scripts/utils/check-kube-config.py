@@ -1,5 +1,6 @@
 import yaml
 import re
+import traceback
 from sys import exit
 from lib import pick
 from os import path, environ, system, WEXITSTATUS
@@ -94,7 +95,12 @@ def check_availability_of_cluster(cluster_name, config):
         if cluster.get('name') == cluster_name:
             server = cluster.get('cluster').get('server')
             server = re.split('^.+://', server)[1]
-            server = server.split(':')
+            if len(server.split(':')) == 1:
+                server=[server, 443]
+            else:
+                server = server.split(':')
+
+
     print((messages.MASTER % (bcolors.WARN, '%s:%s' % (server[0], server[1]), bcolors.NC)).expandtabs(49))
 
     command = 'nc -zvw3 -G 4 %s %s 2> /dev/null' % (server[0], server[1])
@@ -112,11 +118,13 @@ def main():
         kube_context, cluster_name = parse_current_context(kube_config)
         check_availability_of_cluster(cluster_name, kube_config)
         write_context_to_config_file(config_path, kube_context, kube_config)
-    except Exception:
+    except Exception as e:
         if environ.get('NO_KIND', '0') == '0':
             system('make kind.start')
             exit(0)
         else:
+            print(Exception, e)
+            traceback.print_exc()
             exit(1)
 
 
