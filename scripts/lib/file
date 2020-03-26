@@ -22,9 +22,9 @@ metadata:
   labels:
     operator: test
 spec:
-  displayName: $op_name Community Operator
+  displayName: Community Operators incl. $op_name
   image: $op_image
-  publisher: community-operators
+  publisher: community-operators-makefile
   sourceType: grpc
 EOF
 }
@@ -72,6 +72,8 @@ kind: OperatorGroup
 metadata:
   name: ${op_name}-og
   namespace: $namespace
+  labels:
+    operator: test
 spec:
   targetNamespaces:
   - $namespace
@@ -137,6 +139,8 @@ function insert_proxy_container() {
   sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
 }
 
+
+
 # create_kubeconfig_secret_file creates a Secret manifest for the proxy
 # kubeconfig.
 function create_kubeconfig_secret_file() {
@@ -174,6 +178,8 @@ kind: Secret
 metadata:
   name: scorecard-kubeconfig
   namespace: $namespace
+  labels:
+    operator: test
 data:
   kubeconfig: $kubeconfig_base64
 EOF
@@ -198,6 +204,8 @@ function insert_kubeconfig_volume() {
   sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
 }
 
+
+
 # insert_kubeconfig_secret_mount inserts a volume mount for the proxy's
 # kubeconfig Secret and an env variable pointing to the config location
 # into a CSV's deployment.
@@ -221,6 +229,8 @@ function insert_kubeconfig_secret_mount() {
   yq w -i "$csv_file" "$dep_tmpl" "$dep_yaml"
   sed -E -i 's/spec: \|-/spec:/g' "$csv_file"
 }
+
+
 
 function indent() {
   INDENT="      "

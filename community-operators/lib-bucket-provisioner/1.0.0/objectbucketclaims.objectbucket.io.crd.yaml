@@ -3,23 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   name: objectbucketclaims.objectbucket.io
 spec:
-  version: v1alpha1
-  versions:
-    - name: v1alpha1
-      served: true
-      storage: true
-  group: objectbucket.io
-  names:
-    kind: ObjectBucketClaim
-    listKind: ObjectBucketClaimList
-    plural: objectbucketclaims
-    singular: objectbucketclaim
-    shortNames:
-      - obc
-      - obcs
-  scope: Namespaced
-  subresources:
-    status: {}
   additionalPrinterColumns:
   - JSONPath: .spec.storageClassName
     description: StorageClass
@@ -32,6 +15,18 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
+  group: objectbucket.io
+  names:
+    kind: ObjectBucketClaim
+    listKind: ObjectBucketClaimList
+    plural: objectbucketclaims
+    shortNames:
+    - obc
+    - obcs
+    singular: objectbucketclaim
+  scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -51,38 +46,44 @@ spec:
         spec:
           description: Specification of the desired behavior of the claim.
           properties:
-            storageClassName:
-              description: StorageClass names the StorageClass object representing the 
-                desired provisioner and parameters
-              type: string
+            additionalConfig:
+              additionalProperties:
+                type: string
+              description: AdditionalConfig gives providers a location to set proprietary
+                config values (tenant, namespace, etc)
+              type: object
             bucketName:
               description: BucketName (not recommended) the name of the bucket. Caution!
                 In-store bucket names may collide across namespaces.  If you define
                 the name yourself, try to make it as unique as possible.
               type: string
             generateBucketName:
-              description: GenerateBucketName (recommended) a prefix for a bucket name to be
-                followed by a hyphen and 5 random characters. Protects against
-                in-store name collisions.
+              description: GenerateBucketName (recommended) a prefix for a bucket
+                name to be followed by a hyphen and 5 random characters. Protects
+                against in-store name collisions.
               type: string
-            additionalConfig:
-              description: AdditionalConfig gives providers a location to set
-                proprietary config values (tenant, namespace, etc)
-              additionalProperties:
-                type: string
-              type: object
+            storageClassName:
+              description: StorageClass names the StorageClass object representing
+                the desired provisioner and parameters
+              type: string
           required:
-            - storageClassName
+          - storageClassName
           type: object
         status:
           description: Most recently observed status of the claim.
           properties:
             phase:
-              description: ObjectBucketClaimStatusPhase is set by the controller to save the state of the provisioning process
+              description: ObjectBucketClaimStatusPhase is set by the controller to
+                save the state of the provisioning process
               enum:
-                - "pending"
-                - "bound"
-                - "released"
-                - "failed"
+              - Pending
+              - Bound
+              - Released
+              - Failed
               type: string
           type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

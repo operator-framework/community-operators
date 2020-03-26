@@ -1,13 +1,27 @@
 #!/usr/bin/env bash
 
+set -e
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  if [[ -z "${VM_DRIVER}" ]]; then
-    export VM_DRIVER=hyperkit
+  if [[ -z ${VM_DRIVER+x} ]]; then
+      VM_DRIVER=hyperkit
   fi
 fi
 
+if [[ ! -z ${VM_DRIVER+x} ]]; then
+      VM_DRIVER_SWITCH="--vm-driver=${VM_DRIVER}"
+  fi
+
 if [[ -n "${KUBE_VER}" ]]; then
-    MINIKUBE_KUBE_VERSION="--kubernetes-version="${KUBE_VER}""
+    MINIKUBE_KUBE_VERSION="--kubernetes-version=${KUBE_VER}"
 fi
 
-minikube start --vm-driver=${VM_DRIVER} ${MINIKUBE_KUBE_VERSION} --extra-config=apiserver.v=4 -p operators
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  minikube start ${VM_DRIVER_SWITCH} ${MINIKUBE_KUBE_VERSION} --extra-config=apiserver.v=4
+else
+  CHANGE_MINIKUBE_NONE_USER=true sudo minikube start ${VM_DRIVER_SWITCH} ${MINIKUBE_KUBE_VERSION} --extra-config=apiserver.v=4
+fi
+
+JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; echo "waiting for kubernetes node to be available" done
+
+JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lk8s-app=kube-dns -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-dns to be available"; done

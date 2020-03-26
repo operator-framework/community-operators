@@ -1,6 +1,4 @@
 .PHONY: help
-SDK_VER="v0.14.0"
-KUBE_VER="v1.14.0"
 MAKEFLAGS+ = --no-print-directory
 OP_PATH=''
 OP_CHANNEL=''
@@ -10,7 +8,12 @@ WARN=\033[0;33m
 ERR=\033[0;31m
 NC=\033[0m
 force_color_prompt=yes
-VERBOSE=0
+export VERBOSE ?= 0
+export SDK_VER ?= v0.16.0
+export KUBE_VER ?= v1.17.0
+export KIND_VER ?= v0.7.0
+export OLM_VER ?= 0.14.1
+export NO_KIND ?= 0 
 
 help:
 	@grep -E '^[a-zA-Z0-9/._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -65,11 +68,11 @@ dependencies.install.crictl: ## Install crictl
 	@echo "Installed"
 
 olm.install: ## Install OLM to your cluster
-	@scripts/ci/run-script "scripts/ci/install-olm-local" "Install OLM"
+	@scripts/ci/run-script "scripts/ci/install-olm" "Install OLM"
 
-operator.registry.build: check_path ## Build registry image
+operator.configmap.build: check_path ## Build catalog configmap
 	@scripts/ci/make-tmp
-	@scripts/ci/run-script "scripts/ci/build-registry-image" "Make registry configmap"
+	@scripts/ci/run-script "scripts/ci/build-catalog-configmap" "Make catalog configmap"
 
 operator.install: check_path
 	@scripts/ci/make-tmp
@@ -82,4 +85,4 @@ operator.test: check_path ## Operator test which run courier and scorecard
 	@scripts/ci/testscript-wrapper
 
 operator.verify: check_path ## Run only courier
-	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Verify operator" "false"
+	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Lint operator metadata" "false"

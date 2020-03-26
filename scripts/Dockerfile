@@ -10,7 +10,14 @@ RUN apk add --update \
     bash \
   && rm -rf /var/cache/apk/*
 
-COPY . /scripts
+COPY . /scripts/
+
 RUN rm -rf /Makefile && mv /scripts/utils/Makefile /
+
 ENV INSTALL_DEPS=1
 RUN python3 /scripts/utils/check-deps.py
+
+COPY ./utils/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD []

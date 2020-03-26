@@ -72,11 +72,11 @@ function check_csv_passes() {
   local csv="$1"
   local namespace="$2"
   local installmode="$3"
-  local retries=30 # 1 minute timeout
-
+  local retries=30 # 5 minute timeout
+  
   echo "Check that clusterserviceversion \"$csv\" status is set to \"Succeeded\""
-  while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase` == \"Succeeded\" ]]; do
-      sleep 6
+  while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq --raw-output .status.phase` == "Succeeded" ]]; do
+      sleep 10
       retries=$((retries - 1))
       if [[ $retries == 0 ]]; then
         >&2 echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\""
@@ -93,7 +93,7 @@ function check_csv_passes() {
       echo "Check that clusterserviceversion \"$csv\" in second namespace status is set to \"Succeeded\""
       local retries=30
 
-      while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=operators -o json | jq .status.phase` == \"Succeeded\" ]]; do
+      while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=operators -o json | jq --raw-output .status.phase` == "Succeeded" ]]; do
           sleep 6
           retries=$((retries - 1))
           if [[ $retries == 0 ]]; then
@@ -184,7 +184,7 @@ function uninstall_olm() {
 
 
     printf "Uninstall olm %s\t[ ${WARN} Processing ${NC} ]\n" | expand  -t 50 >&2;
-    operator-sdk alpha olm uninstall > /dev/null
+    operator-sdk olm uninstall > /dev/null
     printf "Uninstall olm %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
 }
 
@@ -283,4 +283,184 @@ function get_channel_name() {
     echo "No matching channel exists for this CSV in the package file" 1>&2
     exit 1
   fi
+}
+
+function inject_kubeconfig_volume() {
+  local csv_json="$1"
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec"
+  local volume='{
+    "name": "scorecard-kubeconfig",
+    "secret": {
+      "secretName": "scorecard-kubeconfig",
+      "items": [
+        {
+          "key": "kubeconfig",
+          "path": "config"
+        }
+      ]
+    }}'
+
+   echo "$csv_json" | jq "${insert_path} |= . + {volumes: (.volumes + [${volume}] ) }"
+}
+
+function inject_kubeconfig_secret_mount() {
+  local csv_json=$1
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec.containers[]"
+  local volume_mount='{name: "scorecard-kubeconfig", mountPath: "/scorecard-secret"}'
+
+  jq "${insert_path} |= . + {volumeMounts: (.volumeMounts + [${volume_mount}] ) }"  <<< ${csv_json}
+}
+
+function inject_kubeconfig_env_var() {
+  local csv_json=$1
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec.containers[]"
+  local env_var='{name: "KUBECONFIG", value: "/scorecard-secret/config"}'
+
+  jq "${insert_path} |= . + {env: (.env + [${env_var}] ) }"  <<< ${csv_json}
+}
+
+function inject_proxy_container {
+  local csv_json=$1
+  local proxy_image="$2"
+  local insert_path=".spec.install.spec.deployments[].spec.template.spec"
+  local proxy_container='{
+    "name": "scorecard-proxy",
+    "command": [
+      "scorecard-proxy"
+    ],
+    "env": [
+      {
+        "name": "WATCH_NAMESPACE",
+        "valueFrom": {
+          "fieldRef": {
+            "apiVersion": "v1",
+            "fieldPath": "metadata.namespace"
+          }
+        }
+      }
+    ],
+    "image": "'"$proxy_image"'",
+    "imagePullPolicy": "Always",
+    "ports": [
+      {
+        "name": "proxy",
+        "containerPort": 8889
+      }
+    ]
+  }'
+  
+  jq "${insert_path} |= . + {containers: (.containers + [${proxy_container}] ) }"  <<< ${csv_json}
+}
+
+function generate_kubeconfig_secret_file() {
+  local namespace="$1"
+  # Expected proxy url. The proxy is configured to listen on port 8889.
+  local server="localhost:8889"
+  # Username for scorecard namespaced owner reference.
+  local username="$(echo '{"apiVersion":"","kind":"","name":"scorecard","uid":"","Namespace":"'$namespace'"}' | base64 | tr -d \\n)"
+  # Kubeconfig used to communicate with the proxy.
+  local kubeconfig="apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: http://${username}@${server}
+  name: proxy-server
+contexts:
+- context:
+    cluster: proxy-server
+    user: admin/proxy-server
+  name: $namespace/proxy-server
+current-context: $namespace/proxy-server
+preferences: {}
+users:
+- name: admin/proxy-server
+  user:
+    username: $username
+    password: unused"
+  local kubeconfig_base64="$(echo "$kubeconfig" | base64 | tr -d \\n)"
+
+  cat <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scorecard-kubeconfig
+  namespace: $namespace
+  labels:
+    operator: test
+data:
+  kubeconfig: $kubeconfig_base64
+EOF
+}
+
+# Prepares an Operator (CSV) for testing with scorecard
+function instrument_operator() {
+  local csv="$1"
+  local namespace="$2"
+  local scorecard_proxy_image=${3:-"quay.io/operator-framework/scorecard-proxy:master"}
+
+  local secret_yaml="$(generate_kubeconfig_secret_file $namespace)"
+
+  local temp_secret=$(mktemp)
+  echo "$secret_yaml" > $temp_secret
+  kubectl apply -f $temp_secret
+
+  check_csv_passes $csv $namespace
+
+  local csv_json="$(kubectl get csv $csv -n $namespace -o json)"
+  local csv_json="$(inject_kubeconfig_volume "$csv_json")"
+  local csv_json="$(inject_kubeconfig_secret_mount "$csv_json")"
+  local csv_json="$(inject_kubeconfig_env_var "$csv_json")"
+  local csv_json="$(inject_proxy_container "$csv_json" "$scorecard_proxy_image")"
+
+  local temp_csv=$(mktemp)
+  echo "$csv_json" > $temp_csv
+
+  kubectl apply --validate=false -f $temp_csv
+}
+
+# checks whether the CSV and it's sibling Deployments hav the scorecard-proxy side car
+function check_scorecard_presence() {
+  local csv="$1"
+  local namespace="$2"
+  retries=30 # 5 minute timeout
+  
+  echo "Check that clusterserviceversion \"$csv\" succeeded applied scorecard-proxy"
+  while [ $retries -gt 0 ]; do
+      sleep 10 
+
+      csv_status=$(kubectl get csv ${csv} --namespace=${namespace} -o json | jq --raw-output .status.phase) 
+      csv_scorecard_container=$(kubectl get csv ${csv} --namespace=${namespace} -o jsonpath="{$.spec.install.spec.deployments[*].spec.template.spec.containers[?(@.name=='scorecard-proxy')].command}")
+      csv_has_scorecard=$([ -z "$csv_scorecard_container" ] && echo "False" || echo "True" )
+
+      csv_deployments=$(kubectl get deployment -n $namespace -o json |  jq --raw-output ".items[] | select(.metadata.ownerReferences[].name==\"${csv}\") | .metadata.name")
+      csv_deployments_have_scorecard="True"
+
+      for deployment in $csv_deployments ; do
+          deployment_has_scorecard=$(kubectl get deployment ${deployment} --namespace=${namespace} -o jsonpath="{$.spec.template.spec.containers[?(@.name=='scorecard-proxy')].command}")
+
+          if [ -z "$deployment_has_scorecard" ] ; then 
+            csv_deployments_have_scorecard="False"
+          fi
+      done
+
+      echo "clusterserviceversion \"$csv\" is in phase: $csv_status"
+      echo "clusterserviceversion \"$csv\" has scorecard container: $csv_has_scorecard"
+      echo "clusterserviceversion \"$csv\" deployments have scorecard container: $csv_deployments_have_scorecard"
+
+      if [[ "${csv_status}" == "Succeeded" && "$csv_has_scorecard" == "True" && "$csv_deployments_have_scorecard" == "True" ]] ; then
+        echo "Clusterserviceversion \"$csv\" successfully applied scorecard-proxy in namespace \"$namespace\""
+        return 0
+      else
+        retries=$((retries - 1))
+      fi
+  done
+
+  >&2 echo "failed to reach "Succeeded" phase or find scorecard in clusterserviceversion \"$csv\""
+  # Print out CSV's 'status' section on error
+  kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o jsonpath="{.status}"
+  kubectl get csv ${csv} --namespace=${namespace} -o jsonpath="{$.spec.install.spec.deployments[*].spec.template.spec.containers[?(@.name=='scorecard-proxy')]}"
+  # Check operator pod(s) logs
+  get_operator_logs "$csv" "$namespace"
+  return 1
 }

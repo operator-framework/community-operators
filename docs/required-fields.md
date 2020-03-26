@@ -55,7 +55,6 @@ For the best user experience, choose from the following categories:
 | AI/Machine Learning |
 | Application Runtime |
 | Big Data |
-| Chaos Engineering |
 | Cloud Provider |
 | Database |
 | Developer Tools |
