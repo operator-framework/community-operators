@@ -19,6 +19,7 @@ class messages:
     CLUSTER = 'Find kube cluster \t [ %s %s %s ]'
     CONTEXT = 'Find kube context \t [ %s %s %s ]'
     MASTER = 'Try kube master \t [ %s %s %s ]'
+    OMIT_KIND = 'KIND cluster auto-creation \t [ %s %s %s ]'
 
 
 def get_kube_config(config_path):
@@ -42,9 +43,6 @@ def parse_current_context(kube_config):
     selected = 0
     cluster = ''
 
-    if environ.get('NO_KIND', '0') == '0':
-        options.append('Create a new KIND cluster')
-
     for i in range(len(contexts)):
         context = contexts[i]
         options.append(context.get('name'))
@@ -53,14 +51,18 @@ def parse_current_context(kube_config):
             cluster = context.get('context').get('cluster')
 
     if len(contexts) > 0:
+
         title = 'Please choose an existing Kubernetes cluster or create a new one: '
 
+        options.insert(0, 'Create a new KIND cluster')
         option, index = pick(options, title, indicator='=>', default_index=selected)
         current_context = option
 
-        if index == 0 and environ.get('NO_KIND', '0') == '0':
+        if index == 0:
             print((messages.CONTEXT % (bcolors.WARN, 'skipped', bcolors.NC)).expandtabs(49))
-            raise Exception('Skipped')
+            system('make kind.start')
+            current_context = kube_config.get('current-context')
+            contexts = kube_config.get('contexts')
 
         for i in range(len(contexts)):
             context = contexts[i]
@@ -112,21 +114,26 @@ def check_availability_of_cluster(cluster_name, config):
 
 
 def main():
-    try:
-        env_kube_config = environ.get('KUBECONFIG', '')
-        config_path = env_kube_config if env_kube_config != '' else path.join(Path.home(), '.kube/config')
-        kube_config = get_kube_config(config_path)
-        kube_context, cluster_name = parse_current_context(kube_config)
-        check_availability_of_cluster(cluster_name, kube_config)
-        write_context_to_config_file(config_path, kube_context, kube_config)
-    except Exception as e:
-        if environ.get('NO_KIND', '0') == '0':
-            system('make kind.start')
-            exit(0)
-        else:
+
+    if environ.get('NO_KIND', '0') != '0':
+        print((messages.OMIT_KIND % (bcolors.WARN, 'skipped', bcolors.NC)).expandtabs(49))
+
+        try:
+            env_kube_config = environ.get('KUBECONFIG', '')
+            config_path = env_kube_config if env_kube_config != '' else path.join(Path.home(), '.kube/config')
+            kube_config = get_kube_config(config_path)
+            kube_context, cluster_name = parse_current_context(kube_config)
+            check_availability_of_cluster(cluster_name, kube_config)
+            write_context_to_config_file(config_path, kube_context, kube_config)
+        except Exception as e:
             print(Exception, e)
             traceback.print_exc()
             exit(1)
+    else:
+        print((messages.OMIT_KIND % (bcolors.OK, 'selected', bcolors.NC)).expandtabs(49))
+
+        exit_code = system('make kind.start')
+        exit(exit_code)
 
 
 if __name__ == "__main__":
