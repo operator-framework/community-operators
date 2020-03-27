@@ -1,7 +1,7 @@
 MAKEFLAGS += --no-print-directory
 export OP_PATH=''
 export CLEAN_MODE=NORMAL
-export KUBECONFIG ?= ~/.kube/config
+export KUBECONFIG ?= ${HOME}/.kube/config
 export KUBE_VER ?= v1.17.0
 export OLM_VER ?= 0.14.1
 export SDK_VER ?= v0.16.0
