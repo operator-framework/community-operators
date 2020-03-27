@@ -11,4 +11,4 @@ else
     echo "Detected modified Operator version ${OP_VER}"
 fi
       
-make operator.install OP_PATH="${OP_PATH}" OP_VER="${OP_VER}" VM_DRIVER=none CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=1
+make operator.install OP_PATH="${OP_PATH}" OP_VER="${OP_VER}" VM_DRIVER=none CLEAN_MODE=NORMAL INSTALL_MODE='' VERBOSE=0
