@@ -1,14 +1,15 @@
-FROM docker:18
+FROM centos:centos8
+USER root
 
-RUN apk add --update \
+RUN yum update -y && rm -rf /var/cache/yum
+
+RUN yum -y install \
     python3 \
-    python3-dev \
-    py3-pip \
-    build-base \
+    python3-pip \
     make \
     curl \
     bash \
-  && rm -rf /var/cache/apk/*
+    && yum clean all
 
 COPY . /scripts/
 
