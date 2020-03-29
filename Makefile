@@ -22,6 +22,9 @@ check_no_kind :
 check_kind_install :
 	@if [[ "${NO_KIND}" == "0" &&  "$(which kind)" =~ "not found" ]] ; then echo "KIND (https://kind.sigs.k8s.io) is not installed and NO_KIND is not set." ; exit 1 ; fi
 
+force_pull_image:
+	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
+
 minikube.install: ## Install the local minikube
 	@./scripts/ci/install-minikube
 	@echo "Installed"
@@ -35,13 +38,11 @@ kind.start:
 minikube.start: ## Start local minikube
 	@scripts/ci/run-script "scripts/ci/start-minikube" "Start minikube"
 
-olm.install: ## Install OLM to your cluster
-	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
+olm.install: force_pull_image ## Install OLM to your cluster
 	@python3 scripts/utils/check-kube-config.py
 	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:z -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -it ${OPERATOR_TESTING_IMAGE} olm.install --no-print-directory VERBOSE=${VERBOSE}
 
-operator.install: check_path check_no_kind check_kind_install
-	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
+operator.install: check_path check_no_kind check_kind_install force_pull_image
 	@python3 scripts/utils/check-kube-config.py
 	@scripts/ci/run-script "scripts/ci/build-catalog-image" "Building catalog image"
 	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:z -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -ti ${OPERATOR_TESTING_IMAGE} operator.install --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE} CATALOG_IMAGE=${CATALOG_IMAGE} NO_KIND=${NO_KIND}
@@ -49,12 +50,10 @@ operator.install: check_path check_no_kind check_kind_install
 operator.cleanup: check_path check_no_kind check_kind_install 
 	@scripts/ci/run-script "scripts/ci/cleanup" "Cleaning"
 
-operator.test: check_path check_no_kind check_kind_install ## Operator test which run courier and scorecard
-	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
+operator.test: check_path check_no_kind check_kind_install force_pull_image ## Operator test which run courier and scorecard
 	@python3 scripts/utils/check-kube-config.py
 	@scripts/ci/run-script "scripts/ci/build-catalog-image" "Building catalog image"
 	@docker run --network=host -v ${KUBECONFIG}:/root/.kube/config:z -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -ti ${OPERATOR_TESTING_IMAGE} operator.test --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE} OP_VER=${OP_VER} OP_CHANNEL=${OP_CHANNEL} INSTALL_MODE=${INSTALL_MODE} CLEAN_MODE=${CLEAN_MODE} OLM_VER=${OLM_VER} KUBE_VER=${KUBE_VER} NO_KIND=${NO_KIND} CATALOG_IMAGE=${CATALOG_IMAGE}
 
-operator.verify: check_path ## Run only courier
-	@scripts/ci/run-script "docker pull ${OPERATOR_TESTING_IMAGE}" "Pulling docker image"
+operator.verify: check_path force_pull_image ## Run only courier
 	@docker run -v ${PWD}/community-operators:/community-operators:z -v ${PWD}/upstream-community-operators:/upstream-community-operators:z -ti ${OPERATOR_TESTING_IMAGE} operator.verify --no-print-directory OP_PATH=${OP_PATH} VERBOSE=${VERBOSE}
