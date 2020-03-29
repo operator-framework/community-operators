@@ -9,6 +9,7 @@ RUN microdnf -y install \
     make \
     curl \
     bash \
+    findutils \
     && microdnf clean all
 
 COPY . /scripts/
