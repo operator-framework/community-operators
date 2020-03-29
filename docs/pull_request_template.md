@@ -48,6 +48,6 @@ Remember that you can preview your CSV [here](https://operatorhub.io/preview).
 
 --
 
-<sup>1</sup> If you feel your Operator does not fit any of the pre-defined categories, file a PR against this repo and explain your need
+<sup>1</sup> If you feel your Operator does not fit any of the pre-defined categories, file an issue against this repo and explain your need
 
 <sup>2</sup> For more information see [here](https://github.com/operator-framework/operator-sdk/blob/master/doc/images/operator-capability-level.svg)

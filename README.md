@@ -23,7 +23,19 @@ This repo is the canonical source for Kubernetes Operators that appear on [Opera
 
 We would love to see your Operator being added to this collection. We currently use automated vetting via continuous integration plus manual review to curate a list of high-quality, well-documented Operators. If you are new to Kubernetes Operators start [here](https://github.com/operator-framework/getting-started).
 
-If you have an existing Operator read our [contribution guidelines](./docs/contributing.md) on how to package and test it. Then submit a Pull Request.
+If you have an existing Operator read our [contribution guidelines](./docs/contributing.md) on how to package and test it. Then test your Operator locally and submit a Pull Request.
+
+## Test your Operator before submitting a PR
+
+You can leverage the `Makefile` at the top-level directory of this repository to test your Operator prior to submitting it. Assuming you followed the contribution guide, you can run the entire suite on a Linux or macOS system with `Docker` and [`KIND`](https://github.com/kubernetes-sigs/kind) installed:
+
+`make operator.test OP_PATH=upstream-community-operators/my-operator`
+
+Tests not passing? Check [here](docs/using-scripts.md#troubleshooting).
+
+## Preview your Operator on OperatorHub.io
+
+If you are submitting your Operator in the `upstream-community-operators` directory your Operator will appear on OperatorHub.io. You can preview how your Operator would be rendered there by using the [preview tool](https://operatorhub.io/preview).
 
 ## Submitting your PR
 
@@ -33,15 +45,13 @@ Review this [checklist](./docs/pull_request_template.md) upon creating a PR and 
 
 Similarly, to update your operator you need to submit a PR with any changes to your Operator resources. Refere to our [contribution guide](docs/contributing.md#updating-your-existing-operator) for more details.
 
-## Test your Operator
+## CI Tests your Operator
 
-Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](./docs/ci.md).
+Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](./docs/ci.md). The pipeline will actually run the same `Makefile` commands you use to test locally.
 
 You can help speed up the review of your PR by testing locally, either [manually](./docs/testing-operators.md) or [using scripts](./docs/using-scripts.md)
 
-## Preview your Operator on OperatorHub.io
-
-If you are submitting your Operator in the `upstream-community-operators` directory your Operator will appear on OperatorHub.io. You can preview how your Operator would be rendered there by using the [preview tool](https://operatorhub.io/preview).
+Tests not passing? Check [here](docs/using-scripts.md#troubleshooting).
 
 ## Reporting Bugs
 
