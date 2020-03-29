@@ -1,15 +1,15 @@
-FROM centos:centos8
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 USER root
 
-RUN yum update -y && rm -rf /var/cache/yum
+RUN microdnf update -y && rm -rf /var/cache/yum
 
-RUN yum -y install \
+RUN microdnf -y install \
     python3 \
     python3-pip \
     make \
     curl \
     bash \
-    && yum clean all
+    && microdnf clean all
 
 COPY . /scripts/
 
