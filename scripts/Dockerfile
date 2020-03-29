@@ -1,14 +1,16 @@
-FROM docker:18
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+USER root
 
-RUN apk add --update \
+RUN microdnf update -y && rm -rf /var/cache/yum
+
+RUN microdnf -y install \
     python3 \
-    python3-dev \
-    py3-pip \
-    build-base \
+    python3-pip \
     make \
     curl \
     bash \
-  && rm -rf /var/cache/apk/*
+    findutils \
+    && microdnf clean all
 
 COPY . /scripts/
 
