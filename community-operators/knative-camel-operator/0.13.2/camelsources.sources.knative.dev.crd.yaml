@@ -1,0 +1,87 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    contrib.eventing.knative.dev/release: "v0.13.2"
+    eventing.knative.dev/source: "true"
+    duck.knative.dev/source: "true"
+    knative.dev/crd-install: "true"
+  name: camelsources.sources.knative.dev
+spec:
+  group: sources.knative.dev
+  names:
+    categories:
+    - all
+    - knative
+    - eventing
+    - sources
+    kind: CamelSource
+    plural: camelsources
+  scope: Namespaced
+  subresources:
+    status: {}
+  additionalPrinterColumns:
+  - name: Ready
+    type: string
+    JSONPath: '.status.conditions[?(@.type=="Ready")].status'
+  - name: Reason
+    type: string
+    JSONPath: '.status.conditions[?(@.type=="Ready")].reason'
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            sink:
+              type: object
+              description: "Reference to an object that will resolve to a domain name
+                to use as the sink."
+            ceOverrides:
+              type: object
+              description: "Defines overrides to control modifications of the event
+                sent to the sink."
+            source:
+              properties:
+                flow:
+                  type: object
+                integration:
+                  type: object
+              type: object
+          required:
+          - source
+          type: object
+        status:
+          properties:
+            conditions:
+              items:
+                properties:
+                  lastTransitionTime:
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  severity:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - type
+                - status
+                type: object
+              type: array
+            sinkUri:
+              type: string
+          type: object
+  version: v1alpha1
