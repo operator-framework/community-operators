@@ -89,25 +89,6 @@ function check_csv_passes() {
       echo "clusterserviceversion phase for \"$csv\": `kubectl get "clusterserviceversion/${csv}" --namespace=${namespace} -o json | jq .status.phase`"
   done
 
-  if [[ "$installmode" == "AllNamespaces" ]]; then
-      echo "Check that clusterserviceversion \"$csv\" in second namespace status is set to \"Succeeded\""
-      local retries=30
-
-      while ! [[ `kubectl get "clusterserviceversion/${csv}" --namespace=operators -o json | jq --raw-output .status.phase` == "Succeeded" ]]; do
-          sleep 6
-          retries=$((retries - 1))
-          if [[ $retries == 0 ]]; then
-            >&2 echo "failed to reach "Succeeded" clusterserviceversion status for \"$csv\" in operators namespace"
-            # Print out CSV's 'status' section on error
-            kubectl get "clusterserviceversion/${csv}" --namespace=operators -o jsonpath="{.status}"
-            # Check operator pod(s) logs
-            get_operator_logs "$csv" "operators"
-            exit 1
-          fi
-          echo "clusterserviceversion phase for \"$csv\": `kubectl get "clusterserviceversion/${csv}" --namespace=operators -o json | jq .status.phase`"
-      done
-  fi
-
   echo "Successfully installed clusterserviceversion \"$csv\" in namespace \"$namespace\""
 }
 
@@ -256,7 +237,7 @@ function get_op_namespace() {
   done < <(yq r --tojson "$csv_file" "spec.installModes" | jq -c '.[]')
 
   if [[ ${modes["AllNamespaces"]} == "true" ]]; then
-    echo "operators"
+    echo "$op_name"
   elif [[ ${modes["SingleNamespace"]} == "true" ]]; then
     echo "$op_name"
   elif [[ ${modes["OwnNamespace"]} == "true" ]]; then
