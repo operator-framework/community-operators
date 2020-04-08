@@ -29,7 +29,7 @@ def main(argv):
         if  im['type'] != 'AllNamespaces' and im['supported']:
             installmode = im['type']
         elif im['type'] == 'AllNamespaces' and im['supported'] and installmode is None:
-            installmode = im['type']
+            installmode = 'AllNamespaces'
 
     print(installmode)
 
