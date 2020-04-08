@@ -1,0 +1,227 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "hyperfoil.io/v1alpha1",
+          "kind": "Horreum",
+          "metadata": {
+            "name": "example-horreum"
+          },
+          "spec": {
+            "route": {
+              "host": "horreum.apps.mycloud.example.com"
+            },
+            "keycloak": {
+              "route": {
+                "host": "keycloak.apps.mycloud.example.com"
+              }
+            },
+            "postgres": {
+              "persistentVolumeClaim": "horreum-postgres"
+            },
+            "report": {
+              "persistentVolumeClaim": "hyperfoil-report",
+              "route": {
+                "host": "hyperfoil-report.apps.mycloud.example.com"
+              }
+            }
+          }
+        }
+      ]
+    categories: Developer Tools
+    repository: https://github.com/Hyperfoil/horreum-operator
+    containerImage: quay.io/hyperfoil/horreum-operator:0.1.0
+    description: Performance results repository
+    capabilities: Basic Install
+  name: horreum-operator.v0.1.0
+  namespace: openshift-operators
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: Horreum
+      name: horreums.hyperfoil.io
+      version: v1alpha1
+      displayName: Horreum
+      description: Horreum is the Schema for the horreums API
+      specDescriptors:
+      - path: route
+        description: Hostname for external access to the Horreum application.
+        displayName: Route
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - path: postgres.persistentVolumeClaim
+        description: Name of PVC used to persist the database.
+        displayName: PostgreSQL Persistent Volume Claim
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - path: keycloak.route
+        description: Hostname for external access to Keycloak SSO.
+        displayName: Keycloak Route
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - path: report.enabled
+        description: Enable Hyperfoil report tool.
+        displayName: Hyperfoil Report Enabled
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+      - path: report.route
+        description: Hostname for external access to Hyperfoil reports.
+        displayName: Hyperfoil Report Route
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - path: report.persistentVolumeClaim
+        description: Name of PVC used to persist Hyperfoil reports.
+        displayName: Hyperfoil Report Persistent Volume Claim
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
+      statusDescriptors:
+      - path: status
+        description: Status
+        displayName: Status
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+      - path: reason
+        description: Reason
+        displayName: Reason
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+      - path: lastUpdate
+        description: Last Update
+        displayName: Last Update
+        x-descriptors:
+        - 'urn:alm:descriptor:text'
+  description: |-
+    Horreum is a repository for performance results.
+    While Horreum lives under Hyperfoil project umbrella it is not limited
+    to Hyperfoil results; it accepts free-form JSON and allows
+    highly-customizable views of the data, validation and notification
+    of other services through hooks.
+    The results are physically stored in a PostgreSQL database.
+
+    See more on [github.com/Hyperfoil/Horreum](https://github.com/Hyperfoil/Horreum)
+
+    Horreum is licensed under Apache License 2.0
+  displayName: Horreum
+  install:
+    spec:
+      deployments:
+      - name: horreum-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: horreum-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: horreum-operator
+            spec:
+              containers:
+              - command:
+                - horreum-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: horreum-operator
+                image: quay.io/hyperfoil/horreum-operator:0.1.0
+                imagePullPolicy: Always
+                name: horreum-operator
+                resources: {}
+              serviceAccountName: horreum-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - horreum-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - hyperfoil.io
+          resources:
+          - horreums
+          - horreums/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - '*'
+        # This allows operator to instruct database to run as user 999
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+          resourceNames:
+          - nonroot
+        serviceAccountName: horreum-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - hyperfoil
+  - benchmark
+  - performance
+  - repository
+  - database
+  - results
+  links:
+  - name: GitHub
+    url: https://github.com/Hyperfoil/Horreum
+  maintainers:
+  - name: Radim Vansa
+    email: rvansa@redhat.com
+  - name: Ståle W. Pedersen
+    email: spederse@redhat.com
+  - name: Will Reichert
+    email: wreicher@redhat.com
+  maturity: alpha
+  provider:
+    name: Red Hat, Inc.
+  version: 0.1.0
