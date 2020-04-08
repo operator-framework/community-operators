@@ -7,10 +7,11 @@
 
 - [About this repository](#about-this-repository)
 - [Add your Operator](#add-your-operator)
+- [Test your Operator before submitting a PR](#test-your-operator-before-submitting-a-pr)
+- [Preview your Operator on OperatorHub.io](#preview-your-operator-on-operatorhubio)
 - [Submitting your PR](#submitting-your-pr)
 - [Update your Operator](#update-your-operator)
-- [Test your Operator](#test-your-operator)
-- [Preview your Operator on OperatorHub.io](#preview-your-operator-on-operatorhubio)
+- [CI Tests your Operator](#ci-tests-your-operator)
 - [Reporting Bugs](#reporting-bugs)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
