@@ -1,0 +1,176 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "mariadb.persistentsys/v1alpha1",
+          "kind": "MariaDB",
+          "metadata": {
+            "name": "mariadb"
+          },
+          "spec": {
+            "database": "test-db",
+            "password": "db-user",
+            "rootpwd": "password",
+            "size": 1,
+            "username": "db-user"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Database
+    containerImage: quay.io/manojdhanorkar/mariadb-operator:v0.0.1 
+    createdAt: 2020-04-07 11:17:00
+    description: Create mariadb server and database on Kubernetes
+    repository: https://github.com/abalki001/mariadb-operator
+    support: Manoj Dhanorkar
+    certified: 'false'
+  name: mariadb-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Represents a resource for managing MariaDB database
+      kind: MariaDB
+      displayName: mariadb.persistentsys
+      name: mariadbs.mariadb.persistentsys
+      version: v1alpha1
+  description: "This operator enables you to create MariaDB server\
+    \ and database easily by defining simple Custom Resource. Operator's\nfeatures\
+    \ are as follows:\n\n* Creates a MariaDB server\n* Creates a database"
+  displayName: Mariadb Operator
+  install:
+    spec:
+      deployments:
+      - name: mariadb-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: mariadb-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: mariadb-operator
+            spec:
+              containers:
+              - command:
+                - mariadb-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: mariadb-operator
+                image: quay.io/manojdhanorkar/mariadb-operator:v0.0.1
+                imagePullPolicy: Always
+                name: mariadb-operator
+                resources: {}
+              serviceAccountName: mariadb-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - mariadb-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - mariadb.persistentsys
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: mariadb-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  maturity: alpha
+  version: 0.0.1
+  maintainers:
+  - email: manoj_dhanorkar@persistent.com
+    name: Manoj Dhanorkar
+  minKubeVersion: 1.8.2
+  provider:
+    name: Manoj Dhanorkar
+  selector:
+    matchLabels:
+      name: mariadb-operator
