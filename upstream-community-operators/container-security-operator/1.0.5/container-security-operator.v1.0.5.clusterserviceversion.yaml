@@ -1,0 +1,126 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    capabilities: Full Lifecycle
+    categories: Security
+    containerImage: quay.io/quay/container-security-operator@sha256:6eefeaee910251ba26c825746d11ae166a9781aeace5455b2766d26298911f13
+    createdAt: 2020-04-13 00:00:00
+    description: Identify image vulnerabilities in Kubernetes pods
+    repository: https://github.com/quay/container-security-operator
+    tectonic-visibility: ocs
+  name: container-security-operator.v1.0.5
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Represents a set of vulnerabilities in an image manifest.
+      displayName: Image Manifest Vulnerability
+      kind: ImageManifestVuln
+      name: imagemanifestvulns.secscan.quay.redhat.com
+      version: v1alpha1
+  description: "The Container Security Operator (CSO) brings Quay and Clair metadata to Kubernetes / OpenShift.\
+    \ Starting with vulnerability information the scope will get expanded over time. If it runs on OpenShift,\
+    \ the corresponding vulnerability information is shown inside the OCP Console. The Container Security Operator\
+    \ enables cluster administrators to monitor known container\
+    \ image vulnerabilities in pods running on their Kubernetes cluster. The controller sets up a watch\
+    \ on pods in the specified namespace(s) and queries the container registry for vulnerability\
+    \ information. If the container registry supports image scanning,\
+    \ such as [Quay](https://github.com/quay/quay) with [Clair](https://github.com/quay/clair),\
+    \ then the Operator will expose any vulnerabilities found via the Kubernetes API in an\
+    \ `ImageManifestVuln` object.  This Operator requires no additional configuration after deployment,\
+    \ and will begin watching pods and populating `ImageManifestVulns` immediately once installed."
+  displayName: Container Security
+  install:
+    spec:
+      deployments:
+      - name: container-security-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: container-security-operator-alm-owned
+          template:
+            metadata:
+              labels:
+                name: container-security-operator-alm-owned
+              name: container-security-operator-alm-owned
+            spec:
+              containers:
+              - command:
+                - /bin/security-labeller
+                - '--namespaces=$(WATCH_NAMESPACE)'
+                env:
+                - name: MY_POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: MY_POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                image: quay.io/quay/container-security-operator@sha256:5e96a3d0d7694e26e8354701077f7eb5f7759800c5de0170a007cfc6a51e3f87
+                name: container-security-operator
+              serviceAccountName: container-security-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - secscan.quay.redhat.com
+          resources:
+          - imagemanifestvulns
+          - imagemanifestvulns/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - events
+          verbs:
+          - '*'
+        - apiGroups:
+          - ''
+          resources:
+          - secrets
+          verbs:
+          - get
+        serviceAccountName: container-security-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - open source
+  - containers
+  - security
+  labels:
+    alm-owner-container-security-operator: container-security-operator
+    operated-by: container-security-operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  maturity: alpha
+  links:
+  - name: Source Code
+    url: https://github.com/quay/container-security-operator
+  maintainers:
+  - email: quay-devel@redhat.com
+    name: Quay Engineering Team
+  provider:
+    name: Red Hat
+  selector:
+    matchLabels:
+      alm-owner-container-security-operator: container-security-operator
+      operated-by: container-security-operator
+  version: 1.0.5
+  replaces: container-security-operator.v1.0.4
