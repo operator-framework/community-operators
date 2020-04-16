@@ -1,0 +1,147 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apicasts.apps.3scale.net
+spec:
+  group: apps.3scale.net
+  names:
+    kind: APIcast
+    listKind: APIcastList
+    plural: apicasts
+    singular: apicast
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            adminPortalCredentialsRef:
+              properties:
+                name:
+                  type: string   
+              type: object
+            cacheConfigurationSeconds:
+              format: int64
+              type: integer
+            configurationLoadMode:
+              enum:
+              - boot
+              - lazy
+              type: string
+            deploymentEnvironment:
+              type: string
+            dnsResolverAddress:
+              type: string
+            embeddedConfigurationSecretRef:
+              properties:
+                name:
+                  type: string   
+              type: object
+            enabledServices:
+              items:
+                type: string
+              type: array
+            exposedHost:
+              properties:
+                host:
+                  type: string
+                tls:
+                  items:
+                    properties:
+                      secretName:
+                        type: string
+                      hosts:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  type: array
+              required:
+              - host
+              type: object
+            image:
+              type: string
+            logLevel:
+              enum:
+              - debug
+              - info
+              - notice
+              - warn
+              - error
+              - crit
+              - alert
+              - emerg
+              type: string
+            managementAPIScope:
+              enum:
+              - disabled
+              - status
+              - policies
+              - debug
+              type: string
+            openSSLPeerVerificationEnabled:
+              type: boolean
+            pathRoutingEnabled:
+              type: boolean
+            replicas:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
+              format: int64
+              type: integer
+            responseCodesIncluded:
+              type: boolean
+            serviceAccount:
+              type: string
+          type: object
+          anyOf:
+           - properties:
+               adminPortalCredentialsRef:
+                 type: object
+             required: ["adminPortalCredentialsRef"]
+           - properties:
+               embeddedConfigurationSecretRef:
+                 type: object
+             required: ["embeddedConfigurationSecretRef"]
+        status:
+          properties:
+            conditions:
+              description: Represents the latest available observations of a replica
+                set's current state. +patchMergeKey=type +patchStrategy=merge
+              items:
+                properties:
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of replica set condition.
+                    type: string
+                required:
+                - type
+                - status
+                type: object
+              type: array
+            image:
+              description: The image being used in the APIcast deployment
+              type: string
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
