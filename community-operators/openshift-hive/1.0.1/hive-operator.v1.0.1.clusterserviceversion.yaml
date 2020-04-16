@@ -1,0 +1,295 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"hive.openshift.io/v1","kind":"HiveConfig","metadata":{"name":"hive"},"spec":{"managedDomains":[{"aws":{"credentialsSecretRef":{"name":"my-route53-creds"}},"domains":["my-base-domain.example.com"]}]}}]'
+    capabilities: Seamless Upgrades
+    categories: OpenShift Optional
+    certified: 'false'
+    containerImage: quay.io/openshift-hive/hive:v1.0.1
+    createdAt: '2020-04-13T11:04:38Z'
+    description: OpenShift cluster provisioning and management at scale.
+    repository: https://github.com/openshift/hive
+    support: OpenShift Hive Team
+  name: hive-operator.v1.0.1
+  namespace: placeholder
+spec:
+  customresourcedefinitions:
+    owned:
+    - description: Configuration for the Hive Operator
+      displayName: Hive Config
+      kind: HiveConfig
+      name: hiveconfigs.hive.openshift.io
+      version: v1
+  description: "OpenShift Hive is an operator that runs on top of Kubernetes/OpenShift.\
+    \ Hive can be used to provision\nand perform initial configuration of OpenShift\
+    \ clusters.\n\nFor provisioning OpenShift, Hive uses the [OpenShift installer](https://github.com/openshift/installer).\n\
+    \n### Supported cloud providers\n* AWS\n* Azure\n* Google Cloud Platform\n\nIn\
+    \ the future Hive will support more cloud providers.\n\n## Documentation\n\n*\
+    \ [Quick Start Guide](https://github.com/openshift/hive/blob/master/docs/quick_start.md)\n\
+    * [Using Hive](https://github.com/openshift/hive/blob/master/docs/using-hive.md)\n\
+    * [Hiveutil CLI](https://github.com/openshift/hive/blob/master/docs/hiveutil.md)\n\
+    * [Frequently Asked Questions](https://github.com/openshift/hive/blob/master/docs/FAQs.md)\n\
+    * [Architecture](https://github.com/openshift/hive/blob/master/docs/architecture.md)\n\
+    \nSee the [project README](https://github.com/openshift/hive#documentation) for\
+    \ more documentation.\n\n## Post Install Configuration\n\nAfter installing the\
+    \ OpenShift Hive operator, create a cluster-scoped `HiveConfig` CR to configure\
+    \ Hive.\nUpon creation of `HiveConfig`, the operator will configure Hive's pods.\n\
+    \nExample `HiveConfig`:\n```yaml\n---\n  apiVersion: hive.openshift.io/v1\n  kind:\
+    \ HiveConfig\n  metadata:\n    name: hive\n  spec:\n    managedDomains:\n    -\
+    \ aws:\n        credentialsSecretRef:\n          name: my-route53-creds\n    \
+    \  domains:\n      - my-base-domain.example.com\n```\n\n## Create a cluster\n\n\
+    To create a cluster with Hive, create a `ClusterDeployment` CR. You can also use\
+    \ the\n[`hiveutil` tool](https://github.com/openshift/hive/blob/master/docs/hiveutil.md)'s\
+    \ `create-cluster` command\nto create clusters."
+  displayName: OpenShift Hive
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - velero.io
+          resources:
+          - backups
+          verbs:
+          - create
+        - apiGroups:
+          - ''
+          resources:
+          - serviceaccounts
+          - serviceaccounts/finalizers
+          - secrets
+          - secrets/finalizers
+          - services
+          - services/finalizers
+          - events
+          - configmaps
+          - namespaces
+          - persistentvolumeclaims
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiregistration.k8s.io
+          resources:
+          - apiservices
+          - apiservices/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - validatingwebhookconfigurations
+          - mutatingwebhookconfigurations
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - deployments/finalizers
+          - daemonsets
+          - daemonsets/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          - roles
+          - rolebindings
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - authorization.openshift.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - pods/log
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - admission.hive.openshift.io
+          resources:
+          - dnszones
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        - apiGroups:
+          - admission.hive.openshift.io
+          resources:
+          - clusterdeployments
+          - clusterimagesets
+          - clusterprovisions
+          - dnszones
+          - machinepools
+          - selectorsyncsets
+          - syncsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        serviceAccountName: hive-operator
+      deployments:
+      - name: hive-operator
+        spec:
+          replicas: 1
+          revisionHistoryLimit: 4
+          selector:
+            matchLabels:
+              control-plane: hive-operator
+              controller-tools.k8s.io: '1.0'
+          template:
+            metadata:
+              labels:
+                control-plane: hive-operator
+                controller-tools.k8s.io: '1.0'
+            spec:
+              containers:
+              - command:
+                - /opt/services/hive-operator
+                - --log-level
+                - info
+                env:
+                - name: CLI_CACHE_DIR
+                  value: /var/cache/kubectl
+                - name: HIVE_OPERATOR_NS
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                image: quay.io/openshift-hive/hive:v1.0.1
+                imagePullPolicy: Always
+                livenessProbe:
+                  failureThreshold: 1
+                  httpGet:
+                    path: /debug/health
+                    port: 8080
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                name: hive-operator
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                volumeMounts:
+                - mountPath: /var/cache/kubectl
+                  name: kubectl-cache
+              serviceAccountName: hive-operator
+              terminationGracePeriodSeconds: 10
+              volumes:
+              - emptyDir: {}
+                name: kubectl-cache
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - kubernetes
+  - openshift
+  - multi-cluster
+  - cluster
+  links:
+  - name: OpenShift Hive GitHub
+    url: https://github.com/openshift/hive
+  - name: 'OpenShift Hive: Cluster-as-a-Service'
+    url: https://www.openshift.com/blog/openshift-hive-cluster-as-a-service
+  - name: OpenShift
+    url: https://www.openshift.com/
+  maintainers:
+  - name: OpenShift Hive Team
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 1.0.1
