@@ -1,0 +1,124 @@
+#Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 Inc. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: ratelimitings.wso2.com
+spec:
+  group: wso2.com
+  names:
+    kind: RateLimiting
+    listKind: RateLimitingList
+    plural: ratelimitings
+    singular: ratelimiting
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            bandwidth:
+              properties:
+                dataAmount:
+                  type: string
+                dataUnit:
+                  type: string
+              required:
+              - dataAmount
+              - dataUnit
+              type: object
+            conditions:
+              properties:
+                headerCondition:
+                  properties:
+                    headerName:
+                      type: string
+                    headerValue:
+                      type: string
+                  required:
+                  - headerName
+                  - headerValue
+                  type: object
+                ipCondition:
+                  properties:
+                    endIp:
+                      type: string
+                    negation:
+                      type: boolean
+                    specificIp:
+                      type: string
+                    startIp:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  - specificIp
+                  - negation
+                  - startIp
+                  - endIp
+                  type: object
+              required:
+              - headerCondition
+              - ipCondition
+              type: object
+            description:
+              type: string
+            requestCount:
+              properties:
+                limit:
+                  format: int64
+                  type: integer
+              required:
+              - limit
+              type: object
+            stopOnQuotaReach:
+              type: boolean
+            timeUnit:
+              type: string
+            type:
+              type: string
+            unitTime:
+              format: int64
+              type: integer
+          required:
+          - type
+          - timeUnit
+          - unitTime
+          - requestCount
+          type: object
+        status:
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
