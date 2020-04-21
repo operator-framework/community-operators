@@ -1,0 +1,260 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kogitomgmtconsoles.app.kiegroup.org
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.replicas
+    description: Number of replicas set for this service
+    name: Replicas
+    type: integer
+  - JSONPath: .status.image
+    description: Base image for this service
+    name: Image
+    type: string
+  - JSONPath: .status.externalURI
+    description: External URI to access this service
+    name: Endpoint
+    type: string
+  group: app.kiegroup.org
+  names:
+    kind: KogitoMgmtConsole
+    listKind: KogitoMgmtConsoleList
+    plural: kogitomgmtconsoles
+    singular: kogitomgmtconsole
+  scope: Namespaced
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: KogitoMgmtConsole deploys the Kogito Management Console service
+        in the given namespace
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: KogitoMgmtConsoleSpec defines the desired state of KogitoMgmtConsole
+          properties:
+            envs:
+              description: Environment variables to be added to the runtime container.
+                Keys must be a C_IDENTIFIER.
+              items:
+                description: EnvVar represents an environment variable present in
+                  a Container.
+                properties:
+                  name:
+                    description: Name of the environment variable. Must be a C_IDENTIFIER.
+                    type: string
+                  value:
+                    description: 'Variable references $(VAR_NAME) are expanded using
+                      the previous defined environment variables in the container
+                      and any service environment variables. If a variable cannot
+                      be resolved, the reference in the input string will be unchanged.
+                      The $(VAR_NAME) syntax can be escaped with a double $$, ie:
+                      $$(VAR_NAME). Escaped references will never be expanded, regardless
+                      of whether the variable exists or not. Defaults to "".'
+                    type: string
+                  valueFrom:
+                    description: Source for the environment variable's value. Cannot
+                      be used if value is not empty.
+                    properties:
+                      configMapKeyRef:
+                        description: Selects a key of a ConfigMap.
+                        properties:
+                          key:
+                            description: The key to select.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the ConfigMap or its key
+                              must be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                      fieldRef:
+                        description: 'Selects a field of the pod: supports metadata.name,
+                          metadata.namespace, metadata.labels, metadata.annotations,
+                          spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP.'
+                        properties:
+                          apiVersion:
+                            description: Version of the schema the FieldPath is written
+                              in terms of, defaults to "v1".
+                            type: string
+                          fieldPath:
+                            description: Path of the field to select in the specified
+                              API version.
+                            type: string
+                        required:
+                        - fieldPath
+                        type: object
+                      resourceFieldRef:
+                        description: 'Selects a resource of the container: only resources
+                          limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage,
+                          requests.cpu, requests.memory and requests.ephemeral-storage)
+                          are currently supported.'
+                        properties:
+                          containerName:
+                            description: 'Container name: required for volumes, optional
+                              for env vars'
+                            type: string
+                          divisor:
+                            description: Specifies the output format of the exposed
+                              resources, defaults to "1"
+                            type: string
+                          resource:
+                            description: 'Required: resource to select'
+                            type: string
+                        required:
+                        - resource
+                        type: object
+                      secretKeyRef:
+                        description: Selects a key of a secret in the pod's namespace
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                    type: object
+                required:
+                - name
+                type: object
+              type: array
+            image:
+              description: 'Image definition for the service. Example: Domain: quay.io,
+                Namespace: kiegroup, Name: kogito-service, Tag: latest. On OpenShift
+                an ImageStream will be created in the current namespace pointing to
+                the given image.'
+              properties:
+                domain:
+                  type: string
+                name:
+                  type: string
+                namespace:
+                  type: string
+                tag:
+                  type: string
+              type: object
+            replicas:
+              description: 'Number of replicas that the service will have deployed
+                in the cluster Default value: 1'
+              format: int32
+              minimum: 0
+              type: integer
+            resources:
+              description: Defined compute resource requirements for the deployed
+                service
+              properties:
+                limits:
+                  additionalProperties:
+                    type: string
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    type: string
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
+          type: object
+        status:
+          description: KogitoMgmtConsoleStatus defines the observed state of KogitoMgmtConsole
+          properties:
+            conditions:
+              description: History of conditions for the resource
+              items:
+                description: Condition is the detailed condition for the resource
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    description: ReasonType is the type of reason
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    description: ConditionType is the type of condition
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            deploymentConditions:
+              description: General conditions for the Kogito Service deployment
+              items:
+                description: DeploymentCondition describes the state of a deployment
+                  at a certain point.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: The last time this condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of deployment condition.
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            externalURI:
+              description: URI is where the service is exposed
+              type: string
+            image:
+              description: Image is the resolved image for this service
+              type: string
+          required:
+          - conditions
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
