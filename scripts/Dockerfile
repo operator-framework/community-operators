@@ -9,10 +9,7 @@ RUN microdnf -y install \
     make \
     curl \
     bash \
-<<<<<<< HEAD
     findutils \
-=======
->>>>>>> e29e137... rebase to UBI8 minimal
     && microdnf clean all
 
 COPY . /scripts/
