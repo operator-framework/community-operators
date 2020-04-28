@@ -1,0 +1,322 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "podium.com/v1alpha1",
+          "kind": "Podium",
+          "metadata": {
+            "name": "mypodium"
+          },
+          "spec": {
+            "application_domain": "\u003capps wildcard domain\u003e",
+            "jvb_node_port": 30000,
+            "namespace": "\u003cnamespace\u003e",
+            "lets_encrypt": true,
+            "password_salt": "password123",
+            "admin_password_salt": "admin123",
+            "dokuwiki": {
+              "application_name": "dokuwiki",
+              "enable": true
+            },
+            "drawio": {
+              "application_name": "drawio",
+              "enable": true
+            },
+            "etherpad": {
+              "application_name": "etherpad",
+              "default_text": "Etherpad is a real-time text editor",
+              "default_title": "Welcome to Etherpad",
+              "enable": true
+            },
+            "jitsi": {
+              "application_name": "jitsi",
+              "enable": true,
+              "jicofo_auth_user": "focus",
+              "jicofo_component_secret": "s3cr3t",
+              "jvb_auth_user": "jvb",
+              "jvb_brewery_muc": "jvbbrewery",
+              "jvb_enable_apis": "rest",
+              "jvb_node_selector": "jvb",
+              "jvb_stun_servers": "meet-jit-si-turnrelay.jitsi.net:443",
+              "jvb_tcp_harvester_disabled": "true",
+              "timezone": "Europe/Berlin"
+            },
+            "mattermost": {
+              "application_name": "mattermost-team-edition",
+              "enable": true
+            },
+            "mozaik": {
+              "application_name": "mozaik",
+              "enable": true
+            },
+            "wekan": {
+              "application_name": "wekan",
+              "enable": true,
+              "mongo_database_name": "wekan",
+              "mongo_database_user": "wekan"
+            }
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Integration & Delivery, OpenShift Optional
+    certified: "false"
+    containerImage: quay.io/ktenzer/podium-operator:latest
+    description: A Kube-native collaboration platform to enhance remote teams in OpenShift
+    repository: https://github.com/sa-mw-dach/podium
+    support: ktenzer@redhat.com
+    createdAt: 2020-04-27T20:00:00Z
+  name: podium-operator.v1.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Deployment of components from Podium Operator
+      displayName: Podium
+      kind: Podium
+      name: podia.podium.com
+      version: v1alpha1
+  displayName: Podium
+  description: | 
+    ## Podium
+    Podium is an opensource collaboration platform with video conferencing (jitsi), mattermost (chat), wekan (kanban board), real-time editor (etherpad), drawing (drawio), wiki (dokuwiki) and dashboard (mozaik). Using the best opensource tooling, Podium provides remote teams a complete collaboration platform native in Kubernetes and OpenShift. The Podium dashboard integrates the toolchain together seamlessly, allowing a team, even extended team members to collaborate more effectively, remotely.
+    
+    Podium provides a Custom Resource Definition (CRD) that represents an instance of podium. Multiple podium instances can exist in a single cluster but only one per namespace.
+    ## Installation
+    The Podium Operator is a cluster-wide operator. It installs and configure the the toolchain and integrates them in a single-pane-of-glass dashboard. Each component can be enabled or disabled. Enabled means the component will be installed and managed by the operator. Components can be installed by the operator and later disabled to allow for example customizations for the k8s objects. Once the operator is installed, simply create a project, under installed operators for the project select Podium. Under Overview select create instance. 
+    After you create a instance of Podium you will in the UI see the CR object under the Podium tab and can manage it there. You can also use ```$ oc get podium -n <namespace>``` to manage podium instances from the CLI.
+    ```
+    apiVersion: podium.com/v1alpha1
+    kind: Podium
+    metadata:
+      name: <name of podium instance>
+    spec:
+      application_domain: <application wildcard domain, ie. apps.ocp.example.com>
+      namespace: <namespace where podium instance will be deployed>
+      jvb_node_port: 30000
+      lets_encrypt: true
+      password_salt: password123
+      admin_password_salt: admin123
+      etherpad:
+        enable: true
+        application_name: etherpad
+        default_title: "Welcome to Etherpad"
+        default_text: "Etherpad is a real-time editor"
+      jitsi:
+        enable: true
+        application_name: jitsi
+        jicofo_component_secret: s3cr3t
+        jicofo_auth_user: focus
+        jvb_auth_user: jvb
+        jvb_brewery_muc: jvbbrewery
+        jvb_tcp_harvester_disabled: 'true'
+        jvb_enable_apis: rest
+        jvb_stun_servers: meet-jit-si-turnrelay.jitsi.net:443
+        timezone: Europe/Berlin
+        jvb_node_selector: jvb
+      mattermost:
+        enable: true
+        application_name: mattermost-team-edition
+      wekan:
+        enable: true
+        application_name: wekan
+        mongo_database_name: wekan
+        mongo_database_user: wekan
+      drawio:
+        enable: true
+        application_name: drawio
+      dokuwiki:
+        enable: true
+        application_name: dokuwiki
+      mozaik:
+        enable: true
+        application_name: mozaik
+    ```
+    ## Prerequisites
+    Podium has a few pre-requities to handle the video bridge and TLS certificates.
+    ### Video Bridge
+    Podium uses Jitsi for video conferencing. Video and audio streams are sent from the client (web browser) to the video bridge component over UDP. As such, the video bridge must run on a node that has a routable ip address or public ip. The jvb_node_port setting allows you to choose a port, it will be configured as a node port. Firewall most be open from client IPs (internet/corporate wlan) on the desired port (UDP) to the node public or routable IP. In order to ensure the jvb component runs on a node with a public or routable ip address, a node selector is used. Any nodes that should run the jvb component must be labeled. The jvb does not need to be run on a specific node, just a node that has a routable ip address.
+    ```$ oc node label ocp4-n4krq-worker-6mjcz app=jvb```
+    The jvb component uses STUN to discover the node routable or public IP. This is similar to a reverse proxy. You can configure and use your own stun servers or the one provided. The jvb_stun_serversis parameter is a comma separated list. You will also need to open port 3478 TCP/UDP to the routable or public IP.
+    ### TLS Certificates
+    This is not a Podium specific requirement, all applications need TLS certificates. You can of course use your own solution but Podium integrates with a Let's Encrypt admission controller. Let's Encrypt is a certificate authority providing free TLS certificates via API up to rate limits. Podium configures the routes with a special annotation that will enable Let's Encrypt admission controller to dynamically configure TLS certificate in the route.
+    [Configure Let's Encrypt](https://keithtenzer.com/2020/04/03/openshift-application-certificate-management-with-lets-encrypt/)
+  icon:
+  - base64data: "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"
+    mediatype: "image/png"
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - create
+          - delete
+          - deletecollection
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - podium-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - podium.com
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: podium-operator
+      deployments:
+      - name: podium-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: podium-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: podium-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: podium-operator
+                - name: ANSIBLE_GATHERING
+                  value: explicit
+                image: quay.io/ktenzer/podium-operator:latest
+                imagePullPolicy: Always
+                name: podium-operator
+                resources: {}
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+              serviceAccountName: podium-operator
+              volumes:
+              - emptyDir: {}
+                name: runner
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - ""
+  links:
+  - name: Podium Operator Github Repository
+    url: https://github.com/sa-mw-dach/podium/tree/master/podium-operator
+  maintainers:
+  - email: ktenzer@redhat.com
+    name: Keith Tenzer
+  maturity: alpha
+  provider:
+    name: Podium Community
+    url: https://github.com/sa-mw-dach/podium
+  version: 1.0.1
+  labels:
+    alm-owner-enterprise-app: podium-operator
+    alm-status-descriptors: podium-operator.v1.0.1
