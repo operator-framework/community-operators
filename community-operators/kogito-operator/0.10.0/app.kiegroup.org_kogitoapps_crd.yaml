@@ -1,0 +1,528 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kogitoapps.app.kiegroup.org
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.replicas
+    description: Number of replicas set for this service
+    name: Replicas
+    type: integer
+  - JSONPath: .spec.runtime
+    description: Runtime used to build the service
+    name: Runtime
+    type: string
+  - JSONPath: .spec.enablePersistence
+    description: Indicates if persistence is enabled
+    name: Enable Persistence
+    type: boolean
+  - JSONPath: .spec.enableEvents
+    description: Indicates if events is enabled
+    name: Enable Events
+    type: boolean
+  - JSONPath: .spec.build.imageVersion
+    description: Build image version
+    name: Image Version
+    type: string
+  - JSONPath: .status.route
+    description: External URI to access this service
+    name: Endpoint
+    type: string
+  group: app.kiegroup.org
+  names:
+    kind: KogitoApp
+    listKind: KogitoAppList
+    plural: kogitoapps
+    singular: kogitoapp
+  scope: Namespaced
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: KogitoApp is a project prescription running a Kogito Runtime Service.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: KogitoAppSpec defines the desired state of KogitoApp
+          properties:
+            build:
+              description: 'S2I Build configuration Default value: nil'
+              properties:
+                envs:
+                  description: Environment variables used during build time
+                  items:
+                    description: EnvVar represents an environment variable present
+                      in a Container.
+                    properties:
+                      name:
+                        description: Name of the environment variable. Must be a C_IDENTIFIER.
+                        type: string
+                      value:
+                        description: 'Variable references $(VAR_NAME) are expanded
+                          using the previous defined environment variables in the
+                          container and any service environment variables. If a variable
+                          cannot be resolved, the reference in the input string will
+                          be unchanged. The $(VAR_NAME) syntax can be escaped with
+                          a double $$, ie: $$(VAR_NAME). Escaped references will never
+                          be expanded, regardless of whether the variable exists or
+                          not. Defaults to "".'
+                        type: string
+                      valueFrom:
+                        description: Source for the environment variable's value.
+                          Cannot be used if value is not empty.
+                        properties:
+                          configMapKeyRef:
+                            description: Selects a key of a ConfigMap.
+                            properties:
+                              key:
+                                description: The key to select.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the ConfigMap or its
+                                  key must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                          fieldRef:
+                            description: 'Selects a field of the pod: supports metadata.name,
+                              metadata.namespace, metadata.labels, metadata.annotations,
+                              spec.nodeName, spec.serviceAccountName, status.hostIP,
+                              status.podIP.'
+                            properties:
+                              apiVersion:
+                                description: Version of the schema the FieldPath is
+                                  written in terms of, defaults to "v1".
+                                type: string
+                              fieldPath:
+                                description: Path of the field to select in the specified
+                                  API version.
+                                type: string
+                            required:
+                            - fieldPath
+                            type: object
+                          resourceFieldRef:
+                            description: 'Selects a resource of the container: only
+                              resources limits and requests (limits.cpu, limits.memory,
+                              limits.ephemeral-storage, requests.cpu, requests.memory
+                              and requests.ephemeral-storage) are currently supported.'
+                            properties:
+                              containerName:
+                                description: 'Container name: required for volumes,
+                                  optional for env vars'
+                                type: string
+                              divisor:
+                                description: Specifies the output format of the exposed
+                                  resources, defaults to "1"
+                                type: string
+                              resource:
+                                description: 'Required: resource to select'
+                                type: string
+                            required:
+                            - resource
+                            type: object
+                          secretKeyRef:
+                            description: Selects a key of a secret in the pod's namespace
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                        type: object
+                    required:
+                    - name
+                    type: object
+                  type: array
+                gitSource:
+                  description: Information about the git repository where the Kogito
+                    App source code resides. If set, the operator will use source
+                    to image strategy build.
+                  properties:
+                    contextDir:
+                      description: Context/subdirectory where the code is located,
+                        relative to the repo root
+                      type: string
+                    reference:
+                      description: Branch to use in the Git repository
+                      type: string
+                    uri:
+                      description: Git URI for the s2i source
+                      type: string
+                  required:
+                  - uri
+                  type: object
+                imageRuntimeTag:
+                  description: Custom image used by the source to image process to
+                    build the final Kogito Service image. Takes precedence over ImageVersion
+                    attribute.
+                  pattern: (?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/([a-z0-9-]+)/([a-z0-9-]+):(([a-z0-9\.-]+))
+                  type: string
+                imageS2ITag:
+                  description: Custom image used by the source to image process to
+                    build the Kogito Service binaries. Takes precedence over ImageVersion
+                    attribute.
+                  pattern: (?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]/([a-z0-9-]+)/([a-z0-9-]+):(([a-z0-9\.-]+))
+                  type: string
+                imageVersion:
+                  description: 'Image version for the Kogito official images used
+                    during the build. E.g.: 0.6.0. Default to current Operator version.'
+                  type: string
+                incremental:
+                  type: boolean
+                mavenMirrorURL:
+                  description: Internal Maven Mirror to be used during source-to-image
+                    builds to considerably increase build speed
+                  type: string
+                native:
+                  description: Native indicates if the Kogito Service built should
+                    be compiled to run on native mode when Runtime is Quarkus. For
+                    more information, see https://www.graalvm.org/docs/reference-manual/aot-compilation/.
+                  type: boolean
+                resources:
+                  description: Resources for S2I builder pods.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        type: string
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        type: string
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+                webhooks:
+                  description: WebHook secrets for build configs
+                  items:
+                    description: WebhookSecret Secret to use for a given webhook
+                    properties:
+                      secret:
+                        description: Secret value for webhook
+                        type: string
+                      type:
+                        description: WebHook type, either GitHub or Generic
+                        enum:
+                        - GitHub
+                        - Generic
+                        type: string
+                    type: object
+                  type: array
+              type: object
+            enableEvents:
+              description: 'Set this property to true to tell the operator to deploy
+                an instance of Kafka via the Strimzi Operator and configure this service
+                with the proper information to connect to the Kafka cluster. The Kafka
+                cluster service endpoint will be injected in the Kogito Service container
+                via an environment variable named "KAFKA_BOOTSTRAP_SERVERS" e.g.:
+                kafka-kogito:9092. Set to false or ignore it if your service does
+                not need messaging or if you are going to configure the messaging
+                infrastructure yourself'
+              type: boolean
+            enableIstio:
+              description: Annotates the pods managed by the operator with the required
+                metadata for Istio to setup its sidecars, enabling the mesh. Defaults
+                to false.
+              type: boolean
+            enablePersistence:
+              description: 'Set this property to true to tell the operator to deploy
+                an instance of Infinispan via the Infinispan Operator and configure
+                this service to connect to the deployed server. For Quarkus runtime,
+                it sets QUARKUS_INFINISPAN_CLIENT_* environment variables. For Spring
+                Boot, these variables start with SPRING_INFINISPAN_CLIENT_*. More
+                info: https://github.com/kiegroup/kogito-cloud-operator#kogito-services.
+                Set to false or ignore it if your service does not need persistence
+                or if you are going to configure the persistence infrastructure yourself'
+              type: boolean
+            envs:
+              description: Environment variables to be added to the runtime container.
+                Keys must be a C_IDENTIFIER.
+              items:
+                description: EnvVar represents an environment variable present in
+                  a Container.
+                properties:
+                  name:
+                    description: Name of the environment variable. Must be a C_IDENTIFIER.
+                    type: string
+                  value:
+                    description: 'Variable references $(VAR_NAME) are expanded using
+                      the previous defined environment variables in the container
+                      and any service environment variables. If a variable cannot
+                      be resolved, the reference in the input string will be unchanged.
+                      The $(VAR_NAME) syntax can be escaped with a double $$, ie:
+                      $$(VAR_NAME). Escaped references will never be expanded, regardless
+                      of whether the variable exists or not. Defaults to "".'
+                    type: string
+                  valueFrom:
+                    description: Source for the environment variable's value. Cannot
+                      be used if value is not empty.
+                    properties:
+                      configMapKeyRef:
+                        description: Selects a key of a ConfigMap.
+                        properties:
+                          key:
+                            description: The key to select.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the ConfigMap or its key
+                              must be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                      fieldRef:
+                        description: 'Selects a field of the pod: supports metadata.name,
+                          metadata.namespace, metadata.labels, metadata.annotations,
+                          spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP.'
+                        properties:
+                          apiVersion:
+                            description: Version of the schema the FieldPath is written
+                              in terms of, defaults to "v1".
+                            type: string
+                          fieldPath:
+                            description: Path of the field to select in the specified
+                              API version.
+                            type: string
+                        required:
+                        - fieldPath
+                        type: object
+                      resourceFieldRef:
+                        description: 'Selects a resource of the container: only resources
+                          limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage,
+                          requests.cpu, requests.memory and requests.ephemeral-storage)
+                          are currently supported.'
+                        properties:
+                          containerName:
+                            description: 'Container name: required for volumes, optional
+                              for env vars'
+                            type: string
+                          divisor:
+                            description: Specifies the output format of the exposed
+                              resources, defaults to "1"
+                            type: string
+                          resource:
+                            description: 'Required: resource to select'
+                            type: string
+                        required:
+                        - resource
+                        type: object
+                      secretKeyRef:
+                        description: Selects a key of a secret in the pod's namespace
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                    type: object
+                required:
+                - name
+                type: object
+              type: array
+            image:
+              description: 'Image definition for the service. Example: Domain: quay.io,
+                Namespace: kiegroup, Name: kogito-service, Tag: latest. On OpenShift
+                an ImageStream will be created in the current namespace pointing to
+                the given image.'
+              properties:
+                domain:
+                  type: string
+                name:
+                  type: string
+                namespace:
+                  type: string
+                tag:
+                  type: string
+              type: object
+            replicas:
+              description: 'Number of replicas that the service will have deployed
+                in the cluster Default value: 1'
+              format: int32
+              minimum: 0
+              type: integer
+            resources:
+              description: Defined compute resource requirements for the deployed
+                service
+              properties:
+                limits:
+                  additionalProperties:
+                    type: string
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    type: string
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
+            runtime:
+              description: 'The name of the runtime used, either Quarkus or Springboot
+                Default value: quarkus'
+              enum:
+              - quarkus
+              - springboot
+              type: string
+            service:
+              description: 'Kubernetes Service configuration Default value: nil'
+              properties:
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: Labels for the application service
+                  type: object
+              type: object
+          required:
+          - build
+          type: object
+        status:
+          description: KogitoAppStatus defines the observed state of KogitoApp
+          properties:
+            builds:
+              description: History of service builds status
+              properties:
+                cancelled:
+                  description: Builds have been stopped from executing
+                  items:
+                    type: string
+                  type: array
+                complete:
+                  description: Builds have executed and succeeded
+                  items:
+                    type: string
+                  type: array
+                error:
+                  description: Builds have been prevented from executing by an error
+                  items:
+                    type: string
+                  type: array
+                failed:
+                  description: Builds have executed and failed
+                  items:
+                    type: string
+                  type: array
+                new:
+                  description: Builds are being created
+                  items:
+                    type: string
+                  type: array
+                pending:
+                  description: Builds are about to start running
+                  items:
+                    type: string
+                  type: array
+                running:
+                  description: Builds are running
+                  items:
+                    type: string
+                  type: array
+              type: object
+            conditions:
+              description: History of conditions for the resource
+              items:
+                description: Condition is the detailed condition for the resource
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    description: ReasonType is the type of reason
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    description: ConditionType is the type of condition
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            deployments:
+              description: History of service deployments status
+              properties:
+                failed:
+                  description: Deployments failed
+                  items:
+                    type: string
+                  type: array
+                ready:
+                  description: Deployments are ready to serve requests
+                  items:
+                    type: string
+                  type: array
+                starting:
+                  description: Deployments are starting
+                  items:
+                    type: string
+                  type: array
+                stopped:
+                  description: Deployments are not starting and the next step is unclear
+                  items:
+                    type: string
+                  type: array
+              type: object
+            route:
+              description: External URL for the service
+              type: string
+          required:
+          - builds
+          - conditions
+          - deployments
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
