@@ -1,0 +1,178 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: dnszones.hive.openshift.io
+spec:
+  group: hive.openshift.io
+  names:
+    kind: DNSZone
+    plural: dnszones
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: DNSZone is the Schema for the dnszones API
+      type: object
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: DNSZoneSpec defines the desired state of DNSZone
+          type: object
+          required:
+          - zone
+          properties:
+            aws:
+              description: AWS specifies AWS-specific cloud configuration
+              type: object
+              required:
+              - credentialsSecretRef
+              properties:
+                additionalTags:
+                  description: AdditionalTags is a set of additional tags to set on
+                    the DNS hosted zone. In addition to these tags,the DNS Zone controller
+                    will set a hive.openhsift.io/hostedzone tag identifying the HostedZone
+                    record that it belongs to.
+                  type: array
+                  items:
+                    description: AWSResourceTag represents a tag that is applied to
+                      an AWS cloud resource
+                    type: object
+                    required:
+                    - key
+                    - value
+                    properties:
+                      key:
+                        description: Key is the key for the tag
+                        type: string
+                      value:
+                        description: Value is the value for the tag
+                        type: string
+                credentialsSecretRef:
+                  description: CredentialsSecretRef contains a reference to a secret
+                    that contains AWS credentials for CRUD operations
+                  type: object
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                region:
+                  description: Region is the AWS region to use for route53 operations.
+                    This defaults to us-east-1. For AWS China, use cn-northwest-1.
+                  type: string
+            gcp:
+              description: GCP specifies GCP-specific cloud configuration
+              type: object
+              required:
+              - credentialsSecretRef
+              properties:
+                credentialsSecretRef:
+                  description: CredentialsSecretRef references a secret that will
+                    be used to authenticate with GCP CloudDNS. It will need permission
+                    to create and manage CloudDNS Hosted Zones. Secret should have
+                    a key named 'osServiceAccount.json'. The credentials must specify
+                    the project to use.
+                  type: object
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+            linkToParentDomain:
+              description: LinkToParentDomain specifies whether DNS records should
+                be automatically created to link this DNSZone with a parent domain.
+              type: boolean
+            zone:
+              description: Zone is the DNS zone to host
+              type: string
+        status:
+          description: DNSZoneStatus defines the observed state of DNSZone
+          type: object
+          properties:
+            aws:
+              description: AWSDNSZoneStatus contains status information specific to
+                AWS
+              type: object
+              properties:
+                zoneID:
+                  description: ZoneID is the ID of the zone in AWS
+                  type: string
+            conditions:
+              description: Conditions includes more detailed status for the DNSZone
+              type: array
+              items:
+                description: DNSZoneCondition contains details for the current condition
+                  of a DNSZone
+                type: object
+                required:
+                - status
+                - type
+                properties:
+                  lastProbeTime:
+                    description: LastProbeTime is the last time we probed the condition.
+                    type: string
+                    format: date-time
+                  lastTransitionTime:
+                    description: LastTransitionTime is the last time the condition
+                      transitioned from one status to another.
+                    type: string
+                    format: date-time
+                  message:
+                    description: Message is a human-readable message indicating details
+                      about last transition.
+                    type: string
+                  reason:
+                    description: Reason is a unique, one-word, CamelCase reason for
+                      the condition's last transition.
+                    type: string
+                  status:
+                    description: Status is the status of the condition.
+                    type: string
+                  type:
+                    description: Type is the type of the condition.
+                    type: string
+            gcp:
+              description: GCPDNSZoneStatus contains status information specific to
+                GCP
+              type: object
+              properties:
+                zoneName:
+                  description: ZoneName is the name of the zone in GCP Cloud DNS
+                  type: string
+            lastSyncGeneration:
+              description: LastSyncGeneration is the generation of the zone resource
+                that was last sync'd. This is used to know if the Object has changed
+                and we should sync immediately.
+              type: integer
+              format: int64
+            lastSyncTimestamp:
+              description: LastSyncTimestamp is the time that the zone was last sync'd.
+              type: string
+              format: date-time
+            nameServers:
+              description: NameServers is a list of nameservers for this DNS zone
+              type: array
+              items:
+                type: string
+  version: v1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
