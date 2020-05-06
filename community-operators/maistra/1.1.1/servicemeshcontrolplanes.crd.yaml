@@ -1,0 +1,60 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: servicemeshcontrolplanes.maistra.io
+spec:
+  group: maistra.io
+  names:
+    kind: ServiceMeshControlPlane
+    listKind: ServiceMeshControlPlaneList
+    plural: servicemeshcontrolplanes
+    singular: servicemeshcontrolplane
+    shortNames:
+    - smcp
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1
+  additionalPrinterColumns:
+  - name: Ready
+    description: How many of the total number of member namespaces are configured
+    type: string
+    JSONPath: .status.annotations.readyComponentCount
+  - name: Status
+    description: Whether or not the control plane installation is up to date and ready
+      to handle requests.
+    type: string
+    JSONPath: .status.conditions[?(@.type=="Reconciled")].reason
+  - name: Template
+    description: The configuration template to use as the base.
+    type: string
+    JSONPath: .status.lastAppliedConfiguration.template
+  - name: Version
+    description: The actual current version of the control plane installation.
+    type: string
+    JSONPath: .status.lastAppliedConfiguration.version
+  - name: Age
+    description: The age of the object
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  - name: Image hub
+    description: The image hub used as the base for all component images.
+    type: string
+    priority: 1
+    JSONPath: .status.lastAppliedConfiguration.istio.global.hub
+  - name: Tag
+    description: The image tag used for all component images.
+    type: string
+    priority: 1
+    JSONPath: .status.lastAppliedConfiguration.istio.global.tag
+  - name: Readiness status message
+    description: A human-readable description of the control plane component readiness.
+    type: string
+    priority: 1
+    JSONPath: .status.conditions[?(@.type=="Ready")].message
+  - name: Reconciliation Status message
+    description: The status of the reconciliation process, if the control plane is
+      not up to date with the latest version this resource.
+    type: string
+    priority: 1
+    JSONPath: .status.conditions[?(@.type=="Reconciled")].message
