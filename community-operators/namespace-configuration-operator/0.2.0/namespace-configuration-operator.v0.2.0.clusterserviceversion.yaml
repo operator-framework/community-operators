@@ -1,0 +1,396 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "redhatcop.redhat.io/v1alpha1",
+          "kind": "GroupConfig",
+          "metadata": {
+            "name": "test-groupconfig"
+          },
+          "spec": {
+            "labelSelector": {
+              "matchLabels": {
+                "type": "team"
+              }
+            },
+            "templates": [
+              {
+                "objectTemplate": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {{ .Name }}-dev\nlabels:\n  group: {{ .Name }}  \n"
+              },
+              {
+                "objectTemplate": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {{ .Name }}-qa\nlabels:\n  group: {{ .Name }}          \n"
+              },
+              {
+                "objectTemplate": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {{ .Name }}-prod\nlabels:\n  group: {{ .Name }}                           \n"
+              },
+              {
+                "objectTemplate": "apiVersion: quota.openshift.io/v1\nkind: ClusterResourceQuota\nmetadata:\n  name: {{ .Name }}-quota\nspec:\n  quota:\n    hard:\n      pods: \"4\" \n      requests.cpu: \"1\" \n      requests.memory: 1Gi \n      requests.ephemeral-storage: 2Gi \n      limits.cpu: \"2\" \n      limits.memory: 2Gi \n      limits.ephemeral-storage: 4Gi\n  selector:\n    labels:\n      matchLabels:\n        group: {{ .Name }}\n"
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "redhatcop.redhat.io/v1alpha1",
+          "kind": "UserConfig",
+          "metadata": {
+            "name": "user-sandbox"
+          },
+          "spec": {
+            "providerName": "my-provider",
+            "templates": [
+              {
+                "objectTemplate": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {{ .Name }}-sandbox\n"
+              },
+              {
+                "objectTemplate": "apiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: {{ .Name }}-sandbox\n  namespace: {{ .Name }}-sandbox\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: ClusterRole\n  name: admin\nsubjects:\n- kind: User\n  apiGroup: rbac.authorization.k8s.io\n  name: {{ .Name }}      \n"
+              },
+              {
+                "objectTemplate": "apiVersion: v1\nkind: ResourceQuota\nmetadata:\n  name: standard-sandbox\n  namespace: {{ .Name }}-sandbox\nspec:\n  hard:\n    pods: \"4\" \n    requests.cpu: \"1\" \n    requests.memory: 1Gi \n    requests.ephemeral-storage: 2Gi \n    limits.cpu: \"2\" \n    limits.memory: 2Gi \n    limits.ephemeral-storage: 4Gi\n"
+              },
+              {
+                "objectTemplate": "kind: EgressNetworkPolicy\napiVersion: network.openshift.io/v1\nmetadata:\n  name: air-gapped-sandbox\n  namespace: {{ .Name }}-sandbox\nspec:\n  egress:\n  - type: Deny\n    to:\n      cidrSelector: 10.20.0.0/0\n"
+              },
+              {
+                "objectTemplate": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-from-same-namespace\n  namespace: {{ .Name }}-sandbox\nspec:\n  podSelector:\n  ingress:\n  - from:\n    - podSelector: {}\n  policyTypes:\n    - Ingress   \n"
+              },
+              {
+                "objectTemplate": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-from-openshift-ingress\n  namespace: {{ .Name }}-sandbox\nspec:\n  ingress:\n  - from:\n    - namespaceSelector:\n        matchLabels:\n          network.openshift.io/policy-group: ingress\n  podSelector: {}\n  policyTypes:\n  - Ingress                    \n"
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "redhatcop.redhat.io/v1alpha1",
+          "kind": "NamespaceConfig",
+          "metadata": {
+            "name": "small-size"
+          },
+          "spec": {
+            "selector": {
+              "matchLabels": {
+                "size": "small"
+              }
+            },
+            "templates": [
+              {
+                "objectTemplate": "apiVersion: v1\nkind: ResourceQuota\nmetadata:\n  name: small-size\n  namespace: {{ .Name }}  \nspec:\n  hard:\n    requests.cpu: \"4\" \n    requests.memory: \"2Gi\" \n"
+              }
+            ]
+          }
+        }
+      ]
+    capabilities: Full Lifecycle
+    categories: Security
+    certified: "false"
+    containerImage: quay.io/redhat-cop/namespace-configuration-operator:latest
+    createdAt: 5/28/2019
+    description: This operator provides a facility to define and enforce namespace
+      configurations
+    repository: https://github.com/redhat-cop/namespace-configuration-operator
+    support: Best Effort
+  name: namespace-configuration-operator.v0.2.0
+  namespace: namespace-configuration-operator
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: GroupConfig is the Schema for the groupconfigs API
+      displayName: Group Config
+      kind: GroupConfig
+      name: groupconfigs.redhatcop.redhat.io
+      specDescriptors:
+      - description: AnnotationSelector selects Groups by annotation.
+        displayName: Annotation Selector
+        path: annotationSelector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      - description: LabelSelector selects Groups by label.
+        displayName: Label Selector
+        path: labelSelector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      - description: Templates these are the templates of the resources to be created
+          when a selected groups is created/updated
+        displayName: Templates
+        path: templates
+      version: v1alpha1
+    - description: NamespaceConfig is the Schema for the NamespaceSConfig API
+      displayName: Namespace Config
+      kind: NamespaceConfig
+      name: namespaceconfigs.redhatcop.redhat.io
+      specDescriptors:
+      - description: AnnotationSelector selects Namespaces by annotation.
+        displayName: Annotation Selector
+        path: annotationSelector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      - description: LabelSelector selects Namespaces by label.
+        displayName: Label Selector
+        path: labelSelector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      - description: Templates these are the templates of the resources to be created
+          when a selected namespace is created/updated
+        displayName: Templates
+        path: templates
+      version: v1alpha1
+    - description: UserConfig is the Schema for the userconfigs API
+      displayName: User Config
+      kind: UserConfig
+      name: userconfigs.redhatcop.redhat.io
+      specDescriptors:
+      - description: AnnotationSelector selects Users by annotation.
+        displayName: Annotation Selector
+        path: annotationSelector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      - description: IdentityExtraSelector allows you to specify a selector for the
+          extra fields of the User's identities. If one of the user identities matches
+          the selector the User is selected This condition is in OR with ProviderName
+        displayName: Identity Extra Field Selector
+        path: identityExtraFieldSelector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      - description: LabelSelector selects Users by label.
+        displayName: Label Selector
+        path: labelSelector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      - description: ProviderName allows you to specify an identity provider. If a
+          user logged in with that provider it is selected. This condition is in OR
+          with IdentityExtraSelector
+        displayName: Provider Name
+        path: providerName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Templates these are the templates of the resources to be created
+          when a selected user is created/updated
+        displayName: Templates
+        path: templates
+      version: v1alpha1
+  description: |
+    The `namespace-configuration-operator` helps keeping configurations related to Users, Groups and Namespaces aligned with one of more policies specified as a CRs. The purpose is to provide the foundational building block to create an end-to-end onboarding process. 
+    By onboarding process we mean all the provisioning steps needed to a developer team working on one or more applications to OpenShift.
+    This usually involves configuring resources such as: Groups, RoleBindings, Namespaces, ResourceQuotas, NetworkPolicies, EgressNetworkPolicies, etc.... . Depending on the specific environment the list could continue.
+    Naturally such a process should be as automatic and scalable as possible.
+
+    With the namespace-configuration-operator one can create rules that will react to the creation of Users, Groups and Namespace and will create and enforce a set of resources.
+
+    Here are some examples of the type of onboarding processes that one could support:
+
+    1. [developer sandbox](https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/user-sandbox/readme.md)
+    2. [team onboarding](https://github.com/redhat-cop/namespace-configuration-operator//blob/master/examples/team-onboarding/readme.md) with support of the entire SDLC in a multitentant environment.
+
+    Policies can be expressed with the following CRDs:
+
+    | Watched Resource | CRD |
+    |--|--|
+    | Groups | [GroupConfig](#GroupConfig) |
+    | Users | [UserConfig](#UserConfig) |
+    | Namespace | [NamespaceConfig](#NamespaceConfig) |
+
+    These CRDs all share some commonalities:
+
+    1. Templated Resources
+    2. List of ignored jason path
+
+    ### Templated Resources
+
+    Each has a parameter called `templatedResources`, which is an array. Each element of the array has two fields `objectTemplate` and `excludedPaths` (see below).
+
+    The `objectTemplate` field must contains a [go template](https://golang.org/pkg/text/template/) that resolves to a single API Resource expressed in `yaml`. The template is merged with the object selected by the CR. For example:
+
+    ```yaml
+    apiVersion: redhatcop.redhat.io/v1alpha1
+    kind: UserConfig
+    metadata:
+      name: test-user-config
+    spec:
+      provider: corp-ldap
+      templates:
+      - objectTemplate: |
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: {{ .Name }}-sandbox
+    ```
+
+    This create a rule in which every time a user from the `corp-ldap` provider is created, a namespace called `<username>-sandbox` is also created.
+
+    ### Excluded Paths
+
+    The logic of the `namespace-configuration-operator` is to enforce that the resources resolved by processing the templates "stays in place". In other words if those resources are changed and/or deleted they will be reset by the operator.
+    But there are situations in which at least part of a resource is allowed to change. Common use cases are: annotations and in general the metadata section of a resource can be updated by the various operators watching that resources. The status field is often updated by the main operator managing that resources. Finally, when applicable the `spec.replicas` field should also be allowed to change.
+
+    To handle special use case, one can also specify additional *jsonpaths* that should be ignored when comparing the desired resource and the current resource and making a decision on whether that resource should be reset.
+
+    The following paths are always included:
+
+    1. `.metadata`
+    2. `.status`
+    3. `.spec.replicas`
+
+    ## NamespaceConfig
+
+    The `NamespaceConfig` CR allows specifying one or more objects that will be created in the selected namespaces.
+
+    Namespaces can be selected by labels or annotations via a label selector for example:
+
+    ```yaml
+    apiVersion: redhatcop.redhat.io/v1alpha1
+    kind: NamespaceConfig
+    metadata:
+      name: small-namespace
+      selector:
+        matchLabels:
+          size: small  
+      resources:
+      - apiVersion: v1
+        kind: ResourceQuota
+        metadata:
+          name: small-size  
+        spec:
+          hard:
+            requests.cpu: "4"
+            requests.memory: "2Gi"
+    ```
+
+    Here is a `NamespaceConfig` object using a `matchExpressions` selector:
+
+    ```yaml
+    apiVersion: redhatcop.redhat.io/v1alpha1
+    kind: NamespaceConfig
+    metadata:
+      name: tier-config
+    spec:
+      annotationSelector:
+        matchExpressions:
+          - {key: tier, operator: In, values: [gold,silver]}
+    ```
+
+    Although not enforced by the operator the general expectation is that the NamespaceConfig CR will be used to create objects inside the selected namespace.
+
+    Examples of NamespaceConfig usages can be found [here](https://github.com/redhat-cop/namespace-configuration-operator/blob/master/examples/namespace-config/readme.md)
+
+    ## GroupConfig
+
+    The `GroupConfig` CR allows specifying one or more objects that will be created in the selected Group.
+    Groups can be selected by labels or annotations via a label selector, similarly to the `NamespaceConfig`.
+
+    Often groups are created in OpenShift by a job that synchronizes an Identity Provider with OCP. So the idea is that when new groups are added or deleted the configuration in OpenShift will adapt automatically.
+
+    Although not enforced by the operator, GroupConfig are expected to create cluster-scoped resources like Namespaces, ClusterResourceQuotas and potentially some namespaced resources like RoleBindings.
+
+    ## UserConfig
+
+    In OpenShift an external user is defined by two entities: Users and Identities. There is a relationship of on to many between Users and Identities. Given one user, there can be one Identity per authentication mechanism.
+
+    The `UserConfig` CR allows specifying one or more objects that will be created in the selected User.
+    Users can be selected by label or annotation like `NamespaceConfig` and `UserConfig`.
+    USers can also be selected by provider name (the name of the authentication mechanism) and identity extra field.
+
+    Here is an example:
+
+    ```yaml
+    apiVersion: redhatcop.redhat.io/v1alpha1
+    kind: UserConfig
+    metadata:
+      name: test-user-config
+    spec:
+      providerName: okta-provider
+      identityExtraFieldSelector:
+        matchLabels:
+          sandbox_enabled: "true"
+      templates:
+      - objectTemplate: |
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: {{ .Name }}-sandbox
+    ```
+
+    User will be selected by this `UserConfig` only if they login via the *okta-provider* and if the extra field was populate with the label `sandbox_enabled: "true"`. Note that not all authentication provider allow populating the extra fields in the Identity object.
+  displayName: Namespace Configuration Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: namespace-configuration-operator
+      deployments:
+      - name: namespace-configuration-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: namespace-configuration-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: namespace-configuration-operator
+            spec:
+              containers:
+              - command:
+                - namespace-configuration-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: namespace-configuration-operator
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                image: quay.io/redhat-cop/namespace-configuration-operator:v0.2.0
+                imagePullPolicy: Always
+                name: namespace-configuration-operator
+                resources: {}
+              serviceAccountName: namespace-configuration-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - namespace
+  - user
+  - group
+  - configuration
+  - policy
+  - management
+  links:
+  - name: repository
+    url: https://github.com/redhat-cop/namespace-configuration-operator
+  - name: conatinerImage
+    url: https://quay.io/redhat-cop/namespace-configuration-operator:latest
+  maintainers:
+  - email: rspazzol@redhat.com
+    name: Raffaele Spazzoli
+  maturity: alpha
+  provider:
+    name: Containers & PaaS CoP
+  replaces: namespace-configuration-operator.v0.1.0
+  version: 0.2.0
