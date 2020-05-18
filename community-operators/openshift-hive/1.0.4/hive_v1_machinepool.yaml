@@ -1,0 +1,319 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: machinepools.hive.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.name
+    name: PoolName
+    type: string
+  - JSONPath: .spec.clusterDeploymentRef.name
+    name: ClusterDeployment
+    type: string
+  - JSONPath: .spec.replicas
+    name: Replicas
+    type: integer
+  group: hive.openshift.io
+  names:
+    kind: MachinePool
+    plural: machinepools
+  scope: Namespaced
+  subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: MachinePool is the Schema for the machinepools API
+      type: object
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MachinePoolSpec defines the desired state of MachinePool
+          type: object
+          required:
+          - clusterDeploymentRef
+          - name
+          - platform
+          properties:
+            autoscaling:
+              description: Autoscaling is the details for auto-scaling the machine
+                pool. Replicas and autoscaling cannot be used together.
+              type: object
+              required:
+              - maxReplicas
+              - minReplicas
+              properties:
+                maxReplicas:
+                  description: MaxReplicas is the maximum number of replicas for the
+                    machine pool.
+                  type: integer
+                  format: int32
+                minReplicas:
+                  description: MinReplicas is the minimum number of replicas for the
+                    machine pool.
+                  type: integer
+                  format: int32
+            clusterDeploymentRef:
+              description: ClusterDeploymentRef references the cluster deployment
+                to which this machine pool belongs.
+              type: object
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+            labels:
+              description: Map of label string keys and values that will be applied
+                to the created MachineSet's MachineSpec. This list will overwrite
+                any modifications made to Node labels on an ongoing basis.
+              type: object
+              additionalProperties:
+                type: string
+            name:
+              description: Name is the name of the machine pool.
+              type: string
+            platform:
+              description: Platform is configuration for machine pool specific to
+                the platform.
+              type: object
+              properties:
+                aws:
+                  description: AWS is the configuration used when installing on AWS.
+                  type: object
+                  required:
+                  - rootVolume
+                  - type
+                  properties:
+                    rootVolume:
+                      description: EC2RootVolume defines the storage for ec2 instance.
+                      type: object
+                      required:
+                      - iops
+                      - size
+                      - type
+                      properties:
+                        iops:
+                          description: IOPS defines the iops for the storage.
+                          type: integer
+                        size:
+                          description: Size defines the size of the storage.
+                          type: integer
+                        type:
+                          description: Type defines the type of the storage.
+                          type: string
+                    type:
+                      description: InstanceType defines the ec2 instance type. eg.
+                        m4-large
+                      type: string
+                    zones:
+                      description: Zones is list of availability zones that can be
+                        used.
+                      type: array
+                      items:
+                        type: string
+                azure:
+                  description: Azure is the configuration used when installing on
+                    Azure.
+                  type: object
+                  required:
+                  - osDisk
+                  - type
+                  properties:
+                    osDisk:
+                      description: OSDisk defines the storage for instance.
+                      type: object
+                      required:
+                      - diskSizeGB
+                      properties:
+                        diskSizeGB:
+                          description: DiskSizeGB defines the size of disk in GB.
+                          type: integer
+                          format: int32
+                    type:
+                      description: InstanceType defines the azure instance type. eg.
+                        Standard_DS_V2
+                      type: string
+                    zones:
+                      description: Zones is list of availability zones that can be
+                        used. eg. ["1", "2", "3"]
+                      type: array
+                      items:
+                        type: string
+                gcp:
+                  description: GCP is the configuration used when installing on GCP.
+                  type: object
+                  required:
+                  - type
+                  properties:
+                    type:
+                      description: InstanceType defines the GCP instance type. eg.
+                        n1-standard-4
+                      type: string
+                    zones:
+                      description: Zones is list of availability zones that can be
+                        used.
+                      type: array
+                      items:
+                        type: string
+                openstack:
+                  description: OpenStack is the configuration used when installing
+                    on OpenStack.
+                  type: object
+                  required:
+                  - type
+                  properties:
+                    rootVolume:
+                      description: RootVolume defines the root volume for instances
+                        in the machine pool. The instances use ephemeral disks if
+                        not set.
+                      type: object
+                      required:
+                      - size
+                      - type
+                      properties:
+                        size:
+                          description: Size defines the size of the volume in gibibytes
+                            (GiB). Required
+                          type: integer
+                        type:
+                          description: Type defines the type of the volume. Required
+                          type: string
+                    type:
+                      description: FlavorName defines the OpenStack Nova flavor. eg.
+                        m1.large
+                      type: string
+            replicas:
+              description: Replicas is the count of machines for this machine pool.
+                Replicas and autoscaling cannot be used together. Default is 1, if
+                autoscaling is not used.
+              type: integer
+              format: int64
+            taints:
+              description: List of taints that will be applied to the created MachineSet's
+                MachineSpec. This list will overwrite any modifications made to Node
+                taints on an ongoing basis.
+              type: array
+              items:
+                description: The node this Taint is attached to has the "effect" on
+                  any pod that does not tolerate the Taint.
+                type: object
+                required:
+                - effect
+                - key
+                properties:
+                  effect:
+                    description: Required. The effect of the taint on pods that do
+                      not tolerate the taint. Valid effects are NoSchedule, PreferNoSchedule
+                      and NoExecute.
+                    type: string
+                  key:
+                    description: Required. The taint key to be applied to a node.
+                    type: string
+                  timeAdded:
+                    description: TimeAdded represents the time at which the taint
+                      was added. It is only written for NoExecute taints.
+                    type: string
+                    format: date-time
+                  value:
+                    description: Required. The taint value corresponding to the taint
+                      key.
+                    type: string
+        status:
+          description: MachinePoolStatus defines the observed state of MachinePool
+          type: object
+          properties:
+            conditions:
+              description: Conditions includes more detailed status for the cluster
+                deployment
+              type: array
+              items:
+                description: MachinePoolCondition contains details for the current
+                  condition of a machine pool
+                type: object
+                required:
+                - status
+                - type
+                properties:
+                  lastProbeTime:
+                    description: LastProbeTime is the last time we probed the condition.
+                    type: string
+                    format: date-time
+                  lastTransitionTime:
+                    description: LastTransitionTime is the last time the condition
+                      transitioned from one status to another.
+                    type: string
+                    format: date-time
+                  message:
+                    description: Message is a human-readable message indicating details
+                      about last transition.
+                    type: string
+                  reason:
+                    description: Reason is a unique, one-word, CamelCase reason for
+                      the condition's last transition.
+                    type: string
+                  status:
+                    description: Status is the status of the condition.
+                    type: string
+                  type:
+                    description: Type is the type of the condition.
+                    type: string
+            machineSets:
+              description: MachineSets is the status of the machine sets for the machine
+                pool on the remote cluster.
+              type: array
+              items:
+                description: MachineSetStatus is the status of a machineset in the
+                  remote cluster.
+                type: object
+                required:
+                - maxReplicas
+                - minReplicas
+                - name
+                - replicas
+                properties:
+                  maxReplicas:
+                    description: MaxReplicas is the maximum number of replicas for
+                      the machine set.
+                    type: integer
+                    format: int32
+                  minReplicas:
+                    description: MinReplicas is the minimum number of replicas for
+                      the machine set.
+                    type: integer
+                    format: int32
+                  name:
+                    description: Name is the name of the machine set.
+                    type: string
+                  replicas:
+                    description: Replicas is the current number of replicas for the
+                      machine set.
+                    type: integer
+                    format: int32
+            replicas:
+              description: Replicas is the current number of replicas for the machine
+                pool.
+              type: integer
+              format: int32
+  version: v1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
