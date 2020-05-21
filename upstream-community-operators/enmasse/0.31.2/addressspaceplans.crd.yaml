@@ -1,0 +1,116 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: addressspaceplans.admin.enmasse.io
+  labels:
+    app: enmasse
+spec:
+  group: admin.enmasse.io
+  version: v1beta2
+  scope: Namespaced
+  names:
+    kind: AddressSpacePlan
+    listKind: AddressSpacePlanList
+    singular: addressspaceplan
+    plural: addressspaceplans
+    categories:
+    - enmasse
+  versions:
+    - name: v1beta2
+      served: true
+      storage: true
+    - name: v1beta1
+      served: true
+      storage: false
+    - name: v1alpha1
+      served: true
+      storage: false
+  additionalPrinterColumns:
+  - name: Phase
+    type: string
+    priority: 0
+    description: The phase of the address space plan
+    JSONPath: .status.phase
+  - name: Status
+    type: string
+    priority: 1
+    description: The status of the address space plan
+    JSONPath: .status.message
+  - name: Age
+    priority: 0
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  validation:
+    openAPIV3Schema:
+      type: object
+      description: AddressSpacePlan describes the allowed resource usage of an address space. This resource is created by the service administrator.
+      properties:
+        status:
+          properties:
+            phase:
+              type: string
+              description: "Phase of the address space plan."
+            message:
+              type: string
+              description: "Status and error messages for the address space plan."
+        spec:
+          type: object
+          required:
+            - addressSpaceType
+            - resourceLimits 
+            - addressPlans
+            - infraConfigRef
+          properties:
+            displayName:
+              type: string
+            displayOrder:
+              type: integer
+            shortDescription:
+              type: string
+            longDescription:
+              type: string
+            addressSpaceType:
+              type: string
+            infraConfigRef:
+              type: string
+            resourceLimits:
+              type: object
+              properties:
+                aggregate:
+                  type: number
+                router:
+                  type: number
+                broker:
+                  type: number
+            addressPlans:
+              type: array
+              items:
+                type: string
+        displayName:
+          type: string
+        displayOrder:
+          type: integer
+        shortDescription:
+          type: string
+        longDescription:
+          type: string
+        uuid:
+          type: string
+        addressSpaceType:
+          type: string
+        resources:
+          type: array
+          items:
+            type: object
+            required:
+            - name
+            - max
+            properties:
+              name:
+                type: string
+              max:
+                type: number
+        addressPlans:
+          type: array
+          items:
+            type: string
