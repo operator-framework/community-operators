@@ -6,7 +6,7 @@ Before you begin, we strongly advise that you follow Operator-Lifecycle-Manager'
 
 ## Required fields for OperatorHub
 
-An Operator's CSV must contain the following fields and annotations for it to be displayed properly within OperatorHub.io and OperatorHub in OCP. Below is a guideline, explaining each field and at the bottom of this document is a full example of such a CSV.
+An Operator's CSV must contain the following fields and annotations for it to be displayed properly within OperatorHub.io and OperatorHub in OCP. Below is a guideline explaining each field, and at the bottom of this document is a full example of such a CSV.
 
 ```yaml
 metadata:
