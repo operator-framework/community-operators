@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+eval $(scripts/ci/ansible-env)
+
+if [ -n "${OP_PATH}" ] ;
+  then
+    echo "Release pipeline not running for PR, found modified operator."
+    exit 0
+  fi
+
+echo "Release - just functional test"
+
+echo "operator_base_dir: $(pwd)/upstream-community-operators" > /tmp/tester.yaml
+
+cat <<EOT >> /tmp/tester.yaml
+operators:
+- akka-cluster-operator
+EOT
+
+#prepre prerequisities
+ansible-pull -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH -i localhost, local.yml -e ansible_connection=local -e run_upstream=true  -e run_remove_catalog_repo=false -e kind_version=$KIND_VER -e kind_kube_ver=$KUBE_VER -e olm_ver=$OLM_VER -e operator_sdk_version=$SDK_VER --tags host_build
+
+echo "Input config:"
+cat /tmp/tester.yaml
+
+#fast run, only bundle/index handling using tags
+ansible-pull -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH -i localhost, local.yml -e ansible_connection=local \
+-e run_upstream=true  -e run_remove_catalog_repo=false \
+-e kind_version=$KIND_VER -e kind_kube_ver=$KUBE_VER -e olm_ver=$OLM_VER -e operator_sdk_version=$SDK_VER \
+--tags deploy_bundles -e operators_config=/tmp/tester.yaml -e operator_channel_force=stable
