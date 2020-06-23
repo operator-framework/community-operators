@@ -81,15 +81,15 @@ Your Operator submission will be formatted as a `package` which is a directory n
 
 #### Create a ClusterServiceVersion
 
-To add your operator to any of the supported platforms, you will need to submit metadata for your Operator to be used by the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager/) (OLM). This is YAML file called `ClusterServiceVersion` which contains references to all of the CRDs, RBAC rules, `Deployment` and container image needed to install and securely run your Operator. It also contains user-visible info like a description of its features and supported Kubernetes versions. Note that your Operators CRDs are shipped in separate manifests alongside the CSV so OLM can register them during installation (your Operator not supposed to self-register its CRDs).
+To add your operator to any of the supported platforms, you will need to submit metadata for your Operator to be used by the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager/) (OLM). This is YAML file called `ClusterServiceVersion` which contains references to all of the CRDs, RBAC rules, `Deployment` and container image needed to install and securely run your Operator. It also contains user-visible info like a description of its features and supported Kubernetes versions. Note that your Operator's CRDs are shipped in separate manifests alongside the CSV so OLM can register them during installation (your Operator is not supposed to self-register its CRDs).
 
-[Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md). You can also see an example [here](./required-fields.md#example-csv). An Operator's CSV must contain the fields and mentioned [here](./required-fields.md#required-fields-for-operatorhub) for it to be displayed properly within the various platforms.
+[Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md). You can also see an example [here](./required-fields.md#example-csv). An Operator's CSV must contain the fields mentioned [here](./required-fields.md#required-fields-for-operatorhub) for it to be displayed properly within the various platforms.
 
 There is one CSV per version of your Operator alongside the CRDs, stored in `bundles`.
 
 #### Create a Bundle
 
-A `bundle` represents a released version of your Operator. It is a sub-directory in the `package` directory named after the semantic version of your Operator which contains the  `CustomResourceDefinitions` `ClusterServiceVersion`.
+A `bundle` represents a released version of your Operator. It is a sub-directory in the `package` directory named after the semantic version of your Operator which contains the  `CustomResourceDefinition`s and `ClusterServiceVersion`.
 
 Each released version of your Operator gets a `bundle` directory. The `bundle` directory names correspond the [semantic version](https://semver.org) of your Operator as defined in `spec.version` inside the CSV. The version should also be reflected in the CSV file name for ease of use. It is advised that the `spec.name` field in the CSV is also the same as the package name. Follow the example below, assuming your Operator package is called `my-operator`: 
 
@@ -135,10 +135,10 @@ Your CSV versioning should follow [semantic versioning](https://semver.org/) con
 
 Unless of purely cosmectic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator and also reference your previous Operator version like so: `replaces: my-operator.v1.0.0`
 
-This enables Operator updates being facilitated by OLM on clusters where your Operator is deployed. The CSV being pointed to in the `replaces` property indicate that an existing Operator in that version may be upgraded seamlessly to the new version. It is encouraged to use continuous delivery to update your Operator often as new features are added and bugs are fixed.
+This enables Operator updates being facilitated by OLM on clusters where your Operator is deployed. The CSV being pointed to in the `replaces` property indicates that an existing Operator at that version may be upgraded seamlessly to the new version. It is encouraged to use continuous delivery to update your Operator often as new features are added and bugs are fixed.
 
 ### Operator Bundle Editor
-You can now create your Operator bundle using the [bundle editor](https://operatorhub.io/bundle). Starting by uploading your Kubernetes YAML manifests, the forms on the page will be populated with all valid information and used to create the new Operator bundle. You can modify or add properties through these forms as well. The result will be a downloadable ZIP file.
+You can now create your Operator bundle using the [bundle editor](https://operatorhub.io/packages). Starting by uploading your Kubernetes YAML manifests, the forms on the page will be populated with all valid information and used to create the new Operator bundle. You can modify or add properties through these forms as well. The result will be a downloadable ZIP file.
 
 ## Provide information about your Operator
 

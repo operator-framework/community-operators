@@ -12,7 +12,7 @@ You need the following installed on your local machine:
 * make
 * KIND (if no existing Kubernetes cluster is available via `KUBECONFIG` or in `~/.kube/config`)
 
-**Important:** Notice, that this script uses a container to execute the test. Your `KUBECONFIG` will be bind mounted into the container. Therefor not config-helpers or references to files on your host machine are allowed. This is usually the case for `minikube` or GKE clusters.
+**Important:** Notice, that this script uses a container to execute the test. Your `KUBECONFIG` will be bind mounted into the container. Therefore no config-helpers or references to files on your host machine are allowed. This is usually the case for `minikube` or GKE clusters.
 
 All further dependencies are encapsulated in a container image that this `Makefile` will execute as a test driver.
 
@@ -32,7 +32,7 @@ The `Makefile` supports two test modes. Both have these supported options:
 
 ### Linting metadata only
 
-Using `operator-courier` this test verify your CSV and the package definitionmore detail in the [docs](https://github.com/operator-framework/operator-courier). As part of this test nothing will be changed on your system.
+Using `operator-courier`, this test verifies your CSV and the package definition. More details can be found in the [docs](https://github.com/operator-framework/operator-courier). As part of this test nothing will be changed on your system.
 
 Example, run from the top-level directory of this repository:
 
@@ -54,10 +54,10 @@ Lint Operator metadata                            [  OK  ]
 
 ### Deploying and Testing your Operator
 
-Using the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager)(OLM) your Operator will be packaged into a temporary catalog, containing all currently published community operators and yours. OLM will be installed for you if not present.
+Using the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager) (OLM) your Operator will be packaged into a temporary catalog, containing all currently published community operators and yours. OLM will be installed for you if not present.
 
-Using the current community catalog as a base, allows you to test with dependencies on Operators currently published in this catalog. If you have dependencies outside of this catalog, you need to prepare your own cluster, install OLM and ship a catalog with these dependencies present, otherwise installation will fail. 
-You can either provide an Kubernetes cluster as a testbed via `KUBECONFIG` or `~/.kube/confg`. If you have multiple cluster context configured in your `KUBECONFIG` you will be able to select one. If you have no cluster configured or reachable the Makefile will install a `kind` cluster named `operator-test` for you
+Using the current community catalog as a base allows you to test with dependencies on Operators currently published in this catalog. If you have dependencies outside of this catalog, you need to prepare your own cluster, install OLM, and ship a catalog with these dependencies present; otherwise installation will fail. 
+You can provide a Kubernetes cluster as a testbed via `KUBECONFIG` or `~/.kube/confg`. If you have multiple cluster contexts configured in your `KUBECONFIG` you will be able to select one. If you have no cluster configured or reachable the Makefile will install a `kind` cluster named `operator-test` for you.
 
 For this type of test, additionally the following options exist:
 
@@ -65,7 +65,7 @@ For this type of test, additionally the following options exist:
 
 ` CATALOG_IMAGE ` - when `NO_KIND` is set to `1` you need to specify a container registry image location you have push privileges for and from which the image can be pulled again later by OLM without authentication. This parameter is ignored when `NO_KIND` is absent or set to `0` since the catalog image can be loaded directly into a KIND cluster.
 
-` CLEAN_MODE ` - any of `NORMAL`, `NONE` and `FORCE`. As the test installs OLM components in your Kubernetes cluster this controls the clean up of those. In `NORMAL` clean up will happen if no errors occured. When set to `NONE` clean up is ommitted, when set to `FORCE` clean up will always be done. Default is `NORMAL`.
+` CLEAN_MODE ` - any of `NORMAL`, `NONE` and `FORCE`. As the test installs OLM components in your Kubernetes cluster this controls the clean up of those. In `NORMAL` clean up will happen if no errors occured. When set to `NONE` clean up is omitted. When set to `FORCE` clean up will always be done. Default is `NORMAL`.
 
 ` INSTALL_MODE ` - any of `OwnNamespace`, `SingleNamespace`, `AllNamespaces`. this controls the installation mode of the Operator and should be set according to what your Operator states as supported in the `installModes` section of the CSV. Default is `SingleNamepsace`.
 
@@ -147,11 +147,11 @@ Here are some common scenarios, why your test can fail:
 
 The linter checks for valid JSON in `metadata.annotations.alm-examples`. The rest of the CSV is supposed to be YAML.
 
-### Failures when loading the the Operator into the Community Catalog
+### Failures when loading the Operator into the Community Catalog
 
 `my-operator.v2.1.11 specifies replacement that couldn't be found`
 
-Explanation: This happens because the catalog cannot load your Operator since it's pointing to a non-existing previous version of your Operator using `spec.replaces`. For updates, it is important that this property points to another, older version of your Operator that is already in the catalog.
+Explanation: This happens because the catalog cannot load your Operator since it's pointing to a non-existent previous version of your Operator using `spec.replaces`. For updates, it is important that this property points to another, older version of your Operator that is already in the catalog.
 
 `error adding operator bundle : error decoding CRD: no kind \"CustomResourceDefinition\" is registered for version \"apiextensions.k8s.io/v1\" in scheme \"pkg/registry/bundle.go`
 
@@ -163,13 +163,15 @@ Explanation: Your Operator claims ownership of a CRD that it does not ship. Chec
 
 `error loading package into db: [FOREIGN KEY constraint failed, no default channel specified for my-operator]`
 
-Explanation: This happens when either your Operator package defines more than one channel in `package.yaml` but does not define `defaultChannel`. Or when the package just defines a single channel (in which case you can omit `defaultChanel`) but the catalog couldn't load the CSV that this channel points to using `currentCSV`. This can happen when in the CSV the specified name in `metadata.name` is actually different from what `currentCSV` points to.
+Explanation: This happens when either
+- Your Operator package defines more than one channel in `package.yaml` but does not define `defaultChannel`.
+- The package just defines a single channel (in which case you can omit `defaultChannel`) but the catalog couldn't load the CSV that this channel points to using `currentCSV`. This can happen when in the CSV the specified name in `metadata.name` is actually different from what `currentCSV` points to.
 
 ### Failures when deploying via OLM
 
 `Check if subscription passes` times out
 
-Explanation: In this case the `Subscription` object created by test suite did not transition to the state `AtLatestKnown` before hitting a timeout. There are various reasons for this, ranging from the catalog pod crashing to problems with the `catalog-operator` pod of OLM itself. In any case, the logs of either pod will likely help troubleshooting and finding the root cause.
+Explanation: In this case the `Subscription` object created by the test suite did not transition to the state `AtLatestKnown` before hitting a timeout. There are various reasons for this, ranging from the catalog pod crashing to problems with the `catalog-operator` pod of OLM itself. In any case, the logs of either pod will likely help troubleshooting and finding the root cause.
 
 `Check if CSV passes` times out
 
@@ -179,7 +181,7 @@ Explanation: OLM could not install the Operator's `Deployment` from its CSV befo
 
 `failed to get proxyPod: timed out waiting for the condition:`
 
-Explanation: This happened likely the Operator pod crashed in the middle of the scorecard test suite. For example, when it failed to parse a Custom Resource that scorecard feeds of the list in `metadata.annotations.alm-examples`. OLM will wait for the `Deployment` of the Operator to recover until re-installing the Operator. Re-installation changes the Operator pod's name and hence scorecard fails to reach the logs of scorecard proxy using its old name.
+Explanation: If this happened it is likely the Operator pod crashed in the middle of the scorecard test suite. For example, when it failed to parse a Custom Resource fed to scorecard from the list in `metadata.annotations.alm-examples`. OLM will wait for the `Deployment` of the Operator to recover before re-installing the Operator. Re-installation changes the Operator pod's name and hence scorecard fails to reach the logs of scorecard proxy using its old name.
 
 `failed to create cr resource: object is being deleted: someapi.k8s.io "myCRD" already exists:`
 
@@ -189,8 +191,8 @@ Explanation: This can happen when your Operator automatically creates a CR on st
 
 ### Clean up after a failed test
 
-Like explained above (`CLEAN_MODE`), by default, if all tests run correctly, anything that got installed of on your cluster as part of the test will be deleted. If something fails, the deployed resource will not be deleted in order to give you a chance to debug.
-After you finished debugging you can use the following command to clean up any residual resources as part of a test of a particular Operator:
+As explained above, the default `CLEAN_MODE` of `NORMAL` will delete anything that got installed on your cluster if all tests run correctly.. If something fails, the deployed resources will not be deleted in order to give you a chance to debug.
+After you have finished debugging you can use the following command to clean up any residual resources as part of a test of a particular Operator:
 
 ```
 make operator.cleanup OP_PATH=upstream-community-operators/cockroachdb
