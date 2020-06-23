@@ -1,0 +1,112 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  creationTimestamp: null
+  name: cheinstallations.toolchain.openshift.dev
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=="CheReady")].status
+    name: Ready
+    type: string
+  - JSONPath: .status.conditions[?(@.type=="CheReady")].reason
+    name: Reason
+    type: string
+  - JSONPath: .status.conditions[?(@.type=="CheReady")].message
+    name: Message
+    priority: 1
+    type: string
+  group: toolchain.openshift.dev
+  names:
+    kind: CheInstallation
+    listKind: CheInstallationList
+    plural: cheinstallations
+    singular: cheinstallation
+  scope: Cluster
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: CheInstallation defines how CodeReady Workspaces (Che) operator
+        should be installed
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: CheInstallationSpec defines the desired state of CheInstallation
+          properties:
+            cheOperatorSpec:
+              description: The configuration required for Che operator
+              properties:
+                namespace:
+                  description: The namespace where the CodeReady Workspaces operator
+                    will be installed
+                  type: string
+              required:
+              - namespace
+              type: object
+          required:
+          - cheOperatorSpec
+          type: object
+        status:
+          description: CheInstallationStatus defines the observed state of CheInstallation
+          properties:
+            cheServerURL:
+              description: Route to access CodeReady Workspaces
+              type: string
+            conditions:
+              description: 'Last known condition of the CodeReady Workspaces  operator
+                installation. Supported condition types: CheReady'
+              items:
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transit from one status to
+                      another.
+                    format: date-time
+                    type: string
+                  message:
+                    description: Human readable message indicating details about last
+                      transition.
+                    type: string
+                  reason:
+                    description: (brief) reason for the condition's last transition.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+              x-kubernetes-list-map-keys:
+              - type
+              x-kubernetes-list-type: map
+          type: object
+      type: object
+      x-kubernetes-preserve-unknown-fields: true
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
