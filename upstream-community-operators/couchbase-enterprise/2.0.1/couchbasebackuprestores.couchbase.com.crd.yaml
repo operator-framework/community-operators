@@ -1,0 +1,108 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: couchbasebackuprestores.couchbase.com
+spec:
+  version: v2
+  additionalPrinterColumns:
+  - JSONPath: .status.capacityUsed
+    description: total size of the backup volume
+    name: Capacity Used
+    type: string
+  - JSONPath: .status.lastRun
+    description: last time backup was run
+    name: Last Run
+    type: string
+  - JSONPath: .status.lastSuccess
+    description: last time restore was successful
+    name: Last Success
+    type: string
+  - JSONPath: .status.duration
+    name: Duration
+    type: string
+  - JSONPath: .status.running
+    name: Running
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: couchbase.com
+  names:
+    categories:
+    - all
+    - couchbase
+    kind: CouchbaseBackupRestore
+    plural: couchbasebackuprestores
+    shortNames:
+    - cbrestore
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            backup:
+              type: string
+            end:
+              properties:
+                int:
+                  minimum: 1
+                  type: integer
+                str:
+                  type: string
+              type: object
+            logRetention:
+              pattern: ^\d+(ns|us|ms|s|m|h)$
+              type: string
+            repo:
+              type: string
+            start:
+              properties:
+                int:
+                  minimum: 1
+                  type: integer
+                str:
+                  type: string
+              type: object
+          required:
+          - backup
+          - start
+          type: object
+        status:
+          properties:
+            archive:
+              type: string
+            completed:
+              type: boolean
+            duration:
+              type: string
+            failed:
+              type: boolean
+            job:
+              type: string
+            lastFailure:
+              type: string
+            lastRun:
+              type: string
+            lastSuccess:
+              type: string
+            output:
+              type: string
+            pod:
+              type: string
+            repo:
+              type: string
+            repoList:
+              type: string
+            running:
+              type: boolean
+          type: object
+  versions:
+  - name: v2
+    served: true
+    storage: true
+  - name: v1
+    served: false
+    storage: false
