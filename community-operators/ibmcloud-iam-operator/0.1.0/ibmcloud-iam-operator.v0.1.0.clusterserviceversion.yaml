@@ -1,0 +1,506 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: ibmcloud-iam-operator.v0.1.0
+  namespace: placeholder
+  annotations:
+    alm-examples: >-
+      [{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"AccessPolicy","metadata":{"name":"mypolicy"},"spec":{"subject":{"accessGroupDef":{"accessGroupName":"mygroup","accessGroupNamespace":"default"}},"roles":{"definedRoles":["Viewer","Administrator"],"customRolesDef":[{"customRoleName":"myrole","customRoleNamespace":"default"}]},"target":{"resourceGroup":"Default","serviceClass":"messagehub","serviceID":"9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631","resourceName":"topic","resourceID":"topic-ansu"}}},{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"AccessGroup","metadata":{"name":"mygroup"},"spec":{"name":"MyAccessGroup","description":"A
+      new access group to test access group
+      controller","userEmails":["avarghese@us.ibm.com"],"serviceIDs":["ServiceId-3b9f026a-eb6e-495f-b104-95232d0c4a59","ServiceId-fa27c539-a6cf-41d2-8cb0-2916da5f8e8a"]}},{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"CustomRole","metadata":{"name":"myrole"},"spec":{"roleName":"MyAdmin","serviceClass":"messagehub","displayName":"My
+      Admin","description":"My admin only has a subset of the privileges of an
+      IAM Admin
+      role","actions":["iam.policy.create","iam.policy.update","messagehub.group.read"]}}]
+    categories: Cloud Provider
+    certified: 'false'
+    createdAt: '2020-06-26T10:47:16Z'
+    description: >-
+      The IBM Cloud IAM Operator provides a set of three Kubernetes CRD-Based
+      APIs to manage the lifecycle of Access Policies, Access Groups, and Custom
+      Roles on IAM for IBM public cloud.
+    containerImage: 'cloudoperators/ibmcloud-iam-operator:0.1.0'
+    support: IBM
+    capabilities: Basic Install
+    repository: 'https://github.com/IBM/ibmcloud-iam-operator'
+spec:
+  displayName: IBM Cloud IAM Operator
+  description: "On IBM Public Cloud, Identity and Access Management (IAM) is used to give access permissions so that entities can interact with resources. These access policies are set via the CLI or on the Console and typically require many gestures (retrieving API keys/tokens, creating user groups, adding users to group, obtaining subject and target IDs, copy and pasting, etc...).\_\n\nIBM Cloud IAM Kubernetes Operator provides a **user-friendly Operator for IKS and OpenShift to automate scenarios for managing access to IBM Cloud  Resources** via Kubernetes CRD-Based APIs:\n1. For access groups,\n2. For custom  roles, and\n3. For access policies\n\nThis will give users few advantages:\n- The operator **makes it easier to specify access groups, custom roles, and access policies** at a high level in a Kubernetes  YAML  declaratively, \n- The operator **automates interactions with IAM APIs** without requiring the user to know specifics,\n- The operator **enforces access groups, custom roles, and access policies** via the operator's desired-state management. For example, if a user is moved out of a group accidentally, the operator would move them back and remediate the issue,\n- The operator **integrates IBM Cloud  IAM  tightly with Kubernetes'  built-in  support  for RBAC**.\n## Requirements\nThe operator can be installed on any OLM-enabled Kubernetes cluster with version >= 1.11.  You need an [IBM Cloud account](https://cloud.ibm.com/registration) and the  [IBM Cloud CLI](https://cloud.ibm.com/docs/cli?topic=cloud-cli-getting-started). You need also to have the [kubectl CLI](https://kubernetes.io/docs/tasks/tools/install-kubectl/)   already configured to access your cluster. Before installing the operator, you need to login to  your IBM cloud account with the IBM Cloud CLI:\n\n    ibmcloud login\n\nand set a default target environment for your resources with the command:\n\n    ibmcloud target --cf -g default\n\nThis will use the IBM Cloud resource group `default`. To specify a different resource group, use the following command:\n\n    ibmcloud target -g <resource-group>\n\nyou can then configure the operator running the following script:\n\n    curl -sL https://raw.githubusercontent.com/IBM/ibmcloud-iam-operator/master/hack/config-operator.sh | bash \n\nThe script above creates an IBM Cloud API Key and stores it in a Kubernetes secret that can be accessed by the operator, and it sets defaults such as the resource group and region  used to provision IBM Cloud Services. You can always override the defaults in the custom resources. If you prefer to create the secret and the defaults manually, consult the [IBM Cloud IAM Operator documentation](https://github.com/IBM/ibmcloud-iam-operator).\n## Creating an Access Group, Custom Role or Access Policy\nYou can create an access policy with name `cosuserpolicy` for user `avarghese@us.ibm.com` to access a Cloud Object Storage instance's bucket as an `Administrator`  using the following custom resource written in an yaml file `cosuserpolicy.yaml`:\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessPolicy\n    metadata:\n      name: cosuserpolicy\n    spec:\n      subject:\n        userEmail: avarghese@us.ibm.com\n      roles:\n        definedRoles:\n          - Administrator\n      target:\n        resourceGroup: Default\n        serviceClass: cloud-object-storage\n        serviceID: 1cdd19ff-c033-4767-b6b7-4fe2fc58c6a1\n        resourceName: bucket\n        resourceID: cos-standard-ansu\n\nand then run the command:\n\n    kubectl create -f cosuserpolicy.yaml\n\nTo find the status of your access policy, you can run the command:\n\n    kubectl get accesspolicies.ibmcloud \n    NAME                 STATUS   AGE\n    cosuserpolicy        Online   25s\n\nHere's another example to create all three custom resources: You can create an access policy with name `demonewgrouppolicy` for access group resource `demonewgroup` in namespace `default` to access an Event Stream instance's topic `topic-ansu` as a custom role `ES Admin` that is running in the cluster as a custom role resource `democustomrole` in namespace `default` using the following yaml file [`accesspolicy_example_EventStreams_demo.yaml`](https://github.com/IBM/ibmcloud-iam-operator/blob/master/deploy/examples/accesspolicy_example_EventStreams_demo.yaml) :\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessGroup\n    metadata:\n      name: demonewgroup\n    spec:\n      name: demonewgroup\n      description: A new access group to test access group controller\n      userEmails:\n          - avarghese@us.ibm.com\n          - mvaziri@us.ibm.com\n      serviceIDs:\n        - ServiceId-3b9f026a-eb6e-495f-b104-95232d0c4a59\n        - ServiceId-fa27c539-a6cf-41d2-8cb0-2916da5f8e8a   \n\n    ---\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: CustomRole\n    metadata:\n      name: democustomrole\n    spec:\n      roleName: ESAdmin\n      serviceClass: messagehub\n      displayName: ES Admin\n      description: Event Streams admin is an admin that only has a subset of the privileges of an Admin role\n      actions: \n        - iam.policy.create\n        - iam.policy.update\n        - messagehub.group.read\n\n    ---\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessPolicy\n    metadata:\n      name: demonewgrouppolicy\n    spec:\n      subject:\n        accessGroupDef: \n          accessGroupName: demonewgroup\n          accessGroupNamespace: default\n      roles: \n        definedRoles:\n          - Viewer\n        customRolesDef:\n          - customRoleName: democustomrole\n            customRoleNamespace: default\n      target: \n        resourceGroup: Default    \n        serviceClass: messagehub\n        serviceID: 9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631\n        resourceName: topic\n        resourceID: topic-ansu    \n\nand then run the command:\n\n    kubectl create -f accesspolicy_example_EventStreams_demo.yaml\n\nTo find the status of your access policy, you can run the command:\n\n    kubectl get accessgroups.ibmcloud \n    NAME                 STATUS   AGE\n    demonewgroup        Online   25s\n\n    kubectl get customroles.ibmcloud \n    NAME                 STATUS   AGE\n    democustomrole        Online   25s\n\n    kubectl get accesspolicies.ibmcloud \n    NAME                 STATUS   AGE\n    demonewgrouppolicy        Online   25s\n\nFor additional configuration options, samples and more information on using the operator, consult  the [IBM Cloud IAM Operator documentation](https://github.com/IBM/ibmcloud-iam-operator).\n\n"
+  maturity: alpha
+  version: 0.1.0
+  replaces: ''
+  skips: []
+  minKubeVersion: ''
+  keywords:
+    - IBM
+    - Cloud
+  maintainers:
+    - name: Ansu Varghese
+      email: avarghese@us.ibm.com
+  provider:
+    name: IBM
+  labels:
+    name: ibmcloud-iam-operator
+  selector:
+    matchLabels:
+      name: ibmcloud-iam-operator
+  links:
+    - name: IBM Cloud IAM Operator Project
+      url: 'https://github.com/ibm/ibmcloud-iam-operator'
+  icon:
+    - base64data: >-
+        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
+      mediatype: image/png
+  customresourcedefinitions:
+    owned:
+      - name: accesspolicies.ibmcloud.ibm.com
+        displayName: AccessPolicy
+        kind: AccessPolicy
+        version: v1alpha1
+        description: Represents an instance of a access policy resource on IBM Cloud IAM.
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+          - kind: AccessPolicy
+            version: v1alpha1
+        specDescriptors:
+          - path: roles
+            description: Type to specify a list of Roles of an access policy
+            displayName: Roles
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: subject
+            description: Type to specify the Subject of an access policy
+            displayName: Subject
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: target
+            description: Type to specify the Target of an access policy
+            displayName: Target
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+        statusDescriptors:
+          - path: message
+            description: Detailed message on current status
+            displayName: Message
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: policyID
+            description: Policy ID for the access policy
+            displayName: Policy ID
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: roles
+            description: Type to specify a list of Roles of an access policy (Status)
+            displayName: Roles
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: state
+            description: Current state for the binding
+            displayName: State
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: subject
+            description: Type to specify the Subject of an access policy (Status)
+            displayName: Subject
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: target
+            description: Type to specify the Target of an access policy (Status)
+            displayName: Target
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+      - name: accessgroups.ibmcloud.ibm.com
+        displayName: AccessGroup
+        kind: AccessGroup
+        version: v1alpha1
+        description: Represents an instance of an access group resource on IBM Cloud IAM.
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+          - kind: AccessGroup
+            version: v1alpha1
+        specDescriptors:
+          - path: description
+            description: Description for the new access group
+            displayName: Description
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: name
+            description: Name of the new access group to be created
+            displayName: Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: serviceIDs
+            description: IAM IDs of Services that will be members of this new group
+            displayName: Service IDs
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: userEmails
+            description: Email IDs of the IAM Users who will be members of this new group
+            displayName: User Emails
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+        statusDescriptors:
+          - path: GroupID
+            description: Group ID
+            displayName: Group ID
+            x-descriptors: []
+          - path: description
+            description: Description for the new access group (Status)
+            displayName: Description
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: message
+            description: Detailed message on current status
+            displayName: Message
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: name
+            description: Name of the new access group to be created (Status)
+            displayName: Name
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: serviceIDs
+            description: >-
+              IAM IDs of Services that will be members of this new group
+              (Status)
+            displayName: Service IDs
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: state
+            description: Current state for the access group
+            displayName: State
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: userEmails
+            description: >-
+              Email IDs of the IAM Users who will be members of this new group
+              (Status)
+            displayName: User Emails
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - description: Group ID for the access group
+            displayName: Group ID
+            path: groupID
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+      - name: customroles.ibmcloud.ibm.com
+        displayName: CustomRole
+        kind: CustomRole
+        version: v1alpha1
+        description: Represents an instance of a custom role resource on IBM Cloud IAM.
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+          - kind: CustomRole
+            version: v1alpha1
+        specDescriptors:
+          - path: actions
+            description: >-
+              List of actions that this role can perform (IAM actions as well as
+              actions available for the service specified in ServiceClass
+            displayName: Actions
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: description
+            description: Description for this new custom role
+            displayName: Description
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: displayName
+            description: Display name of the new custom role to be created
+            displayName: Display Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: roleName
+            description: Name of the new custom role to be created
+            displayName: Role Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: serviceClass
+            description: Name of the IBM Cloud service that is linked to this new role
+            displayName: Service Class
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+        statusDescriptors:
+          - path: actions
+            description: >-
+              List of actions that this role can perform (IAM actions as well as
+              actions available for the service specified in ServiceClass
+              (Status)
+            displayName: Actions
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: description
+            description: Description for this new custom role (Status)
+            displayName: Description
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: displayName
+            description: Display name of the new custom role to be created (Status)
+            displayName: Display Name
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: message
+            description: Detailed message on current status
+            displayName: Message
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: roleCRN
+            description: Role CRN for the custom role
+            displayName: Role CRN
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: roleID
+            description: Role ID for the custom role
+            displayName: Role ID
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: roleName
+            description: Name of the new custom role to be created (Status)
+            displayName: Role Name
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: serviceClass
+            description: >-
+              Name of the IBM Cloud service that is linked to this new role
+              (Status)
+            displayName: Service Class
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: state
+            description: Current state for the binding
+            displayName: State
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+    required: []
+  install:
+    strategy: deployment
+    spec:
+      permissions: []
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ibmcloud.ibm.com
+              resources:
+                - accesspolicies
+                - customroles
+                - accessgroups
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ibmcloud.ibm.com
+              resources:
+                - accesspolicies/finalizers
+                - customroles/finalizers
+                - accessgroups/finalizers
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ''
+              resources:
+                - secrets
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ''
+              resources:
+                - configmaps
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ibmcloud.ibm.com
+              resources:
+                - accesspolicies/status
+                - customroles/status
+                - accessgroups/status
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+                - services
+                - services/finalizers
+                - endpoints
+                - persistentvolumeclaims
+                - events
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - ibmcloud-iam-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+                - deployments
+              verbs:
+                - get
+            - apiGroups:
+                - ibmcloud.ibm.com
+              resources:
+                - '*'
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+          serviceAccountName: ibmcloud-iam-operator
+      deployments:
+        - name: ibmcloud-iam-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: ibmcloud-iam-operator
+            strategy:
+              type: RollingUpdate
+            template:
+              metadata:
+                labels:
+                  name: ibmcloud-iam-operator
+              spec:
+                containers:
+                  - command:
+                      - ibmcloud-iam-operator
+                    env:
+                      - name: WATCH_NAMESPACE
+                        value: ''
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: ibmcloud-iam-operator
+                      - name: CONTROLLER_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                    image: 'cloudoperators/ibmcloud-iam-operator:0.1.0'
+                    imagePullPolicy: Always
+                    name: ibmcloud-iam-operator
+                serviceAccountName: ibmcloud-iam-operator
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: false
+    - type: MultiNamespace
+      supported: false
+    - type: AllNamespaces
+      supported: true
