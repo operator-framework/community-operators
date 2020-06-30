@@ -1,11 +1,11 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: infinispan-operator.v1.0.1
+  name: infinispan-operator.v2.0.1
   namespace: placeholder
   annotations:
     tectonic-visibility: ocs
-    capabilities: Basic Install
+    capabilities: Full Lifecycle
     categories: "Database"
     repository: https://github.com/infinispan/infinispan-operator
     alm-examples: |
@@ -19,38 +19,48 @@ metadata:
           "spec": {
             "replicas": 1
           }
+        },
+        {
+          "apiVersion": "infinispan.org/v2alpha1",
+          "kind": "Cache",
+          "metadata": {
+            "name": "example-cache"
+          },
+          "spec": {
+            "adminAuth": {
+              "secretName": "basic-auth"
+            },
+            "clusterName": "example-infinispan",
+            "name": "mycache"
+          }
         }
       ]
     description: Create and manage Infinispan clusters.
-    containerImage: docker.io/jboss/infinispan-operator:1.0.1
-    createdAt: 2019-10-28T16:55:39Z
+    containerImage: quay.io/infinispan/operator:2.0.0.Final-1
+    createdAt: 2020-06-30T16:52:04Z
     support: Infinispan
     certified: "false"
 spec:
-  displayName: infinispan
+  displayName: Infinispan
   description: |
     Infinispan is a distributed, in-memory data store that increases application performance and delivers open-source capabilites to handle demanding use cases.
-
-    The Infinispan Operator provides operational intelligence to simplify deploying Infinispan on Kubernetes clusters.
 
     ### Core Capabilities
     * **Schemaless data structure:** Store different objects as key-value pairs.
     * **Grid-based data storage:** Distribute and replicate data across clusters.
     * **Elastic scaling:** Dynamically adjust the number of nodes to meet demand without service disruption.
     * **Data interoperability:** Store, retrieve, and query data in the grid from different endpoints.
-    * **High availability:** Always have access to data.
+    * **High availability:** Always have access to your data.
 
     ### Infinispan Operator Features
-    * Single port HTTP/HotRod endpoint at `11222`.
-    * Supports custom configuration for different use cases.
-
-    The default user for accessing data is `developer`.
-    The Infinispan Operator generates a password for the default user and stores it in a Secret on startup.
-
-    Each Infinispan pod requests `0.5` CPUs, 512MiB of memory and 1Gi of ReadWriteOnce persistent volume.
-    You can adjust resource allocation with the `.spec.container.cpu` and `.spec.container.memory` fields.
+    * Operational intelligence that simplifies Infinispan cluster deployment.
+    * REST and Hot Rod endpoints available at port `11222`.
+    * Cache service for a high-performance, ephemeral data store.
+    * Data Grid service for a fully configurable Infinispan cluster.
+    * Default application user: `developer`. Infinispan Operator generates credentials in an authentication secret at startup.
+    * Infinispan pods request `0.25` (limit `0.50`) CPUs, 512MiB of memory and 1Gi of ReadWriteOnce persistent storage. Infinispan Operator lets you adjust resource allocation to suit your requirements.
   keywords: ['infinispan', 'key value', 'database', 'datagrid', 'open source']
-  version: 1.0.1
+  version: 2.0.1
   minKubeVersion: 1.11.0
   maturity: alpha
   maintainers:
@@ -58,7 +68,10 @@ spec:
       email: infinispan-dev@lists.jboss.org
   provider:
     name: Infinispan
-  replaces: infinispan-operator.v1.0.0
+  replaces: infinispan-operator.v2.0.0
+  relatedImages:
+    - name: infinispan-server
+      image: infinispan/server:11.0.1.Final
   labels:
     operated-by: infinispan-operator
   selector:
@@ -139,6 +152,40 @@ spec:
               - '*'
             verbs:
               - '*'
+      clusterPermissions:
+        - serviceAccountName: infinispan-operator
+          rules:
+          - apiGroups:
+              - ""
+            resources:
+              - nodes
+              - nodes/status
+            verbs:
+              - get
+              - list
+              - watch
+          - apiGroups:
+              - apiextensions.k8s.io
+            resources:
+              - customresourcedefinitions
+              - customresourcedefinitions/status
+            verbs:
+              - get
+              - list
+              - watch
+          - apiGroups:
+              - ""
+            resources:
+              - nodes/metrics
+              - nodes/spec
+            verbs:
+              - get
+          - apiGroups:
+              - ""
+            resources:
+              - nodes/stats
+            verbs:
+              - get
       deployments:
         - name: infinispan-operator
           spec:
@@ -157,7 +204,7 @@ spec:
                   - name: infinispan-operator
                     command:
                       - infinispan-operator
-                    image: jboss/infinispan-operator:1.0.1
+                    image: quay.io/infinispan/operator:2.0.0.Final-1
                     ports:
                       - containerPort: 60000
                         name: metrics
@@ -173,15 +220,23 @@ spec:
                       - name: OPERATOR_NAME
                         value: "infinispan-operator"
                       - name: DEFAULT_IMAGE
-                        value: "infinispan/server:10.0.0.Final-1"
+                        value: "infinispan/server:11.0.1.Final"
   customresourcedefinitions:
     owned:
+      - description: Cache is the Schema for the caches API
+        kind: Cache
+        name: caches.infinispan.org
+        version: v2alpha1
       - name: infinispans.infinispan.org
         version: v1
         kind: Infinispan
-        displayName: Infinispan
+        displayName: Infinispan Cluster
         description: An Infinispan cluster instance.
         resources:
+          - kind: ConfigMap
+            version: v1
+          - kind: Secret
+            version: v1
           - kind: Service
             version: v1
           - kind: Pod
@@ -201,16 +256,53 @@ spec:
             path: container.memory
           - description: Appends JVM options to each Infinispan node.
             displayName: Extra JVM Options
-            path: container.jvmOptionsAppend
-          - description: Name of the secrect that contains auth info
-            displayName: Endpoint SecretName
+            path: container.extraJvmOpts
+          - description: Name of the secrect that contains auth info.
+            displayName: Endpoint Secret Name
             path: security.endpointSecretName
-          - description: Select how encrption certificates are provided [Secret,Service]
+          - description: Select how encryption certificates are provided [Secret,Service].
             displayName: Endpoint Encryption Type
             path: security.endpointEncryption.type
-          - description: Platform service that serves certificates (openshift.io/service-cert is supported)
+          - description: Platform service that serves certificates (openshift.io/service-cert is supported).
             displayName: Serving Certs Service Name
             path: security.endpointEncryption.certServiceName
-          - description: Name of the secrect that contains certificates
-            displayName: Certificates SecretName
+          - description: Name of the secrect that contains certificates.
+            displayName: Certificates Secret Name
             path: security.endpointEncryption.certSecretName
+          - description: Select service type provided [Cache,DataGrid].
+            displayName: Service Type
+            path: service.type
+          - description: Local Infinispan node storage capacity (DataGrid service only).
+            displayName: Local Storage Capacity
+            path: service.container.storage
+          - description: Name of local site (DataGrid service only).
+            displayName: Name Of Local Site
+            path: service.sites.local.name
+          - description: Kubernetes service type for cross-site communications [LoadBalancer,NodePort] (DataGrid service only).
+            displayName: Kubernetes Service Type For Cross-Site Network
+            path: service.sites.local.expose.type
+          - description: Name of one of the sites (DataGrid service only)
+            displayName: Name Of Site
+            path: service.sites.locations[0].name
+          - description: Site URL for communicating with site (DataGrid service only). Prefixed with minikube:// for Minikube sites, and openshift:// for OpenShift sites.
+            displayName: Site URL
+            path: service.sites.locations[0].url
+          - description: Secret name containing credentials to talk to site (DataGrid service only).
+            displayName: Secret For Site
+            path: service.sites.locations[0].secretName
+          - description: Defines logging categories and log levels.
+            displayName: Logging Categories
+            path: logging.categories
+          - description: Externally exposed Kubernetes service type.
+            displayName: Exposed Kubernetes Service Type
+            path: expose.type
+        statusDescriptors:
+        - description: Type of condition.
+          displayName: Condition Type
+          path: conditions[0].type
+        - description: Status of condition.
+          displayName: Condition Status
+          path: conditions[0].status
+        - description: Message of condition.
+          displayName: Condition Message
+          path: conditions[0].message
