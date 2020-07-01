@@ -1,0 +1,118 @@
+---
+- name: "certificates : check kafka-root-ca secret"
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ meta.name }}-root-ca"
+    namespace: "{{ meta.namespace }}"
+  register: secret_root_ca
+
+- name: "certificates : mount files from secret"
+  template:
+    src: certificates/ca.{{ item }}.j2
+    dest: /tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.{{ item }}
+  loop: "{{ secret_root_ca.resources[0].data | flatten(1) }}"
+  when: secret_root_ca.resources[0].data is defined
+
+- name: "cerstificates : create root-ca private key"
+  openssl_privatekey:
+    path: /tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.key
+    size: 2048
+    state: present
+
+- name: "certificates : create root-ca certificate signing request (CSR)"
+  openssl_csr:
+    path: /tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.csr
+    privatekey_path: /tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.key
+    common_name: "Kafka Root CA"
+    create_subject_key_identifier: yes
+    basic_constraints_critical: yes
+    basic_constraints: 'CA:TRUE'
+    key_usage_critical: yes
+    key_usage: ["cRLSign", "keyCertSign"]
+    select_crypto_backend: cryptography
+    owner: root
+    group: root
+    mode: 0600
+    force: False
+    state: present
+
+- name: "certificates : create root-ca certificate"
+  openssl_certificate:
+    path: /tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.crt
+    csr_path: /tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.csr
+    privatekey_path: /tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.key
+    provider: selfsigned
+    selfsigned_not_after: +36500d
+    owner: root
+    group: root
+    mode: 0600
+    state: present
+  register: root_ca
+
+- name: "certificates : root-ca : create secret"
+  k8s:
+    definition: "{{ lookup('template', 'certificates/root-ca.yaml.j2') }}"
+    state: present
+
+- name: "certificates : zookeeeper : check secret"
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "zookeeper-{{ item }}"
+    namespace: "{{ meta.namespace }}"
+  register: secret_zookeeper_cert
+  loop: "{{ range(0, zookeeper.size) | list }}"
+
+- name: "certificates : zookeeper : mount files from secret"
+  template:
+    src: certificates/zookeeper.{{ item }}.j2
+    dest: /tmp/{{ meta.namespace }}-{{ meta.name }}-zookeeper-0.{{ item }}
+  loop: "{{ secret_zookeeper_cert.resources[0].data | flatten(1) }}"
+  when: secret_zookeeper_cert.resources[0].data is defined
+
+- name: "certificates : zookeeper : create private key"
+  openssl_privatekey:
+    path: /tmp/{{ meta.namespace }}-{{ meta.name }}-zookeeper-{{ item }}.key
+    size: 2048
+    state: present
+  loop: "{{ range(0, zookeeper.size) | list }}"
+
+- name: "certificates : zookeeper : create csr"
+  openssl_csr:
+    path: "/tmp/{{ meta.namespace }}-{{ meta.name }}-zookeeper-{{ item }}.csr"
+    privatekey_path: "/tmp/{{ meta.namespace }}-{{ meta.name }}-zookeeper-{{ item }}.key"
+    common_name: "zookeeper-{{ item }}"
+    subject_alt_name: "DNS:zookeeper-{{ item }},DNS:zookeeper-{{ item }}.zookeeper,DNS:zookeeper-{{ item }}.zookeeper.{{ meta.namespace }},DNS:localhost,IP:127.0.0.1"
+    key_usage_critical: "yes"
+    key_usage: ["digitalSignature", "keyEncipherment", "keyAgreement"]
+    extended_key_usage: ["serverAuth", "clientAuth"]
+    owner: "root"
+    group: "root"
+    mode: "0600"
+    state: present
+  loop: "{{ range(0, zookeeper.size) | list }}"
+
+- name: "certificates : zookeeper : create certificate"
+  openssl_certificate:
+    path: "/tmp/{{ meta.namespace }}-{{ meta.name }}-zookeeper-{{ item }}.crt"
+    csr_path: "/tmp/{{ meta.namespace }}-{{ meta.name }}-zookeeper-{{ item }}.csr"
+    ownca_path: "/tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.crt"
+    ownca_privatekey_path: "/tmp/{{ meta.namespace }}-{{ meta.name }}-root-ca.key"
+    provider: "ownca"
+    ownca_not_after: "{{ root_ca.notAfter }}"
+    owner: "root"
+    group: "root"
+    mode: "0600"
+    state: present
+  register: zookeeper_cert
+  loop: "{{ range(0, zookeeper.size) | list }}"
+
+- debug:
+    msg: "{{ zookeeper_cert }}"
+
+- name: "certificates : zookeeper : create secret"
+  k8s:
+    definition: "{{ lookup('template', 'certificates/zookeeper.yaml.j2') }}"
+    state: present
+  loop: "{{ range(0, zookeeper.size) | list }}"

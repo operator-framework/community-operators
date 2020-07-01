@@ -1,0 +1,96 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: "{{ meta.namespace }}"
+  labels:
+    app: zookeeper
+    release: confluent
+    operator: ansible
+spec:
+  serviceName: zookeeper
+  replicas: {{ zookeeper.size }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        configHash: "{{ zookeeper_configmap | checksum }}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - zookeeper
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: zookeeper
+        image: "confluentinc/cp-zookeeper:{{ version }}"
+        ports:
+        - name: server
+          containerPort: {{ zookeeper.server_port }}
+        - name: leader-election
+          containerPort: {{ zookeeper.election_port }}
+        - name: client
+          containerPort: {{ zookeeper.client_port }}
+        - name: jmx
+          containerPort: {{ zookeeper.jmx_port }}
+        envFrom:
+        - configMapRef:
+            name: zookeeper
+        env:
+        - name: ZOOKEEPER_SERVERS
+          value: "{{ zookeeper_servers }}"
+        - name: ZOOKEEPER_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        command:
+        - "bash"
+        - "-c"
+        - |
+          ZOOKEEPER_SERVER_ID=$((${HOSTNAME##*-}+1)) \
+          /etc/confluent/docker/run
+{% if zookeeper.persistent == true %}
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/lib/zookeeper/data
+        - name: datalogdir
+          mountPath: /var/lib/zookeeper/log
+{% endif %}
+{% if zookeeper.persistent == true %}
+      volumes:
+      - name: datadir
+        emptyDir: {}
+      - name: datalogdir
+        emptyDir: {}
+{% endif %}
+      serviceAccountName: zookeeper
+{% if zookeeper.persistent == true %}
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ zookeeper.data_dir_size }}
+  - metadata:
+      name: datalogdir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ zookeeper.datalog_dir_size }}
+{% endif %}
+---

@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ meta.name }}-mirror-maker
+  namespace: confluent
+  labels:
+    app: mirror-maker
+    release: confluent
+    operator: ansible
+spec:
+  replicas: {{ size }}
+  selector:
+     matchLabels:
+       app: mirror-maker
+  template:
+    metadata:
+      labels:
+        app: mirror-maker
+        configHash: {{ mirror_maker_configmap | checksum }}
+    spec:
+      containers:
+      - name: mirror-maker
+        image: "confluentinc/cp-kafka:{{ version }}"
+        ports:
+        - name: jmx
+          containerPort: 9999
+        command:
+        - "sh"
+        - "-exc"
+        - |
+          unset KAFKA_PORT
+          /usr/bin/kafka-mirror-maker --consumer.config /etc/kafka/consumer.config --producer.config /etc/kafka/producer.config --whitelist "{% for topic in topics %}{{ topic }}{% if not loop.last %}, {% endif %}{% endfor %}"
+
+        volumeMounts:
+        - name: mirror-maker
+          mountPath: /etc/kafka/consumer.config
+          subPath: consumer.config
+        - name: mirror-maker
+          mountPath: /etc/kafka/producer.config
+          subPath: producer.config
+      serviceAccountName: {{ meta.name }}-mirror-maker
+      volumes:
+      - name: mirror-maker
+        configMap:
+          name: {{ meta.name }}-mirror-maker
+          items:
+          - key: consumer.config
+            path: consumer.config
+          - key: producer.config
+            path: producer.config
+---

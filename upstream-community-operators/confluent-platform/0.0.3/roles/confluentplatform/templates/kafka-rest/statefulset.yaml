@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-rest
+  namespace: "{{ meta.namespace }}"
+  labels:
+    app: kafka-rest
+    release: confluent
+    operator: ansible
+spec:
+  serviceName: kafka-rest
+  replicas: {{ kafka_rest.size }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: kafka-rest
+  template:
+    metadata:
+      labels:
+        app: kafka-rest
+        configHash: "{{ kafka_rest_configmap | checksum }}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - kafka-rest
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: kafka-rest
+        image: "confluentinc/cp-kafka-rest:{{ version }}"
+        ports:
+        - name: kafka-rest
+          containerPort: {{ kafka_rest.port }}
+        - name: jmx
+          containerPort: {{ kafka_rest.jmx_port }}
+        envFrom:
+        - configMapRef:
+            name: kafka-rest
+        env:
+        - name: KAFKA_REST_LISTENERS
+          value: "http://0.0.0.0:{{ kafka_rest.port }}"
+        - name: KAFKA_REST_BOOTSTRAP_SERVERS
+          value: "{{ kafka_servers }}"
+        - name: KAFKA_REST_ZOOKEEPER_CONNECT
+          value: "{{ kafka_zookeeper_connect }}"
+        command:
+        - "sh"
+        - "-exc"
+        - |
+          unset KAFKA_REST_PORT
+          KSQL_CLIENT_ID=kafka-rest-$((${HOSTNAME##*-}+1)) \
+          KAFKA_REST_HOST_NAME=kafka-rest-$((${HOSTNAME##*-}+1)) \
+          /etc/confluent/docker/run
+      serviceAccountName: kafka-rest
+---

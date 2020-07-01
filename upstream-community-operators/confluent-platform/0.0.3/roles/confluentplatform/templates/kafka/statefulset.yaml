@@ -1,0 +1,134 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: "{{ meta.namespace }}"
+  labels:
+    app: kafka
+    release: confluent
+    operator: ansible
+spec:
+  serviceName: kafka
+  replicas: {{ kafka.size }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  selector:
+     matchLabels:
+       app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+        configHash: "{{ kafka_configmap | checksum }}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - kafka
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+#      - name: kafka-exporter
+#        image: danielqsj/kafka-exporter:latest
+#        args:
+#        - '--kafka.server=localhost:{{ kafka.plaintext_port }}'
+#        imagePullPolicy: IfNotPresent
+#        volumeMounts:
+#        - name: jmx-config
+#          mountPath: /etc/jmx-kafka
+#        ports:
+#        - name: metrics
+#          containerPort: 9308
+      - name: prometheus-jmx-exporter
+        image: solsson/kafka-prometheus-jmx-exporter:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - java
+        - -XX:+UnlockExperimentalVMOptions
+        - -XX:MaxRAMFraction=1
+        - -XshowSettings:vm
+        - -jar
+        - jmx_prometheus_httpserver.jar
+        - '9308'
+        - /etc/jmx-kafka/jmx-kafka-prometheus.yml
+        ports:
+        - name: metrics
+          containerPort: 9308
+        volumeMounts:
+        - name: jmx-config
+          mountPath: /etc/jmx-kafka
+      - name: kafka
+        image: "confluentinc/cp-kafka:{{ version }}"
+        ports:
+        - name: plaintext
+          containerPort: {{ kafka.plaintext_port }}
+        - name: ssl
+          containerPort: {{ kafka.ssl_port }}
+        - name: sasl
+          containerPort: {{ kafka.sasl_port }}
+        - name: jmx
+          containerPort: {{ kafka.jmx_port }}
+        envFrom:
+        - configMapRef:
+            name: kafka
+        env:
+        - name: KAFKA_BROKER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: "{{ kafka_zookeeper_connect }}"
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://:{{ kafka.plaintext_port }}"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "PLAINTEXT:PLAINTEXT"
+        command:
+        - "sh"
+        - "-exc"
+        - |
+          unset KAFKA_PORT
+          [ -d /var/lib/kafka/data/lost+found ] && rm -R /var/lib/kafka/data/lost+found || echo "Directory lost+found does not exist."
+          KAFKA_BROKER_ID=$((${HOSTNAME##*-})) && \
+          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${HOSTNAME}.kafka.{{ meta.namespace }}:{{ kafka.plaintext_port }} && \
+          /etc/confluent/docker/run
+        readinessProbe:
+          tcpSocket:
+            port: {{ kafka.plaintext_port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: {{ kafka.plaintext_port }}
+          initialDelaySeconds: 15
+          periodSeconds: 20
+{% if kafka.persistent == true %}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/kafka/data
+{% endif %}
+      volumes:
+      - name: jmx-config
+        configMap:
+          name: kafka-jmx-config
+{% if kafka.persistent == true %}
+      - name: data
+        emptyDir: {}
+{% endif %}
+      serviceAccountName: kafka
+{% if kafka.persistent == true %}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ kafka.storage_size }}
+{% endif %}
+---

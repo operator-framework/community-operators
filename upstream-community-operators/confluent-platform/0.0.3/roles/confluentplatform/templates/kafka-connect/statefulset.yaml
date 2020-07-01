@@ -1,0 +1,97 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-connect
+  namespace: "{{ meta.namespace }}"
+  labels:
+    app: kafka-connect
+    release: confluent
+    operator: ansible
+spec:
+  serviceName: kafka-connect
+  replicas: {{ kafka_connect.size }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: kafka-connect
+  template:
+    metadata:
+      labels:
+        app: kafka-connect
+        configHash: "{{ kafka_connect_configmap | checksum }}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - kafka-connect
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: kafka-connect
+        image: "confluentinc/cp-kafka-connect:{{ version }}"
+        ports:
+        - name: kafka-connect
+          containerPort: {{ kafka_connect.port }}
+        - name: jmx
+          containerPort: {{ kafka_connect.jmx_port }}
+        envFrom:
+        - configMapRef:
+            name: kafka-connect
+        env:
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: "{{ kafka_servers }}"
+        - name: CONNECT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONNECT_REST_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONNECT_LISTENERS
+          value: "http://0.0.0.0:{{ kafka_connect.port }}"
+        command:
+        - "bash"
+        - "-c"
+        - |
+          confluent-hub install --no-prompt confluentinc/kafka-connect-kinesis:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-azure-data-lake-gen2-storage:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-gcp-functions:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-salesforce-bulk-api:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-rabbitmq:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-prometheus-metrics:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-pagerduty:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-http:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:{{ version }}
+          confluent-hub install --no-prompt confluentinc/kafka-connect-activemq-sink:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-appdynamics-metrics:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-firebase:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-sqs:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-avro-converter:{{ version }}
+          confluent-hub install --no-prompt confluentinc/connect-transforms:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:{{ version }}
+          confluent-hub install --no-prompt debezium/debezium-connector-mongodb:latest
+          confluent-hub install --no-prompt debezium/debezium-connector-postgresql:latest
+          confluent-hub install --no-prompt debezium/debezium-connector-mysql:latest
+          confluent-hub install --no-prompt debezium/debezium-connector-sqlserver:latest
+          confluent-hub install --no-prompt mongodb/kafka-connect-mongodb:latest
+          confluent-hub install --no-prompt fbascheper/kafka-connect-telegram:latest
+          confluent-hub install --no-prompt jcustenborder/kafka-connect-twitter:latest
+          confluent-hub install --no-prompt jcustenborder/kafka-connect-memcached:latest
+          confluent-hub install --no-prompt jcustenborder/kafka-connect-aerospike:latest
+          confluent-hub install --no-prompt jcustenborder/kafka-connect-redis:latest
+          CONNECT_CLIENT_ID=$((${HOSTNAME##*-}+1)) \
+          /etc/confluent/docker/run
+      serviceAccountName: kafka-connect
+---

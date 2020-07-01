@@ -1,0 +1,67 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: control-center
+  namespace: {{ meta.namespace }}
+  labels:
+    app: control-center
+    release: confluent
+    operator: ansible
+spec:
+  serviceName: control-center
+  replicas: {{ control_center.size }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: control-center
+  template:
+    metadata:
+      labels:
+        app: control-center
+        configHash: "{{ control_center_configmap | checksum }}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - control-center
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: control-center
+        image: "confluentinc/cp-enterprise-control-center:{{ version }}"
+        ports:
+        - name: control-center
+          containerPort: {{ control_center.port }}
+        - name: jmx
+          containerPort: {{ control_center.jmx_port }}
+        envFrom:
+        - configMapRef:
+            name: control-center
+        env:
+        - name: CONTROL_CENTER_BOOTSTRAP_SERVERS
+          value: "{{ kafka_servers }}"
+        - name: CONTROL_CENTER_ZOOKEEPER_CONNECT
+          value: "{{ kafka_zookeeper_connect }}"
+        - name: CONTROL_CENTER_SCHEMA_REGISTRY_URL
+          value: "{{ schema_registry_servers }}"
+        - name: CONTROL_CENTER_CONNECT_CLUSTER
+          value: "{{ kafka_connect_servers }}"
+        - name: CONTROL_CENTER_KSQL_URL
+          value: "{{ ksqldb_servers }}"
+        - name: CONTROL_CENTER_KSQL_ADVERTISED_URL
+          value: "{{ ksqldb_servers }}"
+        command:
+        - "sh"
+        - "-exc"
+        - |
+          CONTROL_CENTER_ID=$((${HOSTNAME##*-}+1)) \
+          /etc/confluent/docker/run
+      serviceAccountName: control-center
+---

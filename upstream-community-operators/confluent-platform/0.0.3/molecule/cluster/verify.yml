@@ -1,0 +1,35 @@
+---
+# This is an example playbook to execute Ansible tests.
+- name: Verify
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  collections:
+    - community.kubernetes
+
+  vars:
+    custom_resource: "{{ lookup('template', '/'.join([deploy_dir, 'crds/pm.bet_v1alpha1_confluentplatform_cr.yaml'])) | from_yaml }}"
+
+  tasks:
+    - name: Create the pm.bet/v1alpha1.ConfluentPlatform and wait for reconciliation to complete
+      k8s:
+        state: present
+        namespace: '{{ namespace }}'
+        definition: '{{ custom_resource }}'
+        wait: yes
+        wait_timeout: 300
+        wait_condition:
+          type: Running
+          reason: Successful
+          status: "True"
+
+    - name: Get Pods
+      k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: '{{ namespace }}'
+      register: pods
+
+    - name: Example assertion
+      assert:
+        that: (pods | length) > 0

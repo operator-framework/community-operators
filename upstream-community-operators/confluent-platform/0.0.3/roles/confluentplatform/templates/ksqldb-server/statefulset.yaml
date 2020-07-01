@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ksqldb-server
+  namespace: "{{ meta.namespace }}"
+  labels:
+    app: ksqldb-server
+    release: confluent
+    operator: ansible
+spec:
+  serviceName: ksqldb-server
+  replicas: {{ ksqldb_server.size }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: ksqldb-server
+  template:
+    metadata:
+      labels:
+        app: ksqldb-server
+        configHash: "{{ ksqldb_server_configmap | checksum }}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - ksqldb-server
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: ksqldb-server
+        image: "confluentinc/cp-ksqldb-server:{{ version }}"
+        ports:
+        - name: ksqldb-server
+          containerPort: {{ ksqldb_server.port }}
+        - name: jmx
+          containerPort: {{ ksqldb_server.jmx_port }}
+        envFrom:
+        - configMapRef:
+            name: ksqldb-server
+        env:
+        - name: KSQL_BOOTSTRAP_SERVERS
+          value: "{{ kafka_servers }}"
+        - name: KSQL_KSQL_STREAMS_BOOTSTRAP_SERVERS
+          value: "{{ kafka_servers }}"
+        - name: KSQL_LISTENERS
+          value: "http://0.0.0.0:{{ ksqldb_server.port }}"
+        command:
+        - "bash"
+        - "-c"
+        - |
+          KSQL_CLIENT_ID=$((${HOSTNAME##*-}+1)) \
+          /etc/confluent/docker/run
+      serviceAccountName: ksqldb-server
+---

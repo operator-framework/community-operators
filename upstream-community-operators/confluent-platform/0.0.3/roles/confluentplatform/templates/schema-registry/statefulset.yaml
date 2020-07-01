@@ -1,0 +1,64 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: schema-registry
+  namespace: "{{ meta.namespace }}"
+  labels:
+    app: schema-registry
+    release: confluent
+    operator: ansible
+spec:
+  serviceName: schema-registry
+  replicas: {{ schema_registry.size }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: schema-registry
+  template:
+    metadata:
+      labels:
+        app: schema-registry
+        configHash: "{{ schema_registry_configmap | checksum }}"
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - schema-registry
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: schema-registry
+        image: "confluentinc/cp-schema-registry:{{ version }}"
+        ports:
+        - name: schema-registry
+          containerPort: {{ schema_registry.port }}
+        - name: jmx
+          containerPort: {{ schema_registry.jmx_port }}
+        envFrom:
+        - configMapRef:
+            name: schema-registry
+        env:
+        - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+          value: "{{ kafka_servers }}"
+        - name: SCHEMA_REGISTRY_HOST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: SCHEMA_REGISTRY_LISTENERS
+          value: "http://0.0.0.0:{{ schema_registry.port }}"
+        command:
+        - "bash"
+        - "-c"
+        - |
+          unset SCHEMA_REGISTRY_PORT
+          SCHEMA_REGISTRY_CLIENT_ID=$((${HOSTNAME##*-}+1)) \
+          /etc/confluent/docker/run
+      serviceAccountName: schema-registry
+---

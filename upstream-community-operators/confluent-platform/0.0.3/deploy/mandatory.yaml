@@ -1,0 +1,396 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: confluentplatforms.kafka.pm.bet
+spec:
+  group: kafka.pm.bet
+  names:
+    kind: ConfluentPlatform
+    plural: confluentplatforms
+    singular: confluentplatform
+    shortNames:
+    - cp
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              version:
+                type: string
+                pattern: '^(\d+).(\d+).(\d+)$'
+                default: "5.3.1"
+          status:
+            type: object
+            properties:
+              version:
+                type: string
+              labelSelector:
+                type: string
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: Zookeeper
+      type: string
+      jsonPath: .spec.zookeeper.enabled
+    - name: Kafka
+      type: boolean
+      jsonPath: .spec.kafka.enabled
+    - name: Schema Registry
+      type: boolean
+      jsonPath: .spec.schemaRegistry.enabled
+    - name: Kafka connect
+      type: boolean
+      jsonPath: .spec.kafkaConnect.enabled
+    - name: KSQLDB Server
+      type: boolean
+      jsonPath: .spec.ksqldbServer.enabled
+    - name: Kafka Rest
+      type: boolean
+      jsonPath: .spec.kafkaRest.enabled
+    - name: Control Center
+      type: boolean
+      jsonPath: .spec.controlCenter.enabled
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+#---
+#apiVersion: apiextensions.k8s.io/v1beta1
+#kind: CustomResourceDefinition
+#metadata:
+#  name: confluentplatforms.kafka.pm.bet
+#spec:
+#  group: kafka.pm.bet
+#  names:
+#    kind: ConfluentPlatform
+#    listKind: ConfluentPlatformList
+#    plural: confluentplatforms
+#    singular: confluentplatform
+#    shortNames:
+#    - cp
+#  scope: Namespaced
+#  subresources:
+#    status: {}
+#  validation:
+#    openAPIV3Schema:
+#      type: object
+#      properties:
+#        spec:
+#          type: object
+#          properties:
+#            version:
+#              type: string
+#              pattern: '^(\d+).(\d+).(\d+)$'
+#  additionalPrinterColumns:
+#  - name: Zookeeper
+#    type: string
+#    JSONPath: .spec.zookeeper.enabled
+#  - name: Kafka
+#    type: boolean
+#    JSONPath: .spec.kafka.enabled
+#  - name: Schema Registry
+#    type: boolean
+#    JSONPath: .spec.schemaRegistry.enabled
+#  - name: Kafka connect
+#    type: boolean
+#    JSONPath: .spec.kafkaConnect.enabled
+#  - name: KSQLDB Server
+#    type: boolean
+#    JSONPath: .spec.ksqldbServer.enabled
+#  - name: Kafka Rest
+#    type: boolean
+#    JSONPath: .spec.kafkaRest.enabled
+#  - name: Control Center
+#    type: boolean
+#    JSONPath: .spec.controlCenter.enabled
+#  - name: Age
+#    type: date
+#    JSONPath: .metadata.creationTimestamp
+#  versions:
+#  - name: v1beta1
+#    served: true
+#    storage: true
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: topics.kafka.pm.bet
+spec:
+  group: kafka.pm.bet
+  names:
+    kind: Topic
+    listKind: TopicList
+    plural: topics
+    singular: topic
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      type: object
+      x-kubernetes-preserve-unknown-fields: true
+  additionalPrinterColumns:
+  - name: Partitions
+    type: integer
+    description: Number of topic partitions
+    JSONPath: .spec.partitions
+  - name: Replication Factor
+    type: integer
+    description:  Replication factor of topic
+    JSONPath: .spec.replicationFactor
+  - name: Retention ms
+    type: integer
+    JSONPath: .spec.options.retentionMs
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: mirrormakers.kafka.pm.bet
+spec:
+  group: kafka.pm.bet
+  names:
+    kind: MirrorMaker
+    listKind: MirrorMakerList
+    plural: mirrormakers
+    singular: mirrormaker
+    shortNames:
+    - mm
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      type: object
+      x-kubernetes-preserve-unknown-fields: true
+  additionalPrinterColumns:
+  - name: Partitions
+    type: integer
+    description: Number of topic partitions
+    JSONPath: .spec.partitions
+  - name: Replication Factor
+    type: integer
+    description:  Replication factor of topic
+    JSONPath: .spec.replicationFactor
+  - name: Retention ms
+    type: integer
+    JSONPath: .spec.options.retentionMs
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: connectors.kafka.pm.bet
+spec:
+  group: kafka.pm.bet
+  names:
+    kind: Connector
+    listKind: ConnectorList
+    plural: connectors
+    singular: connector
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      type: object
+      x-kubernetes-preserve-unknown-fields: true
+  additionalPrinterColumns:
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: confluent-platform
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - namespaces
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - services/finalizers
+  - endpoints
+  - persistentvolumeclaims
+  - events
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - apps
+  resourceNames:
+  - confluent-platform
+  resources:
+  - deployments/finalizers
+  - statefulsets
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  - deployments
+  verbs:
+  - get
+- apiGroups:
+  - kafka.pm.bet
+  resources:
+  - '*'
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: confluent-platform
+subjects:
+- kind: ServiceAccount
+  name: confluent-platform
+  namespace: operators
+roleRef:
+  kind: ClusterRole
+  name: confluent-platform
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: confluent-platform
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confluent-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: confluent-platform
+  template:
+    metadata:
+      labels:
+        name: confluent-platform
+    spec:
+      serviceAccountName: confluent-platform
+      containers:
+        - name: confluent-platform
+          image: "deniss/confluent-platform-operator:v0.0.3"
+          imagePullPolicy: "Always"
+          volumeMounts:
+          - mountPath: /tmp/ansible-operator/runner
+            name: runner
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "confluent-platform"
+            - name: ANSIBLE_GATHERING
+              value: explicit
+      volumes:
+        - name: runner
+          emptyDir: {}
+

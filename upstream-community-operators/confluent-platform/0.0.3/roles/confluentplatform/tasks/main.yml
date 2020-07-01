@@ -1,0 +1,35 @@
+---
+- name: "set facts"
+  set_fact:
+    zookeeper_servers: "{% for host in range(0, zookeeper.size) %}zookeeper-{{ loop.index0 }}.zookeeper.{{ meta.namespace }}:{{ zookeeper.server_port }}:{{ zookeeper.election_port }}{% if not loop.last %};{% endif %}{% endfor %}"
+    kafka_zookeeper_connect: "{% for host in range(0, zookeeper.size) %}zookeeper-{{ loop.index0 }}.zookeeper.{{ meta.namespace }}:{{ zookeeper.client_port }}{% if not loop.last %},{% endif %}{% endfor %}"
+    kafka_servers: "{% for host in range(0, kafka.size) %}kafka-{{ loop.index0 }}.kafka.{{ meta.namespace }}:9092{% if not loop.last %},{% endif %}{% endfor %}"
+    schema_registry_servers: "{% for host in range(0, schema_registry.size) %}schema-registry-{{ loop.index0 }}.schema-registry.{{ meta.namespace }}:{{ schema_registry.port }}{% if not loop.last %},{% endif %}{% endfor %}"
+    kafka_connect_servers: "{% for host in range(0, kafka_connect.size) %}kafka-connect-{{ loop.index0 }}.kafka-connect.{{ meta.namespace }}:{{ kafka_connect.port }}{% if not loop.last %},{% endif %}{% endfor %}"
+    ksqldb_servers: "{% for host in range(0, ksqldb_server.size) %}ksqldb-server-{{ loop.index0 }}.ksqldb-server.{{ meta.namespace }}:{{ ksqldb_server.port }}{% if not loop.last %},{% endif %}{% endfor %}"
+    kafka_rest_servers: "{% for host in range(0, kafka_rest.size) %}kafka-rest-{{ loop.index0 }}.kafka-rest.{{ meta.namespace }}:{{ kafka_rest.port }}{% if not loop.last %},{% endif %}{% endfor %}"
+    control_center_servers: "{% for host in range(0, control_center.size) %}control-center-{{ loop.index0 }}.control-center.{{ meta.namespace }}:{{ control_center.port }}{% if not loop.last %},{% endif %}{% endfor %}"
+
+- name: "include certificate tasks"
+  include_tasks: "certificates.yml"
+
+- name: "include zookeeper tasks"
+  include_tasks: "zookeeper.yml"
+
+- name: "include kafka tasks"
+  include_tasks: "kafka.yml"
+
+- name: "include schema-registry tasks"
+  include_tasks: "schema-registry.yml"
+
+- name: "include kafka-connect tasks"
+  include_tasks: "kafka-connect.yml"
+
+- name: "include ksqldb-server tasks"
+  include_tasks: "ksqldb-server.yml"
+
+- name: "include kafka-rest tasks"
+  include_tasks: "kafka-rest.yml"
+
+- name: "include control-center tasks"
+  include_tasks: "control-center.yml"

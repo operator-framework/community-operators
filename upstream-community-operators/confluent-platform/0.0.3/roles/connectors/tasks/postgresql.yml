@@ -1,0 +1,60 @@
+---
+- name: "check if connector exist"
+  uri:
+    url: "http://{{ kafka_connect_servers }}/connectors/{{ item.name }}"
+    validate_certs: "no"
+    method: "GET"
+    status_code: ["200", "404"]
+  register: connector
+
+- name: "create connector"
+  uri:
+    url: "https://{{ kafka_connect_servers }}:8083/connectors"
+    validate_certs: "no"
+    method: "POST"
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body:
+      name: "{{ item.name }}"
+      config:
+        connector.class: "io.debezium.connector.postgresql.PostgresConnector"
+        database.host: "{{ database.host }}"
+        database.dbname: "{{ database.name }}"
+        database.hostname: "{{ database.hostname }}"
+        database.password: "{{ database.password }}"
+        database.port: "{{ database.port }}"
+        database.server.name: "{{ database.server_name }}"
+        database.user: "{{ item.database_user }}"
+        include.schema.changes: "{{ include_schema_changes }}"
+        key.converter.schemas.enable: "{{ common.key_sonverter_schemas_enable }}"
+        key.converter: "{{ common.key_converter }}"
+        name: "{{ item.name }}"
+        plugin.name: "{{ plugin_name }}"
+        publication.name: "{{ publication_name }}"
+        slot.name: "test_debezium"
+        table.whitelist: "public.betitemsbetitems"
+        transforms.ExtractField.field: "betid"
+        transforms.ExtractField.type: "org.apache.kafka.connect.transforms.ExtractField$Key"
+        transforms.Reroute.topic.regex: "(.*)"
+        transforms.Reroute.topic.replacement: "{{ item.transforms_reroute_topic_replacement }}"
+        transforms.Reroute.type: "io.debezium.transforms.ByLogicalTableRouter"
+        transforms.ValueToKey.fields: "betid"
+        transforms.ValueToKey.type: "org.apache.kafka.connect.transforms.ValueToKey"
+        transforms.filter.filter.condition: "$.resultsource"
+        transforms.filter.filter.type: "include"
+        transforms.filter.missing.or.null.behavior: "exclude"
+        transforms.filter.type: "io.confluent.connect.transforms.Filter$Value"
+        transforms.unwrap.delete.handling.mode: "drop"
+        transforms.unwrap.drop.tombstones: "true"
+        transforms.unwrap.type: "io.debezium.transforms.ExtractNewRecordState"
+        transforms: "RerouteunwrapValueToKeyExtractFieldfilter"
+        value.converter.schemas.enable: "false"
+        value.converter: "org.apache.kafka.connect.json.JsonConverter"
+    body_format: json
+  register: _result
+  until: _result.status == 201
+  retries: 720
+  delay: 5
+  when: connector.results.status != 200
+---
