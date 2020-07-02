@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confluent-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: confluent-platform
+  template:
+    metadata:
+      labels:
+        name: confluent-platform
+    spec:
+      serviceAccountName: confluent-platform
+      containers:
+        - name: confluent-platform
+          image: "deniss/confluent-platform-operator:v0.0.3"
+          imagePullPolicy: "Always"
+          volumeMounts:
+          - mountPath: /tmp/ansible-operator/runner
+            name: runner
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "confluent-platform"
+            - name: ANSIBLE_GATHERING
+              value: explicit
+      volumes:
+        - name: runner
+          emptyDir: {}
