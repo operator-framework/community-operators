@@ -1,0 +1,454 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: addressspaces.enmasse.io
+  labels:
+    app: enmasse
+    enmasse-component: tenant-api
+spec:
+  group: enmasse.io
+  version: v1beta1
+  scope: Namespaced
+  names:
+    kind: AddressSpace
+    listKind: AddressSpaceList
+    singular: addressspace
+    plural: addressspaces
+    categories:
+    - enmasse
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+  additionalPrinterColumns:
+  - name: Type
+    type: string
+    description: The address space type
+    priority: 1
+    JSONPath: .spec.type
+  - name: Plan
+    type: string
+    priority: 1
+    description: The address space plan
+    JSONPath: .spec.plan
+  - name: Ready
+    type: boolean
+    priority: 0
+    description: The readiness of the address space
+    JSONPath: .status.isReady
+  - name: Phase
+    type: string
+    priority: 0
+    description: The phase of the address space
+    JSONPath: .status.phase
+  - name: Status
+    type: string
+    priority: 1
+    description: The status of the address space
+    JSONPath: .status.messages
+  - name: Age
+    priority: 0
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  validation:
+    openAPIV3Schema:
+      type: object
+      description: AddressSpace is a group of addresses that can be accessed through a single connection (per protocol). An AddressSpace can support multiple protocols, as defined by the type. This resource is created by messaging tenants.
+      properties:
+        spec:
+          type: object
+          required:
+            - type
+            - plan
+          properties:
+            type:
+              type: string
+              description: "The type of address space."
+              enum: ["standard", "brokered"]
+            plan:
+              type: string
+              description: "The name of the address space plan to apply."
+            authenticationService:
+              type: object
+              description: "The authentication service to use for authenticating messaging clients."
+              properties:
+                name:
+                  type: string
+                  description: "The name of the authentication service."
+                type:
+                  type: string
+                overrides:
+                  type: object
+                  properties:
+                    host:
+                      type: string
+                    port:
+                      type: integer
+                    realm:
+                      type: string
+            endpoints:
+              type: array
+              description: "Endpoints configured for this address space."
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: "Endpoint name. Use to uniquely identify an endpoint."
+                  service:
+                    type: string
+                    description: "Service referenced by this endpoint."
+                    enum:
+                      - messaging
+                      - mqtt
+                      - console
+                  cert:
+                    type: object
+                    description: "Configure certificates to be used for this endpoint."
+                    properties:
+                      provider:
+                        type: string
+                        description: "Certificate provider to use for this endpoint."
+                        enum:
+                          - wildcard
+                          - certBundle
+                          - openshift
+                          - selfsigned
+                      secretName:
+                        type: string
+                      tlsCert:
+                        type: string
+                        description: "TLS certificate to use for 'certBundle' provider."
+                      tlsKey:
+                        type: string
+                        description: "TLS key to use for 'certBundle' provider."
+                  exports:
+                    type: array
+                    description: "Export address space information."
+                    items:
+                      type: object
+                      properties:
+                        kind:
+                          type: string
+                          description: "Type of resource to export address space information into."
+                          enum:
+                            - ConfigMap
+                            - Secret
+                            - Service
+                        name:
+                          description: "Name of resource to export address space information into."
+                          type: string
+                  expose:
+                    description: "Expose configuration of this endpoint."
+                    type: object
+                    anyOf:
+                      - required:
+                          - type
+                          - loadBalancerPorts
+                        properties:
+                          type:
+                            type: string
+                            description: "Expose this endpoint as LoadBalancer service."
+                            enum:
+                              - loadbalancer
+                          annotations:
+                            type: object
+                          loadBalancerPorts:
+                            type: array
+                            items:
+                              type: string
+                          loadBalancerSourceRanges:
+                            type: array
+                            items:
+                              type: string
+                      - required:
+                          - type
+                          - routeTlsTermination
+                        properties:
+                          type:
+                            type: string
+                            description: "Expose this endpoint as an OpenShift route."
+                            enum:
+                              - route
+                          annotations:
+                            type: object
+                            description: "Annotations to set on the created endpoint."
+                          routeHost:
+                            type: string
+                          routeServicePort:
+                            type: string
+                            description: "Service port. Valid values are 'amqps' for the messaging service, 'secure-mqtt' for the mqtt service, and 'https' for the console service."
+                            enum:
+                              - amqps
+                              - https
+                              - secure-mqtt
+                          routeTlsTermination:
+                            type: string
+                            enum:
+                              - passthrough
+                              - reencrypt
+            networkPolicy:
+              type: object
+              description: "Define NetworkPolicy for this address space."
+              properties:
+                ingress:
+                  type: array
+                  items:
+                    type: object
+                egress:
+                  type: array
+                  items:
+                    type: object
+            connectors:
+              type: array
+              description: "External AMQP connections."
+              items:
+                type: object
+                required:
+                  - name
+                  - endpointHosts
+                properties:
+                  name:
+                    type: string
+                    description: "Connector name. Used to uniquely identify a connector."
+                    pattern: "[a-zA-Z0-9]+"
+                  endpointHosts:
+                    type: array
+                    description: "Endpoints to connect to. First entry is used as primary, additional entries are considered failovers."
+                    minItems: 1
+                    items:
+                      type: object
+                      required:
+                        - host
+                      properties:
+                        host:
+                          type: string
+                        port:
+                          type: integer
+                  role:
+                    type: string
+                    description: "Role of connector. Defaults to 'route-container'."
+                    enum:
+                      - "normal"
+                      - "route-container"
+                      - "edge"
+                  idleTimeout:
+                    type: integer
+                    description: "Idle timeout of AMQP connection (seconds). 0 disables the idle timeout."
+                  maxFrameSize:
+                    type: integer
+                    description: "Max frame size of AMQP connection."
+                  tls:
+                    type: object
+                    description: "TLS configuration for the connector. If not specified, TLS will not be used."
+                    properties:
+                      caCert:
+                        description: "CA certificate to be used by the connector."
+                        anyOf:
+                          - type: string
+                            properties:
+                              value:
+                                type: string
+                                description: "Value of field"
+                          - type: object
+                            properties:
+                              valueFromSecret:
+                                type: object
+                                description: "Secret containing value."
+                                required:
+                                  - name
+                                properties:
+                                  name:
+                                    type: string
+                                    description: "Name of Secret containing value."
+                                  key:
+                                    type: string
+                                    description: "Key to use for looking up entry."
+                      clientCert:
+                        description: "Client certificate to be used by the connector."
+                        anyOf:
+                          - type: string
+                            properties:
+                              value:
+                                type: string
+                                description: "Value of field"
+                          - type: object
+                            properties:
+                              valueFromSecret:
+                                type: object
+                                description: "Secret containing value."
+                                required:
+                                  - name
+                                properties:
+                                  name:
+                                    type: string
+                                    description: "Name of Secret containing value."
+                                  key:
+                                    type: string
+                                    description: "Key to use for looking up entry."
+                      clientKey:
+                        description: "Client key to be used by the connector."
+                        anyOf:
+                          - type: string
+                            properties:
+                              value:
+                                type: string
+                                description: "Value of field"
+                          - type: object
+                            properties:
+                              valueFromSecret:
+                                type: object
+                                description: "Secret containing value."
+                                required:
+                                  - name
+                                properties:
+                                  name:
+                                    type: string
+                                    description: "Name of Secret containing value."
+                                  key:
+                                    type: string
+                                    description: "Key to use for looking up entry."
+                  credentials:
+                    type: object
+                    description: "Credentials used when connecting to endpoints. Either 'username' and 'password', or 'secret' must be defined."
+                    properties:
+                      username:
+                        description: "Username to use for connector."
+                        anyOf:
+                          - type: object
+                            properties:
+                              value:
+                                type: string
+                                description: "Value of field"
+                          - type: object
+                            properties:
+                              valueFromSecret:
+                                type: object
+                                description: "Secret containing value."
+                                required:
+                                  - name
+                                properties:
+                                  name:
+                                    type: string
+                                    description: "Name of Secret containing value."
+                                  key:
+                                    type: string
+                                    description: "Key to use for looking up entry."
+                      password:
+                        description: "Password to use for connector."
+                        anyOf:
+                          - type: string
+                            properties:
+                              value:
+                                type: string
+                                description: "Value of field"
+                          - type: object
+                            properties:
+                              valueFromSecret:
+                                type: object
+                                description: "Secret containing value."
+                                required:
+                                  - name
+                                properties:
+                                  name:
+                                    type: string
+                                    description: "Name of Secret containing value."
+                                  key:
+                                    type: string
+                                    description: "Key to use for looking up entry."
+                  addresses:
+                    type: array
+                    description: "Addresses to make be accessible via this address space."
+                    items:
+                      type: object
+                      required:
+                        - name
+                        - pattern
+                      properties:
+                        name:
+                          type: string
+                          description: "Identifier of address pattern. Used to uniquely identify a pattern."
+                        pattern:
+                          type: string
+                          description: "Pattern used to match addresses. The pattern will be prefixed by the connector name and a forward slash ('myconnector/'). A pattern consists of one or more tokens separated by a forward slash /. A token can be one of the following: a * character, a # character, or a sequence of characters that do not include /, *, or #. The * token matches any single token. The # token matches zero or more tokens. * has higher precedence than #, and exact match has the highest precedence."
+                          pattern: "([^/#*]+|\\*|#)(/([^/#*]+|\\*|#))*"
+        status:
+          type: object
+          properties:
+            isReady:
+              description: "Whether address space is ready to use or not."
+              type: boolean
+            phase:
+              type: string
+              description: "Phase of address space."
+            messages:
+              type: array
+              description: "Status and error messages for address space."
+              items:
+                type: string
+            caCert:
+              description: "CA certificate for endpoints."
+              type: string
+            routers:
+              type: array
+              description: "Router status for this address space."
+              items:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                  undelivered:
+                    type: integer
+                  neighbors:
+                    type: array
+                    items:
+                      type: string
+            connectors:
+              type: array
+              description: "Connector status for this address space."
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  isReady:
+                    type: boolean
+                  messages:
+                    type: array
+                    items:
+                      type: string
+            endpointStatuses:
+              type: array
+              description: "Endpoint status for this address space."
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  externalHost:
+                    type: string
+                  externalPorts:
+                    type: array
+                    items:
+                      type: object
+                      name:
+                        type: string
+                      port:
+                        type: integer
+                  serviceHost:
+                    type: string
+                  servicePorts:
+                    type: array
+                    items:
+                      type: object
+                      name:
+                        type: string
+                      port:
+                        type: integer
+                  messages:
+                    type: array
+                    items:
+                      type: string
+

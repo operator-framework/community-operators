@@ -1,0 +1,396 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: open-liberty-operator.v0.6.0
+  namespace: placeholder
+  annotations:
+    alm-examples: >-
+      [{"apiVersion":"openliberty.io/v1beta1","kind":"OpenLibertyApplication","metadata":{"name":"demo-app"},"spec":{"replicas":1,"applicationImage":"openliberty/open-liberty:full-java8-openj9-ubi","expose":true}},{"apiVersion": "openliberty.io/v1beta1","kind": "OpenLibertyDump","metadata": {"name": "example-dump"},"spec": {"podName": "Specify_Pod_Name_Here","include": ["heap","thread"]}},{"apiVersion": "openliberty.io/v1beta1","kind": "OpenLibertyTrace","metadata": {"name": "example-trace"},"spec": {"podName": "Specify_Pod_Name_Here","traceSpecification": "*=info:com.ibm.ws.webcontainer*=all"}}]
+    categories: Application Runtime
+    certified: 'true'
+    createdAt: 2020-05-21 09:00:00
+    description: Deploy and manage applications running on Open Liberty
+    containerImage: openliberty/operator:0.6.0
+    support: IBM
+    capabilities: Auto Pilot
+    repository: https://github.com/OpenLiberty/open-liberty-operator
+spec:
+  displayName: Open Liberty Operator
+  description: 'This advanced Operator can be used to deploy and manage Open Liberty applications with 
+    consistent, production-grade QoS. This operator is based on the [Runtime Component Operator](https://github.com/application-stacks/runtime-component-operator) 
+    and provides all of its capabilities in addition to Open Liberty specific features such as gathering traces and dumps (Day-2 operations) and easily 
+    configuring and managing the single sign-on information for your Open Liberty applications.
+    
+    Open Liberty Operator enables enterprise architects to govern the way their applications get deployed & managed in the cluster, while 
+    dramatically reducing the learning curve for developers to deploy into Kubernetes - allowing them to focus on writing the code!
+
+    Here are some key features:
+
+    #### Application Lifecyle
+    
+    You can deploy your Open Liberty application container by either pointing to a container image, or an OpenShift ImageStream.
+    When using an ImageStream the Operator will watch for any updates and will re-deploy the modified image.
+
+
+    #### Custom RBAC
+
+    This Operator is capable of using a custom ServiceAccount from the caller, allowing it to follow RBAC restrictions. By default
+    it creates a ServiceAccount if one is not specified, which can also be bound with specific roles.
+
+
+    #### Environment Configuration
+
+    You can configured a variety of artifacts with your deployment, such as: labels, annotations, and environment variables from
+    a ConfigMap, a Secret or a value. 
+
+
+    #### Routing
+
+    Expose your application to external users via a single toggle to create a Route on OpenShift or an Ingress on other Kubernetes environments.
+    Advanced configuration, such as TLS settings, are also easily enabled.  Expiring Route certificates are re-issued.
+
+
+    #### High Availability via Horizontal Pod Autoscaling
+
+    Run multiple instances of your application for high availability. Either specify
+    a static number of replicas or easily configure horizontal auto scaling to create (and delete)
+    instances based on resource consumption.
+
+
+    #### Persistence and advanced storage
+
+    Enable persistence for your application by specifying simple requirements: just tell us the size
+    of the storage and where you would like it to be mounted and We will create and manage that storage for you.  
+
+    This toggles a StatefulSet resource instead of a Deployment resource, so your container can recover
+    transactions and state upon a pod restart. 
+
+    We offer an advanced mode where the user specifies a built-in PersistentVolumeClaim, allowing them to configure
+    many details of the persistent volume, such as its storage class and access mode.
+
+    You can also easily configure and use a single storage for serviceability related Day-2 operations, 
+    such as gatherig server traces and dumps.
+
+
+    #### Service Binding
+
+    Easily bind to available services in your cluster.  Your runtime components can expose and consume other services
+    by simply specifying the target endpoinds: we take care of the heavy lifting such as creating k8s Secrets, injecting
+    them into your container and watching for any changes in configuration!  This way your applications can dynamically
+    reconnect to its required services without any intervention or interruption.
+
+
+    #### Single Sign-On (SSO)
+    
+    Open Liberty provides capabilities to delegate authentication to external providers. Your application users can log in 
+    using their existing social media credentials from providers such as Google, Facebook, LinkedIn, Twitter, GitHub, 
+    and any OpenID Connect (OIDC) or OAuth 2.0 clients.
+
+    Open Liberty Operator allows to easily configure and manage the single sign-on information for your applications.
+
+    #### Exposing metrics to Prometheus
+
+    The Open Liberty Operator exposes the runtime container''s metrics via the [Prometheus Operator](https://operatorhub.io/operator/prometheus).
+
+    Users can pick between a basic mode, where they simply specify the label that Prometheus is watching to scrape the metrics from the container,
+    or they can specify the full `ServiceMonitor` spec embedded into the OpenLibertyApplication''s `spec.monitoring` key controlling things like the poll 
+    internal and security credentials.
+
+    #### Easily mount logs and transaction directories
+
+    If you need to mount the logs and transaction data from your application to an external volume such as NFS (or any storage supported in your cluster),
+    simply add the following (customizing the folder location and size) to your OpenLibertyApplication CR:
+
+      ```
+      storage:
+        size: 2Gi
+        mountPath: "/logs"
+      ```
+
+
+    #### Integration with OpenShift''s Certificate Manager
+
+    The Open Liberty Operator takes advantage of the [cert-manager tool](https://cert-manager.io/), if it is installed on the cluster. This allows the operator to
+    automatically provision TLS certificates for pods as well as routes.
+
+    When creating certificates via the OpenLibertyApplication CR the user can specify a particular issuer name and toggle the scopes between ClusterIssuer (cluster scoped) 
+    and Issuer (namespace scoped). If not specified, these values are retrieved from a ConfigMap, with a default value of `self-signed` and `ClusterIssuer`.
+
+    The certificate is mounted into the container via a Secret so that it is automatically refreshed once the certificate is updated.
+
+    #### Integration with OpenShift Serverless
+
+    Deploy your serverless runtime component using a single toggle.  The Operator will convert all of its generated 
+    resources into [Knative](https://knative.dev) resources, allowing your pod to automatically scale to 0 when it is idle.
+
+
+    #### Integration with Kubernetes Application Navigator (kAppNav) and OpenShift''s Topology UI
+
+    Automatically configures the Kubernetes resources for integration with [kAppNav](https://kappnav.io/), allowing your
+    runtime component to compose an umbrella [Application](https://github.com/kubernetes-sigs/application).  This integration allows users to monitor 
+    all constituents resources of the application and receive alerts when the health status of a component changes.  From an integrated panel users can
+    also launch day-2-operations, such as viewing the Kibana / Grafana dashboards, and enabling trace for a component.
+    
+    During this integration we also set the corresponding labels to support OpenShift''s Developer Topology UI,which allows you to visualize your entire set of deployments 
+    and how they are connected.  
+
+        See our [**documentation**](https://github.com/OpenLiberty/open-liberty-operator/tree/master/doc/)
+        for more information.'
+  maturity: beta
+  replaces: open-liberty-operator.v0.5.1
+  version: 0.6.0
+  keywords:
+    - Open Liberty
+    - MicroProfile
+    - Jakarta EE
+    - Java
+    - Application Server
+    - Application Runtime
+    - Runtime
+    - Spring
+    - Application
+    - Open Source
+    - OpenLiberty
+  maintainers:
+    - name: Artur Dzmitryieu
+      email: dzmitry@ca.ibm.com
+    - name: Navid Shakibapour Tabrizi
+      email: navidst@ca.ibm.com
+    - name: Leo Christy Jesuraj
+      email: leojc@ca.ibm.com
+    - name: Arthur De Magalhaes
+      email: arthurdm@ca.ibm.com
+  provider:
+    name: IBM
+  links:
+    - name: Documentation
+      url: https://github.com/OpenLiberty/open-liberty-operator/tree/master/doc
+    - name: Open Liberty
+      url: https://openliberty.io/
+    - name: Open Liberty Images
+      url: https://github.com/OpenLiberty/ci.docker
+  icon:
+    - base64data: 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
+      mediatype: image/png
+  customresourcedefinitions:
+    owned:
+      - name: openlibertyapplications.openliberty.io
+        displayName: Open Liberty Application
+        kind: OpenLibertyApplication
+        version: v1beta1
+        description: Configuration for the deployment of an Open Liberty application
+        resources:
+          - name: ''
+            kind: Deployment
+          - name: ''
+            kind: Service
+          - name: ''
+            kind: StatefulSet
+          - name: ''
+            kind: Route
+          - name: ''
+            kind: HorizontalPodAutoscaler
+        specDescriptors:
+          - path: applicationImage
+            description: application image to be installed 
+            displayName: Application Image
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - path: version
+            description: version of the application
+            displayName: Application Version
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - path: pullPolicy
+            description: image pull policy for container image
+            displayName: Pull Policy
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:imagePullPolicy
+          - path: replicas
+            description: number of pods to create
+            displayName: Replicas
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:podCount
+          - path: expose
+            description: automatically create HTTP Route
+            displayName: Expose
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+          - path: resourceConstraints
+            description: resource requirements for cpu and memory
+            displayName: Resource Requirements
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+          - path: service.port
+            description: port to use for kubernetes service
+            displayName: Service Port
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:number
+          - path: service.type
+            description: type to use for kubernetes service
+            displayName: Service Type
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - path: autoscaling
+            description: horizontal pod autoscaling
+            displayName: Autoscaling
+            x-descriptors: 
+              - urn:alm:descriptor:com.tectonic.ui:fieldGroup:label
+        statusDescriptors:
+          - path: conditions
+            description: status conditions
+            displayName: Status conditions
+            x-descriptors: 
+              - urn:alm:descriptor:io.kubernetes.conditions
+      - name: openlibertytraces.openliberty.io
+        displayName: Open Liberty Trace
+        kind: OpenLibertyTrace
+        version: v1beta1
+        description: Day-2 operation for gathering server traces
+      - name: openlibertydumps.openliberty.io
+        displayName: Open Liberty Dump
+        kind: OpenLibertyDump
+        version: v1beta1
+        description: Day-2 operation for generating server dumps 
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions: 
+      - rules:
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          - namespaces
+          - pods/exec
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - autoscaling
+          resources:
+          - horizontalpodautoscalers
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resourceNames:
+          - open-liberty-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - openliberty.io
+          resources:
+          - '*'
+          - openlibertytraces
+          - openlibertydumps
+          verbs:
+          - '*'
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - '*'
+        - apiGroups:
+          - serving.knative.dev
+          resources:
+          - services
+          verbs:
+          - '*'
+        - apiGroups:
+          - cert-manager.io
+          resources:
+          - certificates
+          verbs:
+          - '*'
+        - apiGroups:
+          - app.k8s.io
+          resources:
+          - applications
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - servicebindingrequests
+          verbs:
+          - '*'
+        - apiGroups:
+          - networking.k8s.io
+          - extensions
+          resources:
+          - ingresses
+          verbs:
+          - '*'
+        serviceAccountName: open-liberty-operator
+      deployments:
+        - name: open-liberty-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: open-liberty-operator
+            template:
+              metadata:
+                labels:
+                  name: open-liberty-operator
+              spec:
+                serviceAccountName: open-liberty-operator
+                containers:
+                  - name: open-liberty-operator
+                    image: openliberty/operator:0.6.0
+                    command:
+                      - open-liberty-operator
+                    imagePullPolicy: Always
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: open-liberty-operator
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: true

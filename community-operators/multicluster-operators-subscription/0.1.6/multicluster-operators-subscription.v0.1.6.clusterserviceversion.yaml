@@ -1,0 +1,970 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "apps.open-cluster-management.io/v1",
+          "kind": "Channel",
+          "metadata": {
+            "name": "dev-helmrepo"
+          },
+          "spec": {
+            "type": "HelmRepo",
+            "pathname": "http://kubernetes-charts.storage.googleapis.com/"
+          },
+          "status": {
+            "state": "N/A"
+          }
+        },
+        {
+          "apiVersion": "apps.open-cluster-management.io/v1",
+          "kind": "Subscription",
+          "metadata": {
+            "name": "sub-nginx"
+          },
+          "spec": {
+            "channel": "ns-ch/predev-ch",
+            "name": "nginx-ingress",
+            "packageFilter": {
+              "version": "=1.26.1"
+            },
+            "packageOverrides": [
+              {
+                "packageAlias": "nginx-ingress",
+                "packageName": "nginx-ingress",
+                "packageOverrides": [
+                  {
+                    "path": "spec",
+                    "value": {
+                      "defaultBackend": {
+                        "replicaCount": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "placement": {
+              "local": true
+            }
+          }
+        }
+      ]
+    capabilities: Seamless Upgrades
+    categories: "Integration & Delivery,OpenShift Optional"
+    olm.skipRange: '<0.1.4'
+    certified: 'false'
+    containerImage: quay.io/open-cluster-management/multicluster-operators-subscription:community-2.0
+    createdAt: 2020-06-21T18:00:00Z
+    description: An operator to subscribe resources from nameSpace, objectBucket, helm and github types of channels
+    repository: https://github.com/open-cluster-management/multicloud-operators-subscription
+    support: Red Hat
+  name: multicluster-operators-subscription.v0.1.6
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Subscribe resources from a channel according to its package filters
+      displayName: App Subscription
+      group: apps.open-cluster-management.io
+      kind: Subscription
+      name: subscriptions.apps.open-cluster-management.io
+      version: v1
+      specDescriptors:
+      - description: The channel namespace/name that the subscription points to
+        displayName: Channel
+        path: channel
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:label
+      - description: The package name that the subscription subscribes
+        displayName: Package Name
+        path: name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Wether enable the subscription or not
+        displayName: Placement Enabled
+        path: placement.local
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: The package version filter applied by the subscription
+        displayName: Package Version filter
+        path: packageFilter.version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The package label selector applied by the subscription
+        displayName: Package Label Selector
+        path: packageFilter.labelSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The package name that will be overrided by the subscription
+        displayName: Overrided Package Name
+        path: packageOverrides.packageName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The package path that will be overrided by the subscription
+        displayName: Overrided Package Path
+        path: packageOverrides.packageOverrides.path
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The value that will be replaced into the package path
+        displayName: Overrided Package value
+        path: packageOverrides.packageOverrides.value
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      statusDescriptors:
+      - description: Last updated time of the subscription
+        displayName: Last Updated Time
+        path: lastUpdateTime
+        x-descriptors:
+        - urn:alm:descriptor:text     
+      - description: The current phase of the subscription
+        displayName: Phase
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:text   
+      - description: The current status of the subscription
+        displayName: Status
+        path: statuses
+        x-descriptors:
+        - urn:alm:descriptor:text 
+    - description: Represent a helm chart repository
+      displayName: Channel
+      group: apps.open-cluster-management.io
+      kind: Channel
+      name: channels.apps.open-cluster-management.io
+      version: v1
+    - description: Represent a helm chart selected by the subscription, for internal use only. 
+      displayName: Helm Release
+      group: apps.open-cluster-management.io
+      kind: HelmRelease
+      name: helmreleases.apps.open-cluster-management.io
+      version: v1
+    - description: Contain a k8s resource template for deployment, for internal use only.
+      displayName: Deployable
+      group: apps.open-cluster-management.io
+      kind: Deployable
+      name: deployables.apps.open-cluster-management.io
+      version: v1
+    - description: Placement Rules to determine which mangaged clusters will be deployed by multicluster applications.
+      displayName: Placement Rule
+      group: apps.open-cluster-management.io
+      kind: PlacementRule
+      name: placementrules.apps.open-cluster-management.io
+      version: v1
+    - description: Application selectors to determine which subscriptions and deployables are bundled into the application
+      displayName: Application
+      group: app.k8s.io
+      kind: Application
+      name: applications.app.k8s.io
+      version: v1beta1
+  description: |
+    A multicluster subscription operator subscribes resources from a Channel and get them deployed to kubernetes clusters
+    ## Prerequisites
+    - Operator Lifecycle Manager (OLM) needs to be installed.
+
+    OLM installation can be checked by running the command:
+      ```
+      $ kubectl get pods --all-namespaces | grep olm
+      olm        catalog-operator-7f54797f5f-z9l9n         1/1     Running            0          46s
+      olm        olm-operator-65874bdb76-vs6gf             1/1     Running            0          46s
+      olm        operatorhubio-catalog-8wp2d               1/1     Running            0          36s
+      olm        packageserver-7fb4588767-8mxv4            1/1     Running            0          34s
+      olm        packageserver-7fb4588767-d6h8j            1/1     Running            0          25s
+      ```
+
+    ## How to Install
+    - Install `Multicluster Subscription Operator` by following instructions in top right button `Install`.
+
+    Three new pods are created in `openshift-operators` namespace
+
+    ```
+    $ kubectl get pods -n openshift-operators
+    NAME                                                            READY   STATUS    RESTARTS   AGE
+    multicluster-operators-application-5ccbbc878d-98fdp               4/4     Running   0          49s
+    multicluster-operators-hub-subscription-65f7d689d6-6vpr5          1/1     Running   0          49s
+    multicluster-operators-standalone-subscription-86df85d4bf-m4bd9   1/1     Running   0          49s
+    ```
+
+    The operator is now providing new Custom Resources Definitions: `subscriptions.apps.open-cluster-management.io`, `channels.apps.open-cluster-management.io`
+
+    ## Using the Multicluster Subscription Operator
+    Here is an example to demonstrate how to create one Multicluster Subscription CR to subscribe the helm chart nginx-ingress v1.26.1
+
+    -  Create a channel `dev-helmrepo` in namespace `dev` to point to a helm repo `kubernetes-charts.storage.googleapis.com`
+
+    ```
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: dev
+    ---
+    apiVersion: apps.open-cluster-management.io/v1
+    kind: Channel
+    metadata:
+      name: dev-helmrepo
+      namespace: dev
+    spec:
+        type: HelmRepo
+        pathname: http://kubernetes-charts.storage.googleapis.com/
+        configRef: 
+          name: skip-cert-verify
+          apiVersion: v1
+          kind: ConfigMap
+    ---
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: skip-cert-verify
+      namespace: dev
+    data:
+      insecureSkipVerify: "true"
+    ```
+
+    -  Create a subscription `simple` in the `default` namespace to subscribe the nginx-ingress v1.26.1 package. The subscription is disabled by default.
+
+    ```
+    apiVersion: apps.open-cluster-management.io/v1
+    kind: Subscription
+    metadata:
+      name: simple
+    spec:
+      channel: dev/dev-helmrepo
+      name: nginx-ingress
+      placement:
+        local: false
+      packageFilter:
+        version: =1.26.1
+      packageOverrides:
+        - packageName: nginx-ingress
+          packageAlias: nginx-ingress
+          packageOverrides:
+          - path: spec
+            value:
+              defaultBackend:
+                replicaCount: 3
+    ```
+    
+    - Deploy the nginx-ingress v1.26.1 package by setting the subscription `spec.placement.local` to `true`
+
+    ```
+    kubectl patch subscriptions.apps.open-cluster-management.io simple --type='json' -p='[{"op": "replace", "path": "/spec/placement/local", "value": true}]'
+    ```
+
+    - Make sure the subscribed nginx-ingress package being deployed to the default namespace
+
+    ```
+    $ kubectl get pods -n default |grep nginx
+    nginx-ingress-controller-775b4967cb-8nx9m        1/1     Running   0          118s
+    nginx-ingress-default-backend-659bd647bd-bfkn8   1/1     Running   0          118s
+    nginx-ingress-default-backend-659bd647bd-fpcnp   1/1     Running   0          118s
+    nginx-ingress-default-backend-659bd647bd-v4nbf   1/1     Running   0          118s
+    ```
+    
+  displayName: Multicluster Subscription Operator
+  icon:
+    - base64data: iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAEDElEQVRoge2ZSWgUQRSGv0lmXKLiAm4RRTAqmCDoUUVBjYKKIMZ49C6auB3Ei548uBy8RNCTSkAwiKAgiDkIKoLoQY1L3EHNwV1jNDGZ8VCvrJ6eXqqT7nEi+aHo7nqvuv6/6/XrVzMwhCEkghSQleNgQgHfsn/BIgmkHeeDbVXy8F+uiEau6CwGhhT85yuiUervTF7keK3IYAstIFjIQUp3VZZ5dWbJXwV9nQPOASOT5xUJdcBPDMe/cAvpk+tvcrwGTCgOx1DsI/9BWwmZD7yW86fA7GIw9UE50CRceoEGIggpAyqBO3L9AVicOOVCjAYuCYefQL30hwrpxQgJulExMBX/B2ktpNzRVw4cxyzt9tgpF6KG4NDulxCNRkzoHSO5ymAF8EXmuQlM9PAJFfIbfyEAmzDp7zxQMSDKhdgC9Mj9W/BP/9ZCgsqXRcB78bsFTOoX5XykgAMOPmErHosQgCpU7OaA58DcCKTdSAMnMO/gVosxoUL0soYJAZgC3Bb/j8BSizFujAEuyz06gXWW40KFdMt1xvKGk4HPmPS8yXIcwAzgvox9ByyMMDZWIbMdRH7JsQ/YYzF2AfBWxjxAiYqC2ISsAT6J72NgHvnp+ST+4VkLfBW/VmBcFAWCUCH6yQ7zuUEZKrtowi2oONdwpuerwCyHrQLYj0kopwLmCcOAhIwDLmKyy1689yyLgA6H3z3gBqai7hNBA9nvWAsZ7hpYA7Rj6p7akIkmosJL30+36/hntwywGWhGpfZO4AcqvTejVluHa6gQHRZOIfXAd+m/C8wMEeFEBarYWw5MC/DbIIRzIe0FsDaqkDRw2OFzmvh3jCngqIPYA2AHUA2MklYN7ATaPISFCpmOyig51EdyW8wCNI7IHN0yh1+Nh9gaMB/tQCFdcv1Gjh3AkrhYu7AeI2Klh70VuODRX4sRs1Z3+gnJoTJNZSyUC5HB7De8Vjstti6f8Y1ifym+vkKa6H+Ot0Ed5p3wCqcwIWngofh4lkU/xBj3PsONszLPDh97mBCAXeLT7GXUQiqB8dKSEPVE5pnnY7cRUiM+z7yMWkixmi5vrgT49KDqOt3OyZgxYu/0Kuo+o7KIE2XA2IAnEweCVj2DigyNKpc9Gz8de+jQqnb0jXc1XZtNcfXr5KBD67HNLjAp3AXmAKtQX2xQ0eCEzqZfUDWbG6vleDt2dhGwEUW0Df+vud6zjPCwpYFHYq9LgqAtMsArIdLg4xMkZKfY2rHflieGdZis5LUtaEXtZdz7llUyJosqc0oChzBiGgn+9SaNWgldZx1MnF0EpMjfKrShvtg1qB/QR8v5bkxJkkWJKMk/c9djfvALau2UUDj5IY0qAM+gvjOdqJ3pQ+mrowRe7CHY4A8ixrhAvKZDJwAAAABJRU5ErkJggg==
+      mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - "admissionregistration.k8s.io"
+          - "apiextensions.k8s.io"
+          - "apiregistration.k8s.io"
+          - "apps"
+          - "apps.open-cluster-management.io"
+          - "authorization.k8s.io"
+          - "etcd.database.coreos.com"
+          - "hive.openshift.io"
+          - "mcm.ibm.com"
+          - "rbac.authorization.k8s.io"
+          - "security.openshift.io"
+          resources:
+          - "apiservices"
+          - "channels"
+          - "clusterjoinrequests"
+          - "clusterrolebindings"
+          - "configmaps"
+          - "customresourcedefinitions"
+          - "deployments"
+          - "etcdclusters"
+          - "hiveconfigs"
+          - "mutatingwebhookconfigurations"
+          - "namespaces"
+          - "pods"
+          - "replicasets"
+          - "rolebindings"
+          - "secrets"
+          - "securitycontextconstraints"
+          - "serviceaccounts"
+          - "services"
+          - "subjectaccessreviews"
+          - "subscriptions"
+          verbs:
+          - "get"
+        - apiGroups:
+          - ""
+          - "admissionregistration.k8s.io"
+          - "apiextensions.k8s.io"
+          - "apiregistration.k8s.io"
+          - "apps"
+          - "apps.open-cluster-management.io"
+          - "authorization.k8s.io"
+          - "etcd.database.coreos.com"
+          - "hive.openshift.io"
+          - "monitoring.coreos.com"
+          - "rbac.authorization.k8s.io"
+          - "mcm.ibm.com"
+          - "security.openshift.io"
+          resources:
+          - "apiservices"
+          - "channels"
+          - "clusterjoinrequests"
+          - "clusterrolebindings"
+          - "clusterroles"
+          - "configmaps"
+          - "customresourcedefinitions"
+          - "deployments"
+          - "etcdclusters"
+          - "hiveconfigs"
+          - "mutatingwebhookconfigurations"
+          - "namespaces"
+          - "rolebindings"
+          - "secrets"
+          - "securitycontextconstraints"
+          - "serviceaccounts"
+          - "services"
+          - "servicemonitors"
+          - "subjectaccessreviews"
+          - "subscriptions"
+          - "validatingwebhookconfigurations"
+          verbs:
+          - "create"
+        - apiGroups:
+          - ""
+          - "apps"
+          - "admissionregistration.k8s.io"
+          - "apiregistration.k8s.io"
+          - "authorization.k8s.io"
+          - "config.openshift.io"
+          - "mcm.ibm.com"
+          - "operator.open-cluster-management.io"
+          - "rbac.authorization.k8s.io"
+          resources:
+          - "apiservices"
+          - "clusterjoinrequests"
+          - "configmaps"
+          - "deployments"
+          - "ingresses"
+          - "multiclusterhubs"
+          - "namespaces"
+          - "rolebindings"
+          - "servicemonitors"
+          - "secrets"
+          - "services"
+          - "subjectaccessreviews"
+          - "validatingwebhookconfigurations"
+          verbs:
+          - "list"
+        - apiGroups:
+          - ""
+          - "admissionregistration.k8s.io"
+          - "apiregistration.k8s.io"
+          - "apps"
+          - "authorization.k8s.io"
+          - "config.openshift.io"
+          - "mcm.ibm.com"
+          - "operator.open-cluster-management.io"
+          - "rbac.authorization.k8s.io"
+          - "storage.k8s.io"
+          resources:
+          - "apiservices"
+          - "configmaps"
+          - "clusterjoinrequests"
+          - "deployments"
+          - "ingresses"
+          - "multiclusterhubs"
+          - "namespaces"
+          - "rolebindings"
+          - "secrets"
+          - "services"
+          - "storageclasses"
+          - "subjectaccessreviews"
+          - "validatingwebhookconfigurations"
+          verbs:
+          - "watch"
+        - apiGroups:
+          - ""
+          - "admissionregistration.k8s.io"
+          - "apps"
+          - "mcm.ibm.com"
+          - "monitoring.coreos.com"
+          - "operator.open-cluster-management.io"
+          resources:
+          - "deployments"
+          - "deployments/finalizers"
+          - "services"
+          - "services/finalizers"
+          - "servicemonitors"
+          - "servicemonitors/finalizers"
+          - "validatingwebhookconfigurations"
+          - "multiclusterhubs"
+          - "multiclusterhubs/finalizers"
+          - "multiclusterhubs/status"
+          verbs:
+          - "update"
+        - apiGroups:
+          - "admissionregistration.k8s.io"
+          - "apiextensions.k8s.io"
+          - "apiregistration.k8s.io"
+          - "hive.openshift.io"
+          - "mcm.ibm.com"
+          - "rbac.authorization.k8s.io"
+          resources:
+          - "apiservices"
+          - "clusterroles"
+          - "clusterrolebindings"
+          - "customresourcedefinitions"
+          - "hiveconfigs"
+          - "mutatingwebhookconfigurations"
+          verbs:
+          - "deletecollection"
+        - apiGroups:
+          - ""
+          - "action.open-cluster-management.io"
+          - "agent.open-cluster-management.io"
+          - "apiextensions.k8s.io"
+          - "app.k8s.io"
+          - "apps.open-cluster-management.io"
+          - "authorization.k8s.io"
+          - "certificates.k8s.io"
+          - "clusterregistry.k8s.io"
+          - "cluster.open-cluster-management.io"
+          - "config.openshift.io"
+          - "compliance.mcm.ibm.com"
+          - "hive.openshift.io"
+          - "internal.open-cluster-management.io"
+          - "inventory.open-cluster-management.io"
+          - "mcm.ibm.com"
+          - "multicloud.ibm.com"
+          - "policy.mcm.ibm.com"
+          - "proxy.open-cluster-management.io"
+          - "rbac.authorization.k8s.io"
+          - "view.open-cluster-management.io"
+          - "operator.open-cluster-management.io"
+          resources:
+          - "applications"
+          - "applications/status"
+          - "applicationrelationships"
+          - "applicationrelationships/status"
+          - "baremetalassets"
+          - "baremetalassets/status"
+          - "certificatesigningrequests"
+          - "certificatesigningrequests/approval"
+          - "channels"
+          - "channels/status"
+          - "customresourcedefinitions"
+          - "managedclusteractions"
+          - "managedclusteractions/status"
+          - "clusterdeployments"
+          - "managedclusterinfos"
+          - "managedclusterinfos/status"
+          - "clusterjoinrequests"
+          - "clusterjoinrequests/status"
+          - "clusterjoinrequests/finalizers"
+          - "clusters"
+          - "clusters/status"
+          - "clusters/finalizers"
+          - "clusterstatuses"
+          - "clusterstatuses/aggregator"
+          - "clusterstatuses/metering-receiver"
+          - "clusterstatuses/topology"
+          - "clusterversions"
+          - "compliances"
+          - "configmaps"
+          - "deployables"
+          - "deployables/status"
+          - "deployableoverrides"
+          - "deployableoverrides/status"
+          - "endpoints"
+          - "endpointconfigs"
+          - "events"
+          - "helmrepos"
+          - "helmrepos/status"
+          - "klusterletconfigs"
+          - "machinepools"
+          - "namespaces"
+          - "placementbindings"
+          - "placementpolicies"
+          - "placementpolicies/status"
+          - "placementrules"
+          - "placementrules/status"
+          - "policies"
+          - "resourceviews"
+          - "resourceviews/status"
+          - "roles"
+          - "rolebindings"
+          - "secrets"
+          - "signers"
+          - "managedclusters"
+          - "managedclusterviews"
+          - "managedclusterviews/status"
+          - "subscriptions"
+          - "subscriptions/status"
+          - "subjectaccessreviews"
+          - "syncsets"
+          - "works"
+          - "works/status"
+          - "works/result"
+          - "worksets"
+          - "worksets/status"
+          - "clustermanagers"
+          verbs:
+          - "create"
+          - "get"
+          - "list"
+          - "watch"
+          - "update"
+          - "delete"
+          - "deletecollection"
+          - "patch"
+          - "approve"
+        serviceAccountName: multicluster-operators
+      deployments:
+      - name: multicluster-operators-application
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: multicluster-operators-application
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: multicluster-operators-application
+            spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 70
+                    podAffinityTerm:
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                      labelSelector:
+                        matchExpressions:
+                        - key: app
+                          operator: In
+                          values:
+                          - multicluster-operators-application
+                  - weight: 35
+                    podAffinityTerm:
+                      topologyKey: kubernetes.io/hostname
+                      labelSelector:
+                        matchExpressions:
+                        - key: app
+                          operator: In
+                          values:
+                          - multicluster-operators-application
+              containers:
+              - command:
+                - /usr/local/bin/multicluster-operators-placementrule
+                - --alsologtostderr
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: DEPLOYMENT_LABEL
+                  value: multicluster-operators-application
+                - name: OPERATOR_NAME
+                  value: multicluster-operators-placementrule
+                livenessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                readinessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                image: quay.io/open-cluster-management/multicluster-operators-placementrule:community-2.0
+                imagePullPolicy: Always
+                name: multicluster-operators-placementrule
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 512Mi
+                  requests:
+                    cpu: 25m
+                    memory: 64Mi
+                volumeMounts:
+                - name: tmp
+                  mountPath: "/tmp"
+              - command:
+                - /usr/local/bin/multicluster-operators-deployable
+                - --alsologtostderr
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: DEPLOYMENT_LABEL
+                  value: multicluster-operators-application
+                - name: OPERATOR_NAME
+                  value: multicluster-operators-deployable
+                livenessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                readinessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                image: quay.io/open-cluster-management/multicluster-operators-deployable:community-2.0
+                imagePullPolicy: Always
+                name: multicluster-operators-deployable
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 64Mi
+                volumeMounts:
+                - name: tmp
+                  mountPath: "/tmp"
+              - command:
+                - /usr/local/bin/multicluster-operators-channel
+                - --alsologtostderr
+                ports:
+                - containerPort: 9443            
+                  name: chn-whk-server
+                  protocol: TCP
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: DEPLOYMENT_LABEL
+                  value: multicluster-operators-application
+                - name: OPERATOR_NAME
+                  value: multicluster-operators-channel
+                livenessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                readinessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                image: quay.io/open-cluster-management/multicluster-operators-channel:community-2.0
+                imagePullPolicy: Always
+                name: multicluster-operators-channel
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 64Mi
+                volumeMounts:
+                - name: tmp
+                  mountPath: "/tmp"                    
+              - command:
+                - /usr/local/bin/multicluster-operators-application
+                - --alsologtostderr
+                ports:
+                - containerPort: 9442
+                  name: app-whk-server
+                  protocol: TCP
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: DEPLOYMENT_LABEL
+                  value: multicluster-operators-application
+                - name: OPERATOR_NAME
+                  value: multicluster-operators-application
+                livenessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                readinessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                image: quay.io/open-cluster-management/multicluster-operators-application:community-2.0
+                imagePullPolicy: Always
+                name: multicluster-operators-application
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 512Mi
+                  requests:
+                    cpu: 25m
+                    memory: 64Mi
+                volumeMounts:
+                - name: tmp
+                  mountPath: "/tmp"
+              volumes:
+              - name: tmp
+                emptyDir: {}
+              serviceAccountName: multicluster-operators
+      - name: multicluster-operators-standalone-subscription
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: multicluster-operators-standalone-subscription
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: multicluster-operators-standalone-subscription
+            spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 70
+                    podAffinityTerm:
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                      labelSelector:
+                        matchExpressions:
+                        - key: app
+                          operator: In
+                          values:
+                          - multicluster-operators-standalone-subscription
+                  - weight: 35
+                    podAffinityTerm:
+                      topologyKey: kubernetes.io/hostname
+                      labelSelector:
+                        matchExpressions:
+                        - key: app
+                          operator: In
+                          values:
+                          - multicluster-operators-standalone-subscription
+              containers:
+              - command:
+                - /usr/local/bin/multicluster-operators-subscription
+                - --standalone
+                - --sync-interval=10
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: DEPLOYMENT_LABEL
+                  value: multicluster-operators-standalone-subscription
+                - name: OPERATOR_NAME
+                  value: multicluster-operators-standalone-subscription
+                livenessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                readinessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                image: quay.io/open-cluster-management/multicluster-operators-subscription:community-2.0
+                imagePullPolicy: Always
+                name: multicluster-operators-standalone-subscription
+                resources:
+                  limits:
+                    cpu: 750m
+                    memory: 2Gi
+                  requests:
+                    cpu: 150m
+                    memory: 128Mi
+                volumeMounts:
+                - name: tmp
+                  mountPath: "/tmp"
+                - name: multicluster-operators-subscription-tls
+                  readOnly: true
+                  mountPath: "/etc/subscription"
+              volumes:
+              - name: tmp
+                emptyDir: {}
+              - name: multicluster-operators-subscription-tls
+                secret:
+                defaultMode: 420
+                secretName: multicluster-operators-subscription
+                items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+              serviceAccountName: multicluster-operators
+      - name: multicluster-operators-hub-subscription
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: multicluster-operators-hub-subscription
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: multicluster-operators-hub-subscription
+            spec:
+              affinity:
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 70
+                    podAffinityTerm:
+                      topologyKey: failure-domain.beta.kubernetes.io/zone
+                      labelSelector:
+                        matchExpressions:
+                        - key: app
+                          operator: In
+                          values:
+                          - multicluster-operators-hub-subscription
+                  - weight: 35
+                    podAffinityTerm:
+                      topologyKey: kubernetes.io/hostname
+                      labelSelector:
+                        matchExpressions:
+                        - key: app
+                          operator: In
+                          values:
+                          - multicluster-operators-hub-subscription
+              containers:
+              - command:
+                - /usr/local/bin/multicluster-operators-subscription
+                - --sync-interval=10
+                ports:
+                - containerPort: 8443            
+                env:
+                - name: WATCH_NAMESPACE
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: DEPLOYMENT_LABEL
+                  value: multicluster-operators-hub-subscription
+                - name: OPERATOR_NAME
+                  value: multicluster-operators-hub-subscription
+                livenessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                readinessProbe:
+                  exec:
+                    command:
+                    - ls
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                image: quay.io/open-cluster-management/multicluster-operators-subscription:community-2.0
+                imagePullPolicy: Always
+                name: multicluster-operators-hub-subscription
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 2Gi
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                volumeMounts:
+                - name: tmp
+                  mountPath: "/tmp"
+                - name: multicluster-operators-subscription-tls
+                  readOnly: true
+                  mountPath: "/etc/subscription"
+              volumes:
+              - name: tmp
+                emptyDir: {}
+              - name: multicluster-operators-subscription-tls
+                secret:
+                defaultMode: 420
+                secretName: multicluster-operators-subscription
+                items:
+                - key: tls.crt
+                  path: tls.crt
+                - key: tls.key
+                  path: tls.key
+              serviceAccountName: multicluster-operators
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - Red Hat
+  - multicluster
+  - subscription
+  - channel
+  labels:
+    app: multicluster-operators-subscription
+  links:
+  - name: Multicluster Subscription Operator Project
+    url: https://github.com/open-cluster-management/multicloud-operators-subscription
+  maintainers:
+  - email: xiangli@redhat.com
+    name: Xiangjing Li
+  maturity: alpha
+  provider:
+    name: Red Hat
+  selector:
+    matchLabels:
+      app: multicluster-operators-subscription
+  replaces: multicluster-operators-subscription.v0.1.5
+  version: 0.1.6

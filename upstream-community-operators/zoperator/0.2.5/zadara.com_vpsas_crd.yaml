@@ -1,0 +1,232 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: vpsas.zadara.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    description: Status of the VPSA
+    name: Status
+    type: string
+  - JSONPath: .spec.csi.provisioner
+    description: Name of CSI provisioner
+    name: Provisioner
+    type: string
+  - JSONPath: .spec.hostname
+    description: Name of CSI provisioner
+    name: Hostname
+    priority: 1
+    type: string
+  - JSONPath: .spec.csi.autoExpandSupport
+    description: Volume auto-expand support
+    name: Autoexpand
+    priority: 1
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: zadara.com
+  names:
+    kind: Vpsa
+    listKind: VpsaList
+    plural: vpsas
+    singular: vpsa
+  scope: Cluster
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: VPSA allows your Kubernetes cluster to connect to VPSA. For each
+        Vpsa having `spec.csi` specified, Operator will automatically deploy a CSI
+        Driver, and create sample Storage Classes (Block and NAS for each Storage
+        Pool on that VPSA).
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: VpsaSpec defines the desired state of Vpsa
+          properties:
+            csi:
+              description: CSI provisioner
+              properties:
+                autoExpandSupport:
+                  description: Support VPSA NAS Volume auto-expand feature. Enabled
+                    by default. To enable auto-expand for CSI Volumes, you need to
+                    configure Storage Class parameters.volumeOptions https://github.com/zadarastorage/zadara-csi/#storage-class.
+                    When autoExpandSupport is enabled, periodical sync will be handled
+                    by a CronJob, running in the same namespace as CSI driver.
+                  type: boolean
+                iscsiMode:
+                  description: A way for the CSI plugin to reach iscsiadm on host
+                    https://github.com/zadarastorage/zadara-csi#node-iscsi-connectivity
+                  enum:
+                  - rootfs
+                  - client-server
+                  type: string
+                livenessProbe:
+                  description: 'Liveness probe configuration for CSI driver. Default
+                    livenessProbe.handler is httpGet: {path:"/healthz", port:9808}.
+                    Note: livenessProbe.handler MUST be httpGet, with path "/healthz".
+                    Other options not allowed. livenessProbe.handler.port is configurable
+                    (default 9808) and MUST be unique for each CSI instance. More:
+                    https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes'
+                  properties:
+                    exec:
+                      description: One and only one of the following should be specified.
+                        Exec specifies the action to take.
+                      properties:
+                        command:
+                          description: Command is the command line to execute inside
+                            the container, the working directory for the command  is
+                            root ('/') in the container's filesystem. The command
+                            is simply exec'd, it is not run inside a shell, so traditional
+                            shell instructions ('|', etc) won't work. To use a shell,
+                            you need to explicitly call out to that shell. Exit status
+                            of 0 is treated as live/healthy and non-zero is unhealthy.
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    failureThreshold:
+                      description: Minimum consecutive failures for the probe to be
+                        considered failed after having succeeded. Defaults to 3. Minimum
+                        value is 1.
+                      format: int32
+                      type: integer
+                    httpGet:
+                      description: HTTPGet specifies the http request to perform.
+                      properties:
+                        host:
+                          description: Host name to connect to, defaults to the pod
+                            IP. You probably want to set "Host" in httpHeaders instead.
+                          type: string
+                        httpHeaders:
+                          description: Custom headers to set in the request. HTTP
+                            allows repeated headers.
+                          items:
+                            description: HTTPHeader describes a custom header to be
+                              used in HTTP probes
+                            properties:
+                              name:
+                                description: The header field name
+                                type: string
+                              value:
+                                description: The header field value
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                        path:
+                          description: Path to access on the HTTP server.
+                          type: string
+                        port:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: Name or number of the port to access on the
+                            container. Number must be in the range 1 to 65535. Name
+                            must be an IANA_SVC_NAME.
+                          x-kubernetes-int-or-string: true
+                        scheme:
+                          description: Scheme to use for connecting to the host. Defaults
+                            to HTTP.
+                          type: string
+                      required:
+                      - port
+                      type: object
+                    initialDelaySeconds:
+                      description: 'Number of seconds after the container has started
+                        before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                      format: int32
+                      type: integer
+                    periodSeconds:
+                      description: How often (in seconds) to perform the probe. Default
+                        to 10 seconds. Minimum value is 1.
+                      format: int32
+                      type: integer
+                    successThreshold:
+                      description: Minimum consecutive successes for the probe to
+                        be considered successful after having failed. Defaults to
+                        1. Must be 1 for liveness and startup. Minimum value is 1.
+                      format: int32
+                      type: integer
+                    tcpSocket:
+                      description: 'TCPSocket specifies an action involving a TCP
+                        port. TCP hooks not yet supported TODO: implement a realistic
+                        TCP lifecycle hook'
+                      properties:
+                        host:
+                          description: 'Optional: Host name to connect to, defaults
+                            to the pod IP.'
+                          type: string
+                        port:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: Number or name of the port to access on the
+                            container. Number must be in the range 1 to 65535. Name
+                            must be an IANA_SVC_NAME.
+                          x-kubernetes-int-or-string: true
+                      required:
+                      - port
+                      type: object
+                    timeoutSeconds:
+                      description: 'Number of seconds after which the probe times
+                        out. Defaults to 1 second. Minimum value is 1. More info:
+                        https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                      format: int32
+                      type: integer
+                  type: object
+                provisioner:
+                  description: 'CSI provisioner to be used in a StorageClass, for
+                    example `csi.zadara.com`. More: https://kubernetes.io/docs/concepts/storage/storage-classes/#provisioner'
+                  type: string
+              required:
+              - iscsiMode
+              type: object
+            hostname:
+              description: Hostname of the VPSA
+              type: string
+            https:
+              description: 'Use https connection to the VPSA (default: http)'
+              type: boolean
+            token:
+              description: Token of the VPSA
+              type: string
+          required:
+          - hostname
+          - https
+          - token
+          type: object
+        status:
+          description: VpsaStatus defines the observed state of Vpsa
+          properties:
+            state:
+              enum:
+              - CsiUnknown
+              - CsiCreating
+              - CsiReady
+              - CsiDeleting
+              - CsiFailed
+              type: string
+          required:
+          - state
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

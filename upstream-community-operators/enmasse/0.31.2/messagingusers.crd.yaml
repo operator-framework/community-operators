@@ -1,0 +1,123 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: messagingusers.user.enmasse.io
+  labels:
+    app: enmasse
+    enmasse-component: tenant-api
+spec:
+  group: user.enmasse.io
+  version: v1beta1
+  scope: Namespaced
+  names:
+    kind: MessagingUser
+    listKind: MessagingUserList
+    singular: messaginguser
+    plural: messagingusers
+    categories:
+    - enmasse
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+  additionalPrinterColumns:
+  - name: Username
+    type: string
+    description: The user name used by clients
+    priority: 0
+    JSONPath: .spec.username
+  - name: Type
+    type: string
+    description: Authentication type of the user
+    priority: 0
+    JSONPath: .spec.authentication.type
+  - name: Phase
+    priority: 0
+    type: string
+    description: Phase of the Messaging User
+    JSONPath: .status.phase
+  - name: Message
+    priority: 1
+    type: string
+    description: Message of the Messaging User
+    JSONPath: .status.message
+  - name: Age
+    priority: 0
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: MessagingUser is a user that can be used to authenticate and authorize a messaging application. This resource is created by messaging tenants.
+      properties:
+        status:
+          type: object
+          properties:
+            phase:
+              description: "The lifecycle phase of the messaging user"
+              type: string
+            message:
+              description: "Message describing the current state"
+              type: string
+            generation:
+              description: "Applied generation"
+              type: integer
+        spec:
+          type: object
+          required:
+            - username
+            - authentication
+          properties:
+            username:
+              type: string
+              description: "The username used by messaging clients."
+              pattern: "^[a-z0-9]+([a-z0-9_@.:\\-]*[a-z0-9]+|[a-z0-9]*)$"
+            authentication:
+              type: object
+              description: "The authentication specification."
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  description: "The type of authentication."
+                  enum:
+                  - password
+                  - federated
+                  - serviceaccount
+                password:
+                  type: string
+                  description: "Base64-encoded password for the 'password' authentication type."
+                provider:
+                  type: string
+                  description: "Federated identity provider for the 'federated' authentication type."
+                federatedUserid:
+                  type: string
+                  description: "Federated user id for the 'federated' authentication type."
+                federatedUsername:
+                  type: string
+                  description: "Federated user name for the 'federated' authentication type."
+            authorization:
+              type: array
+              description: "The authorization rules for the user."
+              items:
+                type: object
+                properties:
+                  operations:
+                    type: array
+                    description: "The operations that should apply to addresses matched by this rule."
+                    items:
+                      type: string
+                      enum:
+                      - send
+                      - recv
+                      - view
+                      - manage
+                  addresses:
+                    type: array
+                    description: "The addresses the rule should apply to."
+                    items:
+                      type: string
+                      description: "Pattern used to match addresses. The pattern will be prefixed by the connector name and a forward slash ('myconnector/'). A pattern consists of one or more tokens separated by a forward slash /. A token can be one of the following: a * character, a # character, or a sequence of characters that do not include /, *, or #. The * token matches any single token. The # token matches zero or more tokens. * has higher precedence than #, and exact match has the highest precedence."
+                      pattern: "([^/#*]+|\\*|#)(/([^/#*]+|\\*|#))*"
