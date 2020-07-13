@@ -1,0 +1,322 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: subscriptions.apps.open-cluster-management.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.phase
+    description: subscription status
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: apps.open-cluster-management.io
+  names:
+    kind: Subscription
+    listKind: SubscriptionList
+    plural: subscriptions
+    shortNames:
+    - appsub
+    singular: subscription
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Subscription is the Schema for the subscriptions API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SubscriptionSpec defines the desired state of Subscription
+          properties:
+            channel:
+              type: string
+            name:
+              description: To specify 1 package in channel
+              type: string
+            overrides:
+              description: for hub use only to specify the overrides when apply to
+                clusters
+              items:
+                description: Overrides field in deployable
+                properties:
+                  clusterName:
+                    type: string
+                  clusterOverrides:
+                    items:
+                      description: ClusterOverride describes rules for override
+                      type: object
+                    minItems: 1
+                    type: array
+                required:
+                - clusterName
+                - clusterOverrides
+                type: object
+              type: array
+            packageFilter:
+              description: To specify more than 1 package in channel
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  type: object
+                filterRef:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                labelSelector:
+                  description: A label selector is a label query over a set of resources.
+                    The result of matchLabels and matchExpressions are ANDed. An empty
+                    label selector matches all objects. A null label selector matches
+                    no objects.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements.
+                        The requirements are ANDed.
+                      items:
+                        description: A label selector requirement is a selector that
+                          contains values, a key, and an operator that relates the
+                          key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies
+                              to.
+                            type: string
+                          operator:
+                            description: operator represents a key's relationship
+                              to a set of values. Valid operators are In, NotIn, Exists
+                              and DoesNotExist.
+                            type: string
+                          values:
+                            description: values is an array of string values. If the
+                              operator is In or NotIn, the values array must be non-empty.
+                              If the operator is Exists or DoesNotExist, the values
+                              array must be empty. This array is replaced during a
+                              strategic merge patch.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - key
+                        - operator
+                        type: object
+                      type: array
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: matchLabels is a map of {key,value} pairs. A single
+                        {key,value} in the matchLabels map is equivalent to an element
+                        of matchExpressions, whose key field is "key", the operator
+                        is "In", and the values array contains only "value". The requirements
+                        are ANDed.
+                      type: object
+                  type: object
+                version:
+                  pattern: ([0-9]+)((\.[0-9]+)(\.[0-9]+)|(\.[0-9]+)?(\.[xX]))$
+                  type: string
+              type: object
+            packageOverrides:
+              description: To provide flexibility to override package in channel with
+                local input
+              items:
+                description: Overrides field in deployable
+                properties:
+                  packageAlias:
+                    type: string
+                  packageName:
+                    type: string
+                  packageOverrides:
+                    items:
+                      description: PackageOverride describes rules for override
+                      type: object
+                    type: array
+                required:
+                - packageName
+                type: object
+              type: array
+            placement:
+              description: For hub use only, to specify which clusters to go to
+              properties:
+                clusterSelector:
+                  description: A label selector is a label query over a set of resources.
+                    The result of matchLabels and matchExpressions are ANDed. An empty
+                    label selector matches all objects. A null label selector matches
+                    no objects.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements.
+                        The requirements are ANDed.
+                      items:
+                        description: A label selector requirement is a selector that
+                          contains values, a key, and an operator that relates the
+                          key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies
+                              to.
+                            type: string
+                          operator:
+                            description: operator represents a key's relationship
+                              to a set of values. Valid operators are In, NotIn, Exists
+                              and DoesNotExist.
+                            type: string
+                          values:
+                            description: values is an array of string values. If the
+                              operator is In or NotIn, the values array must be non-empty.
+                              If the operator is Exists or DoesNotExist, the values
+                              array must be empty. This array is replaced during a
+                              strategic merge patch.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - key
+                        - operator
+                        type: object
+                      type: array
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: matchLabels is a map of {key,value} pairs. A single
+                        {key,value} in the matchLabels map is equivalent to an element
+                        of matchExpressions, whose key field is "key", the operator
+                        is "In", and the values array contains only "value". The requirements
+                        are ANDed.
+                      type: object
+                  type: object
+                clusters:
+                  items:
+                    description: GenericClusterReference - in alignment with kubefed
+                    properties:
+                      name:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  type: array
+                local:
+                  type: boolean
+                placementRef:
+                  description: ObjectReference contains enough information to let
+                    you inspect or modify the referred object.
+                  properties:
+                    apiVersion:
+                      description: API version of the referent.
+                      type: string
+                    fieldPath:
+                      description: 'If referring to a piece of an object instead of
+                        an entire object, this string should contain a valid JSON/Go
+                        field access statement, such as desiredState.manifest.containers[2].
+                        For example, if the object reference is to a container within
+                        a pod, this would take on a value like: "spec.containers{name}"
+                        (where "name" refers to the name of the container that triggered
+                        the event) or if no container name is specified "spec.containers[2]"
+                        (container with index 2 in this pod). This syntax is chosen
+                        only to have some well-defined way of referencing a part of
+                        an object. TODO: this design is not final and this field is
+                        subject to change in the future.'
+                      type: string
+                    kind:
+                      description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                      type: string
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                      type: string
+                    resourceVersion:
+                      description: 'Specific resourceVersion to which this reference
+                        is made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                      type: string
+                    uid:
+                      description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                      type: string
+                  type: object
+              type: object
+            timewindow:
+              description: help user control when the subscription will take affect
+              properties:
+                daysofweek:
+                  description: Defines the day of the week for the subscription timewindow
+                    window https://golang.org/pkg/time/#Weekday
+                  items:
+                    type: string
+                  type: array
+                hours:
+                  items:
+                    description: HourRange time format for each time will be Kitchen
+                      format, defined at https://golang.org/pkg/time/#pkg-constants
+                    properties:
+                      end:
+                        type: string
+                      start:
+                        type: string
+                    type: object
+                  type: array
+                location:
+                  description: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+                  type: string
+                windowtype:
+                  description: 'active time window or not, if timewindow is active,
+                    then deploy will only applies during these windows Note, if you
+                    want to generation crd with operator-sdk v0.10.0, then the following
+                    line should be: <+kubebuilder:validation:Enum=active,blocked,Active,Blocked>'
+                  enum:
+                  - active
+                  - blocked
+                  - Active
+                  - Blocked
+                  type: string
+              type: object
+          required:
+          - channel
+          type: object
+        status:
+          description: "SubscriptionStatus defines the observed state of Subscription
+            Examples - status of a subscription on hub Status: \tphase: Propagated
+            \tstatuses: \t  washdc: \t\tpackages: \t\t  nginx: \t\t\tphase: Subscribed
+            \t\t  mongodb: \t\t\tphase: Failed \t\t\tReason: \"not authorized\" \t\t\tMessage:
+            \"user xxx does not have permission to start pod\" \t\t\tresourceStatus:
+            {}    toronto: \t\tpackages: \t\t  nginx: \t\t\tphase: Subscribed \t\t
+            \ mongodb: \t\t\tphase: Subscribed Status of a subscription on managed
+            cluster will only have 1 cluster in the map."
+          properties:
+            lastUpdateTime:
+              format: date-time
+              type: string
+            message:
+              type: string
+            phase:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
+              type: string
+            reason:
+              type: string
+            statuses:
+              description: For endpoint, it is the status of subscription, key is
+                packagename, For hub, it aggregates all status, key is cluster name
+          type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
