@@ -1,0 +1,172 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apicasts.apps.3scale.net
+spec:
+  group: apps.3scale.net
+  names:
+    kind: APIcast
+    listKind: APIcastList
+    plural: apicasts
+    singular: apicast
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: APIcast is the Schema for the apicasts API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: APIcastSpec defines the desired state of APIcast
+          properties:
+            adminPortalCredentialsRef:
+              description: LocalObjectReference contains enough information to let
+                you locate the referenced object inside the same namespace.
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+            cacheConfigurationSeconds:
+              format: int64
+              type: integer
+            configurationLoadMode:
+              enum:
+              - boot
+              - lazy
+              type: string
+            deploymentEnvironment:
+              type: string
+            dnsResolverAddress:
+              type: string
+            embeddedConfigurationSecretRef:
+              description: LocalObjectReference contains enough information to let
+                you locate the referenced object inside the same namespace.
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+            enabledServices:
+              items:
+                type: string
+              type: array
+            exposedHost:
+              properties:
+                host:
+                  type: string
+                tls:
+                  items:
+                    description: IngressTLS describes the transport layer security
+                      associated with an Ingress.
+                    properties:
+                      hosts:
+                        description: Hosts are a list of hosts included in the TLS
+                          certificate. The values in this list must match the name/s
+                          used in the tlsSecret. Defaults to the wildcard host setting
+                          for the loadbalancer controller fulfilling this Ingress,
+                          if left unspecified.
+                        items:
+                          type: string
+                        type: array
+                      secretName:
+                        description: SecretName is the name of the secret used to
+                          terminate SSL traffic on 443. Field is left optional to
+                          allow SSL routing based on SNI hostname alone. If the SNI
+                          host in a listener conflicts with the "Host" header field
+                          used by an IngressRule, the SNI host is used for termination
+                          and value of the Host header is used for routing.
+                        type: string
+                    type: object
+                  type: array
+              required:
+              - host
+              type: object
+            image:
+              type: string
+            logLevel:
+              enum:
+              - debug
+              - info
+              - notice
+              - warn
+              - error
+              - crit
+              - alert
+              - emerg
+              type: string
+            managementAPIScope:
+              enum:
+              - disabled
+              - status
+              - policies
+              - debug
+              type: string
+            openSSLPeerVerificationEnabled:
+              type: boolean
+            pathRoutingEnabled:
+              type: boolean
+            replicas:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
+              format: int64
+              type: integer
+            responseCodesIncluded:
+              type: boolean
+            serviceAccount:
+              type: string
+          type: object
+          anyOf:
+           - properties:
+               adminPortalCredentialsRef:
+                 type: object
+             required: ["adminPortalCredentialsRef"]
+           - properties:
+               embeddedConfigurationSecretRef:
+                 type: object
+             required: ["embeddedConfigurationSecretRef"]
+        status:
+          description: APIcastStatus defines the observed state of APIcast
+          properties:
+            conditions:
+              description: Represents the latest available observations of a replica
+                set's current state.
+              items:
+                properties:
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of replica set condition.
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            image:
+              description: The image being used in the APIcast deployment
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
