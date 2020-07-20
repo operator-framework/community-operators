@@ -21,9 +21,11 @@ for op_distro in "${!OP_TYPES[@]}"; do
   for op_type in ${OP_TYPES[$op_distro]}; do
     for file in $(git diff master --name-only 2>&1); do
       if echo "$file" | grep -q "^$op_type"; then
-        OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
-        OP_VER="$(echo "$file" | awk -F'/' '{ print $3 }')"
-        echo $OP_VER >> /tmp/op_ver
+        if [ $(echo $file| awk -F'/' '{print NF}') -ge 4 ]; then
+            OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
+            OP_VER="$(echo "$file" | awk -F'/' '{ print $3 }')"
+            echo $OP_VER >> /tmp/op_ver
+        fi
         if [[ -n "${SEEN[$OP_PATH]}" ]]; then
           continue
         fi
@@ -32,7 +34,6 @@ for op_distro in "${!OP_TYPES[@]}"; do
     done
   done
 done
-
 echo "export OP_VER=$(cat /tmp/op_ver 2>/dev/null|  sort --version-sort | tail -n 1)"
 echo "export OP_PATH=$OP_PATH"
 if [[ $(echo $OP_PATH) = upstream* ]]; then
