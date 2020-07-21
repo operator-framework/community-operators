@@ -27,18 +27,18 @@ install:
 
 jobs:
   include:
-  - stage: Pipeline
+  - stage: FMO Test Pipeline
+    name: FMO Test Pipeline (failure accepted)
+    script:
+    - scripts/ci/run-ansible-tests||true
+
+  - stage: Current Pipeline
     name: Test loading the Operator into the Community Catalog
     install: skip
     script:
     - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev .
   - name: Test Operator deployment using OLM running on KIND
     script: scripts/ci/run-deployment-tests.sh
-
-  - stage: FMO Test Pipeline
-    name: FMO Test Pipeline (failure accepted)
-    script:
-    - scripts/ci/run-ansible-tests||true
 
   - stage: operatorhubio prod deploy
     name: Trigger PROD deploy of operatorhub.io
