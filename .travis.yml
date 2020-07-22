@@ -10,7 +10,7 @@ python:
 
 #TODO: set redhat-operator-ecosystem/operator-test-playbooks
 env:
-- KIND_VER=v0.8.1 KUBE_VER=v1.18.2 OLM_VER=0.15.1 SDK_VER=v0.16.0 DISTRO_TYPE=upstream PLAYBOOK_VARS="-i localhost, local.yml -e kind_version=v0.8.1 -e kind_kube_ver=v1.18.2 -e olm_ver=0.14.1 -e operator_sdk_version=v0.16.0 -e ansible_connection=local -e run_remove_catalog_repo=false" PLAYBOOK_REPO=https://github.com/J0zi/operator-test-playbooks PLAYBOOK_BRANCH='live' ANSIBLE_STDOUT_CALLBACK=yaml
+- KIND_VER=v0.8.1 KUBE_VER=v1.18.2 OLM_VER=0.15.1 SDK_VER=v0.16.0 DISTRO_TYPE=upstream PLAYBOOK_VARS="-i localhost, local.yml -e kind_version=v0.8.1 -e kind_kube_ver=v1.18.2 -e olm_ver=0.15.1 -e operator_sdk_version=v0.16.0 -e ansible_connection=local -e run_remove_catalog_repo=false" PLAYBOOK_REPO=https://github.com/J0zi/operator-test-playbooks PLAYBOOK_BRANCH='live' ANSIBLE_STDOUT_CALLBACK=yaml
 
 
 services:
@@ -31,6 +31,9 @@ jobs:
     name: FMO Test Pipeline (failure accepted)
     script:
     - scripts/ci/run-ansible-tests||true
+  - name: FMO Test if release is possible (failure accepted)
+    script:
+    - scripts/ci/run-release-upstream -t||true
 
   - stage: Current Pipeline
     name: Test loading the Operator into the Community Catalog
@@ -45,12 +48,12 @@ jobs:
     script: scripts/ci/trigger-operatorhubio-ci.sh
     if: type = push
 
-# moved to different branch as there is different release mechanism
-#  - name: FMO Release Pipeline test (failure accepted)
-#    script:
-#    - scripts/ci/test-release-upstream
-#    if: type = push
-#  - name: FMO Release Pipeline  (failure accepted)
-#    script:
-#    - scripts/ci/run-release-upstream
-#    if: type = push
+  - stage: FMO release pipeline
+    name: FMO Release Pipeline test (failure accepted)
+    script:
+    - scripts/ci/test-release-upstream -s
+    if: type = push
+  - name: FMO Release Pipeline  (failure accepted)
+    script:
+    - scripts/ci/run-release-upstream -r
+    if: type = push
