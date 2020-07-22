@@ -27,10 +27,19 @@ install:
 
 jobs:
   include:
+  - stage: Go/Stop
+    name: Run tests only on operator modification
+    script:
+    - scripts/ci/PR-traffic-light
+    install: skip
+    if: type = pull_request
+
   - stage: FMO Test Pipeline
     name: FMO Test Pipeline (failure accepted)
     script:
     - scripts/ci/run-ansible-tests||true
+    if: type = pull_request
+
   - name: FMO Test if release is possible (failure accepted)
     script:
     - scripts/ci/run-release-upstream -t||true
@@ -40,8 +49,11 @@ jobs:
     install: skip
     script:
     - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev .
+    if: type = pull_request
+
   - name: Test Operator deployment using OLM running on KIND
     script: scripts/ci/run-deployment-tests.sh
+    if: type = pull_request
 
   - stage: operatorhubio prod deploy
     name: Trigger PROD deploy of operatorhub.io
@@ -53,6 +65,7 @@ jobs:
     script:
     - scripts/ci/test-release-upstream -s
     if: type = push
+
   - name: FMO Release Pipeline  (failure accepted)
     script:
     - scripts/ci/run-release-upstream -r
