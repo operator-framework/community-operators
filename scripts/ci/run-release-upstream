@@ -2,43 +2,88 @@
 
 eval $(scripts/ci/ansible-env)
 
-if [ -n "${OP_PATH}" ] ;
-  then
-    echo "Release pipeline not running for PR, found modified operator."
-    exit 0
-  fi
+RELEASE_TARGET=''
+GENERATE_OP_CONF=1
+FORCE_RELEASE=0
+
+case "$1" in
+
+-u)  echo "Release pipeline upstream"
+        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_OPERATOR_TESTING' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog'
+    ;;
+-c)  echo "Release pipeline community"
+        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_NEW_ORG' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing_community -e bundle_index_image_namespace=operator_testing_community -e bundle_index_image_name=catalog'
+    ;;
+-t)  echo  "Testing if release is possible"
+        GENERATE_OP_CONF=0
+        echo "operator_base_dir: $(pwd)/upstream-community-operators" > /tmp/changed-operators.yaml
+        echo "operators:" >> /tmp/changed-operators.yaml
+        SINGLE_OPERATOR=$(echo $OP_PATH|awk -F'/' '{print $2}')
+        echo "- $SINGLE_OPERATOR" >> /tmp/changed-operators.yaml
+        cat /tmp/changed-operators.yaml
+        FORCE_RELEASE=1
+    ;;
+-s)  echo  "Testing if release pipeline is working"
+        GENERATE_OP_CONF=0
+        echo "operator_base_dir: $(pwd)/upstream-community-operators" > /tmp/changed-operators.yaml
+
+        cat <<EOT >> /tmp/changed-operators.yaml
+operators:
+- akka-cluster-operator
+EOT
+        cat /tmp/changed-operators.yaml
+        FORCE_RELEASE=1
+    ;;
+*) echo "Syntax: $0 [-r|t|s]"
+   echo "options:"
+   echo "u     upstream - Run release pipeline"
+   echo "c     community - Run release pipeline"
+   echo "t     test - Testing locally if release is possible on this specific operator."
+   echo "s     sample - Testing locally on a sample if release pipeline is working."
+   echo
+
+esac
+
+if [ $(echo $FORCE_RELEASE) == 0 ] ; then
+    if [ -n "${OP_PATH}" ] ;
+      then
+        echo "Release pipeline not running for PR, found modified operator."
+        exit 0
+      fi
+fi
 
 echo "Release pipeline starting"
-rm /tmp/changed-git* 2>/dev/null
-pwd
-ls
-#mkdir -p /tmp/oper
-#cd /tmp/oper
-#git clone --depth=50 -n https://github.com/operator-framework/community-operators.git
-#cd community-operators
-git log --pretty=format: --name-only --since="8 days ago" | sort | uniq > /tmp/changed-git-files
-grep upstream-community-operators /tmp/changed-git-files > /tmp/changed-git-files-upstream
-cat /tmp/changed-git-files-upstream
-if [ $(cat /tmp/changed-git-files-upstream|wc -l) -gt 0 ]; then
-    # ignore specific files in upstream-community-operators top level like OWNERS
-    awk -F '/' 'NF>2 {print}' /tmp/changed-git-files-upstream > /tmp/changed-git-files-upstream-top-lev
-    awk -F 'upstream-community-operators/' '{ print $2 }' /tmp/changed-git-files-upstream-top-lev > /tmp/changed-git-files-upstream-list
-    awk -F '/' '{ print $1 }' /tmp/changed-git-files-upstream-list|sort|uniq > /tmp/changed-git-files-upstream-opnames
-    sed 's/^/- /' /tmp/changed-git-files-upstream-opnames > /tmp/changed-operators.yaml
-    sed -i "1ioperator_base_dir: $(pwd)/upstream-community-operators\noperators:" /tmp/changed-operators.yaml
-    CHANGED_OPERATORS=`cat /tmp/changed-operators.yaml`
-else
-    CHANGED_OPERATORS=''
-    echo "Nothing to release"
-    exit 0
+
+if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
+
+    rm /tmp/changed-git* 2>/dev/null
+    pwd
+    ls
+    #mkdir -p /tmp/oper
+    #cd /tmp/oper
+    #git clone --depth=50 -n https://github.com/operator-framework/community-operators.git
+    #cd community-operators
+    git log --pretty=format: --name-only --since="1 days ago" | sort | uniq > /tmp/changed-git-files
+    grep upstream-community-operators /tmp/changed-git-files > /tmp/changed-git-files-upstream
+    cat /tmp/changed-git-files-upstream
+    if [ $(cat /tmp/changed-git-files-upstream|wc -l) -gt 0 ]; then
+        # ignore specific files in upstream-community-operators top level like OWNERS
+        awk -F '/' 'NF>2 {print}' /tmp/changed-git-files-upstream > /tmp/changed-git-files-upstream-top-lev
+        awk -F 'upstream-community-operators/' '{ print $2 }' /tmp/changed-git-files-upstream-top-lev > /tmp/changed-git-files-upstream-list
+        awk -F '/' '{ print $1 }' /tmp/changed-git-files-upstream-list|sort|uniq > /tmp/changed-git-files-upstream-opnames
+        sed 's/^/- /' /tmp/changed-git-files-upstream-opnames > /tmp/changed-operators.yaml
+        sed -i "1ioperator_base_dir: $(pwd)/upstream-community-operators\noperators:" /tmp/changed-operators.yaml
+        CHANGED_OPERATORS=`cat /tmp/changed-operators.yaml`
+    else
+        CHANGED_OPERATORS=''
+        echo "Nothing to release"
+        exit 0
+    fi
+    echo "Input config:"
+    echo "$CHANGED_OPERATORS"
+
+    pwd
+    ls
 fi
-echo "Input config:"
-echo "$CHANGED_OPERATORS"
-
-pwd
-ls
-##prepre prerequisities
-#ansible-pull -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build
-
 #fast run, only bundle/index handling using tags
-ansible-pull -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build,deploy_bundles -e operators_config=/tmp/changed-operators.yaml -e operator_channel_force=stable
+ansible-pull -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build,deploy_bundles -e operators_config=/tmp/changed-operators.yaml $RELEASE_TARGET
