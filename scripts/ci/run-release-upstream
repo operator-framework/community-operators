@@ -8,8 +8,11 @@ FORCE_RELEASE=0
 
 case "$1" in
 
--r)  echo "Release pipeline"
-        RELEASE_TARGET='-e quay_api_token=$AUTOMATION_TOKEN_OPERATOR_TESTING -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog'
+-u)  echo "Release pipeline upstream"
+        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_OPERATOR_TESTING' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog'
+    ;;
+-c)  echo "Release pipeline community"
+        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_NEW_ORG' -e bundle_registry=quay.io -e bundle_image_namespace=new_org -e bundle_index_image_namespace=new_org -e bundle_index_image_name=catalog'
     ;;
 -t)  echo  "Testing if release is possible"
         GENERATE_OP_CONF=0
@@ -33,7 +36,8 @@ EOT
     ;;
 *) echo "Syntax: $0 [-r|t|s]"
    echo "options:"
-   echo "r     release - Run release pipeline"
+   echo "u     upstream - Run release pipeline"
+   echo "c     community - Run release pipeline"
    echo "t     test - Testing locally if release is possible on this specific operator."
    echo "s     sample - Testing locally on a sample if release pipeline is working."
    echo
@@ -59,7 +63,7 @@ if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
     #cd /tmp/oper
     #git clone --depth=50 -n https://github.com/operator-framework/community-operators.git
     #cd community-operators
-    git log --pretty=format: --name-only --since="3 days ago" | sort | uniq > /tmp/changed-git-files
+    git log --pretty=format: --name-only --since="1 days ago" | sort | uniq > /tmp/changed-git-files
     grep upstream-community-operators /tmp/changed-git-files > /tmp/changed-git-files-upstream
     cat /tmp/changed-git-files-upstream
     if [ $(cat /tmp/changed-git-files-upstream|wc -l) -gt 0 ]; then
@@ -81,6 +85,5 @@ if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
     pwd
     ls
 fi
-
 #fast run, only bundle/index handling using tags
 ansible-pull -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build,deploy_bundles -e operators_config=/tmp/changed-operators.yaml $RELEASE_TARGET
