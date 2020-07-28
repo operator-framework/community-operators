@@ -10,10 +10,10 @@ STREAM_NAME=upstream-community-operators
 case "$1" in
 
 -u)  echo "Release pipeline upstream"
-        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_OPERATOR_TESTING' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog'
+        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog'
     ;;
 -c)  echo "Release pipeline community"
-        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_NEW_ORG' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing_community -e bundle_index_image_namespace=operator_testing_community -e bundle_index_image_name=catalog'
+        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_COMMUNITY' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing_community -e bundle_index_image_namespace=operator_testing_community -e bundle_index_image_name=catalog'
         STREAM_NAME="community-operators"
     ;;
 -t)  echo  "Testing if release is possible"
@@ -58,13 +58,16 @@ echo "Release pipeline starting"
 
 if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
 
-#    rm /tmp/changed-git* 2>/dev/null
+#remove following paragraph before releasing from linux VM, only valid for Travis non master branch
+    echo "Need to clone master, cloning..."
+    mkdir -p /tmp/oper
+    cd /tmp/oper
+    git clone --depth=50 -n https://github.com/operator-framework/community-operators.git
+    cd community-operators
+
+
     pwd
     ls
-    #mkdir -p /tmp/oper
-    #cd /tmp/oper
-    #git clone --depth=50 -n https://github.com/operator-framework/community-operators.git
-    #cd community-operators
     git log --pretty=format: --name-only --since="1 days ago" | sort | uniq > /tmp/changed-git-files-orig-$STREAM_NAME
     grep "^$STREAM_NAME" /tmp/changed-git-files-orig-$STREAM_NAME > /tmp/changed-git-files-$STREAM_NAME
     cat /tmp/changed-git-files-$STREAM_NAME
