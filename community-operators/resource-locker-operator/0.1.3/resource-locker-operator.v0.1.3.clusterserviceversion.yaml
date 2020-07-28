@@ -8,93 +8,12 @@ metadata:
           "apiVersion": "redhatcop.redhat.io/v1alpha1",
           "kind": "ResourceLocker",
           "metadata": {
-            "name": "test-simple-resource"
+            "name": "example-resourcelocker"
           },
           "spec": {
-            "resources": [
-              {
-                "object": {
-                  "apiVersion": "v1",
-                  "kind": "ResourceQuota",
-                  "metadata": {
-                    "name": "small-size",
-                    "namespace": "resource-locker-test"
-                  },
-                  "spec": {
-                    "hard": {
-                      "requests.cpu": "4",
-                      "requests.memory": "2Gi"
-                    }
-                  }
-                }
-              }
-            ],
-            "serviceAccountRef": {
-              "name": "default"
-            }
+            "size": 3
           }
-        },
-        {
-          "apiVersion": "redhatcop.redhat.io/v1alpha1",
-          "kind": "ResourceLocker",
-          "metadata": {
-            "name": "test-simple-patch"
-          },
-          "spec": {
-            "serviceAccountRef": {
-              "name": "default"
-            },
-            "patches": [
-              {
-                "targetObjectRef": {
-                  "apiVersion": "v1",
-                  "kind": "ServiceAccount",
-                  "name": "test",
-                  "namespace": "resource-locker-test"
-                },
-                "patchTemplate": "metadata:\n  annotations:\n    hello: bye\n",
-                "patchType": "application/strategic-merge-patch+json"
-              }
-            ]
-          }
-        },
-        {
-          "apiVersion": "redhatcop.redhat.io/v1alpha1",
-          "kind": "ResourceLocker",
-          "metadata": {
-            "name": "test-complex-patch"
-          },
-          "spec": {
-            "serviceAccountRef": {
-              "name": "default"
-            },
-            "patches": [
-              {
-                "targetObjectRef": {
-                  "apiVersion": "v1",
-                  "kind": "ServiceAccount",
-                  "name": "test",
-                  "namespace": "resource-locker-test"
-                },
-                "patchTemplate": "metadata:\n  annotations:\n    {{ (index . 0).metadata.name }}: {{ (index . 1).metadata.name }}\n",
-                "patchType": "application/strategic-merge-patch+json",
-                "sourceObjectRefs": [
-                  {
-                    "apiVersion": "v1",
-                    "kind": "Namespace",
-                    "name": "resource-locker-test"
-                  },
-                  {
-                    "apiVersion": "v1",
-                    "kind": "ServiceAccount",
-                    "name": "default",
-                    "namespace": "resource-locker-test"
-                  }
-                ]
-              }
-            ]
-          }
-        }                
+        }
       ]
     capabilities: Deep Insights
     categories: Security
@@ -105,15 +24,13 @@ metadata:
       into the state described by its custom resource preventing any drifts.
     repository: https://github.com/redhat-cop/resource-locker-operator
     support: Best Effort
-  name: resource-locker-operator.v0.1.2
+  name: resource-locker-operator.v0.1.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: represent the desire to lock a set of resources and / or patches
-        into the state described by this custom resource preventing any drifts.
-      displayName: Resource Locker
+    - description: ResourceLocker is the Schema for the resourcelockers API
       kind: ResourceLocker
       name: resourcelockers.redhatcop.redhat.io
       version: v1alpha1
@@ -179,7 +96,9 @@ spec:
                 - resource-locker-operator
                 env:
                 - name: WATCH_NAMESPACE
-                  value: ""
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
@@ -190,7 +109,7 @@ spec:
                       fieldPath: metadata.namespace
                 - name: OPERATOR_NAME
                   value: resource-locker-operator
-                image: quay.io/redhat-cop/resource-locker-operator:v0.1.2
+                image: quay.io/redhat-cop/resource-locker-operator:v0.1.3
                 imagePullPolicy: Always
                 name: resource-locker-operator
                 resources: {}
@@ -260,5 +179,5 @@ spec:
   maturity: alpha
   provider:
     name: Containers & PaaS CoP
-  version: 0.1.2
-  replaces: resource-locker-operator.v0.1.1
+  replaces: resource-locker-operator.v0.1.2
+  version: 0.1.3
