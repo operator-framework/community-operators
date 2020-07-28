@@ -22,56 +22,28 @@ before_install:
 
 install:
 #original
-  - scripts/ci/install-deps $DISTRO_TYPE
+#  - scripts/ci/install-deps $DISTRO_TYPE
   - pip install ansible jmespath
 
 jobs:
   include:
-  - stage: Traffic light - Go/Stop
-    name: Run tests only on operator modification, otherwise red and stop all tests.
-    script:
-    - scripts/ci/PR-traffic-light
-    install: skip
-    if: type = pull_request
-
-  - stage: FMO Test Pipeline
-    name: FMO Test Pipeline (failure accepted)
-    script:
-    - scripts/ci/run-ansible-tests||true
-    if: type = pull_request
-
-  - name: FMO Test if release is possible (failure accepted)
-    script:
-    - scripts/ci/run-release -t||true
-
-  - stage: Current Pipeline
-    name: Test loading the Operator into the Community Catalog
-    install: skip
-    script:
-    - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev .
-    if: type = pull_request
-
-  - name: Test Operator deployment using OLM running on KIND
-    script: scripts/ci/run-deployment-tests.sh
-    if: type = pull_request
-
-  - stage: operatorhubio prod deploy
-    name: Trigger PROD deploy of operatorhub.io
-    script: scripts/ci/trigger-operatorhubio-ci.sh
-    if: type = push
-
-#  - stage: FMO release pipeline
-#    name: FMO Release Pipeline test (failure accepted)
-#    script:
-#    - scripts/ci/test-release-upstream -s
+#  - stage: operatorhubio prod deploy
+#    name: Trigger PROD deploy of operatorhub.io
+#    script: scripts/ci/trigger-operatorhubio-ci.sh
 #    if: type = push
-#
-#  - name: FMO Release Pipeline upstream  (failure accepted)
-#    script:
-#    - scripts/ci/run-release -u
+
+  - stage: Release pipeline
+    name: Release Pipeline test
+    script:
+    - scripts/ci/test-release-upstream -s
 #    if: type = push
-#
-#  - name: FMO Release Pipeline openshift community (failure accepted)
-#    script:
-#    - scripts/ci/run-release -c
+
+  - name: Release Pipeline upstream
+    script:
+    - scripts/ci/run-release -u
+#    if: type = push
+
+  - name: Release Pipeline openshift community
+    script:
+    - scripts/ci/run-release -c
 #    if: type = push
