@@ -4,7 +4,7 @@
 
 
 
-#This script is triggered only from `release-pipeline-running` branch. Modifications on `master` will not be reflected on the pipeline.
+#This script is triggered mainly from `release-pipeline-running` branch. Modifications on `master` will not be reflected on the release pipeline, just release tests will be updated.
 
 
 
@@ -14,35 +14,44 @@ eval $(scripts/ci/ansible-env)
 RELEASE_TARGET=''
 GENERATE_OP_CONF=1
 FORCE_RELEASE=0
-STREAM_NAME=upstream-community-operators
+#STREAM_NAME=upstream-community-operators
 
 case "$1" in
 
 -u)  echo "Release pipeline upstream"
-        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
+        STREAM_NAME='upstream-community-operators'
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-'$STREAM_NAME'.yaml -e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
     ;;
 -c)  echo "Release pipeline community"
-        RELEASE_TARGET='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_COMMUNITY' -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog'
-        STREAM_NAME="community-operators"
+        STREAM_NAME='community-operators'
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-'$STREAM_NAME'.yaml -e quay_api_token='$AUTOMATION_TOKEN_RELEASE_COMMUNITY' -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog'
     ;;
 -t)  echo  "Testing if release is possible"
         GENERATE_OP_CONF=0
-        echo "operator_base_dir: $(pwd)/upstream-community-operators" > /tmp/changed-operators-$STREAM_NAME.yaml
-        echo "operators:" >> /tmp/changed-operators-$STREAM_NAME.yaml
-        SINGLE_OPERATOR=$(echo $OP_PATH|awk -F'/' '{print $2}')
-        echo "- $SINGLE_OPERATOR" >> /tmp/changed-operators-$STREAM_NAME.yaml
-        cat /tmp/changed-operators-$STREAM_NAME.yaml
+#        echo "operator_base_dir: $(pwd)/$STREAM_NAME" > /tmp/changed-operators-$STREAM_NAME.yaml
+#        echo "operators:" >> /tmp/changed-operators-$STREAM_NAME.yaml
+#        SINGLE_OPERATOR=$(echo $OP_PATH|awk -F'/' '{print $2}')
+#        echo "- $SINGLE_OPERATOR" >> /tmp/changed-operators-$STREAM_NAME.yaml
+#        cat /tmp/changed-operators-$STREAM_NAME.yaml
         FORCE_RELEASE=1
+        if [ "$2" = "prod" ]; then
+            if [ "$STREAM_NAME" = "upstream-community-operators" ] ; then CHECK_WITH='-e production_registry_namespace=quay.io/operatorhubio'
+            else CHECK_WITH='-e production_registry_namespace=quay.io/openshift-community-operators'
+            fi
+            CHECK_WITH="$CHECK_WITH -e index_force_rebuild=true"
+        fi
+        RELEASE_TARGET="-e operator_dir=$(pwd)/$OP_PATH $CHECK_WITH"
     ;;
 -s)  echo  "Testing if release pipeline is working"
         GENERATE_OP_CONF=0
-        echo "operator_base_dir: $(pwd)/upstream-community-operators" > /tmp/changed-operators-$STREAM_NAME.yaml
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-upstream-community-operators.yaml'
+        echo "operator_base_dir: $(pwd)/upstream-community-operators" > /tmp/changed-operators-upstream-community-operators.yaml
 
-        cat <<EOT >> /tmp/changed-operators-$STREAM_NAME.yaml
+        cat <<EOT >> /tmp/changed-operators-upstream-community-operators.yaml
 operators:
 - akka-cluster-operator
 EOT
-        cat /tmp/changed-operators-$STREAM_NAME.yaml
+        cat /tmp/changed-operators-upstream-community-operators.yaml
         FORCE_RELEASE=1
     ;;
 *) echo "Syntax: $0 [-r|t|s]"
@@ -73,6 +82,8 @@ if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
     cd /tmp/oper
     git clone https://github.com/operator-framework/community-operators.git
     cd community-operators
+
+
     pwd
     ls
 
@@ -100,4 +111,4 @@ if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
     ls
 fi
 #fast run, only bundle/index handling using tags
-ansible-pull -vv -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build,deploy_bundles -e operators_config=/tmp/changed-operators-$STREAM_NAME.yaml $RELEASE_TARGET
+ansible-pull -vv -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build,deploy_bundles $RELEASE_TARGET
