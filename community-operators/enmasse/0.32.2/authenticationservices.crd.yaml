@@ -1,0 +1,221 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: authenticationservices.admin.enmasse.io
+  labels:
+    app: enmasse
+spec:
+  group: admin.enmasse.io
+  version: v1beta1
+  scope: Namespaced
+  names:
+    kind: AuthenticationService
+    listKind: AuthenticationServiceList
+    singular: authenticationservice
+    plural: authenticationservices
+    categories:
+    - enmasse
+  additionalPrinterColumns:
+  - name: Phase
+    type: string
+    priority: 0
+    description: The phase of the authentication service
+    JSONPath: .status.phase
+  - name: Status
+    type: string
+    priority: 1
+    description: The status of the authentication service
+    JSONPath: .status.message
+  - name: Age
+    priority: 0
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  validation:
+    openAPIV3Schema:
+      type: object
+      description: AuthenticationService describes a service that can be used for authenticating messaging clients for one or more address spaces. This resource is created by the service administrator.
+      properties:
+        spec:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - none
+              - standard
+              - external
+            realm:
+              type: string
+            none:
+              type: object
+              properties:
+                replicas:
+                  type: integer
+                certificateSecret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                image:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    pullPolicy:
+                      type: string
+                resources:
+                  type: object
+                  properties:
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+            standard:
+              type: object
+              properties:
+                replicas:
+                  type: integer
+                certificateSecret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                credentialsSecret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                initImage:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    pullPolicy:
+                      type: string
+                jvmOptions:
+                  type: string
+                image:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    pullPolicy:
+                      type: string
+                deploymentName:
+                  type: string
+                serviceName:
+                  type: string
+                routeName:
+                  type: string
+                storage:
+                  type: object
+                  required:
+                  - type
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - ephemeral
+                      - persistent-claim
+                    class:
+                      type: string
+                    size:
+                      type: string
+                    claimName:
+                      type: string
+                    deleteClaim:
+                      type: boolean
+                resources:
+                  type: object
+                  properties:
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+                datasource:
+                  type: object
+                  required:
+                  - type
+                  properties:
+                    type:
+                      type: string
+                    host:
+                      type: string
+                    port:
+                      type: integer
+                    database:
+                      type: string
+                    credentialsSecret:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                securityContext:
+                  type: object
+            external:
+              type: object
+              required:
+              - host
+              - port
+              properties:
+                allowOverride:
+                  type: boolean
+                host:
+                  type: string
+                port:
+                  type: integer
+                caCertSecret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                clientCertSecret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+        status:
+          type: object
+          properties:
+            phase:
+              type: string
+              description: "Phase of the authentication service."
+            message:
+              type: string
+              description: "Status and error messages for the authentication service."
+            host:
+              type: string
+            port:
+              type: integer
