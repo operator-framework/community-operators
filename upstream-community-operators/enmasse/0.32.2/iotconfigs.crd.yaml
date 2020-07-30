@@ -1,0 +1,174 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: iotconfigs.iot.enmasse.io
+  labels:
+    app: enmasse
+spec:
+  group: iot.enmasse.io
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: IoTConfig
+    plural: iotconfigs
+    singular: iotconfig
+    shortNames:
+    - icfg
+    categories:
+    - enmasse
+  additionalPrinterColumns:
+  - name: Phase
+    type: string
+    description: Phase of the IoT config
+    JSONPath: .status.phase
+  - name: Message
+    type: string
+    description: Message
+    JSONPath: .status.message
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: IoTConfig deploys the IoT protocol adapters, device registry and tenant management services. This resource is created by the service administrator.
+      type: object
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+          properties:
+            name:
+              type: string
+              pattern: "^default$"
+
+        spec:
+          type: object
+          properties:
+
+            enableDefaultRoutes:
+              type: boolean
+
+            imageOverrides:
+              type: object
+
+            interServiceCertificates:
+              description: |
+                Configure the strategy to use for connecting services using certificates. If no configuration
+                is present, and you are running on OpenShift 4, then it will automatically deploy certificates
+                using the Service CA.
+              type: object
+              properties:
+                secretCertificatesStrategy:
+                  description: |
+                    Provide certificates for the different services manually.
+                  type: object
+                  properties:
+                    caSecretName:
+                      description: Name of the secret holding the CA certificate in PEM format.
+                      type: string
+                    serviceSecretNames:
+                      description: |
+                        A mapping table from the service names to the secrets holding the key and certificates,
+                        signed by the CA provided in `caSecretName`.
+                      type: object
+                serviceCAStrategy:
+                  description: |
+                    Use the OpenShift Service CA to generate and update certificates. You can also use this on
+                    any other Kubernetes version, if you have installed the Service CA operator:
+                    see https://github.com/openshift/service-ca-operator
+
+                    Even it this property has no fields, you will need to put an empty object to enable this: e.g. 'serviceCAStrategy: {}'
+                  type: object
+              oneOf:
+                - required: [secretCertificatesStrategy]
+                - required: [serviceCAStrategy]
+
+            java:
+              type: object
+              properties:
+                requireNativeTls:
+                  type: boolean
+
+            tls:
+              description: Global TLS configuration
+              type: object
+              properties:
+                versions:
+                  type: array
+                  items:
+                    type: string
+
+            mesh:
+              type: object
+              properties:
+                services:
+                  type: object
+
+            adapters:
+              type: object
+              properties:
+                defaults:
+                  type: object
+                http:
+                  type: object
+                mqtt:
+                  type: object
+                sigfox:
+                  type: object
+                lorawan:
+                  type: object
+
+            services:
+              type: object
+              properties:
+                deviceConnection:
+                  type: object
+                deviceRegistry:
+                  type: object
+                authentication:
+                  type: object
+                tenant:
+                  type: object
+
+            tracing:
+              type: object
+
+            monitoring:
+              type: object
+
+            logging:
+              type: object
+
+        status:
+          type: object
+          properties:
+            phase:
+              type: string
+            message:
+              type: string
+
+            adapters:
+              type: object
+            services:
+              type: object
+
+            conditions:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  status:
+                    type: string
+                  lastTransitionTime:
+                    type: string
+                    format: date-time
+                  reason:
+                    type: string
+                  message:
+                    type: string
