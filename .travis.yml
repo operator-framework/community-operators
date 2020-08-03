@@ -34,6 +34,17 @@ jobs:
     install: skip
     if: type = pull_request
 
+  - stage: Current Pipeline
+    name: Test loading the Operator into the Community Catalog
+    install: skip
+    script:
+    - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev .
+    if: type = pull_request
+
+  - name: Test Operator deployment using OLM running on KIND
+    script: scripts/ci/run-deployment-tests.sh
+    if: type = pull_request
+
   - stage: Bundle Test Pipeline (beta)
     name: Bundle Test Pipeline (beta)
     script:
@@ -49,17 +60,6 @@ jobs:
     script:
     - scripts/ci/run-release -t prod
     before_install: skip
-
-  - stage: Current Pipeline
-    name: Test loading the Operator into the Community Catalog
-    install: skip
-    script:
-    - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev .
-    if: type = pull_request
-
-  - name: Test Operator deployment using OLM running on KIND
-    script: scripts/ci/run-deployment-tests.sh
-    if: type = pull_request
 
   - stage: operatorhubio prod deploy
     name: Trigger PROD deploy of operatorhub.io
