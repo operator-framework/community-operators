@@ -5,15 +5,15 @@ metadata:
   namespace: placeholder
   annotations:
     alm-examples: >-
-      [{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"AccessPolicy","metadata":{"name":"mypolicy"},"spec":{"subject":{"accessGroupDef":{"accessGroupName":"mygroup","accessGroupNamespace":"default"}},"roles":{"definedRoles":["Viewer","Administrator"],"customRolesDef":[{"customRoleName":"myrole","customRoleNamespace":"default"}]},"target":{"resourceGroup":"Default","serviceClass":"messagehub","serviceID":"9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631","resourceName":"topic","resourceID":"topic-ansu"}}},{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"AccessGroup","metadata":{"name":"mygroup"},"spec":{"name":"MyAccessGroup","description":"A
+      [{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"AuthorizationPolicy","metadata":{"name":"myauthpolicy"},"spec":{"source":{"resourceGroup":"Default","serviceClass":"kms","serviceID":"9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631"},"roles":["Reader"],"target":{"resourceGroup":"Default","serviceClass":"messagehub","serviceID":"9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631","resourceName":"topic","resourceID":"topic-ansu"}}},{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"AccessGroup","metadata":{"name":"mygroup"},"spec":{"name":"MyAccessGroup","description":"A
       new access group to test access group
-      controller","userEmails":["avarghese@us.ibm.com"],"serviceIDs":["ServiceId-3b9f026a-eb6e-495f-b104-95232d0c4a59","ServiceId-fa27c539-a6cf-41d2-8cb0-2916da5f8e8a"]}},{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"CustomRole","metadata":{"name":"myrole"},"spec":{"roleName":"MyAdmin","serviceClass":"messagehub","displayName":"My
+      controller","userEmails":["avarghese@us.ibm.com"],"serviceIDs":["ServiceId-3b9f026a-eb6e-495f-b104-95232d0c4a59","ServiceId-fa27c539-a6cf-41d2-8cb0-2916da5f8e8a"]}},{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"AccessPolicy","metadata":{"name":"mypolicy"},"spec":{"subject":{"accessGroupDef":{"accessGroupName":"mygroup","accessGroupNamespace":"default"}},"roles":{"definedRoles":["Viewer","Administrator"],"customRolesDef":[{"customRoleName":"myrole","customRoleNamespace":"default"}]},"target":{"resourceGroup":"Default","serviceClass":"messagehub","serviceID":"9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631","resourceName":"topic","resourceID":"topic-ansu"}}},{"apiVersion":"ibmcloud.ibm.com/v1alpha1","kind":"CustomRole","metadata":{"name":"myrole"},"spec":{"roleName":"MyAdmin","serviceClass":"messagehub","displayName":"My
       Admin","description":"My admin only has a subset of the privileges of an
       IAM Admin
       role","actions":["iam.policy.create","iam.policy.update","messagehub.group.read"]}}]
     categories: Cloud Provider
     certified: 'false'
-    createdAt: '2020-06-26T10:47:16Z'
+    createdAt: '2020-08-12T13:36:55Z'
     description: >-
       The IBM Cloud IAM Operator provides a set of three Kubernetes CRD-Based
       APIs to manage the lifecycle of Access Policies, Access Groups, and Custom
@@ -24,9 +24,10 @@ metadata:
     repository: 'https://github.com/IBM/ibmcloud-iam-operator'
 spec:
   displayName: IBM Cloud IAM Operator
-  description: "On IBM Public Cloud, Identity and Access Management (IAM) is used to give access permissions so that entities can interact with resources. These access policies are set via the CLI or on the Console and typically require many gestures (retrieving API keys/tokens, creating user groups, adding users to group, obtaining subject and target IDs, copy and pasting, etc...).\_\n\nIBM Cloud IAM Kubernetes Operator provides a **user-friendly Operator for IKS and OpenShift to automate scenarios for managing access to IBM Cloud  Resources** via Kubernetes CRD-Based APIs:\n1. For access groups,\n2. For custom  roles, and\n3. For access policies\n\nThis will give users few advantages:\n- The operator **makes it easier to specify access groups, custom roles, and access policies** at a high level in a Kubernetes  YAML  declaratively, \n- The operator **automates interactions with IAM APIs** without requiring the user to know specifics,\n- The operator **enforces access groups, custom roles, and access policies** via the operator's desired-state management. For example, if a user is moved out of a group accidentally, the operator would move them back and remediate the issue,\n- The operator **integrates IBM Cloud  IAM  tightly with Kubernetes'  built-in  support  for RBAC**.\n## Requirements\nThe operator can be installed on any OLM-enabled Kubernetes cluster with version >= 1.11.  You need an [IBM Cloud account](https://cloud.ibm.com/registration) and the  [IBM Cloud CLI](https://cloud.ibm.com/docs/cli?topic=cloud-cli-getting-started). You need also to have the [kubectl CLI](https://kubernetes.io/docs/tasks/tools/install-kubectl/)   already configured to access your cluster. Before installing the operator, you need to login to  your IBM cloud account with the IBM Cloud CLI:\n\n    ibmcloud login\n\nand set a default target environment for your resources with the command:\n\n    ibmcloud target --cf -g default\n\nThis will use the IBM Cloud resource group `default`. To specify a different resource group, use the following command:\n\n    ibmcloud target -g <resource-group>\n\nyou can then configure the operator running the following script:\n\n    curl -sL https://raw.githubusercontent.com/IBM/ibmcloud-iam-operator/master/hack/config-operator.sh | bash \n\nThe script above creates an IBM Cloud API Key and stores it in a Kubernetes secret that can be accessed by the operator, and it sets defaults such as the resource group and region  used to provision IBM Cloud Services. You can always override the defaults in the custom resources. If you prefer to create the secret and the defaults manually, consult the [IBM Cloud IAM Operator documentation](https://github.com/IBM/ibmcloud-iam-operator).\n## Creating an Access Group, Custom Role or Access Policy\nYou can create an access policy with name `cosuserpolicy` for user `avarghese@us.ibm.com` to access a Cloud Object Storage instance's bucket as an `Administrator`  using the following custom resource written in an yaml file `cosuserpolicy.yaml`:\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessPolicy\n    metadata:\n      name: cosuserpolicy\n    spec:\n      subject:\n        userEmail: avarghese@us.ibm.com\n      roles:\n        definedRoles:\n          - Administrator\n      target:\n        resourceGroup: Default\n        serviceClass: cloud-object-storage\n        serviceID: 1cdd19ff-c033-4767-b6b7-4fe2fc58c6a1\n        resourceName: bucket\n        resourceID: cos-standard-ansu\n\nand then run the command:\n\n    kubectl create -f cosuserpolicy.yaml\n\nTo find the status of your access policy, you can run the command:\n\n    kubectl get accesspolicies.ibmcloud \n    NAME                 STATUS   AGE\n    cosuserpolicy        Online   25s\n\nHere's another example to create all three custom resources: You can create an access policy with name `demonewgrouppolicy` for access group resource `demonewgroup` in namespace `default` to access an Event Stream instance's topic `topic-ansu` as a custom role `ES Admin` that is running in the cluster as a custom role resource `democustomrole` in namespace `default` using the following yaml file [`accesspolicy_example_EventStreams_demo.yaml`](https://github.com/IBM/ibmcloud-iam-operator/blob/master/deploy/examples/accesspolicy_example_EventStreams_demo.yaml) :\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessGroup\n    metadata:\n      name: demonewgroup\n    spec:\n      name: demonewgroup\n      description: A new access group to test access group controller\n      userEmails:\n          - avarghese@us.ibm.com\n          - mvaziri@us.ibm.com\n      serviceIDs:\n        - ServiceId-3b9f026a-eb6e-495f-b104-95232d0c4a59\n        - ServiceId-fa27c539-a6cf-41d2-8cb0-2916da5f8e8a   \n\n    ---\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: CustomRole\n    metadata:\n      name: democustomrole\n    spec:\n      roleName: ESAdmin\n      serviceClass: messagehub\n      displayName: ES Admin\n      description: Event Streams admin is an admin that only has a subset of the privileges of an Admin role\n      actions: \n        - iam.policy.create\n        - iam.policy.update\n        - messagehub.group.read\n\n    ---\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessPolicy\n    metadata:\n      name: demonewgrouppolicy\n    spec:\n      subject:\n        accessGroupDef: \n          accessGroupName: demonewgroup\n          accessGroupNamespace: default\n      roles: \n        definedRoles:\n          - Viewer\n        customRolesDef:\n          - customRoleName: democustomrole\n            customRoleNamespace: default\n      target: \n        resourceGroup: Default    \n        serviceClass: messagehub\n        serviceID: 9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631\n        resourceName: topic\n        resourceID: topic-ansu    \n\nand then run the command:\n\n    kubectl create -f accesspolicy_example_EventStreams_demo.yaml\n\nTo find the status of your access policy, you can run the command:\n\n    kubectl get accessgroups.ibmcloud \n    NAME                 STATUS   AGE\n    demonewgroup        Online   25s\n\n    kubectl get customroles.ibmcloud \n    NAME                 STATUS   AGE\n    democustomrole        Online   25s\n\n    kubectl get accesspolicies.ibmcloud \n    NAME                 STATUS   AGE\n    demonewgrouppolicy        Online   25s\n\nFor additional configuration options, samples and more information on using the operator, consult  the [IBM Cloud IAM Operator documentation](https://github.com/IBM/ibmcloud-iam-operator).\n\n"
+  description: "On IBM Public Cloud, Identity and Access Management (IAM) is used to give access permissions so that entities can interact with resources. These access policies are set via the CLI or on the Console and typically require many gestures (retrieving API keys/tokens, creating user groups, adding users to group, obtaining subject and target IDs, copy and pasting, etc...).\_\n\nIBM Cloud IAM Kubernetes Operator provides a **user-friendly Operator for IKS and OpenShift to automate scenarios for managing access to IBM Cloud  Resources** via Kubernetes CRD-Based APIs:\n1. For access groups,\n2. For custom  roles,\n3. For access policies, and\n4. For authorization policies\n\nThis will give users few advantages:\n- The operator **makes it easier to specify access groups, custom roles, access & authorization policies** at a high level in a Kubernetes  YAML  declaratively, \n- The operator **automates interactions with IAM APIs** without requiring the user to know specifics,\n- The operator **enforces access groups, custom roles, access & authorization policies** via the operator's desired-state management. For example, if a user is moved out of a group accidentally, the operator would move them back and remediate the issue,\n- The operator **integrates IBM Cloud  IAM  tightly with Kubernetes'  built-in  support  for RBAC**.\n## Requirements\nThe operator can be installed on any OLM-enabled Kubernetes cluster with version >= 1.11.  You need an [IBM Cloud account](https://cloud.ibm.com/registration) and the  [IBM Cloud CLI](https://cloud.ibm.com/docs/cli?topic=cloud-cli-getting-started). You need also to have the [kubectl CLI](https://kubernetes.io/docs/tasks/tools/install-kubectl/)   already configured to access your cluster. Before installing the operator, you need to login to  your IBM cloud account with the IBM Cloud CLI:\n\n    ibmcloud login\n\nand set a default target environment for your resources with the command:\n\n    ibmcloud target --cf -g default\n\nThis will use the IBM Cloud resource group `default`. To specify a different resource group, use the following command:\n\n    ibmcloud target -g <resource-group>\n\nyou can then configure the operator running the following script:\n\n    curl -sL https://raw.githubusercontent.com/IBM/ibmcloud-iam-operator/master/hack/config-operator.sh | bash \n\nThe script above creates an IBM Cloud API Key and stores it in a Kubernetes secret that can be accessed by the operator, and it sets defaults such as the resource group and region  used to provision IBM Cloud Services. You can always override the defaults in the custom resources. If you prefer to create the secret and the defaults manually, consult the [IBM Cloud IAM Operator documentation](https://github.com/IBM/ibmcloud-iam-operator).\n## Creating an Access Group, Custom Role, Access or Authorization Policy\nYou can create an access policy with name `cosuserpolicy` for user `avarghese@us.ibm.com` to access a Cloud Object Storage instance's bucket as an `Administrator`  using the following custom resource written in an yaml file `cosuserpolicy.yaml`:\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessPolicy\n    metadata:\n      name: cosuserpolicy\n    spec:\n      subject:\n        userEmail: avarghese@us.ibm.com\n      roles:\n        definedRoles:\n          - Administrator\n      target:\n        resourceGroup: Default\n        serviceClass: cloud-object-storage\n        serviceID: 1cdd19ff-c033-4767-b6b7-4fe2fc58c6a1\n        resourceName: bucket\n        resourceID: cos-standard-ansu\n\nand then run the command:\n\n    kubectl create -f cosuserpolicy.yaml\n\nTo find the status of your access policy, you can run the command:\n\n    kubectl get accesspolicies.ibmcloud \n    NAME                 STATUS   AGE\n    cosuserpolicy        Online   25s\n\nYou can create an authorization policy for `cloud-object-storage` services to be authorized to read `key-protect` instances using the following custom resource written in an yaml file `coskmspolicy.yaml`:\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AuthorizationPolicy\n    metadata:\n      name: coskmsauthpolicy\n    spec:\n      source:\n        serviceClass: cloud-object-storage\n      roles:      \n        - Reader\n      target:\n        serviceClass: kms\n\nand then run the command:\n  \n    kubectl create -f coskmspolicy.yaml\n\nTo find the status of your authorization policy, you can run the command:\n\n    kubectl get authorizationpolicies.ibmcloud \n    NAME                 STATUS   AGE\n    coskmspolicy        Online   25s\n\nHere's another example to create all three custom resources: You can create an access policy with name `demonewgrouppolicy` for access group resource `demonewgroup` in namespace `default` to access an Event Stream instance's topic `topic-ansu` as a custom role `ES Admin` that is running in the cluster as a custom role resource `democustomrole` in namespace `default` using the following yaml file [`accesspolicy_example_EventStreams_demo.yaml`](https://github.com/IBM/ibmcloud-iam-operator/blob/master/deploy/examples/accesspolicy_example_EventStreams_demo.yaml) :\n\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessGroup\n    metadata:\n      name: demonewgroup\n    spec:\n      name: demonewgroup\n      description: A new access group to test access group controller\n      userEmails:\n          - avarghese@us.ibm.com\n          - mvaziri@us.ibm.com\n      serviceIDs:\n        - ServiceId-3b9f026a-eb6e-495f-b104-95232d0c4a59\n        - ServiceId-fa27c539-a6cf-41d2-8cb0-2916da5f8e8a   \n\n    ---\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: CustomRole\n    metadata:\n      name: democustomrole\n    spec:\n      roleName: ESAdmin\n      serviceClass: messagehub\n      displayName: ES Admin\n      description: Event Streams admin is an admin that only has a subset of the privileges of an Admin role\n      actions: \n        - iam.policy.create\n        - iam.policy.update\n        - messagehub.group.read\n\n    ---\n    apiVersion: ibmcloud.ibm.com/v1alpha1\n    kind: AccessPolicy\n    metadata:\n      name: demonewgrouppolicy\n    spec:\n      subject:\n        accessGroupDef: \n          accessGroupName: demonewgroup\n          accessGroupNamespace: default\n      roles: \n        definedRoles:\n          - Viewer\n        customRolesDef:\n          - customRoleName: democustomrole\n            customRoleNamespace: default\n      target: \n        resourceGroup: Default    \n        serviceClass: messagehub\n        serviceID: 9f9d6641-d5ad-4fb2-8d49-c1e97bcfb631\n        resourceName: topic\n        resourceID: topic-ansu    \n\nand then run the command:\n\n    kubectl create -f accesspolicy_example_EventStreams_demo.yaml\n\nTo find the status of your access policy, you can run the command:\n\n    kubectl get accessgroups.ibmcloud \n    NAME                 STATUS   AGE\n    demonewgroup        Online   25s\n\n    kubectl get customroles.ibmcloud \n    NAME                 STATUS   AGE\n    democustomrole        Online   25s\n\n    kubectl get accesspolicies.ibmcloud \n    NAME                 STATUS   AGE\n    demonewgrouppolicy        Online   25s\n\nFor additional configuration options, samples and more information on using the operator, consult  the [IBM Cloud IAM Operator documentation](https://github.com/IBM/ibmcloud-iam-operator).\n\n"
   maturity: alpha
   version: 0.1.0
+  replaces: ''
   skips: []
   minKubeVersion: ''
   keywords:
@@ -51,11 +52,13 @@ spec:
       mediatype: image/png
   customresourcedefinitions:
     owned:
-      - name: accesspolicies.ibmcloud.ibm.com
-        displayName: AccessPolicy
-        kind: AccessPolicy
+      - name: authorizationpolicies.ibmcloud.ibm.com
+        displayName: AuthorizationPolicy
+        kind: AuthorizationPolicy
         version: v1alpha1
-        description: Represents an instance of a access policy resource on IBM Cloud IAM.
+        description: >-
+          Represents an instance of a authorization policy resource on IBM Cloud
+          IAM.
         resources:
           - version: v1
             kind: Deployment
@@ -69,21 +72,21 @@ spec:
             kind: Secret
           - version: v1
             kind: ConfigMap
-          - kind: AccessPolicy
+          - kind: AuthorizationPolicy
             version: v1alpha1
         specDescriptors:
           - path: roles
-            description: Type to specify a list of Roles of an access policy
+            description: Type to specify a list of Roles of an authorization policy
             displayName: Roles
             x-descriptors:
               - 'urn:alm:descriptor:com.tectonic.ui:text'
-          - path: subject
-            description: Type to specify the Subject of an access policy
-            displayName: Subject
+          - path: source
+            description: Type to specify the Source of an authorization policy
+            displayName: Source
             x-descriptors:
               - 'urn:alm:descriptor:com.tectonic.ui:text'
           - path: target
-            description: Type to specify the Target of an access policy
+            description: Type to specify the Target of an authorization policy
             displayName: Target
             x-descriptors:
               - 'urn:alm:descriptor:com.tectonic.ui:text'
@@ -94,13 +97,20 @@ spec:
             x-descriptors:
               - 'urn:alm:descriptor:text'
           - path: policyID
-            description: Policy ID for the access policy
+            description: Policy ID for the authorization policy
             displayName: Policy ID
             x-descriptors:
               - 'urn:alm:descriptor:text'
           - path: roles
-            description: Type to specify a list of Roles of an access policy (Status)
+            description: >-
+              Type to specify a list of Roles of an authorization policy
+              (Status)
             displayName: Roles
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: source
+            description: Type to specify the Source of an authorization policy (Status)
+            displayName: Source
             x-descriptors:
               - 'urn:alm:descriptor:text'
           - path: state
@@ -108,13 +118,8 @@ spec:
             displayName: State
             x-descriptors:
               - 'urn:alm:descriptor:text'
-          - path: subject
-            description: Type to specify the Subject of an access policy (Status)
-            displayName: Subject
-            x-descriptors:
-              - 'urn:alm:descriptor:text'
           - path: target
-            description: Type to specify the Target of an access policy (Status)
+            description: Type to specify the Target of an authorization policy (Status)
             displayName: Target
             x-descriptors:
               - 'urn:alm:descriptor:text'
@@ -201,6 +206,73 @@ spec:
           - description: Group ID for the access group
             displayName: Group ID
             path: groupID
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+      - name: accesspolicies.ibmcloud.ibm.com
+        displayName: AccessPolicy
+        kind: AccessPolicy
+        version: v1alpha1
+        description: Represents an instance of a access policy resource on IBM Cloud IAM.
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+          - kind: AccessPolicy
+            version: v1alpha1
+        specDescriptors:
+          - path: roles
+            description: Type to specify a list of Roles of an access policy
+            displayName: Roles
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: subject
+            description: Type to specify the Subject of an access policy
+            displayName: Subject
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - path: target
+            description: Type to specify the Target of an access policy
+            displayName: Target
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+        statusDescriptors:
+          - path: message
+            description: Detailed message on current status
+            displayName: Message
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: policyID
+            description: Policy ID for the access policy
+            displayName: Policy ID
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: roles
+            description: Type to specify a list of Roles of an access policy (Status)
+            displayName: Roles
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: state
+            description: Current state for the binding
+            displayName: State
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: subject
+            description: Type to specify the Subject of an access policy (Status)
+            displayName: Subject
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - path: target
+            description: Type to specify the Target of an access policy (Status)
+            displayName: Target
             x-descriptors:
               - 'urn:alm:descriptor:text'
       - name: customroles.ibmcloud.ibm.com
@@ -327,6 +399,7 @@ spec:
                 - accesspolicies
                 - customroles
                 - accessgroups
+                - authorizationpolicies
               verbs:
                 - get
                 - list
@@ -341,6 +414,7 @@ spec:
                 - accesspolicies/finalizers
                 - customroles/finalizers
                 - accessgroups/finalizers
+                - authorizationpolicies/finalizers
               verbs:
                 - get
                 - list
@@ -379,6 +453,7 @@ spec:
                 - accesspolicies/status
                 - customroles/status
                 - accessgroups/status
+                - authorizationpolicies/status
               verbs:
                 - get
                 - list
