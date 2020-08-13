@@ -1,0 +1,287 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "pmem-csi.intel.com/v1alpha1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "pmem-csi.intel.com"
+          },
+          "spec": {
+            "deviceMode": "lvm",
+            "nodeSelector": {
+              "storage": "pmem"
+            },
+            "pmemPercentage": 50
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Storage
+    certified: "false"
+    containerImage: intel/pmem-csi-driver:v0.7.0
+    createdAt: 2020-06-25 10:50Z
+    description: An operator for deploying and managing the PMEM-CSI driver
+    repository: https://github.com/intel/pmem-csi/tree/release-0.7
+    support: Intel
+  name: pmem-csi-operator.v0.7.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Represents a PMEM-CSI driver deployment in the cluster.
+      displayName: Deployment
+      kind: Deployment
+      name: deployments.pmem-csi.intel.com
+      resources:
+      - kind: StatefulSet
+        name: ""
+        version: apps/v1
+      - kind: DaemonSet
+        name: ""
+        version: apps/v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: 'CSI Driver mode for device management: ''lvl'' or ''direct'''
+        displayName: Device manager to use
+        path: deviceMode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      version: v1alpha1
+  description: |2
+
+    Intel PMEM-CSI is a [CSI](https://github.com/container-storage-interface/spec)
+    storage driver for container orchestrators like Kubernetes. It makes local
+    persistent memory ([PMEM](https://pmem.io/)) available as a filesystem volume to
+    container applications. It can currently utilize non-volatile memory devices
+    that can be controlled via the [libndctl utility library](https://github.com/pmem/ndctl).
+    *Persistent memory* in this context refers to a non-volatile dual in-line
+    memory module (NVDIMM). See the [PMEM-CSI documentation](https://intel.github.io/pmem-csi/0.7/README.html)
+    for more details.
+
+    This is the operator to deploy and manage the [PMEM-CSI](https://intel.github.io/pmem-csi/0.7/README.html)
+    driver on a Kubernetes cluster.
+
+    ## Prerequisite
+    ### Software required
+
+    The recommended minimum Linux kernel version for running the PMEM-CSI driver is 4.15.
+    See [Persistent Memory Programming](https://pmem.io/2018/05/15/using_persistent_memory_devices_with_the_linux_device_mapper.html)
+    for more details about supported kernel versions.
+
+    ### Hardware required
+
+    Persistent memory device(s) are required for operation. However, some development
+    and testing can be done using [QEMU-emulated](https://docs.pmem.io/persistent-memory/getting-started-guide/creating-development-environments/virtualization/qemu)
+    persistent memory devices.
+
+    ### Cluster requirements
+
+    The operator can be installed on any OLM-enabled Kubernetes cluster with version >= 1.15.
+    Make sure that the alpha feature gates _`CSINodeInfo`_ and _`CSIDriverRegistry`_ are enabled
+    in your cluster. The method to configure alpha feature gates may vary, depending on
+    the Kubernetes deployment. It may not be necessary anymore when the feature has reached
+    beta state, which depends on the Kubernetes version.
+
+    You also need to have the [kubectl CLI](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+    already configured to access your cluster.
+
+    ### Preparing worker nodes
+
+    **Persistent memory pre-provisioning**
+
+    The PMEM-CSI driver needs pre-provisioned regions on the NVDIMM device(s).
+    The PMEM-CSI driver itself intentionally leaves that to the administrator who
+    then can decide how much and how PMEM is to be used for PMEM-CSI.
+    When running the Kubernetes cluster and PMEM-CSI on bare metal, the [ipmctl](https://github.com/intel/ipmctl)
+    utility can be used to create regions.
+
+    Example of creating regions using all NVDIMMs:
+    ```
+    $ ipmctl create -goal PersistentMemoryType=AppDirect
+    ```
+    **Label the cluster nodes that provide persistent memory device(s)**
+    ```
+    $ kubectl label node <your node> storage=pmem
+    ```
+
+    ## Deploying PMEM-CSI driver
+
+    Once after installing the PMEM-CSI operator, you can deploy the PMEM-CSI driver by
+    creating an instance of the PMEM-CSI deployment custom resource as shown below:
+    ```
+    $ kubectl create -f - <<EOF
+    apiVersion: pmem-csi.intel.com/v1alpha1
+    kind: Deployment
+    metadata:
+      name: pmem-deployment
+    spec:
+      pmemPercentage: 50
+      deviceMode: lvm
+    EOF
+    ```
+    For additional configuration options, examples and more information on using the operator,
+    refer to the [PMEM-CSI documentation](https://intel.github.io/pmem-csi/0.7/README.html)
+  displayName: Operator for PMEM-CSI driver
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - csidrivers
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - get
+          - create
+          - delete
+        - apiGroups:
+          - pmem-csi.intel.com
+          resources:
+          - deployments
+          - deployments/status
+          verbs:
+          - '*'
+        serviceAccountName: pmem-csi-operator
+      deployments:
+      - name: pmem-csi-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: pmem-csi-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: pmem-csi-operator
+                name: pmem-csi-operator
+                pmem-csi.intel.com/webhook: ignore
+            spec:
+              containers:
+              - command:
+                - /usr/local/bin/pmem-csi-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: pmem-csi-operator
+                image: intel/pmem-csi-driver:canary
+                imagePullPolicy: IfNotPresent
+                name: pmem-csi-operator
+                resources: {}
+                securityContext:
+                  readOnlyRootFilesystem: true
+                volumeMounts:
+                - mountPath: /tmp
+                  name: tmp
+              serviceAccountName: pmem-csi-operator
+              volumes:
+              - emptyDir: {}
+                name: tmp
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - services
+          - services/finalizers
+          - serviceaccounts
+          - endpoints
+          - events
+          - secrets
+          - pods
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resourceNames:
+          - pmem-csi-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        serviceAccountName: pmem-csi-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - pmem-csi-operator
+  - pmem-csi
+  - persistent memory
+  - PMEM
+  - Intel
+  links:
+  - name: PMEM-CSI
+    url: https://intel.github.io/pmem-csi/0.7
+  maintainers:
+  - email: olev.kartau@intel.com
+    name: Olev Kartau
+  - email: patrick.ohly@intel.com
+    name: Patrick Ohly
+  - email: amarnath.valluri@intel.com
+    name: Amarnath Valluri
+  maturity: alpha
+  minKubeVersion: 1.15.0
+  provider:
+    name: Intel® Corporation
+  version: 0.7.0

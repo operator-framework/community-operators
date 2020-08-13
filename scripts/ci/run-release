@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+eval $(scripts/ci/ansible-env)
+
+RELEASE_TARGET=''
+GENERATE_OP_CONF=1
+FORCE_RELEASE=0
+#STREAM_NAME=upstream-community-operators
+
+case "$1" in
+
+-u)  echo "Release pipeline upstream"
+        STREAM_NAME='upstream-community-operators'
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-'$STREAM_NAME'.yaml -e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
+    ;;
+-c)  echo "Release pipeline community"
+        STREAM_NAME='community-operators'
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-'$STREAM_NAME'.yaml -e quay_api_token='$AUTOMATION_TOKEN_RELEASE_COMMUNITY' -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog'
+    ;;
+-U)  echo "Release pipeline upstream TO A TEST ORGANIZATION!!"
+        STREAM_NAME='upstream-community-operators'
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-'$STREAM_NAME'.yaml -e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM_TEST' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog'
+    ;;
+-C)  echo "Release pipeline community TO A TEST ORGANIZATION!!"
+        STREAM_NAME='community-operators'
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-'$STREAM_NAME'.yaml -e quay_api_token='$AUTOMATION_TOKEN_RELEASE_COMMUNITY_TEST' -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing_community -e bundle_index_image_namespace=operator_testing_community -e bundle_index_image_name=catalog'
+    ;;
+-t)  echo  "Testing if release is possible"
+        GENERATE_OP_CONF=0
+#        echo "operator_base_dir: $(pwd)/$STREAM_NAME" > /tmp/changed-operators-$STREAM_NAME.yaml
+#        echo "operators:" >> /tmp/changed-operators-$STREAM_NAME.yaml
+#        SINGLE_OPERATOR=$(echo $OP_PATH|awk -F'/' '{print $2}')
+#        echo "- $SINGLE_OPERATOR" >> /tmp/changed-operators-$STREAM_NAME.yaml
+#        cat /tmp/changed-operators-$STREAM_NAME.yaml
+        FORCE_RELEASE=1
+        if [ "$2" = "prod" ]; then
+            if [ "$STREAM_NAME" = "upstream-community-operators" ] ; then CHECK_WITH='-e production_registry_namespace=quay.io/operatorhubio'
+            else CHECK_WITH='-e production_registry_namespace=quay.io/openshift-community-operators'
+            fi
+            CHECK_WITH="$CHECK_WITH -e index_force_rebuild=true"
+        fi
+        RELEASE_TARGET="-e operator_dir=$(pwd)/$OP_PATH $CHECK_WITH"
+    ;;
+-s)  echo  "Testing if release pipeline is working"
+        GENERATE_OP_CONF=0
+        RELEASE_TARGET='-e operators_config=/tmp/changed-operators-upstream-community-operators.yaml'
+        echo "operator_base_dir: $(pwd)/upstream-community-operators" > /tmp/changed-operators-upstream-community-operators.yaml
+
+        cat <<EOT >> /tmp/changed-operators-upstream-community-operators.yaml
+operators:
+- akka-cluster-operator
+EOT
+        cat /tmp/changed-operators-upstream-community-operators.yaml
+        FORCE_RELEASE=1
+    ;;
+*) echo "Syntax: $0 [-r|t|s]"
+   echo "options:"
+   echo "u     upstream - Run release pipeline"
+   echo "c     community - Run release pipeline"
+   echo "t     test - Testing locally if release is possible on this specific operator."
+   echo "s     sample - Testing locally on a sample if release pipeline is working."
+   echo
+
+esac
+
+if [ $(echo $FORCE_RELEASE) == 0 ] ; then
+    if [ -n "${OP_PATH}" ] ;
+      then
+        echo "Release pipeline not running for PR, found modified operator."
+        exit 0
+      fi
+fi
+
+echo "Release pipeline starting"
+
+if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
+
+#remove following paragraph before releasing from linux VM, only valid for Travis
+    echo "Need to clone master, cloning..."
+    mkdir -p /tmp/oper
+    cd /tmp/oper
+    git clone https://github.com/operator-framework/community-operators.git
+    cd community-operators
+    pwd
+    ls
+
+    git log --pretty=format: --name-only --since="1 days ago"
+    git log --pretty=format: --name-only --since="1 days ago" | sort | uniq > /tmp/changed-git-files-orig-$STREAM_NAME
+    grep "^$STREAM_NAME" /tmp/changed-git-files-orig-$STREAM_NAME > /tmp/changed-git-files-$STREAM_NAME
+    cat /tmp/changed-git-files-$STREAM_NAME
+    if [ $(cat /tmp/changed-git-files-$STREAM_NAME|wc -l) -gt 0 ]; then
+        # ignore specific files in upstream-community-operators top level like OWNERS
+        awk -F '/' 'NF>2 {print}' /tmp/changed-git-files-$STREAM_NAME > /tmp/changed-git-files-top-lev-$STREAM_NAME
+        awk -F "$STREAM_NAME/" '{ print $2 }' /tmp/changed-git-files-top-lev-$STREAM_NAME > /tmp/changed-git-files-list-$STREAM_NAME
+        awk -F '/' '{ print $1 }' /tmp/changed-git-files-list-$STREAM_NAME|sort|uniq > /tmp/changed-git-files-opnames-$STREAM_NAME
+        sed 's/^/- /' /tmp/changed-git-files-opnames-$STREAM_NAME > /tmp/changed-operators-$STREAM_NAME.yaml
+        sed -i "1ioperator_base_dir: $(pwd)/$STREAM_NAME\noperators:" /tmp/changed-operators-$STREAM_NAME.yaml
+        CHANGED_OPERATORS=`cat /tmp/changed-operators-$STREAM_NAME.yaml`
+    else
+        CHANGED_OPERATORS=''
+        echo "Nothing to release"
+        exit 0
+    fi
+    echo "Input config:"
+    echo "$CHANGED_OPERATORS"
+
+    pwd
+    ls
+fi
+#fast run, only bundle/index handling using tags
+ansible-pull -vv -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build,deploy_bundles $RELEASE_TARGET

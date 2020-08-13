@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+eval $(scripts/ci/ansible-env)
+
+if [ -z "${OP_PATH}" ] ;
+  then
+    echo "No operator modification detected. Exiting."
+    exit 0
+  else
+    echo "Detected modified Operator in ${OP_PATH}"
+    echo "Detected modified Operator version ${OP_VER}"
+  fi
+
+if [ "$STREAM_NAME" = "upstream-community-operators" ] ; then CHECK_WITH='-e production_registry_namespace=quay.io/operatorhubio'
+else CHECK_WITH='-e production_registry_namespace=quay.io/openshift-community-operators'
+fi
+
+ansible-pull -vv -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=$RUN_UPSTREAM  \
+-e operator_dir=$(pwd)/$OP_PATH -e operator_version=$OP_VER -e catalog_repo_dir=$(pwd) --tags host_build,pure_test $CHECK_WITH

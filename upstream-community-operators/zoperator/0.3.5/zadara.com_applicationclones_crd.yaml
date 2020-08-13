@@ -1,0 +1,176 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: applicationclones.zadara.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    description: Status of the Application Clone
+    name: Status
+    type: string
+  - JSONPath: .spec.cloneConfiguration
+    description: Name of Clone Configuration
+    name: Clone Configuration
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: zadara.com
+  names:
+    kind: ApplicationClone
+    listKind: ApplicationCloneList
+    plural: applicationclones
+    singular: applicationclone
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: ApplicationClone is an internal resource, created by Operator.
+        It includes a list of all restored Kubernetes resources and VPSA Volumes,
+        and provides information about restore status for each item. When ApplicationClone
+        is created, Operator starts cloning VPSA Volumes, and restoring Kubernetes
+        resources, from the ApplicationSnapshot.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            cloneConfiguration:
+              description: Reference For Clone Configuration
+              type: string
+          required:
+          - cloneConfiguration
+          type: object
+        status:
+          properties:
+            pvcs:
+              description: PVCs of the Application
+              items:
+                properties:
+                  name:
+                    description: Name of the PVC
+                    type: string
+                  namespace:
+                    description: Namespace of the PVC
+                    type: string
+                  state:
+                    description: State of the PVC
+                    enum:
+                    - Pending
+                    - Creating
+                    - Created
+                    - Failed
+                    - Deleting
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              type: array
+            pvs:
+              description: PVs of the Application
+              items:
+                properties:
+                  name:
+                    description: Name of the PV
+                    type: string
+                  originalPvc:
+                    description: Name of the original PVC
+                    type: string
+                  pvc:
+                    description: Name of the cloned PVC
+                    type: string
+                  state:
+                    description: State of the PV
+                    enum:
+                    - Pending
+                    - Creating
+                    - Created
+                    - Failed
+                    - Deleting
+                    type: string
+                  vpsaVolume:
+                    description: Name of the cloned volume in the VPSA
+                    type: string
+                required:
+                - name
+                - originalPvc
+                - pvc
+                - vpsaVolume
+                type: object
+              type: array
+            resourceKinds:
+              description: Resource Kinds (Group, Version, Resource) of the Application
+                (including the APIObjects)
+              items:
+                properties:
+                  apiObjects:
+                    description: APIObject from this resource kind
+                    items:
+                      properties:
+                        name:
+                          description: Name of the APIObject
+                          type: string
+                        state:
+                          description: State of the APIObject
+                          enum:
+                          - Pending
+                          - Creating
+                          - Created
+                          - Failed
+                          - Deleting
+                          type: string
+                      required:
+                      - name
+                      - state
+                      type: object
+                    type: array
+                  name:
+                    description: Name of the resource kind (GVR - Group, Version,
+                      Resource)
+                    type: string
+                  state:
+                    description: State of the resource kind
+                    enum:
+                    - Pending
+                    - Creating
+                    - Created
+                    - Failed
+                    - Deleting
+                    type: string
+                required:
+                - apiObjects
+                - name
+                - state
+                type: object
+              type: array
+            state:
+              description: State of the ApplicationClone
+              enum:
+              - Pending
+              - Initialized
+              - Creating
+              - Created
+              - Failed
+              - Deleting
+              type: string
+          required:
+          - state
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
