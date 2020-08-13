@@ -1,0 +1,236 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    certified: 'false'
+    repository: github.com/atef23/jupyterlab-operator
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "jupyter.example.com/v1alpha1",
+          "kind": "Jupyterlab",
+          "metadata": {
+            "name": "jupyterlab-sample"
+          },
+          "spec": {
+            "size": 1
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v0.19.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    containerImage: 'quay.io/aaziz/jupyterlab-operator:v1.0.0'
+    createdAt: '2020-08-11T12:00:00Z'
+    categories: 'AI/Machine Learning, Developer Tools'
+    description: Operator for Jupyterlab
+  name: jupyterlab-operator.v1.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Jupyterlab is the Schema for the jupyterlabs API
+      kind: Jupyterlab
+      name: jupyterlabs.jupyter.example.com
+      version: v1alpha1
+      displayName: Jupyterlab
+  displayName: Jupyterlab
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAADUAAAAhCAIAAAD2w3SqAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEPSURBVFhH7ZbBEYMgEEXTjf1QjTer8GYH9OAMTXilAIvYrLAwxqiJfJnksG+4sIPjk/UrD/pv1A9D/TDUD0P9MO7ws4Y6Q5OXqTBS34S6zMvA/Ubq2KMhO0ohMrVSdxvva+B+PuzTsd+v9y/59YMUIo6bznVDsxTKqOZnQ7FrZVpKJb8D6etU8kuhwcLB1PGbB/HDwsHc57fOr4QXDQeD++21UsKLhoOB/Xa/czG8cDgY0O80vJsvdhFf+8krb8ilu87xDxuKL+/ZuuN+WeYGsi31Jq2/sLVf++U+vo/NySCH92Tkh/zElf7Ofjmq5D3g0bd7CU39jQvssDwAX1sEnI/KqB+G+mGoH4b6IRA9AfM03ocXOND7AAAAAElFTkSuQmCC
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - jupyter.example.com
+          resources:
+          - jupyterlabs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - jupyter.example.com
+          resources:
+          - jupyterlabs/status
+          verbs:
+          - get
+          - patch
+          - update
+        serviceAccountName: jupyterlab-operator-manager-role
+      - rules:
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: jupyterlab-operator-proxy-role
+      - rules:
+        - nonResourceURLs:
+          - /metrics
+          verbs:
+          - get
+        serviceAccountName: jupyterlab-operator-metrics-reader
+      - rules:
+        - verbs:
+          - '*'
+          apiGroups:
+            - '*'
+          resources:
+            - '*'
+        - verbs:
+          - '*'
+          nonResourceURLs:
+            - '*'
+        serviceAccountName: default
+      deployments:
+      - name: jupyterlab-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                command:
+                - /manager
+                image: quay.io/aaziz/jupyterlab-operator:v1.0.0
+                name: manager
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 30Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: jupyterlab-operator-leader-election-role
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - ide
+  - ai
+  - ml
+  links:
+  - name: Jupyterlab Operator
+    url: https://jupyterlab-operator.domain
+  maturity: alpha
+  maintainers:
+    - name: Atef Aziz
+      email: aaziz@redhat.com
+  provider:
+    name: Atef Aziz
+  description: >
+    Jupyterlab provides an interface for the development of Jupyter notebooks. See Jupyter project documentation and resources for detailed information:
+
+      [Jupyter GitHub] (https://github.com/jupyter)
+
+      [Jupyter Project] (https://jupyter.org)
+
+
+    **Prerequisites:**
+
+    - Cluster administrator privileges
+
+
+    **Installation:**
+
+
+    1. Install the operator through the catalog.
+
+    2. Select Jupyterlab under "Installed Operators"
+
+    3. Create an instance of Jupyterlab using the default configuration "jupyterlab-sample"
+
+    3. Once the instance has started, the route to the Jupyterlab interface is created under Networking -> Routes
+
+    4.Access the Jupyterlab pod log to obtain the login authorization token
+  version: 1.0.0
