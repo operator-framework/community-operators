@@ -1,0 +1,114 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: addressplans.admin.enmasse.io
+  labels:
+    app: enmasse
+spec:
+  group: admin.enmasse.io
+  version: v1beta2
+  scope: Namespaced
+  names:
+    kind: AddressPlan
+    listKind: AddressPlanList
+    singular: addressplan
+    plural: addressplans
+    categories:
+    - enmasse
+  versions:
+    - name: v1beta2
+      served: true
+      storage: true
+    - name: v1beta1
+      served: true
+      storage: false
+    - name: v1alpha1
+      served: true
+      storage: false
+  additionalPrinterColumns:
+  - name: Phase
+    type: string
+    priority: 0
+    description: The phase of the address plan
+    JSONPath: .status.phase
+  - name: Status
+    type: string
+    priority: 1
+    description: The status of the address plan
+    JSONPath: .status.message
+  - name: Age
+    priority: 0
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  validation:
+    openAPIV3Schema:
+      type: object
+      description: AddressPlan describes the resource usage and common properties of an address. This resource is created by the service administrator.
+      properties:
+        status:
+          properties:
+            phase:
+              type: string
+              description: "Phase of the address plan."
+            message:
+              type: string
+              description: "Status and error messages for the address plan."
+        spec:
+          type: object
+          required:
+            - addressType
+            - resources
+          properties:
+            displayName:
+              type: string
+            displayOrder:
+              type: integer
+            shortDescription:
+              type: string
+            longDescription:
+              type: string
+            addressType:
+              type: string
+            partitions:
+              type: integer
+            resources:
+              type: object
+              properties:
+                router:
+                  type: number
+                broker:
+                  type: number
+            messageTtl:
+              type: object
+              description: "Restricts message time-to-live (TTL). Applies to address types queue and topic only."
+              properties:
+                maximum:
+                  description: "Imposes a maximum TTL value (in milliseconds) for messages arriving at the address.  Messages arriving with TTL values greater than this value (or no TTL value) will have their expiration adjusted."
+                  type: integer
+                minimum:
+                  description: "Imposes a minimum TTL value (in milliseconds) for messages arriving at the address.  Messages arriving with TTL values less than this value will have their expiration adjusted."
+                  type: integer
+        displayName:
+          type: string
+        displayOrder:
+          type: integer
+        shortDescription:
+          type: string
+        longDescription:
+          type: string
+        uuid:
+          type: string
+        addressType:
+          type: string
+        requiredResources:
+          type: array
+          items:
+            type: object
+            required:
+            - name
+            - credit
+            properties:
+              name:
+                type: string
+              credit:
+                type: number

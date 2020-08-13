@@ -1,0 +1,314 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: snapscheduler.v1.1.1
+  namespace: placeholder
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "snapscheduler.backube/v1",
+          "kind": "SnapshotSchedule",
+          "metadata": {
+            "name": "daily"
+          },
+          "spec": {
+            "retention": {
+              "maxCount": 7
+            },
+            "schedule": "0 0 * * *"
+          }
+        }
+      ]
+    categories: Storage
+    certified: 'false'
+    createdAt: 'Fri Apr 24, 2020'
+    description: >-
+      The SnapScheduler operator takes snapshots of Kubernetes CSI-based
+      persistent volumes according to user-supplied schedules.
+    containerImage: 'quay.io/backube/snapscheduler:1.1.1'
+    support: 'https://gitter.im/backube/snapscheduler'
+    capabilities: Full Lifecycle
+    repository: 'https://github.com/backube/snapscheduler'
+spec:
+  displayName: SnapScheduler
+  description: |-
+    ## About this operator
+
+    The SnapScheduler operator takes snapshots of CSI-based PersistentVolumes
+    according to a configurable
+    [Cron-like](https://en.wikipedia.org/wiki/Cron#Overview) schedule. The
+    schedules include configurable retention policies for snapshots as well as
+    selectors to limit the volumes that are snapshotted. An example schedule
+    could be:
+
+    > *Snapshot **all volumes** in a namespace **daily at midnight**, retaining
+    > the most recent **7** snapshots for each volume.*
+
+    Multiple schedules can be combined to provide more elaborate protection
+    schemes. For example, a given volume (or collection of volumes) could be
+    protected with:
+
+    - 6 hourly snapshots
+    - 7 daily snapshots
+    - 4 weekly snapshots
+    - 12 monthly snapshots
+
+    ### How it works
+
+    The operator watches for `SnapshotSchedule` CRs in each namespace. When the
+    current time matches the schedule's cronspec, the operator creates a
+    `VolumeSnapshot` object for each `PersistentVolumeClaim` in the namespace
+    (or subset thereof if a label selector is provided). The `VolumeSnapshot`
+    objects are named according to the template:
+    `<pvcname>-<schedulename>-<timestamp>`. After creating the new snapshots,
+    the oldest snapshots are removed if necessary, according to the retention
+    policy of the schedule.
+
+    Please see the [full
+    documentation](https://backube.github.io/snapscheduler/) for more
+    information.
+
+    ## Requirements
+
+    - OpenShift >= 4.4 (Kubernetes >= 1.17)
+    - CSI-based storage driver that supports snapshots (i.e. has the
+      `CREATE_DELETE_SNAPSHOT` capability)
+
+    ## Examples
+
+    The schedule for snapshotting is controlled by the
+    `snapshotschedules.snapscheduler.backube` Custom Resource. This is a
+    namespaced resource that applies only to the PersistentVolumeClaims in its
+    namespace.
+
+    Below is a simple example that keeps 7 daily (taken at midnight) snapshots
+    of all PVCs in a given namespace:
+
+    ```yaml
+    ---
+    apiVersion: snapscheduler.backube/v1
+    kind: SnapshotSchedule
+    metadata:
+      name: daily
+    spec:
+      retention:
+        maxCount: 7
+      schedule: "0 0 * * *"
+    ```
+
+    See the [usage
+    documentation](https://backube.github.io/snapscheduler/usage.html) for full
+    details, including how to:
+
+    - add label selectors to restrict which PVCs this schedule applies to
+    - set the VolumeSnapshotClass used by the schedule
+    - apply custom labels to the automatically created VolumeSnapshot objects
+  maturity: stable
+  version: 1.1.1
+  # replaces: snapscheduler.v0.0.0
+  minKubeVersion: 1.17.0
+  keywords:
+    - csi
+    - snapshot
+    - storage
+    - scheduler
+  maintainers:
+    - name: John Strunk
+      email: jstrunk@redhat.com
+  provider:
+    name: Backube
+  labels: {}
+  selector:
+    matchLabels: {}
+  links:
+    - name: Documentation
+      url: 'https://backube.github.io/snapscheduler/'
+    - name: Source
+      url: 'https://github.com/backube/snapscheduler'
+    - name: Blog
+      url: 'https://backube.github.io/'
+    - name: Support/discussion on gitter.im
+      url: 'https://gitter.im/backube/snapscheduler'
+  icon:
+    - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgIHhtbG5zOmNjPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyMiCiAgIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgd2lkdGg9IjIxMG1tIgogICBoZWlnaHQ9IjI5N21tIgogICB2aWV3Qm94PSIwIDAgMjEwIDI5NyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnOTc5MSIKICAgc29kaXBvZGk6ZG9jbmFtZT0ic25hcHNjaGVkdWxlci5zdmciCiAgIGlua3NjYXBlOnZlcnNpb249IjAuOTIuNCAodW5rbm93bikiPgogIDx0aXRsZQogICAgIGlkPSJ0aXRsZTgzMyI+c25hcHNjaGVkdWxlciBsb2dvPC90aXRsZT4KICA8ZGVmcwogICAgIGlkPSJkZWZzOTc4NSI+CiAgICA8ZmlsdGVyCiAgICAgICBzdHlsZT0iY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzOnNSR0I7IgogICAgICAgaW5rc2NhcGU6bGFiZWw9IkRyb3AgU2hhZG93IgogICAgICAgaWQ9ImZpbHRlcjE1MzEiPgogICAgICA8ZmVGbG9vZAogICAgICAgICBmbG9vZC1vcGFjaXR5PSIwLjQ5ODAzOSIKICAgICAgICAgZmxvb2QtY29sb3I9InJnYigwLDAsMCkiCiAgICAgICAgIHJlc3VsdD0iZmxvb2QiCiAgICAgICAgIGlkPSJmZUZsb29kMTUyMSIgLz4KICAgICAgPGZlQ29tcG9zaXRlCiAgICAgICAgIGluPSJmbG9vZCIKICAgICAgICAgaW4yPSJTb3VyY2VHcmFwaGljIgogICAgICAgICBvcGVyYXRvcj0iaW4iCiAgICAgICAgIHJlc3VsdD0iY29tcG9zaXRlMSIKICAgICAgICAgaWQ9ImZlQ29tcG9zaXRlMTUyMyIgLz4KICAgICAgPGZlR2F1c3NpYW5CbHVyCiAgICAgICAgIGluPSJjb21wb3NpdGUxIgogICAgICAgICBzdGREZXZpYXRpb249IjEiCiAgICAgICAgIHJlc3VsdD0iYmx1ciIKICAgICAgICAgaWQ9ImZlR2F1c3NpYW5CbHVyMTUyNSIgLz4KICAgICAgPGZlT2Zmc2V0CiAgICAgICAgIGR4PSIyIgogICAgICAgICBkeT0iMiIKICAgICAgICAgcmVzdWx0PSJvZmZzZXQiCiAgICAgICAgIGlkPSJmZU9mZnNldDE1MjciIC8+CiAgICAgIDxmZUNvbXBvc2l0ZQogICAgICAgICBpbj0iU291cmNlR3JhcGhpYyIKICAgICAgICAgaW4yPSJvZmZzZXQiCiAgICAgICAgIG9wZXJhdG9yPSJvdmVyIgogICAgICAgICByZXN1bHQ9ImNvbXBvc2l0ZTIiCiAgICAgICAgIGlkPSJmZUNvbXBvc2l0ZTE1MjkiIC8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPHNvZGlwb2RpOm5hbWVkdmlldwogICAgIGlkPSJiYXNlIgogICAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgICBib3JkZXJjb2xvcj0iIzY2NjY2NiIKICAgICBib3JkZXJvcGFjaXR5PSIxLjAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAuMCIKICAgICBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIgogICAgIGlua3NjYXBlOnpvb209IjAuNzYiCiAgICAgaW5rc2NhcGU6Y3g9IjI1OC40NTQyMSIKICAgICBpbmtzY2FwZTpjeT0iNTU0LjczNjg0IgogICAgIGlua3NjYXBlOmRvY3VtZW50LXVuaXRzPSJtbSIKICAgICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJsYXllcjEiCiAgICAgc2hvd2dyaWQ9ImZhbHNlIgogICAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgICBpbmtzY2FwZTp3aW5kb3ctaGVpZ2h0PSIxMTAzIgogICAgIGlua3NjYXBlOndpbmRvdy14PSIwIgogICAgIGlua3NjYXBlOndpbmRvdy15PSIyNyIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIiAvPgogIDxtZXRhZGF0YQogICAgIGlkPSJtZXRhZGF0YTk3ODgiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPnNuYXBzY2hlZHVsZXIgbG9nbzwvZGM6dGl0bGU+CiAgICAgICAgPGNjOmxpY2Vuc2UKICAgICAgICAgICByZGY6cmVzb3VyY2U9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LXNhLzQuMC8iIC8+CiAgICAgICAgPGRjOnJpZ2h0cz4KICAgICAgICAgIDxjYzpBZ2VudD4KICAgICAgICAgICAgPGRjOnRpdGxlPkNDIEJZLVNBPC9kYzp0aXRsZT4KICAgICAgICAgIDwvY2M6QWdlbnQ+CiAgICAgICAgPC9kYzpyaWdodHM+CiAgICAgIDwvY2M6V29yaz4KICAgICAgPGNjOkxpY2Vuc2UKICAgICAgICAgcmRmOmFib3V0PSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9saWNlbnNlcy9ieS1zYS80LjAvIj4KICAgICAgICA8Y2M6cGVybWl0cwogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjUmVwcm9kdWN0aW9uIiAvPgogICAgICAgIDxjYzpwZXJtaXRzCiAgICAgICAgICAgcmRmOnJlc291cmNlPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyNEaXN0cmlidXRpb24iIC8+CiAgICAgICAgPGNjOnJlcXVpcmVzCiAgICAgICAgICAgcmRmOnJlc291cmNlPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyNOb3RpY2UiIC8+CiAgICAgICAgPGNjOnJlcXVpcmVzCiAgICAgICAgICAgcmRmOnJlc291cmNlPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyNBdHRyaWJ1dGlvbiIgLz4KICAgICAgICA8Y2M6cGVybWl0cwogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjRGVyaXZhdGl2ZVdvcmtzIiAvPgogICAgICAgIDxjYzpyZXF1aXJlcwogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjU2hhcmVBbGlrZSIgLz4KICAgICAgPC9jYzpMaWNlbnNlPgogICAgPC9yZGY6UkRGPgogIDwvbWV0YWRhdGE+CiAgPGcKICAgICBpbmtzY2FwZTpsYWJlbD0iTGF5ZXIgMSIKICAgICBpbmtzY2FwZTpncm91cG1vZGU9ImxheWVyIgogICAgIGlkPSJsYXllcjEiPgogICAgPGcKICAgICAgIGlkPSJnMTU0MiI+CiAgICAgIDxnCiAgICAgICAgIGlkPSJnMTAzNjYiPgogICAgICAgIDxwYXRoCiAgICAgICAgICAgZD0iTSAxMDYuMzYzMjgsNjYuMDg1OTM4IEMgODIuNjU1MjIzLDY2LjA4NjExIDU5LjA4ODk4Niw3NS43NDYyOTMgNDIuMzEyNSw5Mi4zNTM1MTYgMjUuNTM2MDE0LDEwOC45NjA3NCAxNS43NTk2MDksMTMyLjMxNjQgMTUuNzU5NzY2LDE1NS44MjAzMSBjIC0xLjU3ZS00LDIzLjUwMzkxIDkuNzc2MjQ4LDQ2Ljg1OTU4IDI2LjU1MjczNCw2My40NjY4IDE2Ljc3NjQ4NiwxNi42MDcyMiA0MC4zNDI3MjMsMjYuMjY3NCA2NC4wNTA3OCwyNi4yNjc1OCAyMy43MDgwNiwtMS44ZS00IDQ3LjI3NDMsLTkuNjYwMzYgNjQuMDUwNzgsLTI2LjI2NzU4IDE2Ljc3NjQ5LC0xNi42MDcyMiAyNi41NTI4OSwtMzkuOTYyODkgMjYuNTUyNzQsLTYzLjQ2NjggMS41ZS00LC0yMy41MDM5MSAtOS43NzYyNSwtNDYuODU5NTcgLTI2LjU1Mjc0LC02My40NjY3OTQgQyAxNTMuNjM3NTgsNzUuNzQ2MjkzIDEzMC4wNzEzNCw2Ni4wODYxMSAxMDYuMzYzMjgsNjYuMDg1OTM4IFoiCiAgICAgICAgICAgaW5rc2NhcGU6aHJlZj0iI3BhdGgxMDMzNiIKICAgICAgICAgICBpZD0icGF0aDEwMzk3IgogICAgICAgICAgIHN0eWxlPSJvcGFjaXR5OjE7ZmlsbDpub25lO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpldmVub2RkO3N0cm9rZTojMDgwODA4O3N0cm9rZS13aWR0aDoyO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDo0O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxIgogICAgICAgICAgIHhsaW5rOmhyZWY9IiNwYXRoMTAzMzYiCiAgICAgICAgICAgaW5rc2NhcGU6b3JpZ2luYWw9Ik0gMTA2LjM2MzI4IDcwLjU0NDkyMiBBIDg2LjE0NTE2NCA4NS4yNzQ4MjYgMCAwIDAgMjAuMjE4NzUgMTU1LjgyMDMxIEEgODYuMTQ1MTY0IDg1LjI3NDgyNiAwIDAgMCAxMDYuMzYzMjggMjQxLjA5NTcgQSA4Ni4xNDUxNjQgODUuMjc0ODI2IDAgMCAwIDE5Mi41MDc4MSAxNTUuODIwMzEgQSA4Ni4xNDUxNjQgODUuMjc0ODI2IDAgMCAwIDEwNi4zNjMyOCA3MC41NDQ5MjIgeiAiCiAgICAgICAgICAgaW5rc2NhcGU6cmFkaXVzPSI0LjQ1ODAzMTciCiAgICAgICAgICAgc29kaXBvZGk6dHlwZT0iaW5rc2NhcGU6b2Zmc2V0IiAvPgogICAgICAgIDxlbGxpcHNlCiAgICAgICAgICAgc3R5bGU9Im9wYWNpdHk6MTtmaWxsOm5vbmU7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiMwODA4MDg7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjQ7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjEiCiAgICAgICAgICAgaWQ9InBhdGgxMDMzNiIKICAgICAgICAgICBjeT0iMTU1LjgyMDM0IgogICAgICAgICAgIGN4PSIxMDYuMzYzIgogICAgICAgICAgIHJ4PSI4Ni4xNDUxNjQiCiAgICAgICAgICAgcnk9Ijg1LjI3NDgyNiIgLz4KICAgICAgICA8cGF0aAogICAgICAgICAgIHNvZGlwb2RpOnR5cGU9InN0YXIiCiAgICAgICAgICAgc3R5bGU9Im9wYWNpdHk6MTtmaWxsOm5vbmU7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiMwODA4MDg7c3Ryb2tlLXdpZHRoOjIuMDM3OTk4Njg7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjQ7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjEiCiAgICAgICAgICAgaWQ9InBhdGgxMDM0MCIKICAgICAgICAgICBzb2RpcG9kaTpzaWRlcz0iNyIKICAgICAgICAgICBzb2RpcG9kaTpjeD0iMTA2LjY5NjY2IgogICAgICAgICAgIHNvZGlwb2RpOmN5PSIxNTYuMTMwMzkiCiAgICAgICAgICAgc29kaXBvZGk6cjE9Ijg1LjE0MzAyOCIKICAgICAgICAgICBzb2RpcG9kaTpyMj0iNTkuNjY1NTA4IgogICAgICAgICAgIHNvZGlwb2RpOmFyZzE9Ii0xLjU3MDc5NjMiCiAgICAgICAgICAgc29kaXBvZGk6YXJnMj0iLTAuMjMzOTUzMTgiCiAgICAgICAgICAgaW5rc2NhcGU6ZmxhdHNpZGVkPSJmYWxzZSIKICAgICAgICAgICBpbmtzY2FwZTpyb3VuZGVkPSIwIgogICAgICAgICAgIGlua3NjYXBlOnJhbmRvbWl6ZWQ9IjAiCiAgICAgICAgICAgZD0ibSAxMDYuNjk2NjcsNzAuOTg3MzU4IDU4LjA0MDA3LDcxLjMxMTA4MiA4LjUyNzQyLC0zOS4yNTM4NiAtMTkuNTY1ODUsODkuODM5MjkgMzYuMDA2NjcsLTE3LjgwNzM4IC04Mi40MzgzLDQwLjcxNjY4IDM2LjM3MjE2LDE3LjA0ODQ0IC04My4yMzMwMjEsLTM5LjA2NjQzIDkuMzQ4NjY2LDM5LjA2NjQyIC0yMS4zNTE1NzgsLTg5LjQzMTcxIC0yNC43MTQ1NTksMzEuNjY2NiA1Ni42MDgwMzQsLTcyLjQ1MzA5IC00MC4xNjcyMTgsMC40MjExNyA5MS45NDA2NDYsLTAuOTE1ODIgeiIKICAgICAgICAgICBpbmtzY2FwZTp0cmFuc2Zvcm0tY2VudGVyLXg9IjEuODg3NDQyZS0wNiIKICAgICAgICAgICBpbmtzY2FwZTp0cmFuc2Zvcm0tY2VudGVyLXk9Ii00LjIxNTk0MiIgLz4KICAgICAgICA8cGF0aAogICAgICAgICAgIHN0eWxlPSJvcGFjaXR5OjE7ZmlsbDojMDA4MGZmO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpldmVub2RkO3N0cm9rZTojMDA4MGZmO3N0cm9rZS13aWR0aDozLjc3OTUyNzYxO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDo0O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxIgogICAgICAgICAgIGQ9Im0gMzE4LjI4NjEzLDc2OS42NzcxOSBjIC00Ny4wMDU0OCwtMjIuMDgxMzcgLTg1LjYxNzAzLC00MC4zMDA0NyAtODUuODAzNDQsLTQwLjQ4Njg3IC0wLjE4NjQsLTAuMTg2NDEgLTEwLjMwNjM4LC00Mi4xMDMwNiAtMjIuNDg4ODMsLTkzLjE0ODExIGwgLTIyLjE0OTkxLC05Mi44MDkxOCA1OC42MTEyNSwtNzUuMDUzNDEgNTguNjExMjUsLTc1LjA1MzQxIDI1LjY1Nzg5LC0wLjc5NDkxIGMgMTQuMTExODQsLTAuNDM3MjEgNTcuMzI5MzQsLTAuOTU4NTQgOTYuMDM4ODcsLTEuMTU4NTMgbCA3MC4zODA5OSwtMC4zNjM2MSA2MC4yOTE2OCw3NC4wNDQ5MyA2MC4yOTE3LDc0LjA0NDkyIC0yMC4xNDYzNiw5My4wNjAzNSAtMjAuMTQ2MzUsOTMuMDYwMzMgLTg0Ljg2ODQyLDQyLjM0MzUgYyAtNDYuNjc3NjQsMjMuMjg4OTIgLTg1Ljc1NjU4LDQyLjM3MDE0IC04Ni44NDIxMSw0Mi40MDI3MiAtMS4wODU1MywwLjAzMjUgLTQwLjQzMjcyLC0xOC4wMDczNiAtODcuNDM4MjEsLTQwLjA4ODcyIHoiCiAgICAgICAgICAgaWQ9InBhdGgxMDM0NCIKICAgICAgICAgICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICAgICAgICAgIHRyYW5zZm9ybT0ic2NhbGUoMC4yNjQ1ODMzMykiIC8+CiAgICAgIDwvZz4KICAgICAgPHJlY3QKICAgICAgICAgeT0iNDcuNTExODQ1IgogICAgICAgICB4PSIxMDEuMjc4OTgiCiAgICAgICAgIGhlaWdodD0iMTguMTAzMDY5IgogICAgICAgICB3aWR0aD0iMTAuMTY4MDQ1IgogICAgICAgICBpZD0icmVjdDEwMzQ2IgogICAgICAgICBzdHlsZT0ib3BhY2l0eToxO2ZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6IzAwMDQwMDtzdHJva2Utd2lkdGg6MS41OTM2NTg4O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDo0O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxIiAvPgogICAgICA8cmVjdAogICAgICAgICByeD0iMC41IgogICAgICAgICByeT0iMC41IgogICAgICAgICB5PSIzNy4yMDI1NzYiCiAgICAgICAgIHg9Ijk2LjU5MTYwNiIKICAgICAgICAgaGVpZ2h0PSIxMC4yNDcyMjQiCiAgICAgICAgIHdpZHRoPSIxOS41NDI3OCIKICAgICAgICAgaWQ9InJlY3QxMDM0Ni04IgogICAgICAgICBzdHlsZT0ib3BhY2l0eToxO2ZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6IzAwMDQwMDtzdHJva2Utd2lkdGg6MS42NjIyNTE1OTtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6NDtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MSIgLz4KICAgICAgPGcKICAgICAgICAgaWQ9ImcxMDM3MC03IgogICAgICAgICB0cmFuc2Zvcm09InJvdGF0ZSgzMy43MzA0NCwxMTIuNzk3ODIsMTYzLjYwMTMzKSI+CiAgICAgICAgPHJlY3QKICAgICAgICAgICBzdHlsZT0ib3BhY2l0eToxO2ZpbGw6IzAwMDQwMDtmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6IzAwMDQwMDtzdHJva2Utd2lkdGg6MS41OTM2NTg4O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDo0O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxIgogICAgICAgICAgIGlkPSJyZWN0MTAzNDYtMCIKICAgICAgICAgICB3aWR0aD0iMTAuMTY4MDQ1IgogICAgICAgICAgIGhlaWdodD0iMTguMTAzMDY5IgogICAgICAgICAgIHg9IjEwMS4yNzg5OCIKICAgICAgICAgICB5PSI1MS4yMTYwMTEiIC8+CiAgICAgICAgPHJlY3QKICAgICAgICAgICByeD0iMC41IgogICAgICAgICAgIHJ5PSIwLjUiCiAgICAgICAgICAgc3R5bGU9Im9wYWNpdHk6MTtmaWxsOiMwMDA0MDA7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiMwMDA0MDA7c3Ryb2tlLXdpZHRoOjEuNjYyMjUxNTk7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjQ7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjEiCiAgICAgICAgICAgaWQ9InJlY3QxMDM0Ni04LTgiCiAgICAgICAgICAgd2lkdGg9IjE5LjU0Mjc4IgogICAgICAgICAgIGhlaWdodD0iMTAuMjQ3MjI0IgogICAgICAgICAgIHg9Ijk2LjU5MTYwNiIKICAgICAgICAgICB5PSI0MC45MDY3NDIiIC8+CiAgICAgIDwvZz4KICAgICAgPHRleHQKICAgICAgICAgaWQ9InRleHQxMzg3IgogICAgICAgICB5PSIxOTEuMzMzNzkiCiAgICAgICAgIHg9IjcyLjA1MDIyNCIKICAgICAgICAgc3R5bGU9ImZvbnQtc3R5bGU6bm9ybWFsO2ZvbnQtd2VpZ2h0Om5vcm1hbDtmb250LXNpemU6MTAuNTgzMzMzMDJweDtsaW5lLWhlaWdodDoxLjI1O2ZvbnQtZmFtaWx5OnNhbnMtc2VyaWY7bGV0dGVyLXNwYWNpbmc6MHB4O3dvcmQtc3BhY2luZzowcHg7ZmlsbDojMDAwMDAwO2ZpbGwtb3BhY2l0eToxO3N0cm9rZTpub25lO3N0cm9rZS13aWR0aDowLjI2NDU4MzMyO2ZpbHRlcjp1cmwoI2ZpbHRlcjE1MzEpIgogICAgICAgICB4bWw6c3BhY2U9InByZXNlcnZlIj48dHNwYW4KICAgICAgICAgICBzdHlsZT0iZm9udC1zdHlsZTpub3JtYWw7Zm9udC12YXJpYW50Om5vcm1hbDtmb250LXdlaWdodDpib2xkO2ZvbnQtc3RyZXRjaDpub3JtYWw7Zm9udC1zaXplOjEwNS44MzMzMzU4OHB4O2ZvbnQtZmFtaWx5OidMaWJlcmF0aW9uIFNhbnMnOy1pbmtzY2FwZS1mb250LXNwZWNpZmljYXRpb246J0xpYmVyYXRpb24gU2FucywgQm9sZCc7Zm9udC12YXJpYW50LWxpZ2F0dXJlczpub3JtYWw7Zm9udC12YXJpYW50LWNhcHM6bm9ybWFsO2ZvbnQtdmFyaWFudC1udW1lcmljOm5vcm1hbDtmb250LWZlYXR1cmUtc2V0dGluZ3M6bm9ybWFsO3RleHQtYWxpZ246c3RhcnQ7d3JpdGluZy1tb2RlOmxyLXRiO3RleHQtYW5jaG9yOnN0YXJ0O3N0cm9rZS13aWR0aDowLjI2NDU4MzMyIgogICAgICAgICAgIHk9IjE5MS4zMzM3OSIKICAgICAgICAgICB4PSI3Mi4wNTAyMjQiCiAgICAgICAgICAgaWQ9InRzcGFuMTM4NSIKICAgICAgICAgICBzb2RpcG9kaTpyb2xlPSJsaW5lIj5TPC90c3Bhbj48L3RleHQ+CiAgICAgIDxwYXRoCiAgICAgICAgIGQ9Im0gMTA1LjUyMTQ4LDExLjg0NzY1NiBjIC02LjI4ODk3OSwyLjNlLTUgLTEyLjUzMDczNCwyLjY1NTkwNCAtMTYuOTQ5MjE0LDcuMTgxNjQxIC00LjQxODQ4MSw0LjUyNTczNyAtNi45NzA1NTYsMTAuODU1MzE4IC02Ljk3MDcwNCwxNy4yMTY3OTcgMS40OGUtNCw2LjM2MTQ3OSAyLjU1MjIyMywxMi42OTEwNiA2Ljk3MDcwNCwxNy4yMTY3OTcgNC40MTg0OCw0LjUyNTczNyAxMC42NjAyMzUsNy4xODE2MTggMTYuOTQ5MjE0LDcuMTgxNjQgNi4yODg5OSwtMS44ZS01IDEyLjUzMDc0LC0yLjY1NTkwMyAxNi45NDkyMiwtNy4xODE2NCA0LjQxODQ5LC00LjUyNTczOCA2Ljk3MDU2LC0xMC44NTUzMTYgNi45NzA3MSwtMTcuMjE2Nzk3IC0xLjVlLTQsLTYuMzYxNDgyIC0yLjU1MjIyLC0xMi42OTEwNiAtNi45NzA3MSwtMTcuMjE2Nzk3IC00LjQxODQ4LC00LjUyNTczOCAtMTAuNjYwMjMsLTcuMTgxNjIzIC0xNi45NDkyMiwtNy4xODE2NDEgeiIKICAgICAgICAgaW5rc2NhcGU6aHJlZj0iI3BhdGg4MzQiCiAgICAgICAgIGlkPSJwYXRoODM2IgogICAgICAgICBzdHlsZT0ib3BhY2l0eToxO2ZpbGw6I2ZhODJhYjtmaWxsLW9wYWNpdHk6MDtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6IzA4MDgwODtzdHJva2Utd2lkdGg6MS45OTk5OTk4ODtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6NDtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MSIKICAgICAgICAgeGxpbms6aHJlZj0iI3BhdGg4MzQiCiAgICAgICAgIGlua3NjYXBlOm9yaWdpbmFsPSJNIDEwNi4wNTA3OCAxNi4wNTQ2ODggQSAxOS43MTI5NTUgMjAuMTkxODg3IDAgMCAwIDg2LjMzNzg5MSAzNi4yNDYwOTQgQSAxOS43MTI5NTUgMjAuMTkxODg3IDAgMCAwIDEwNi4wNTA3OCA1Ni40Mzc1IEEgMTkuNzEyOTU1IDIwLjE5MTg4NyAwIDAgMCAxMjUuNzYzNjcgMzYuMjQ2MDk0IEEgMTkuNzEyOTU1IDIwLjE5MTg4NyAwIDAgMCAxMDYuMDUwNzggMTYuMDU0Njg4IHogIgogICAgICAgICBpbmtzY2FwZTpyYWRpdXM9IjQuMjA3Mzg5OCIKICAgICAgICAgc29kaXBvZGk6dHlwZT0iaW5rc2NhcGU6b2Zmc2V0IiAvPgogICAgICA8ZWxsaXBzZQogICAgICAgICByeT0iMjAuMTkxODg3IgogICAgICAgICByeD0iMTkuNzEyOTU1IgogICAgICAgICBjeT0iMzYuMjQ2MTU5IgogICAgICAgICBjeD0iMTA2LjA1MDY5IgogICAgICAgICBpZD0icGF0aDgzNCIKICAgICAgICAgc3R5bGU9Im9wYWNpdHk6MTtmaWxsOiNmYTgyYWI7ZmlsbC1vcGFjaXR5OjA7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiMwODA4MDg7c3Ryb2tlLXdpZHRoOjEuOTk5OTk5ODg7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjQ7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjEiIC8+CiAgICA8L2c+CiAgPC9nPgo8L3N2Zz4K
+      mediatype: image/svg+xml
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - name: snapshotschedules.snapscheduler.backube
+        displayName: SnapshotSchedule
+        group: snapscheduler.backube
+        kind: SnapshotSchedule
+        version: v1
+        description: >-
+          A SnapshotSchedule defines a frequency, retention policy, and PVC
+          selection criteria for automated volume snapshots.
+        specDescriptors:
+          # https://github.com/openshift/console/blob/master/frontend/packages/operator-lifecycle-manager/src/components/descriptors/reference/reference.md
+          - displayName: Schedule
+            description: Cronspec representing the schedule for snapshots
+            path: schedule
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - displayName: Maximum snapshots
+            description: The maximum number of snapshots to retain per PVC
+            path: retention.maxCount
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+          - displayName: PVC Selector
+            description: >-
+              A filter to select the PVCs to snapshot with this schedule
+            path: claimSelector
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:selector:core:v1:PersistentVolumeClaim'
+          - displayName: VolumeSnapshotClass name
+            description: The name of the VolumeSnapshotClass to use
+            path: snapshotTemplate.snapshotClassName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:SnapshotTemplate'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+        statusDescriptors:
+          - displayName: Next Snapshot
+            description: The time of the next scheduled snapshot
+            path: nextSnapshotTime
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - displayName: Last Snapshot
+            description: The time of the last scheduled snapshot
+            path: lastSnapshotTime
+            x-descriptors:
+              - 'urn:alm:descriptor:text'
+          - displayName: Conditions
+            description: Conditions
+            path: conditions
+            x-descriptors:
+              - 'urn:alm:descriptor:io.kubernetes.conditions'
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - services
+                - services/finalizers
+                - configmaps
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - snapscheduler
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+                - deployments
+              verbs:
+                - get
+            - apiGroups:
+                - snapscheduler.backube
+              resources:
+                - '*'
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - snapshot.storage.k8s.io
+              resources:
+                - volumesnapshots
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+              verbs:
+                - get
+                - list
+                - watch
+          serviceAccountName: snapscheduler
+      deployments:
+        - name: snapscheduler
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                name: snapscheduler
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: snapscheduler
+              spec:
+                containers:
+                  - command:
+                      - snapscheduler
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: snapscheduler
+                    image: quay.io/backube/snapscheduler:1.1.1
+                    imagePullPolicy: IfNotPresent
+                    name: snapscheduler
+                    resources:
+                      requests:
+                        cpu: 10m
+                        memory: 100Mi
+                nodeSelector:
+                  kubernetes.io/arch: amd64
+                  kubernetes.io/os: linux
+                serviceAccountName: snapscheduler
+    strategy: deployment
+  installModes:
+    - supported: false
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces

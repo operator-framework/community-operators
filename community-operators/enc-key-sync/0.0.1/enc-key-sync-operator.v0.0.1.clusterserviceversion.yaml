@@ -1,0 +1,339 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: enc-key-sync-operator.v0.0.1
+  namespace: placeholder
+  annotations:
+    capabilities: Basic Install
+    categories: Security
+    certified: 'false'
+    containerImage: docker.io/lumjjb/enc-key-sync-operator:v0.0.1
+    createdAt: 2020-07-21 20:00:00
+    repository: https://github.com/IBM/k8s-enc-image-operator
+    support: IBM
+    alm-examples: |
+      [
+        {
+          "apiVersion": "oci.crypt/v1alpha1",
+          "kind": "EncKeySync",
+          "metadata": {
+            "name": "example-enckeysync"
+          },
+          "spec": {
+            "keysDir": "/etc/crio/keys/enc-key-sync",
+            "isOpenShift": true
+          }
+        }
+      ]
+    description: >+
+      This operator provides facility to sync decryption keys required for
+      Encrypted Container Images.
+
+spec:
+  description: >
+    ## About this Operator
+
+    This operator provides facility to sync decryption keys required for
+    Encrypted Container Images.
+
+    This operator allows the easy deployment of a Daemonset that syncs keys
+    so that they are available to the container runtime (i.e. containerd/crio).
+    The current supported ways to do this are through
+
+    - Kubernetes secrets
+
+
+    For more information on what encrypted container images are and how to
+    encrypt and use them, please refer to the links attached in this operator
+    manifest.
+
+    ### Prerequisites for enabling this Operator
+
+    - Kubernetes (>= 1.17)
+
+    - With cri-o runtime (>=1.17) or containerd (>=1.4)
+
+    ### Questions and support
+
+    If you have any questions about the operator and/or encrypted container
+    images, please reach out to our maintainers or create an issue in the
+    github link in the manifest.
+
+    ## Getting Started
+
+    After installing the operator, getting started with decrypting container
+    images in your cluster is done in three simple steps
+
+    - Setup the key path on container runtimes on each node (optional if done by cloud provider)
+
+    - Initialize the operator with the key path
+
+    - Configuring decryption keys
+
+
+    ### Setup the key path on container runtimes on each node
+
+    Depending on the runtime you use, they will look for decryption keys to
+    decrypt the container images in different directories.
+
+    - cri-o (>=1.17) by default has keys in directory `/etc/crio/keys`.
+      This is configurable in the runtime if required, please refer to the
+      [cri-o decryption doc](https://github.com/cri-o/cri-o/blob/master/tutorials/decryption.md).
+
+    - containerd (>=1.4) requires some configuration of the runtime. For this,
+      please refer to the [containerd decryption doc](https://github.com/containerd/cri/blob/master/docs/decryption.md).
+
+    For OpenShift (>=4.4), it is configured by default to use cri-o with path
+    `/etc/crio/keys`
+
+    ### Initialize the operator with the key path
+
+    From the previous step, we have gotten the key path, lets initialize the
+    operator by creating the `EncKeySync` custom resource. Replacing `keysDir`
+    with a subpath of the path obtained from the previous step.
+
+    For example, if you have the path set as `/path/to/keys`, then set
+    `keysDir: /path/to/keys/enc-key-sync`.
+
+     ```yaml
+     apiVersion: oci.crypt/v1alpha1
+     kind: EncKeySync
+     metadata:
+       name: example-enckeysync
+     spec:
+       # Replace this line with your path if required
+       keysDir: /etc/crio/keys/enc-key-sync
+       isOpenShift: true
+     ```
+
+    The default value of `keysDir` uses the default cri-o runtime path.
+    If running on an OpenShift cluster, set `isOpenShift: true`.
+
+    What the daemonset does is it syncs all keys that you will configure to this
+    path on every worker node's host file system.
+
+    ### Configuring decryption keys
+
+    Great, now that we have the key syncer running, we can create our decryption
+    keys. This can be done by creating a kubernetes secret in the namespace
+    where the operator was installed with `--type=key`. For example
+
+     ```
+     $ kubectl create -n enc-key-sync secret generic  \
+       --type=key \
+       --from-file=my-priv-key.pem \
+       my-decryption-key
+     ```
+
+    In this case, we installed the operator in namespace `enc-key-sync`,
+    and have a private key locally with filename `my-priv-key.pem`. If you are
+    following this example, you can use the following private key:
+
+      ```
+      $ cat > my-priv-key.pem <<EOF
+      -----BEGIN RSA PRIVATE KEY-----
+      MIIEpAIBAAKCAQEAv8Ny7dCWQ8Pdq1ddYSwkQOCB3lUEZVEyj9StX3jnISF/rxIs
+      UZzJfbOrQN0fGkm+1sCCtltgQdztTjito8FhDGflqQBSmV40XP3iZnNUJDrHuAol
+      463Z/BuxxFXL3ry6rTosLGfrRwdQjxp8RSsnWyIIO2rmcqXZYe4SCtiMjMejLlTI
+      DWLIMdYL3d6hA4DpgDLoh6EPmhKMVVwRt5b0ew5eMLcDuq6ButOM5yv4zYVHNraj
+      Y41NK+abSlFb6wzMg2AUDiC/MxV1LRq6mpyZGJllx3LS1M1j7fDO3pmh/M0X7yD/
+      4RgHwFaW4/4CQBw3fyxrOv0pZzZay+o/pyMMWwIDAQABAoIBAQC8HV2HEZH21BOG
+      W+PMyWKfCh4cHsZ7JZY2JmoVOCN0CsqY0XkMboPyfehHbyNtxF4jiSIxBZ59vd5F
+      V7Bu7eroIpvWl+xva0xu1NfdrNEj4U2+qqXUnd0zRW+zrH6b+AQgnupqfV7+hJxw
+      ZYj2yYiIC/CLaSi72xpOyR6F6TyndBVRFePoktfCsPcevQDTVeYEbTr9q52vwK3d
+      nROr3bV+J2y5Glce/4A6yTknJoDNWcDFvy3Ai//5bpV2x38E+FNRRb1BfZN56/7M
+      3bEvwLyJ2bvnEqAQ+7Z8+307aMiMr01s1IQLYvi5Z1fvNewoaj1yxjxfawPvcMtB
+      YDg6soDRAoGBAOA8zv/a48WD+dCb9WFk4YtRqg3ZjwSRKT3Afsfkd5lGz8yRlGP4
+      HXCP8nQ7c2TUEjqiQmtyxrq7yi5dacIzzZXAlS8ORA5BxCfrxzUBvuPKgGoxeozC
+      /Xef7mJ6Si+JDIjY2GKwO8I66JgxScTi7JWlyXmQ26rY4/0Yg8f6Au8XAoGBANrt
+      FPYVXn4S6VdAdhFzkx85ymQ+uX6yflRIUcmP5sySKMCPD1GSrVujDIgj485sEmH2
+      h57gDWzFWLmEU6PDsG2Bpsi29w5MMibr4y7Ez6y1rNd9eor5lDIhKi2sJRA0Ftj1
+      tBl31rhkJfCnzVIRn3Q+ZuvgTca7J9oUnCFBlfddAoGAUih1f3Dnu1qbkT9TLJgV
+      u0H0mJZ5vCajgaihywN+fn5fbIh6YhZqUu+q2cNeiDbbZvhEdbHb9lcPwOUg9rKc
+      RJ4HCvKjJMYb5LSSjG1TT4rGeiIe0Kwwyj+izBoaTEhee1VYEvCXNJb42apVaPnr
+      zPitVQkqMvK8teLhhceog4kCgYA2M/C2pL/KcyA2rA0PcRAB8Sr8+tKuXb8NWwJ0
+      5x37lExmsITYa3pkb9AQfOJQH03F12Xongx027+F3w9eQnsSAcGrfDFa5t6b6FdN
+      IwlP94Mdr0GB2x0n9DIfMLnUczEc8mhuzc7pxFHobYNWSGq0Oyb8S4K2K2xIgEXP
+      rg9VOQKBgQCvZXPe7uRyfeFxH9uexhPOZEYNpF8/SxeFnTmxoyDNgfTaT6wC0Vwt
+      jALXNbZLiYen9cUBfusELk8chLna1tCvLDUTT0m/Y80d8p+S80EsZ20ja1A3HdBv
+      h1TW/ep4aPeI0UE0ZNOifUB37IGXETO5fohbzm799dH8jtAkE02pww==
+      -----END RSA PRIVATE KEY-----
+      EOF
+      ```
+
+    ### Running an encrypted container
+
+    Great - we are done setting up the operator and configuring keys, now we can
+    run encrypted container images! If you followed along with the provided
+    private key, you should be able to run the image `docker.io/lumjjb/sample-enc-app`
+
+     ```
+     $ kubectl run enc-workload --image=docker.io/lumjjb/sample-enc-app
+     ```
+
+    Great you have successfully run an encrypted container image!
+
+
+  maturity: alpha
+  keywords:
+    - encryption
+    - decryption
+    - oci
+    - image
+    - container
+  maintainers:
+    - name: Brandon Lum
+      email: lumjjb@gmail.com
+  provider:
+    name: IBM
+  version: 0.0.1
+  replaces: ''
+  skips: []
+  minKubeVersion: 1.17.0
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - kind: EncKeySync
+        name: enckeysyncs.oci.crypt
+        version: v1alpha1
+        specDescriptors: []
+        statusDescriptors: []
+        description: Configuration for enc-key-sync helm deployment
+        displayName: EncKeySync helm configuration
+  displayName: Encrypted Images Key Syncer Helm Operator
+  icon:
+    - base64data: >-
+        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
+      mediatype: image/jpeg
+  install:
+    spec:
+      deployments:
+        - name: enc-key-sync-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: enc-key-sync-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: enc-key-sync-operator
+              spec:
+                containers:
+                  - env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: 'metadata.annotations[''olm.targetNamespaces'']'
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: enc-key-sync-operator
+                    image: 'docker.io/lumjjb/enc-key-sync-operator:v0.0.1'
+                    imagePullPolicy: Always
+                    name: enc-key-sync-operator
+                    resources: {}
+                serviceAccountName: enc-key-sync-operator
+      permissions:
+        - rules:
+            - apiGroups:
+                - ''
+              resources:
+                - namespaces
+              verbs:
+                - get
+            - apiGroups:
+                - ''
+              resources:
+                - configmaps
+                - secrets
+              verbs:
+                - '*'
+            - apiGroups:
+                - ''
+              resources:
+                - events
+              verbs:
+                - create
+            - apiGroups:
+                - ''
+              resources:
+                - serviceaccounts
+                - services
+              verbs:
+                - '*'
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+              verbs:
+                - '*'
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - enc-key-sync-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+                - deployments
+              verbs:
+                - get
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - '*'
+            - apiGroups:
+                - oci.crypt
+              resources:
+                - '*'
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+          serviceAccountName: enc-key-sync-operator
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+  links:
+    - name: 'CNCF Webinar: Encrypted Container Images'
+      url: >-
+        https://www.cncf.io/webinars/advancing-image-security-and-compliance-through-container-image-encryption/
+    - name: 'Blog: Advancing image security encrypted container images'
+      url: >-
+        https://developer.ibm.com/articles/advancing-image-security-encrypted-container-images/
