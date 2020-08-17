@@ -10,6 +10,7 @@ NC=\033[0m
 force_color_prompt=yes
 export VERBOSE ?= 0
 export SDK_VER ?= v0.16.0
+export COURIER_VER ?= 2.1.9
 export KUBE_VER ?= v1.17.0
 export KIND_VER ?= v0.7.0
 export OLM_VER ?= 0.14.1
@@ -44,7 +45,7 @@ dependencies.install.jq: ## Install jq
 	@echo "Installed"
 
 dependencies.install.operator-courier: ## Install operator-courier
-	@python3 -m pip install operator-courier
+	@python3 -m pip install operator-courier==${COURIER_VER}
 	@echo "Installed"
 
 dependencies.install.operator-sdk: ## Install operator-sdk

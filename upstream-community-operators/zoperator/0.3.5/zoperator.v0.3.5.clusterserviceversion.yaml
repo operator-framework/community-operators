@@ -1,0 +1,1038 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "AppDefinition",
+          "metadata": {
+            "name": "cassandra-test"
+          },
+          "spec": {
+            "namespace": "default",
+            "selector": {
+              "matchLabels": {
+                "app": "cassandra"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "ApplicationClone",
+          "metadata": {
+            "name": "cassandra-2009-02-09--19-52-14-clone"
+          },
+          "spec": {
+            "cloneConfiguration": "dr-us-west-clone"
+          }
+        },
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "ApplicationSnapshot",
+          "metadata": {
+            "name": "cassandra-2009-02-09--19-52-14"
+          },
+          "spec": {
+            "apiObjects": [
+              "{\"apiVersion\": \"v1\",\"items\": [{\"apiVersion\": \"v1\",\"kind\": \"ConfigMap\",\"metadata\": {...",
+              "{\"apiVersion\": \"v1\",\"items\": [{\"apiVersion\": \"apps\u000b1\",\"kind\": \"Deployment\",\"metadata\": {..."
+            ],
+            "snapshotConfiguration": "dr-us-west-snapshot",
+            "vpsas": [
+              {
+                "name": "example-vpsa",
+                "provisioner": "csi.zadara.com",
+                "snapshots": [
+                  {
+                    "cg": "vol-0000001"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "CloneConfiguration",
+          "metadata": {
+            "name": "dr-us-west-clone"
+          },
+          "spec": {
+            "appSnapshot": {
+              "name": "mysql-snap-2020-01-26"
+            },
+            "dryRun": false,
+            "prefix": "clone-",
+            "suffix": "",
+            "targetNamespace": "test"
+          }
+        },
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "Invoker",
+          "metadata": {
+            "name": "mysql-daily-backup"
+          },
+          "spec": {
+            "snapshotConfiguration": {
+              "name": "dr-us-west-snapshot"
+            }
+          }
+        },
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "SnapshotConfiguration",
+          "metadata": {
+            "name": "dr-us-west-snapshot"
+          },
+          "spec": {
+            "appDefinition": "cassandra-test",
+            "policies": [
+              "daily-snapshot-for-month",
+              "weekly-snapshot-for-year"
+            ]
+          }
+        },
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "SnapshotPolicy",
+          "metadata": {
+            "name": "daily-snapshot-for-month"
+          },
+          "spec": {
+            "keepLast": 7,
+            "schedule": "0 0 * * *"
+          }
+        },
+        {
+          "apiVersion": "zadara.com/v1alpha1",
+          "kind": "Vpsa",
+          "metadata": {
+            "name": "example-vpsa"
+          },
+          "spec": {
+            "csi": {
+              "autoExpandSupport": true,
+              "iscsiMode": "rootfs",
+              "livenessProbe": {
+                "httpGet": {
+                  "port": 9808
+                },
+                "periodSeconds": 5
+              },
+              "provisioner": "csi.zadara.com"
+            },
+            "hostname": "example.vpsas.zadara.com",
+            "https": true,
+            "token": "EXAMPLETOKEN-1234"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Storage
+    certified: "false"
+    containerImage: zadara/zoperator:0.3.5
+    createdAt: August 9, 2020
+    description: Zadara Operator enables storage provisioning via Zadara's CSI driver
+      and data management capabilities for K8s applications.
+    repository: https://github.com/zadarastorage/zadara-operator
+    support: k8s@zadara.com
+  creationTimestamp: null
+  name: zoperator.v0.3.5
+  namespace: default
+spec:
+  annotations:
+    capabilities: Basic Install
+    categories: Storage
+    certified: "false"
+    containerImage: zadara/zoperator:0.3.5
+    createdAt: August 9, 2020
+    description: Zadara Operator enables storage provisioning via Zadara's CSI driver
+      and data management capabilities for K8s applications.
+    repository: https://github.com/zadarastorage/zadara-operator
+    support: k8s@zadara.com
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: AppDefinition allows to define which Kubernetes resources compose
+        an Application, as a logical unit. This is done by means of namespaces and
+        label-based selectors. The result of the query should include workloads (e.g
+        Deployments, StatefulSets), RBAC, configuration (Secrets, ConfigMaps), storage,
+        and all other resources required for the application to run.
+      displayName: App Definition
+      kind: AppDefinition
+      name: appdefinitions.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: Application Definition was automatically created by Zadara Operator
+        displayName: Auto Discover
+        path: autoDiscover
+      - description: Namespace to include in ApplicationSnapshots
+        displayName: Namespace
+        path: namespace
+      - description: Selector for API Resources (PVCs, Deployments, etc.) to include
+          in as Application
+        displayName: Selector
+        path: selector
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:selector:'
+      statusDescriptors:
+      - description: API objects (Deployments, StatefulSets, ConfigMaps, etc.) matching
+          namespace and selector defined in the Spec. These objects will be included
+          in ApplicationSnapshot.
+        displayName: APIObjects
+        path: apiObjects
+      - description: 'State of the application snapshot is one of the following: Pending
+          - Application definition is waiting to Operator initialization. DoesNotExist
+          - Application is not installed on cluster. NotRunning - Application exists
+          on cluster but not running (no active pods running). Running - Application
+          is running on cluster.'
+        displayName: State
+        path: state
+      version: v1alpha1
+    - description: ApplicationClone is an internal resource, created by Operator.
+        It includes a list of all restored Kubernetes resources and VPSA Volumes,
+        and provides information about restore status for each item. When ApplicationClone
+        is created, Operator starts cloning VPSA Volumes, and restoring Kubernetes
+        resources, from the ApplicationSnapshot.
+      displayName: Application Clone
+      kind: ApplicationClone
+      name: applicationclones.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: Reference For Clone Configuration
+        displayName: Clone Configuration
+        path: cloneConfiguration
+      statusDescriptors:
+      - description: PVCs of the Application
+        displayName: PVCs
+        path: pvcs
+      - description: PVs of the Application
+        displayName: PVs
+        path: pvs
+      - description: Resource Kinds (Group, Version, Resource) of the Application
+          (including the APIObjects)
+        displayName: Resource Kinds
+        path: resourceKinds
+      - description: State of the ApplicationClone
+        displayName: State
+        path: state
+      version: v1alpha1
+    - description: ApplicationSnapshot is an internal resource, created by Operator.
+        It includes all Application metadata (such as Deployment, StatefulSet, ConfigMap,
+        PersistentVolumeClaim, and other Kubernetes resources) and Snapshots of Data,
+        stored on VPSA. When ApplicationSnapshot is created, Operator creates snapshots
+        of VPSA Volumes, and stores serialized Kubernetes resources in the ApplicationSnapshot.
+        ApplicationSnapshot can appear only in one CloneConfiguration at the same
+        time (User can't clone the same ApplicationSnapshot twice).
+      displayName: Application Snapshot
+      kind: ApplicationSnapshot
+      name: applicationsnapshots.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: Included API objects by the application snapshot
+        displayName: APIObjects
+        path: apiObjects
+      - description: Reference to a SnapshotConfiguration to snapshot
+        displayName: Snapshot Configuration
+        path: snapshotConfiguration
+      - description: VPSAs that provides the volumes of the Application
+        displayName: Vpsas
+        path: vpsas
+      statusDescriptors:
+      - description: 'State of the application snapshot is one of the following: Pending
+          - Snapshot is waiting for required objects to be ready to use. Initialized
+          - Snapshot was initialized. SuspendingIO - Suspending IO of VPSAs volumes
+          to be crash-consistent. Creating - Snapshot is being created by the VPSAs.
+          Created - Snapshot is created and ready to be cloned. Failed - Snapshot
+          creation failed, can''t cloned from this snapshot. Deleting - Snapshot is
+          being deleted in the VPSAs.'
+        displayName: State
+        path: state
+      version: v1alpha1
+    - description: CloneConfiguration allows to specify which ApplicationSnapshot
+        must be restored. Additionally, it allows to set destination namespace and
+        renaming pattern for restored resources.
+      displayName: Clone Configuration
+      kind: CloneConfiguration
+      name: cloneconfigurations.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: 'Application Clone name (default: Prefix + AppSnapshot.Name +
+          Suffix)'
+        displayName: App Clone
+        path: appClone
+      - description: Name of the Application Clone
+        displayName: Name
+        path: appClone.name
+      - description: Application Snapshot to clone
+        displayName: App Snapshot
+        path: appSnapshot
+      - description: Name of the Application Snapshot
+        displayName: Name
+        path: appSnapshot.name
+      - description: 'Run clone configuration checks only (default: false)'
+        displayName: Dryrun
+        path: dryRun
+      - description: 'Prefix to add to cloned resources (default: "clone-")'
+        displayName: Prefix
+        path: prefix
+      - description: Target namespaces to clone to
+        displayName: Target Namespace
+        path: targetNamespace
+      statusDescriptors:
+      - description: 'State of the Clone Configuration can be one of the following:
+          Pending - Clone configuration is waiting for required objects to be ready
+          to use. Ready - Clone configuration is valid and ready for use.'
+        displayName: State
+        path: state
+      version: v1alpha1
+    - description: Invoker activates SnapshotConfiguration or CloneConfiguration.
+        When SnapshotConfiguration is invoked, Operator will create a CronJob (for
+        recurring Snapshot Policies), or a Job (for on-demand policy), which will
+        create a new ApplicationSnapshot. When CloneConfiguration is invoked, Operator
+        will create a new ApplicationClone object, eventually causing ApplicationSnapshot
+        to be cloned. Deleting Invoker is an equivalent to stopping a SnapshotPolicy,
+        or a cloning process (Application Snapshots or Clones will not be deleted).
+      displayName: Invoker
+      kind: Invoker
+      name: invokers.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: Reference to a CloneConfiguration to Invoke
+        displayName: Clone Cfg
+        path: cloneConfiguration
+      - description: Reference to Clone configuration name
+        displayName: Name
+        path: cloneConfiguration.name
+      - description: Reference to a SnapshotConfiguration to Invoke
+        displayName: Snapshot Cfg
+        path: snapshotConfiguration
+      - description: Reference to Snapshot configuration name
+        displayName: Name
+        path: snapshotConfiguration.name
+      statusDescriptors:
+      - description: 'State of the Invoker can be one of the following: Pending -
+          Invoker is waiting for required objects to be ready to use. Ready - Invoker
+          is valid and ready for use.'
+        displayName: State
+        path: state
+      version: v1alpha1
+    - description: SnapshotConfiguration allows to select application resources which
+        must be included in ApplicationSnapshot (using namespace and labels), and
+        to attach Snapshot Policies to the application (including Persistent Volumes
+        on VPSA). Additionally, it provides information about all Application Snapshot
+        created for this SnapshotConfiguration.
+      displayName: Snapshot Configuration
+      kind: SnapshotConfiguration
+      name: snapshotconfigurations.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: Application Definition for the snapshot
+        displayName: App Definition
+        path: appDefinition
+      - description: Snapshot policies, defining when ApplicationSnapshots should
+          be taken
+        displayName: Policies
+        path: policies
+      statusDescriptors:
+      - description: All policies mentioned in Spec with lists of all the related
+          ApplicationSnapshots
+        displayName: Policies
+        path: policies
+      - description: 'State of the Snapshot Configuration can be one of the following:
+          Pending - Snapshot configuration is waiting for required objects to be ready
+          to use. Idle - No Application Snapshots using this configuration were created.
+          Active - All Application Snapshots using this configuration were created
+          successfully. Failed - Some Application Snapshots using this configuration
+          are in failed state.'
+        displayName: State
+        path: state
+      version: v1alpha1
+    - description: SnapshotPolicy defines frequency for ApplicationSnapshots to be
+        taken, and retention policy for cleaning up old ApplicationSnapshots.
+      displayName: Snapshot Policy
+      kind: SnapshotPolicy
+      name: snapshotpolicies.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: Retention policy for snapshots. Oldest snapshots are deleted.
+        displayName: Keep Last
+        path: keepLast
+      - description: Either schedule in Cron format (see https://en.wikipedia.org/wiki/Cron)
+          or "on-demand"
+        displayName: Schedule
+        path: schedule
+      statusDescriptors:
+      - description: 'State of the Snapshot Policy can be one of the following: Pending
+          - Snapshot Policy is waiting to Operator initialization. Ready - Snapshot
+          Policy is valid and ready for use.'
+        displayName: State
+        path: state
+      version: v1alpha1
+    - description: VPSA allows your Kubernetes cluster to connect to VPSA. For each
+        Vpsa having `spec.csi` specified, Operator will automatically deploy a CSI
+        Driver, and create sample Storage Classes (Block and NAS for each Storage
+        Pool on that VPSA).
+      displayName: Vpsa
+      kind: Vpsa
+      name: vpsas.zadara.com
+      resources:
+      - kind: AppDefinition
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationClone
+        name: ""
+        version: v1alpha1
+      - kind: ApplicationSnapshot
+        name: ""
+        version: v1alpha1
+      - kind: CloneConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: ClusterRole
+        name: ""
+        version: v1
+      - kind: ClusterRoleBinding
+        name: ""
+        version: v1
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: CsiDriver
+        name: ""
+        version: v1beta1
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: Invoker
+        name: ""
+        version: v1alpha1
+      - kind: Namespaces
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: ReplicaSet
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      - kind: SnapshotConfiguration
+        name: ""
+        version: v1alpha1
+      - kind: SnapshotPolicy
+        name: ""
+        version: v1alpha1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      - kind: Status
+        name: ""
+        version: v1alpha1
+      - kind: Vpsa
+        name: ""
+        version: v1alpha1
+      specDescriptors:
+      - description: CSI provisioner
+        displayName: Csi
+        path: csi
+      - description: Support VPSA NAS Volume auto-expand feature. Enabled by default.
+          To enable auto-expand for CSI Volumes, you need to configure Storage Class
+          parameters.volumeOptions https://github.com/zadarastorage/zadara-csi/#storage-class.
+          When autoExpandSupport is enabled, periodical sync will be handled by a
+          CronJob, running in the same namespace as CSI driver.
+        displayName: Auto Expand Support
+        path: csi.autoExpandSupport
+      - description: A way for the CSI plugin to reach iscsiadm on host https://github.com/zadarastorage/zadara-csi#node-iscsi-connectivity
+        displayName: Iscsi Mode
+        path: csi.iscsiMode
+      - description: 'Liveness probe configuration for CSI driver. Default livenessProbe.handler
+          is httpGet: {path:"/healthz", port:9808}. Note: livenessProbe.handler MUST
+          be httpGet, with path "/healthz". Other options not allowed. livenessProbe.handler.port
+          is configurable (default 9808) and MUST be unique for each CSI instance.
+          More: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes'
+        displayName: Liveness Probe
+        path: csi.livenessProbe
+      - description: 'CSI provisioner to be used in a StorageClass, for example `csi.zadara.com`.
+          More: https://kubernetes.io/docs/concepts/storage/storage-classes/#provisioner'
+        displayName: Provisioner
+        path: csi.provisioner
+      - description: Hostname of the VPSA
+        displayName: Hostname
+        path: hostname
+      - description: 'Use https connection to the VPSA (default: http)'
+        displayName: Https
+        path: https
+      - description: Token of the VPSA
+        displayName: Token
+        path: token
+      statusDescriptors:
+      - displayName: State
+        path: state
+      version: v1alpha1
+  description: |
+    The Zadara Operator provides storage and data management for K8s stateful
+    applications as a cloud-native service, while leveraging Zadara's enterprise
+    grade Storage-as-a-Service VPSA for provisioning and managing persistent
+    storage.
+
+    Zadara Operator provides:
+    * Zadara CSI driver automatic installation and management
+    * Automatic K8s application discovery
+    * Application protection using an intelligent and efficient snapshots mechanism.
+    * Custom snapshots scheduling for application protection
+    * Instant application clone
+    * CLI for centralized management for Zadara's K8s assets
+
+    ## About Zadara
+
+    Zadara provides companies and service providers agile, secure
+    enterprise storage as a consumption-based service. Any location, any
+    data type, any protocol. Zadara offers resource isolation, exceptional
+    security, and management control.
+
+    More information at: [Zadara Kubernetes Operator](https://github.com/zadarastorage/zadara-operator)
+  displayName: Zadara Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - nonResourceURLs:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: zoperator
+      deployments:
+      - name: zoperator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: zoperator
+          strategy: {}
+          template:
+            metadata:
+              creationTimestamp: null
+              labels:
+                name: zoperator
+            spec:
+              containers:
+              - command:
+                - zoperator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: OPERATOR_NAME
+                  value: zoperator
+                image: zadara/zoperator:0.3.5
+                name: zoperator
+                resources: {}
+                volumeMounts:
+                - mountPath: /etc/zoperator
+                  name: config-dir
+              serviceAccountName: zoperator
+              volumes:
+              - configMap:
+                  name: zoperator-config-map
+                  optional: true
+                name: config-dir
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - Zadara
+  - Storage
+  - Volumes
+  - CSI
+  - NAS
+  - Block
+  - Persistent Volume
+  - Cloud Storage
+  - STaaS
+  - PVC
+  - Data Protection
+  - Data Management
+  labels:
+    app: Zadara Operator
+  links:
+  - name: Zadara
+    url: https://www.zadara.com/
+  - name: Installation Guide
+    url: https://github.com/zadarastorage/zadara-operator#installation
+  - name: CLI
+    url: https://github.com/zadarastorage/zadara-operator#cli
+  maintainers:
+  - email: k8s@zadara.com
+    name: Zadara
+  maturity: alpha
+  provider:
+    name: Zadara
+  selector:
+    matchLabels:
+      name: zoperator
+  version: 0.3.5
+status: {}

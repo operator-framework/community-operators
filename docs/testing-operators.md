@@ -31,9 +31,9 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 ## Overview
-These instructions walk you through how to manually test if your Operator deploys correctly with Operator Framework. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
-These tests and all pre-requisite can also be executed automatically in a single step using a [Makefile](./using-scripts.md).
-The process below assume that you have an Kubernetes Operator in the Operator Framework *manifest* format, where each version of your Operator bundle is nested it's own subdirectory:
+These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
+These tests and all prerequisites can also be executed automatically in a single step using a [Makefile](./using-scripts.md).
+The process below assumes that you have a Kubernetes Operator in the Operator Framework *manifest* format, where each version of your Operator bundle is nested in its own subdirectory:
 ```sh
 $ tree my-operator/
 my-operator
@@ -74,7 +74,7 @@ git clone https://github.com/operator-framework/operator-marketplace.git
 git clone https://github.com/operator-framework/operator-courier.git
 git clone https://github.com/operator-framework/operator-lifecycle-manager.git
 ```
-Before you begin your current working dir should look like the following, with `my-operator/` as an example for the name of your bundle:
+Before you begin your current working dir should look like the following, with `my-operator-bundle/` as an example for the name of your bundle:
 ```
 my-operator-bundle/
 operator-marketplace/
@@ -126,11 +126,11 @@ Following the steps to build the bundle application and push it to the [quay.io]
 
 Following an example.
 ```
-$export OPERATOR_DIR=my-operator-bundle/
-$export QUAY_NAMESPACE=johndoe
-$export PACKAGE_NAME=my-operator
-$export PACKAGE_VERSION=1.0.0
-$export TOKEN=$QUAY_TOKEN
+$ export OPERATOR_DIR=my-operator-bundle/
+$ export QUAY_NAMESPACE=johndoe
+$ export PACKAGE_NAME=my-operator
+$ export PACKAGE_VERSION=1.0.0
+$ export TOKEN=$QUAY_TOKEN
 ```
 2. Run the following command to push the bundle.
 ```
