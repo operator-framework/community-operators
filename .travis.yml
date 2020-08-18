@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 language: python
 os: linux
 sudo: required
@@ -6,29 +6,70 @@ sudo: required
 if: branch = master
 
 python:
-- "3.6"
+- "3.8"
 
+#TODO: set redhat-operator-ecosystem/operator-test-playbooks
 env:
-- DISTRO_TYPE=upstream KIND_VER=v0.8.1 KUBE_VER=v1.18.2 OLM_VER=0.14.1 SDK_VER=v0.16.0
+- KIND_VER=v0.8.1 KUBE_VER=v1.18.2 OLM_VER=0.15.1 SDK_VER=v0.16.0 DISTRO_TYPE=upstream PLAYBOOK_VARS="-i localhost, local.yml -e kind_version=v0.8.1 -e kind_kube_ver=v1.18.2 -e olm_ver=0.15.1 -e operator_sdk_version=v0.19.2 -e ansible_connection=local -e run_remove_catalog_repo=false" PLAYBOOK_REPO=https://github.com/J0zi/operator-test-playbooks PLAYBOOK_BRANCH='upstream-community' ANSIBLE_STDOUT_CALLBACK=yaml
+
+
+services:
+  - docker
 
 before_install:
 # check-pr needs to be sourced so it can pass the test early.
 - source scripts/ci/check-pr $DISTRO_TYPE
 
 install:
-- scripts/ci/install-deps $DISTRO_TYPE
+#original
+  - scripts/ci/install-deps $DISTRO_TYPE
+  - pip install ansible jmespath
 
 jobs:
   include:
-  - stage: catalog build
+  - stage: Traffic light - Go/Stop
+    if: type = pull_request
+    name: Run tests only on operator modification, otherwise red and stop all tests.
+    script:
+    - scripts/ci/PR-traffic-light
+    install: skip
+
+  - stage: Current Pipeline
+    if: type = pull_request
     name: Test loading the Operator into the Community Catalog
     install: skip
     script:
-    - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev . 
-  - stage: operator deployment test
-    name: Test Operator deployment using OLM running on KIND
+    - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev .
+
+  - name: Test Operator deployment using OLM running on KIND
+    if: type = pull_request
     script: scripts/ci/run-deployment-tests.sh
+
   - stage: operatorhubio prod deploy
+    if: type = push
     name: Trigger PROD deploy of operatorhub.io
     script: scripts/ci/trigger-operatorhubio-ci.sh
+
+  - stage: Bundle Test Pipeline (beta)
+    if: type = pull_request
+    name: Bundle Test Pipeline (beta)
+    script:
+    - scripts/ci/run-ansible-tests
+
+  - name: Test if release by bundle pipeline is possible (beta)
+    if: type = pull_request
+    script:
+    - scripts/ci/run-release -t
+    before_install: skip
+
+  - name: Test if release by bundle pipeline is possible from production registry (beta)
+    if: type = pull_request
+    script:
+    - scripts/ci/run-release -t prod
+    before_install: skip
+
+  - stage: Release piepeline (beta)
     if: type = push
+    name: Trigger release on community-operator-catalog
+    script: scripts/ci/trigger-community-op-catalog-ci-release.sh
+

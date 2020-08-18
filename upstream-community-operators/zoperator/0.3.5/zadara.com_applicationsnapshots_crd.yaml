@@ -1,0 +1,122 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: applicationsnapshots.zadara.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.state
+    description: Status of the Application Snapshot
+    name: Status
+    type: string
+  - JSONPath: .spec.snapshotConfiguration
+    description: Name of Snapshot Configuration
+    name: Snapshot Configuration
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: zadara.com
+  names:
+    kind: ApplicationSnapshot
+    listKind: ApplicationSnapshotList
+    plural: applicationsnapshots
+    singular: applicationsnapshot
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: ApplicationSnapshot is an internal resource, created by Operator.
+        It includes all Application metadata (such as Deployment, StatefulSet, ConfigMap,
+        PersistentVolumeClaim, and other Kubernetes resources) and Snapshots of Data,
+        stored on VPSA. When ApplicationSnapshot is created, Operator creates snapshots
+        of VPSA Volumes, and stores serialized Kubernetes resources in the ApplicationSnapshot.
+        ApplicationSnapshot can appear only in one CloneConfiguration at the same
+        time (User can't clone the same ApplicationSnapshot twice).
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ApplicationSnapshotSpec defines the desired state of ApplicationSnapshot
+          properties:
+            apiObjects:
+              description: Included API objects by the application snapshot
+              items:
+                type: string
+              type: array
+            snapshotConfiguration:
+              description: Reference to a SnapshotConfiguration to snapshot
+              type: string
+            vpsas:
+              description: VPSAs that provides the volumes of the Application
+              items:
+                properties:
+                  name:
+                    description: Vpsa name
+                    type: string
+                  provisioner:
+                    description: 'VPSA (CSI) provisioner used in StorageClass. More:
+                      https://kubernetes.io/docs/concepts/storage/storage-classes/#provisioner'
+                    type: string
+                  snapshots:
+                    description: VPSA's snapshots information
+                    items:
+                      properties:
+                        cg:
+                          description: VPSA's consistency group identifier
+                          type: string
+                        id:
+                          description: VPSA's snapshot identifier
+                          type: string
+                      required:
+                      - cg
+                      type: object
+                    type: array
+                required:
+                - name
+                - provisioner
+                - snapshots
+                type: object
+              type: array
+          required:
+          - snapshotConfiguration
+          type: object
+        status:
+          description: ApplicationSnapshotStatus defines the observed state of ApplicationSnapshot
+          properties:
+            state:
+              description: 'State of the application snapshot is one of the following:
+                Pending - Snapshot is waiting for required objects to be ready to
+                use. Initialized - Snapshot was initialized. SuspendingIO - Suspending
+                IO of VPSAs volumes to be crash-consistent. Creating - Snapshot is
+                being created by the VPSAs. Created - Snapshot is created and ready
+                to be cloned. Failed - Snapshot creation failed, can''t cloned from
+                this snapshot. Deleting - Snapshot is being deleted in the VPSAs.'
+              enum:
+              - Pending
+              - Initialized
+              - SuspendingIO
+              - Creating
+              - Failed
+              - Created
+              - Deleting
+              type: string
+          required:
+          - state
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
