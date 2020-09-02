@@ -1,0 +1,333 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    categories: "OpenShift Optional"
+    certified: "false"
+    containerImage: quay.io/openshift-windows/community-windows-machine-config-operator:4.6-ea3e7e4
+    createdAt: 2020-10-08T18:20:00Z
+    description: An operator that enables Windows container workloads on OKD/OCP
+    operatorframework.io/suggested-namespace: openshift-windows-machine-config-operator
+    repository: https://github.com/openshift/windows-machine-config-operator
+    support: ""
+  name: community-windows-machine-config-operator.v0.0.1
+  namespace: openshift-windows-machine-config-operator
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned: []
+  description: |-
+    ## WARNING
+    Community distribution of the Windows Machine Config Operator.
+
+    This is an alpha build, and is not meant for production workloads.
+
+    Issues with this distribution of WMCO can be opened against the [WMCO repository](https://github.com/openshift/windows-machine-config-operator).
+
+    Please ensure that when installing this operator the startingCSV you subscribe to is supported on the
+    version of OKD/OCP you are using. This CSV is meant for OKD/OCP 4.6.
+
+    Upgrading the OKD/OCP cluster from version 4.6 to 4.7 while running this operator is not supported. When upgrading
+    a cluster, remove all Windows MachineSets and uninstall this operator. Once the cluster upgrade process has completed,
+    you may reinstall the operator, and recreate all Windows MachineSets.
+
+    ## Documentation
+
+    ### Introduction
+    The Windows Machine Config Operator configures Windows Machines into nodes, enabling Windows container workloads to
+    be ran within OKD/OCP clusters. The operator is configured to watch for Machines with a `machine.openshift.io/os-id: Windows`
+    label. The way a user will initiate the process is by creating a MachineSet which uses a Windows image with the Docker
+    container runtime installed. The operator will do all the necessary steps to configure the underlying VM so that it can join
+    the cluster as a worker node.
+
+    ### Pre-requisites
+    * OKD/OCP 4.6 cluster running on Azure or AWS, configured with hybrid OVN Kubernetes networking
+
+    ### Usage
+    Once the `openshift-windows-machine-config-operator` namespace has been created, a secret must be created containing
+    the private key that will be used to access the Windows VMs. The private key should be in PEM encoded RSA format.
+    ```
+    # Change path as necessary
+    oc create secret generic cloud-private-key --from-file=private-key.pem=/path/to/key.pem -n openshift-windows-machine-config-operator
+    ```
+
+    Below is the example of an Azure Windows MachineSet which can create Windows Machines that the WMCO can react upon.
+    Please note that the windows-user-data secret will be created by the WMCO lazily when it is configuring the first
+    Windows Machine. After that, the windows-user-data will be available for the subsequent MachineSets to be consumed.
+    It might take around 10 minutes for the Windows VM to be configured so that it joins the cluster. Please note that
+    the MachineSet should have following labels:
+    * `machine.openshift.io/os-id: Windows`
+    * `machine.openshift.io/cluster-api-machine-role: worker`
+    * `machine.openshift.io/cluster-api-machine-type: worker`
+
+    The following label, needs to be added to the Machine spec within the MachineSet spec:
+    * `node-role.kubernetes.io/worker: ""`
+
+    Not having these labels will result in the Windows node not being marked as a worker.
+
+    `<infrastructureID>` should be replaced with the output of:
+    ```
+    oc get -o jsonpath='{.status.infrastructureName}{"\n"}' infrastructure cluster
+    ```
+
+    `<location>` should be replaced with a valid Azure location like `centralus`.
+
+    `<zone>` should be replaced with a valid Azure availability zone like `us-east-1a`.
+
+    Please note that on Azure, Windows Machine names cannot be more than 15 characters long.
+    The MachineSet name can therefore not be more than 9 characters long, due to the way Machine names are generated from it.
+
+    ```
+    apiVersion: machine.openshift.io/v1beta1
+    kind: MachineSet
+    metadata:
+      labels:
+        machine.openshift.io/cluster-api-cluster: <infrastructureID>
+      name: winworker
+      namespace: openshift-machine-api
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          machine.openshift.io/cluster-api-cluster: <infrastructureID>
+          machine.openshift.io/cluster-api-machineset: winworker
+      template:
+        metadata:
+          labels:
+            machine.openshift.io/cluster-api-cluster: <infrastructureID>
+            machine.openshift.io/cluster-api-machine-role: worker
+            machine.openshift.io/cluster-api-machine-type: worker
+            machine.openshift.io/cluster-api-machineset: winworker
+            machine.openshift.io/os-id: Windows
+        spec:
+          metadata:
+            labels:
+              node-role.kubernetes.io/worker: ""
+          providerSpec:
+            value:
+              apiVersion: azureproviderconfig.openshift.io/v1beta1
+              credentialsSecret:
+                name: azure-cloud-credentials
+                namespace: openshift-machine-api
+              image:
+                offer: WindowsServer
+                publisher: MicrosoftWindowsServer
+                resourceID: ""
+                sku: 2019-Datacenter-with-Containers
+                version: latest
+              kind: AzureMachineProviderSpec
+              location: <location>
+              managedIdentity: <infrastructureID>-identity
+              networkResourceGroup: <infrastructureID>-rg
+              osDisk:
+                diskSizeGB: 128
+                managedDisk:
+                  storageAccountType: Premium_LRS
+                osType: Windows
+              publicIP: false
+              resourceGroup: <infrastructureID>-rg
+              subnet: <infrastructureID>-worker-subnet
+              userDataSecret:
+                name: windows-user-data
+                namespace: openshift-machine-api
+              vmSize: Standard_D2s_v3
+              vnet: <infrastructureID>-vnet
+              zone: "<zone>"
+    ```
+    Example MachineSet for other cloud providers:
+    - [AWS](https://github.com/openshift/windows-machine-config-operator/blob/release-4.6/docs/machineset-aws.md)
+  displayName: Community Windows Machine Config Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          - nodes
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          - networks
+          verbs:
+          - get
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests
+          - certificatesigningrequests/approval
+          verbs:
+          - get
+          - list
+          - update
+        - apiGroups:
+          - operator.openshift.io
+          resources:
+          - networks
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - signers
+          verbs:
+          - approve
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - machine.openshift.io
+          resources:
+          - machines
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - machine.openshift.io
+          resources:
+          - machinesets
+          verbs:
+          - list
+          - get
+          - watch
+        serviceAccountName: windows-machine-config-operator
+      deployments:
+      - name: windows-machine-config-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: windows-machine-config-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: windows-machine-config-operator
+            spec:
+              containers:
+              - args:
+                - --zap-level=debug
+                - --zap-encoder=console
+                command:
+                - windows-machine-config-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: community-windows-machine-config-operator
+                image: quay.io/openshift-windows/community-windows-machine-config-operator:4.6-ea3e7e4
+                imagePullPolicy: IfNotPresent
+                name: windows-machine-config-operator
+                resources: {}
+              hostNetwork: true
+              serviceAccountName: windows-machine-config-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          - services/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+          - get
+          - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - windows-machine-config-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - hostnetwork
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: windows-machine-config-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - windows
+  maintainers:
+    - email: team-winc@redhat.com
+      name: Red Hat Windows Containers Team
+  maturity: alpha
+  minKubeVersion: 1.19.0
+  provider:
+    name: Red Hat
+  version: 0.0.1
