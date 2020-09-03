@@ -22,7 +22,7 @@ This repo is the canonical source for Kubernetes Operators that appear on [Opera
 
 ## Add your Operator
 
-We would love to see your Operator being added to this collection. We currently use automated vetting via continuous integration plus manual review to curate a list of high-quality, well-documented Operators. If you are new to Kubernetes Operators start [here](https://github.com/operator-framework/getting-started).
+We would love to see your Operator being added to this collection. We currently use automated vetting via continuous integration plus manual review to curate a list of high-quality, well-documented Operators. If you are new to Kubernetes Operators start [here](https://sdk.operatorframework.io/).
 
 If you have an existing Operator read our [contribution guidelines](./docs/contributing.md) on how to package and test it. Then test your Operator locally and submit a Pull Request.
 
