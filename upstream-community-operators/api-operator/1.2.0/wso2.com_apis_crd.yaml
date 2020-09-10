@@ -1,0 +1,139 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: apis.wso2.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.replicas
+    name: INITIAL-REPLICAS
+    type: integer
+  - JSONPath: .spec.mode
+    name: Mode
+    type: string
+  - JSONPath: .spec.apiEndPoint
+    name: ENDPOINT
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: wso2.com
+  names:
+    kind: API
+    listKind: APIList
+    plural: apis
+    singular: api
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: API is the Schema for the apis API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: APISpec defines the desired state of API
+          properties:
+            apiEndPoint:
+              type: string
+            definition:
+              description: Definition of the API.
+              properties:
+                interceptors:
+                  description: Interceptors for API. Default value "<empty>".
+                  properties:
+                    ballerina:
+                      description: Ballerina interceptors. Default value "<empty>".
+                      items:
+                        type: string
+                      type: array
+                    java:
+                      description: Java interceptors. Default value "<empty>".
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                swaggerConfigmapNames:
+                  description: Array of config map names of swagger definitions for
+                    the API.
+                  items:
+                    type: string
+                  type: array
+                type:
+                  type: string
+              required:
+              - swaggerConfigmapNames
+              type: object
+            environmentVariables:
+              description: Environment variables to be added to the API deployment.
+                Default value "<empty>".
+              items:
+                type: string
+              type: array
+            image:
+              description: Docker image of the API to be deployed. If specified, ignores
+                the values of `UpdateTimeStamp`, `Override`. Uses the given image
+                for the deployment. Default value "<empty>".
+              type: string
+            ingressHostname:
+              description: Ingress Hostname that the API is being exposed. Default
+                value "<empty>".
+              type: string
+            mode:
+              description: Mode of the API. The mode from the swagger definition will
+                be overridden by this value. Supports "privateJet", "sidecar", "<empty>".
+                Default value "<empty>".
+              type: string
+            override:
+              description: Override the exiting API docker image. Default value "false".
+              type: boolean
+            replicas:
+              description: Replica count of the API.
+              type: integer
+            updateTimeStamp:
+              description: Update API definition creating a new docker image. Make
+                a rolling update to the existing API. with prefixing the timestamp
+                value. Default value "<empty>".
+              type: string
+            version:
+              description: Version of the API. The version from the swagger definition
+                will be overridden by this value. Default value "<empty>".
+              type: string
+          required:
+          - definition
+          - replicas
+          type: object
+        status:
+          description: APIStatus defines the observed state of API
+          properties:
+            replicas:
+              description: replicas field in the status sub-resource will define the
+                initial replica count allocated to the API.This will be the minimum
+                replica count for a single API
+              type: integer
+          required:
+          - replicas
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
