@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Pass release without action if no operator modification
+set -e
+
+DIRS=()
+
+PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)
+
+#if [[ "$1" == "openshift" ]]; then
+  DIRS=( "community-operators" ) # upstream or community, doesnt matter, all contains `community-operators`
+#else
+#  DIRS=( "upstream-community-operators" )
+#fi
+
+IS_TESTABLE=0
+
+# Only run CI on changes to certain directories.
+
+for d in "${DIRS[@]}"; do
+  if git log -m -1 --name-only --first-parent "$PR_COMMIT" | grep -q "$d" ; then
+    IS_TESTABLE=1
+    break
+  fi
+done
+if [[ $IS_TESTABLE -eq 0 ]]; then
+   echo "No testable operators or scripts were updated, not running the CI."
+   exit 0
+fi
+

@@ -6,6 +6,8 @@ unset OP_PATH
 unset OP_VER
 [ -e /tmp/op_ver ] && rm /tmp/op_ver
 
+PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)
+
 declare -A OP_TYPES
 OP_TYPES=(
   ["upstream"]="upstream-community-operators"
@@ -18,7 +20,7 @@ for op_distro in "${!OP_TYPES[@]}"; do
   OP_TYPE_VAR="OPERATORS_${op_distro^^}"
   declare $OP_TYPE_VAR=""
   for op_type in ${OP_TYPES[$op_distro]}; do
-    for file in $(git diff --name-only $TRAVIS_COMMIT_RANGE --name-only 2>&1); do
+    for file in $(git log -m -1 --name-only --first-parent $PR_COMMIT --name-only 2>&1); do
       if echo "$file" | grep -q "^$op_type"; then
         if [ $(echo $file| awk -F'/' '{print NF}') -ge 4 ]; then
             OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
