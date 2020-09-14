@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+eval $(scripts/ci/ansible-env)
+
+INDEX_CHECK_PARAMS=''
+AUTH_PARAMS=''
+GENERATE_OP_CONF=1
+FORCE_RELEASE=0
+OP_UNCOMPLETE=/tmp/operators_uncomplete-localhost.yaml
+
+case "$1" in
+
+-u)  echo "Index fix upstream pipeline"
+        STREAM_NAME='upstream-community-operators'
+        INDEX_CHECK_PARAMS='-e bundle_index_image=quay.io/operatorhubio/catalog -e operator_base_dir=/tmp/oper/community-operators/'$STREAM_NAME
+        AUTH_PARAMS='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
+    ;;
+-c)  echo "Index fix community pipeline"
+        STREAM_NAME='community-operators'
+        INDEX_CHECK_PARAMS='-e bundle_index_image=quay.io/openshift-community-operators/catalog -e operator_base_dir=/tmp/oper/community-operators/'$STREAM_NAME
+        AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
+    ;;
+*) echo "Syntax: $0 [-u|c]"
+   echo "options:"
+   echo "u     upstream - Run index fix upstream pipeline"
+   echo "c     community - Run index fix community pipeline"
+   echo
+
+esac
+
+echo "Index fix pipeline starting"
+rm -f $OP_UNCOMPLETE
+ansible-pull -vv -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags host_build,index_check $INDEX_CHECK_PARAMS
+if [ -f $OP_UNCOMPLETE ];then
+  ansible-pull -vv -U $PLAYBOOK_REPO -C $PLAYBOOK_BRANCH $PLAYBOOK_VARS -e run_upstream=true --tags deploy_bundles -e operators_config=$OP_UNCOMPLETE $AUTH_PARAMS
+fi
