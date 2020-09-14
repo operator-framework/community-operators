@@ -5,6 +5,7 @@ set -e
 unset OP_PATH
 unset OP_VER
 [ -e /tmp/op_ver ] && rm /tmp/op_ver
+echo "export PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)"
 
 declare -A OP_TYPES
 OP_TYPES=(
@@ -18,17 +19,17 @@ for op_distro in "${!OP_TYPES[@]}"; do
   OP_TYPE_VAR="OPERATORS_${op_distro^^}"
   declare $OP_TYPE_VAR=""
   for op_type in ${OP_TYPES[$op_distro]}; do
-    for file in $(git diff master --name-only 2>&1); do
+    for file in $(git log -m -1 --name-only --first-parent $PR_COMMIT 2>&1); do
       if echo "$file" | grep -q "^$op_type"; then
+        OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
         if [ $(echo $file| awk -F'/' '{print NF}') -ge 4 ]; then
-            OP_PATH="$(echo "$file" | awk -F'/' '{ print $1"/"$2 }')"
             OP_VER="$(echo "$file" | awk -F'/' '{ print $3 }')"
             echo $OP_VER >> /tmp/op_ver
         fi
-        if [[ -n "${SEEN[$OP_PATH]}" ]]; then
-          continue
-        fi
-        SEEN[$OP_PATH]="seen"
+#        if [[ -n "${SEEN[$OP_PATH]}" ]]; then
+#          continue
+#        fi
+#        SEEN[$OP_PATH]="seen"
       fi
     done
   done
@@ -42,3 +43,4 @@ if [[ $(echo $OP_PATH) = upstream* ]]; then
 else
     echo "export STREAM_NAME=community-operators"
 fi
+
