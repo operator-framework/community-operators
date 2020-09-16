@@ -1,0 +1,123 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    capabilities: Basic Install
+    categories: Application Runtime, Monitoring, Security
+    certified: "false"
+    containerImage: quay.io/deployment-validation-operator/dv-operator:0.0.10
+    createdAt: 08/25/2020
+    description: The deployment validation operator
+    repository: https://github.com/app-sre/dv-operator
+    support: Best Effort
+  name: deployment-validation-operator.v0.0.10
+spec:
+  description: 'The Deployment Validator Operator for Kubernetes monitors workloads
+    on a cluster a provides suggestions for best practices. '
+  displayName: Deployment Validation Operator
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - get
+          - list
+          - watch
+        serviceAccountName: deployment-validation-operator
+      deployments:
+      - name: deployment-validation-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              k8s-app: deployment-validation-operator
+          strategy:
+            rollingUpdate:
+              maxSurge: 1
+              maxUnavailable: 0
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                k8s-app: deployment-validation-operator
+                name: deployment-validation-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  value: ""
+                - name: OPERATOR_NAME
+                  value: deployment-validation-operator
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                image: quay.io/deployment-validation-operator/dv-operator:0.0.10
+                imagePullPolicy: Always
+                name: deployment-validation-operator
+              restartPolicy: Always
+              serviceAccount: deployment-validation-operator
+              terminationGracePeriodSeconds: 30
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - services
+          - services/finalizers
+          verbs:
+          - get
+          - create
+          - list
+          - delete
+          - update
+          - watch
+          - patch
+        - apiGroups:
+          - apps
+          resourceNames:
+          - deployment-validation-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - '*'
+        serviceAccountName: deployment-validation-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: AllNamespaces
+  - supported: false
+    type: MultiNamespace
+  keywords:
+  - dvo
+  labels:
+    alm-owner-dvo: deployment-validation-operator
+    operated-by: deployment-validation-operator
+  links:
+  - name: repository
+    url: https://github.com/app-sre/dv-operator
+  - name: containerImage
+    url: https://quay.io/deployment-validation-operator/dv-operator:0.0.10
+  maturity: alpha
+  provider:
+    name: Red Hat
+  selector:
+    matchLabels:
+      alm-owner-dvo: deployment-validation-operator
+      operated-by: deployment-validation-operator
+  version: 0.0.10
