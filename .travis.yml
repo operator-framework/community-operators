@@ -28,7 +28,6 @@ before_script:
 jobs:
   include:
 
-#TODO: pull only
   - stage: Traffic light for all tests - Go/Stop
     if: type = pull_request
     name: Run tests only on operator modification, otherwise red and stop all tests.
@@ -39,36 +38,15 @@ jobs:
     services: skip
     before_install: skip
 
-  - stage: Current Pipeline
+  - stage: Bundle Test Pipeline
     if: type = pull_request
-    name: Test loading the Operator into the Community Catalog
-    before_script: skip
-    install: skip
-    script:
-    - docker build --build-arg PERMISSIVE_LOAD=false -f upstream.Dockerfile -t operatorhub-catalog:dev .
-
-  - name: Test Operator deployment using OLM running on KIND
-    if: type = pull_request
-    install: skip
-    before_script: skip
-    script: scripts/ci/run-deployment-tests.sh
-
-  - stage: Bundle Test Pipeline (beta)
-    if: type = pull_request
-    name: Bundle Test Pipeline (beta)
+    name: Bundle Test Pipeline
     script:
     - scripts/ci/run-ansible-tests
     install: skip
     before_install: skip
 
-  - name: Test if release by bundle pipeline is possible (beta)
-    if: type = pull_request
-    script:
-    - scripts/ci/run-release -t
-    install: skip
-    before_install: skip
-
-  - name: Test if release by bundle pipeline is possible from production registry (beta)
+  - name: Test if release by bundle pipeline is possible from production registry
     if: type = pull_request
     script:
     - scripts/ci/run-release -t prod
@@ -82,7 +60,7 @@ jobs:
     before_install: skip
     before_script: skip
 
-  - stage: Release pipeline (beta)
+  - stage: Release pipeline
     if: type = push
     name: Trigger release on community-operator-catalog
     script: scripts/ci/trigger-community-op-catalog-ci-release.sh
@@ -90,7 +68,7 @@ jobs:
     before_script: skip
     before_install: skip
 
-  - stage: Release pipeline (beta)
+  - stage: Release pipeline Push to Quay
     if: type = push
     name: Push to Quay
     script: scripts/ci/push-to-quay
