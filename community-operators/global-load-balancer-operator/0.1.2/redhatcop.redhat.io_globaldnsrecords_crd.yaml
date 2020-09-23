@@ -1,0 +1,383 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: globaldnsrecords.redhatcop.redhat.io
+spec:
+  group: redhatcop.redhat.io
+  names:
+    kind: GlobalDNSRecord
+    listKind: GlobalDNSRecordList
+    plural: globaldnsrecords
+    singular: globaldnsrecord
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: GlobalDNSRecord is the Schema for the globaldnsrecords API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: GlobalDNSRecordSpec defines the desired state of GlobalDNSRecord
+          properties:
+            endpoints:
+              description: Enpoints is the list of the cluster endpoitns that need
+                to be considered for this dns record
+              items:
+                description: Endpoint represents a traffic ingress point to the cluster.
+                  Currently only LoadBalancer service is supported.
+                properties:
+                  clusterCredentialRef:
+                    description: CredentialsSecretRef is a reference to a secret containing
+                      the credentials to access the cluster a key called "kubeconfig"
+                      containing a valid kubeconfig file for connecting to the cluster
+                      must exist in this secret.
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                  clusterName:
+                    description: ClusterName name of the cluster to connect to.
+                    type: string
+                  loadBalancerServiceRef:
+                    description: LoadBalancerServiceRef contains a reference to the
+                      load balancer service that will receive the traffic, if using
+                      a router, put here the service created by the ingress controller.
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                required:
+                - clusterCredentialRef
+                - clusterName
+                - loadBalancerServiceRef
+                type: object
+              type: array
+              x-kubernetes-list-map-keys:
+              - clusterName
+              x-kubernetes-list-type: map
+            globalZoneRef:
+              description: GlobalZoneRef represents the global zone that will be used
+                to host this record
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+            healthCheck:
+              description: Probe is the health check used to probe the health of the
+                applications and decide which IPs to return Only HttpAction is supported
+              properties:
+                exec:
+                  description: One and only one of the following should be specified.
+                    Exec specifies the action to take.
+                  properties:
+                    command:
+                      description: Command is the command line to execute inside the
+                        container, the working directory for the command  is root
+                        ('/') in the container's filesystem. The command is simply
+                        exec'd, it is not run inside a shell, so traditional shell
+                        instructions ('|', etc) won't work. To use a shell, you need
+                        to explicitly call out to that shell. Exit status of 0 is
+                        treated as live/healthy and non-zero is unhealthy.
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                failureThreshold:
+                  description: Minimum consecutive failures for the probe to be considered
+                    failed after having succeeded. Defaults to 3. Minimum value is
+                    1.
+                  format: int32
+                  type: integer
+                httpGet:
+                  description: HTTPGet specifies the http request to perform.
+                  properties:
+                    host:
+                      description: Host name to connect to, defaults to the pod IP.
+                        You probably want to set "Host" in httpHeaders instead.
+                      type: string
+                    httpHeaders:
+                      description: Custom headers to set in the request. HTTP allows
+                        repeated headers.
+                      items:
+                        description: HTTPHeader describes a custom header to be used
+                          in HTTP probes
+                        properties:
+                          name:
+                            description: The header field name
+                            type: string
+                          value:
+                            description: The header field value
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
+                    path:
+                      description: Path to access on the HTTP server.
+                      type: string
+                    port:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      description: Name or number of the port to access on the container.
+                        Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+                      x-kubernetes-int-or-string: true
+                    scheme:
+                      description: Scheme to use for connecting to the host. Defaults
+                        to HTTP.
+                      type: string
+                  required:
+                  - port
+                  type: object
+                initialDelaySeconds:
+                  description: 'Number of seconds after the container has started
+                    before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                  format: int32
+                  type: integer
+                periodSeconds:
+                  description: How often (in seconds) to perform the probe. Default
+                    to 10 seconds. Minimum value is 1.
+                  format: int32
+                  type: integer
+                successThreshold:
+                  description: Minimum consecutive successes for the probe to be considered
+                    successful after having failed. Defaults to 1. Must be 1 for liveness
+                    and startup. Minimum value is 1.
+                  format: int32
+                  type: integer
+                tcpSocket:
+                  description: 'TCPSocket specifies an action involving a TCP port.
+                    TCP hooks not yet supported TODO: implement a realistic TCP lifecycle
+                    hook'
+                  properties:
+                    host:
+                      description: 'Optional: Host name to connect to, defaults to
+                        the pod IP.'
+                      type: string
+                    port:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      description: Number or name of the port to access on the container.
+                        Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+                      x-kubernetes-int-or-string: true
+                  required:
+                  - port
+                  type: object
+                timeoutSeconds:
+                  description: 'Number of seconds after which the probe times out.
+                    Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                  format: int32
+                  type: integer
+              type: object
+            loadBalancingPolicy:
+              description: LoadBalancingPolicy describes the policy used to loadbalance
+                the results of the DNS queries.
+              enum:
+              - Weighted
+              - Multivalue
+              - Geolocation
+              - Geoproximity
+              - Latency
+              - Failover
+              type: string
+            name:
+              description: Name is the fqdn that will be used for this record.
+              pattern: (?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]
+              type: string
+            ttl:
+              description: TTL is the TTL for this dns record kubebuilder:default:60
+              type: integer
+          required:
+          - globalZoneRef
+          - loadBalancingPolicy
+          - name
+          type: object
+        status:
+          description: GlobalDNSRecordStatus defines the observed state of GlobalDNSRecord
+          properties:
+            conditions:
+              description: ReconcileStatus this is the general status of the main
+                reconciler
+              items:
+                description: "Condition represents an observation of an object's state.
+                  Conditions are an extension mechanism intended to be used when the
+                  details of an observation are not a priori known or would not apply
+                  to all instances of a given Kind. \n Conditions should be added
+                  to explicitly convey properties that users and components care about
+                  rather than requiring those properties to be inferred from other
+                  observations. Once defined, the meaning of a Condition can not be
+                  changed arbitrarily - it becomes part of the API, and has the same
+                  backwards- and forwards-compatibility concerns of any other part
+                  of the API."
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    description: ConditionReason is intended to be a one-word, CamelCase
+                      representation of the category of cause of the current status.
+                      It is intended to be used in concise output, such as one-line
+                      kubectl get output, and in summarizing occurrences of causes.
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    description: "ConditionType is the type of the condition and is
+                      typically a CamelCased word or short phrase. \n Condition types
+                      should indicate state in the \"abnormal-true\" polarity. For
+                      example, if the condition indicates when a policy is invalid,
+                      the \"is valid\" case is probably the norm, so the condition
+                      should be called \"Invalid\"."
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+            endpointStatuses:
+              additionalProperties:
+                description: Conditions is a set of Condition instances.
+                items:
+                  description: "Condition represents an observation of an object's
+                    state. Conditions are an extension mechanism intended to be used
+                    when the details of an observation are not a priori known or would
+                    not apply to all instances of a given Kind. \n Conditions should
+                    be added to explicitly convey properties that users and components
+                    care about rather than requiring those properties to be inferred
+                    from other observations. Once defined, the meaning of a Condition
+                    can not be changed arbitrarily - it becomes part of the API, and
+                    has the same backwards- and forwards-compatibility concerns of
+                    any other part of the API."
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      description: ConditionReason is intended to be a one-word, CamelCase
+                        representation of the category of cause of the current status.
+                        It is intended to be used in concise output, such as one-line
+                        kubectl get output, and in summarizing occurrences of causes.
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      description: "ConditionType is the type of the condition and
+                        is typically a CamelCased word or short phrase. \n Condition
+                        types should indicate state in the \"abnormal-true\" polarity.
+                        For example, if the condition indicates when a policy is invalid,
+                        the \"is valid\" case is probably the norm, so the condition
+                        should be called \"Invalid\"."
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              description: EndpointStatuses contains the status of the endpoint as
+                they were looked up during the latest reconcile. We don't fail when
+                an endpoint look up fails, but we need to tarck its status.
+              type: object
+              x-kubernetes-map-type: granular
+            monitoredServiceStatuses:
+              additionalProperties:
+                description: Conditions is a set of Condition instances.
+                items:
+                  description: "Condition represents an observation of an object's
+                    state. Conditions are an extension mechanism intended to be used
+                    when the details of an observation are not a priori known or would
+                    not apply to all instances of a given Kind. \n Conditions should
+                    be added to explicitly convey properties that users and components
+                    care about rather than requiring those properties to be inferred
+                    from other observations. Once defined, the meaning of a Condition
+                    can not be changed arbitrarily - it becomes part of the API, and
+                    has the same backwards- and forwards-compatibility concerns of
+                    any other part of the API."
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      description: ConditionReason is intended to be a one-word, CamelCase
+                        representation of the category of cause of the current status.
+                        It is intended to be used in concise output, such as one-line
+                        kubectl get output, and in summarizing occurrences of causes.
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      description: "ConditionType is the type of the condition and
+                        is typically a CamelCased word or short phrase. \n Condition
+                        types should indicate state in the \"abnormal-true\" polarity.
+                        For example, if the condition indicates when a policy is invalid,
+                        the \"is valid\" case is probably the norm, so the condition
+                        should be called \"Invalid\"."
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              description: MonitoredServiceStatuses contains the reconcile status
+                of each of the monitored services in the remote clusters
+              type: object
+              x-kubernetes-map-type: granular
+            providerStatus:
+              description: ProviderStatus contains provider specific status information
+              properties:
+                route53:
+                  properties:
+                    healthCheckID:
+                      additionalProperties:
+                        type: string
+                      description: HealthCheckID represents the route53 healthcheck
+                        created for this record
+                      type: object
+                      x-kubernetes-map-type: granular
+                    policyID:
+                      description: PolicyID represents the route53 routing policy
+                        created for this record
+                      type: string
+                    policyInstanceID:
+                      description: PolicyInstanceID represents the ID of the DNSRecord
+                      type: string
+                  type: object
+              type: object
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
