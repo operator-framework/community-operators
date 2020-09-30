@@ -10,9 +10,10 @@ export KUBE_VER=v1.18.2
 export OLM_VER=0.15.1
 export SDK_VER=v0.16.0
 export DISTRO_TYPE=upstream
-export PLAYBOOK_VARS="-i localhost, local.yml -e kind_version=v0.8.1 -e kind_kube_ver=v1.18.2 -e olm_ver=0.15.1 -e operator_sdk_version=v0.16.0 -e ansible_connection=local -e run_remove_catalog_repo=false"
-export PLAYBOOK_REPO=https://github.com/J0zi/operator-test-playbooks
-export PLAYBOOK_BRANCH='sprint-8' #check if correct
+export ANSIBLE_BASE_ARGS="-i localhost, local.yml -e ansible_connection=local -e run_remove_catalog_repo=false"
+export ANSIBLE_EXTRA_ARGS=""
+export ANSIBLE_PULL_REPO="https://github.com/redhat-operator-ecosystem/operator-test-playbooks"
+export ANSIBLE_PULL_BRANCH="upstream-community"
 export ANSIBLE_STDOUT_CALLBACK=yaml
 export AUTOMATION_TOKEN_RELEASE_UPSTREAM='please-fill'
 echo '************************ upstream starting *******************************'
