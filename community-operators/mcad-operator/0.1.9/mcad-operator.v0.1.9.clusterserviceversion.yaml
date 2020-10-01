@@ -1,0 +1,267 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: >-
+      [{"apiVersion":"mcad.ibm.com/v1beta1","kind":"MCADHelmConfig","metadata":{"name":"example-mcadhelmconfig"},"spec":{"configMap":{"agentConfigs":null,"dispatcherMode":"false","name":null},"deploymentName":"xqueuejob-controller","image":{"pullPolicy":"Always","repository":"darroyo/mcad-controller","tag":"v1.29.0"},"imagePullSecret":{"name":null,"password":"dummyvalue","registry":"registry.stage1.ng.bluemix.net","username":"iamapikey"},"loglevel":4,"namespace":"kube-system","nodeSelector":{"hostname":null},"replicaCount":1,"resources":{"limits":{"cpu":"2000m","memory":"2048Mi"},"requests":{"cpu":"2000m","memory":"2048Mi"}},"serviceAccount":"xqueuejob-controller","volumes":{"hostPath":null}}}]
+    capabilities: Basic Install
+    description: A Kubernetes Native Holistic Lifecycle Resource Manager for Applications
+  name: mcad-operator.v0.1.9
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - kind: MCADHelmConfig
+        name: mcadhelmconfigs.mcad.ibm.com
+        version: v1beta1
+        specDescriptors: []
+        statusDescriptors: []
+        displayName: MCAD Helm Configuration
+        description: Helm configuration for deploying an instance of the MCAD Operator.
+  description: >
+    ## A Kubernetes Native Holistic Lifecycle Resource Manager for Applications
+
+    For more details about the `Multi-Cluster Application Dispatcher` features
+    and use cases refer to the `MCAD` README
+    [here](https://github.com/IBM/multi-cluster-app-dispatcher/blob/master/README.md).
+
+    ## About this Operator
+
+    This operator provides mechanisms for applications to manage batch jobs in a
+    single or mult-cluster environment.
+
+    The multi-cluster-app-dispatcher (MCAD) controller is capable of (i)
+    providing an abstraction for wrapping all resources of the job/application
+    and treating them holistically, (ii) queuing job/application creation
+    requests and applying different queuing policies, e.g., First In First Out,
+    Priority, (iii) dispatching the job to one of multiple clusters, where a
+    MCAD queuing agent runs, using configurable dispatch policies, and (iv)
+    auto-scaling pod sets, balancing job demands and cluster availability
+    (future work).
+
+
+    ### Questions and support
+
+    If you have any questions about the operator and/or encrypted container
+    images, please reach out to our maintainers or create an issue in the github
+    link in the manifest.
+
+
+    ## Getting Started
+
+    After installing the operator Refer to the
+    [tutorial](https://github.com/IBM/multi-cluster-app-dispatcher/blob/master/doc/usage/tutorial.md)
+    on how to use the `Multi-Cluster-App-Dispatcher` to run batch job in
+    Kubernetes.
+
+    ### Prerequisites for enabling this Operator
+
+    - Kubernetes (>= 1.11.10)
+
+    - This operator should be installed in the kube-system namespace only.
+  displayName: Multi-Cluster Application Dispatcher
+  icon:
+    - base64data: ''
+      mediatype: ''
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ''
+              resources:
+                - namespaces
+              verbs:
+                - get
+            - apiGroups:
+                - ''
+              resources:
+                - configmaps
+                - secrets
+              verbs:
+                - '*'
+            - apiGroups:
+                - ''
+              resources:
+                - events
+              verbs:
+                - create
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+              verbs:
+                - '*'
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - clusterrolebindings
+                - clusterroles
+              verbs:
+                - '*'
+            - apiGroups:
+                - apiregistration.k8s.io
+              resources:
+                - apiservices
+              verbs:
+                - '*'
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - rolebindings
+              verbs:
+                - '*'
+            - apiGroups:
+                - extensions
+              resources:
+                - deployments
+              verbs:
+                - '*'
+            - apiGroups:
+                - ''
+              resources:
+                - serviceaccounts
+                - services
+                - services/finalizers
+              verbs:
+                - '*'
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - mcad-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+                - deployments
+              verbs:
+                - get
+            - apiGroups:
+                - mcad.ibm.com
+              resources:
+                - '*'
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ''
+              resources:
+                - pods
+                - services
+                - services/finalizers
+                - endpoints
+                - persistentvolumeclaims
+                - events
+                - configmaps
+                - secrets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+          serviceAccountName: mcad-operator
+      deployments:
+        - name: mcad-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: mcad-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: mcad-operator
+              spec:
+                containers:
+                  - env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: 'metadata.annotations[''olm.targetNamespaces'']'
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: mcad-operator
+                    image: 'darroyo/mcad-operator:v0.1.8'
+                    imagePullPolicy: Always
+                    name: mcad-operator
+                    resources: {}
+                serviceAccountName: mcad-operator
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+  keywords:
+    - mcad
+    - appwrapper
+    - multi-cluster
+    - queue
+    - dispatcher
+    - application
+    - holistic dispatcher
+    - applications
+    - holistic scheduling
+    - queuing
+    - application lifecycle
+    - quota management
+  links:
+    - name: MCAD Operator
+      url: 'https://github.com/IBM/multi-cluster-app-dispatcher'
+  maintainers:
+    - email: darroyo@us.ibm.com
+      name: Diana Arroyo
+  maturity: alpha
+  provider:
+    name: IBM
+  version: 0.1.9
+  minKubeVersion: 1.11.0
