@@ -46,7 +46,8 @@ COPY --from=bundles_builder /registry/bundles.db /registry/bundles.db
 RUN chgrp -R 0 /registry && \
     chgrp -R 0 /dev && \
     chmod -R g+rwx /registry && \
-    chmod -R g+rwx /dev
+    chmod -R g+rwx /dev && \
+    touch /etc/nsswitch.conf
 
 # This image doesn't need to run as root user
 USER 1001
