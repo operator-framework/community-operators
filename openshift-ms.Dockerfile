@@ -7,7 +7,7 @@ RUN apk --no-cache add \
     gcc \
     libc-dev
 
-ENV REGISTRY_TAG v1.5.6
+ENV REGISTRY_TAG v1.14.3
 
 WORKDIR /src
 
