@@ -8,10 +8,20 @@ curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.g
 chmod ug+x /tmp/operator-test/bin/oc
 oc get pods --all-namespaces|grep -i olm
 
+#temp test
+echo "Need to clone test branch, cloning..."
+mkdir -p /tmp/oper-for-me-test
+cd /tmp/oper-for-me-test
+git clone https://github.com/J0zi/community-operators.git
+cd community-operators
+git checkout oper-for-my-test
+ls
+
 #detection start
 
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
-cd "$TARGET_PATH"
+#TODO: uncomment
+#cd "$TARGET_PATH"
 pwd
 #TODO: check
 COMMIT=$(git --no-pager log -n1 --format=format:"%H" | tail -n 1)
@@ -29,6 +39,7 @@ declare -A CHANGED_FILES
 echo "changed community files:"
 CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/')
 echo
+# shellcheck disable=SC2128
 if [ -z "$CHANGED_FILES" ]; then
     echo "No community operator (Openshift) modified, no reason to deploy on Openshift"
     exit 0
