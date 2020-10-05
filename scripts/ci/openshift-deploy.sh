@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-set -e #fail in case of non zero return
 #This scripts is configured in https://github.com/openshift/release/tree/master/ci-operator/config/operator-framework/community-operators and executed from ci-operator/jobs
+
+set -e #fail in case of non zero return
 
 export PATH=$PATH:/tmp/operator-test/bin
 mkdir -p /tmp/operator-test/bin
