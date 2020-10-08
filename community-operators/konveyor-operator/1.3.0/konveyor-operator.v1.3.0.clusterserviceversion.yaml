@@ -2,14 +2,14 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: konveyor-operator.v1.2.0
+  name: konveyor-operator.v1.3.0
   namespace: openshift-migration
   annotations:
-    olm.skipRange: '>=0.0.0 <1.2.0'
+    olm.skipRange: '>=0.0.0 <1.3.0'
     capabilities: Seamless Upgrades
-    description: Facilitates migration of workloads from OpenShift 3.x to OpenShift 4.x
+    description: Facilitates migration of container workloads from OpenShift 3.x to OpenShift 4.x
     categories: 'OpenShift Optional'
-    containerImage: quay.io/konveyor/mig-operator-container:release-1.2.0
+    containerImage: quay.io/konveyor/mig-operator-container:release-1.3.0
     createdAt: 2019-07-25T10:21:00Z
     repository: https://github.com/konveyor/mig-operator
     alm-examples: |-
@@ -31,7 +31,8 @@ metadata:
               "restic_timeout": "1h",
               "mig_pv_limit": "100",
               "mig_pod_limit": "100",
-              "mig_namespace_limit": "10"
+              "mig_namespace_limit": "10",
+              "mig_failure_rollback": false
             }
         },
         {
@@ -135,6 +136,23 @@ metadata:
         },
         {
             "apiVersion": "migration.openshift.io/v1alpha1",
+            "kind": "MigAnalytic",
+            "metadata": {
+              "name": "host",
+              "namespace": "openshift-migration"
+            },
+            "spec": {
+              "plan": {
+                "name": "foo",
+                "namespace": "openshift-migration"
+              },
+              "analyzeK8SResources": true,
+              "analyzeImageCount": true,
+              "analyzePVCapacity": true
+            }
+        },
+        {
+            "apiVersion": "migration.openshift.io/v1alpha1",
             "kind": "MigCluster",
             "metadata": {
               "name": "host",
@@ -174,40 +192,49 @@ metadata:
     support: Red Hat
     operatorframework.io/suggested-namespace: openshift-migration
 spec:
+  skips:
+  - konveyor-operator.v1.2.5
+  - konveyor-operator.v1.2.4
+  - konveyor-operator.v1.2.3
+  - konveyor-operator.v1.2.2
+  - konveyor-operator.v1.2.1
+  - konveyor-operator.v1.2.0
   relatedImages:
   - name: controller
-    image: quay.io/konveyor/mig-controller:release-1.2.0
+    image: quay.io/konveyor/mig-controller:release-1.3.0
   - name: ui
-    image: quay.io/konveyor/mig-ui:release-1.2.0
+    image: quay.io/konveyor/mig-ui:release-1.3.0
   - name: velero
-    image: quay.io/konveyor/velero:konveyor-1.3.2
+    image: quay.io/konveyor/velero:konveyor-1.4.2
   - name: velero_restic_restore_helper
-    image: quay.io/konveyor/velero-restic-restore-helper:konveyor-1.3.2
+    image: quay.io/konveyor/velero-restic-restore-helper:konveyor-1.4.2
   - name: migration_plugin
-    image: quay.io/konveyor/migration-plugin:release-1.2.0
+    image: quay.io/konveyor/openshift-velero-plugin:release-1.3.0
   - name: aws_plugin
-    image: quay.io/konveyor/velero-plugin-for-aws:konveyor-1.0.1
+    image: quay.io/konveyor/velero-plugin-for-aws:konveyor-1.1.0
   - name: azure_plugin
-    image: quay.io/konveyor/velero-plugin-for-microsoft-azure:konveyor-1.0.1
+    image: quay.io/konveyor/velero-plugin-for-microsoft-azure:konveyor-1.1.0
   - name: gcp_plugin
-    image: quay.io/konveyor/velero-plugin-for-gcp:konveyor-1.0.1
+    image: quay.io/konveyor/velero-plugin-for-gcp:konveyor-1.1.0
   - name: registry
     image: quay.io/konveyor/registry:release_2.7
   - name: hook_runner
-    image: quay.io/konveyor/hook-runner:release-1.2.0
-  displayName: Konveyor Operator
+    image: quay.io/konveyor/hook-runner:release-1.3.0
+  displayName: Konveyor Operator for Containers
   description: |
-    The Konveyor Operator for OpenShift enables installation of the OpenShift application migration tool.
+    The Konveyor Operator enables installation of the application migration tool components.
 
-    Prior to installing create the openshift-migration namespace (oc create namespace openshift-migration) and install the operator within this namespace.
+    After you have installed the Operator, you can install components by creating a MigrationController CR.
 
-    After installation you can install components by creating a MigrationController CR. Generally the defaults provided are acceptable for an OpenShift 4 destination cluster.
-    The components include
-    * velero and restic which is required on all source and destination cluster
-    * mig-controller to coordinate backups and restores between cluster
-    * mig-ui which provides a user friendly interface for creating migration plans.
+    By default, the Operator installs the following components on an OpenShift Container Platform 4 target cluster:
 
-    If you experience any issues or have feature requests, please [file an issue in our Github repository](https://github.com/konveyor/mig-operator/issues)
+    * velero and restic, to back up data on the source cluster and restore it on the target cluster
+    * mig-controller, to coordinate the backup and restore processes
+    * mig-ui, the web console for managing migrations
+
+    If you experience any issues or have feature requests, please file an [issue](https://github.com/konveyor/mig-operator/issues)
+
+    For more information, see the [OpenShift Container Platform Migration Guide](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.4/html-single/migration/index).
   keywords: ['migration']
 
   maintainers:
@@ -226,7 +253,7 @@ spec:
     url: https://github.com/konveyor/mig-operator
 
   labels:
-    alm-status-descriptors: konveyor-operator.v1.2.0
+    alm-status-descriptors: konveyor-operator.v1.3.0
     alm-owner-prometheus: konveyor-operator
 
   selector:
@@ -294,6 +321,7 @@ spec:
           - events
           - configmaps
           - secrets
+          - serviceaccounts
           verbs:
           - '*'
         - apiGroups:
@@ -384,6 +412,49 @@ spec:
           - migration.openshift.io
           resources:
           - migclusters
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          - clusterversions
+          verbs:
+          - get
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          - security.openshift.io
+          - build.openshift.io
+          - migration.openshift.io
+          - velero.io
+          - packages.operators.coreos.com
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - get
+          - watch
+          - list
+          - update
+          - patch
+          - create
+          - delete
+          - assign
+          - deletecollection
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          - pods/log
+          verbs:
+          - '*'
+        - nonResourceURLs:
+          - '*'
           verbs:
           - '*'
       - serviceAccountName: migration-controller
@@ -590,6 +661,7 @@ spec:
           verbs:
           - list
           - update
+          - watch
           - delete
           - deletecollection
         - apiGroups:
@@ -662,19 +734,8 @@ spec:
             spec:
               serviceAccount: migration-operator
               containers:
-              - name: ansible
-                image: quay.io/konveyor/mig-operator-container:release-1.2.0
-                command:
-                - /usr/local/bin/ao-logs
-                - /tmp/ansible-operator/runner
-                - stdout
-                imagePullPolicy: Always
-                volumeMounts:
-                - mountPath: /tmp/ansible-operator/runner
-                  name: runner
-                  readOnly: true
               - name: operator
-                image: quay.io/konveyor/mig-operator-container:release-1.2.0
+                image: quay.io/konveyor/mig-operator-container:release-1.3.0
                 imagePullPolicy: Always
                 volumeMounts:
                 - mountPath: /tmp/ansible-operator/runner
@@ -694,18 +755,18 @@ spec:
                   value: quay.io
                 - name: PROJECT
                   value: konveyor
-                - NAME: HOOK_RUNNER_REPO
+                - name: HOOK_RUNNER_REPO
                   value: hook-runner
                 - name: HOOK_RUNNER_TAG
-                  value: release-1.2.0
+                  value: release-1.3.0
                 - name: MIG_CONTROLLER_REPO
                   value: mig-controller
                 - name: MIG_CONTROLLER_TAG
-                  value: release-1.2.0
+                  value: release-1.3.0
                 - name: MIG_UI_REPO
                   value: mig-ui
                 - name: MIG_UI_TAG
-                  value: release-1.2.0
+                  value: release-1.3.0
                 - name: MIGRATION_REGISTRY_REPO
                   value: registry
                 - name: MIGRATION_REGISTRY_TAG
@@ -713,32 +774,32 @@ spec:
                 - name: VELERO_REPO
                   value: velero
                 - name: VELERO_TAG
-                  value: konveyor-1.3.2
+                  value: konveyor-1.4.2
                 - name: VELERO_PLUGIN_REPO
-                  value: migration-plugin
+                  value: openshift-velero-plugin
                 - name: VELERO_PLUGIN_TAG
-                  value: release-1.2.0
+                  value: release-1.3.0
                 - name: VELERO_AWS_PLUGIN_REPO
                   value: velero-plugin-for-aws
                 - name: VELERO_AWS_PLUGIN_TAG
-                  value: konveyor-1.0.1
+                  value: konveyor-1.1.0
                 - name: VELERO_GCP_PLUGIN_REPO
                   value: velero-plugin-for-gcp
                 - name: VELERO_GCP_PLUGIN_TAG
-                  value: konveyor-1.0.1
+                  value: konveyor-1.1.0
                 - name: VELERO_AZURE_PLUGIN_REPO
                   value: velero-plugin-for-microsoft-azure
                 - name: VELERO_AZURE_PLUGIN_TAG
-                  value: konveyor-1.0.1
+                  value: konveyor-1.1.0
                 - name: VELERO_RESTIC_RESTORE_HELPER_REPO
                   value: velero-restic-restore-helper
                 - name: VELERO_RESTIC_RESTORE_HELPER_TAG
-                  value: konveyor-1.3.2
+                  value: konveyor-1.4.2
               volumes:
               - name: runner
                 emptyDir: {}
-  maturity: stable
-  version: 1.2.0
+  maturity: alpha
+  version: 1.3.0
   customresourcedefinitions:
     owned:
     - name: backupstoragelocations.velero.io
@@ -761,6 +822,11 @@ spec:
       kind: DownloadRequest
       displayName: DownloadRequest
       description: A download request for velero
+    - name: miganalytics.migration.openshift.io
+      version: v1alpha1
+      kind: MigAnalytic
+      displayName: MigAnalytic
+      description: A request to Analyze a MigPlan and its namespaces
     - name: migclusters.migration.openshift.io
       version: v1alpha1
       kind: MigCluster
