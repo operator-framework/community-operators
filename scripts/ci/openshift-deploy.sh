@@ -70,4 +70,4 @@ ansible-pull -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-d
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
-echo "CSV_FILE=$CSV_FILE"
+#echo "CSV_FILE=$CSV_FILE"
