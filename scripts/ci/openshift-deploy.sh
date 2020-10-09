@@ -7,7 +7,7 @@ export PATH=$PATH:/tmp/operator-test/bin
 mkdir -p /tmp/operator-test/bin
 curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/operator-test/bin oc
 chmod ug+x /tmp/operator-test/bin/oc
-oc get pods --all-namespaces|grep -i olm
+#oc get pods --all-namespaces|grep -i olm
 
 #temp test
 echo "Need to clone test branch, cloning..."
@@ -56,8 +56,8 @@ done
 echo
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
-CSV_FILE="$(find $TARGET_PATH/$OP_NAME/$OP_VER -name "*${OP_VER}.clusterserviceversion.yaml" -type f -exec basename {} \; )"
-echo "CSV_FILE=$CSV_FILE"
+#CSV_FILE="$(find $TARGET_PATH/$OP_NAME/$OP_VER -name "*${OP_VER}.clusterserviceversion.yaml" -type f -exec basename {} \; )"
+#echo "CSV_FILE=$CSV_FILE"
 
 #detection end
 
