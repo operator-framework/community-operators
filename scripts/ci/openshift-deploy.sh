@@ -20,8 +20,10 @@ ls
 
 #detection start
 
-TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
+TARGET_PATH='/tmp/oper-for-me-test/community-operators/community-operators'
+
 #TODO: uncomment
+#TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
 #cd "$TARGET_PATH"
 pwd
 #TODO: check
