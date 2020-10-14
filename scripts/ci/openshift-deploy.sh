@@ -21,14 +21,14 @@ TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community
 #ls
 #TARGET_PATH='/tmp/oper-for-me-test/community-operators/community-operators'
 
-#clone again to supres caching
-echo "Need to clone actual branch, cloning..."
-mkdir -p /tmp/oper-for-me-test
-cd /tmp/oper-for-me-test
-git clone https://github.com/operator-framework/community-operators.git
-cd community-operators
-ls
-TARGET_PATH='/tmp/oper-for-me-test/community-operators/community-operators'
+##clone again to suppress caching
+#echo "Need to clone actual branch, cloning..."
+#mkdir -p /tmp/oper-for-me-test
+#cd /tmp/oper-for-me-test
+#git clone https://github.com/operator-framework/community-operators.git
+#cd community-operators
+#ls
+#TARGET_PATH='/tmp/oper-for-me-test/community-operators/community-operators'
 
 #detection start
 
