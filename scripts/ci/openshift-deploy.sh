@@ -48,13 +48,8 @@ git --no-pager log -m -1 --name-only --first-parent $COMMIT
 declare -A CHANGED_FILES
 ##community only
 echo "changed community files:"
-CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/')
+CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || ( echo '******* No community operator (Openshift) modified, no reason to deploy on Openshift *******'; exit 0)
 echo
-# shellcheck disable=SC2128
-if [ -z "$CHANGED_FILES" ]; then
-    echo "No community operator (Openshift) modified, no reason to deploy on Openshift"
-    exit 0
-fi
 
 for sf in ${CHANGED_FILES[@]}; do
   echo $sf
@@ -66,14 +61,11 @@ done
 echo
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
-#CSV_FILE="$(find $TARGET_PATH/$OP_NAME/$OP_VER -name "*${OP_VER}.clusterserviceversion.yaml" -type f -exec basename {} \; )"
-#echo "CSV_FILE=$CSV_FILE"
 
 #detection end
 
 mkdir -p /tmp/playbooks2
 cd /tmp/playbooks2
-#ansible-pull -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e csv_name=$CSV_FILE
 ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
