@@ -50,11 +50,6 @@ declare -A CHANGED_FILES
 echo "changed community files:"
 CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || ( echo '******* No community operator (Openshift) modified, no reason to deploy on Openshift *******'; exit 0)
 echo
-# shellcheck disable=SC2128
-if [ -z "$CHANGED_FILES" ]; then
-    echo "No community operator (Openshift) modified, no reason to deploy on Openshift"
-    exit 0
-fi
 
 for sf in ${CHANGED_FILES[@]}; do
   echo $sf
