@@ -61,14 +61,11 @@ done
 echo
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
-#CSV_FILE="$(find $TARGET_PATH/$OP_NAME/$OP_VER -name "*${OP_VER}.clusterserviceversion.yaml" -type f -exec basename {} \; )"
-#echo "CSV_FILE=$CSV_FILE"
 
 #detection end
 
 mkdir -p /tmp/playbooks2
 cd /tmp/playbooks2
-#ansible-pull -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e csv_name=$CSV_FILE
 ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
