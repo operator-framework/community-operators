@@ -3,16 +3,22 @@
 INPUT_CATALOG_IMAGE=${INPUT_CATALOG_IMAGE-"quay.io/operatorhubio/catalog:latest"}
 OHIO_REGISTRY_IMAGE=${OHIO_REGISTRY_IMAGE-"quay.io/operator-framework/upstream-community-operators:latest"}
 
-eval $(scripts/ci/ansible-env)
+# eval $(scripts/ci/ansible-env)
 
-if [ "$STREAM_NAME" = "upstream-community-operators" ];then
+export
+echo "$TRAVIS_COMMIT_MESSAGE"
+
+STREAM_NAME=$(echo "$TRAVIS_COMMIT_MESSAGE" | cut -d '/' -f 1)
+echo $STREAM_NAME
+
+# if [ "$STREAM_NAME" = "upstream-community-operators" ];then
   ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS \
   --tags host_build,app_registry \
   -e bundle_index_image=$INPUT_CATALOG_IMAGE \
   -e index_export_parallel=true \
   -e app_registry_image=$OHIO_REGISTRY_IMAGE \
   -e quay_api_token=$OHIO_REGISTRY_TOKEN
-else
-  echo "Skipping building App Registry for '$STREAM_NAME'"
-fi
+# else
+  # echo "Skipping building App Registry for '$STREAM_NAME'"
+# fi
 
