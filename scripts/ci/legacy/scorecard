@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 cd /
-. /scripts/ci/env
+. /scripts/ci/legacy/env
 export_color
 KUBECONFIG=~/.kube/config
 
@@ -27,11 +27,11 @@ printf "Running scorecard trough all supplied CRs %s\t[ ${WARN} Processing ${NC}
 
 for config_file in $(find "/tmp/scorecard-bundles" -name "*.bundle.yaml" -print); do
 
-  /scripts/ci/run-script "operator-sdk scorecard -o text --config $config_file --kubeconfig $KUBECONFIG --verbose --selector='test in (checkspectest,writingintocrshaseffecttest)'" "    Running required tests"
+  /scripts/ci/legacy/run-script "operator-sdk scorecard -o text --config $config_file --kubeconfig $KUBECONFIG --verbose --selector='test in (checkspectest,writingintocrshaseffecttest)'" "    Running required tests"
 
   sleep 10
 
-  /scripts/ci/run-script "operator-sdk scorecard -o text --config $config_file --kubeconfig $KUBECONFIG --verbose --selector='test in (checkstatustest)'" "    Running recommended tests" false
+  /scripts/ci/legacy/run-script "operator-sdk scorecard -o text --config $config_file --kubeconfig $KUBECONFIG --verbose --selector='test in (checkstatustest)'" "    Running recommended tests" false
 
   # If non-fatal scorecard errors occured, print out operator logs
   if [[ $? != 0 ]]; then
@@ -47,10 +47,10 @@ done
 printf "Running scorecard trough all supplied CRs %s\t[ ${OK} OK ${NC} ]\n" | expand  -t 50 >&2
 
 if [[ "$CLEAN_MODE" == "NORMAL" || "$CLEAN_MODE" == "FORCE" ]]; then
-  /scripts/ci/run-script "delete_objects_incluster $DEPLOY_DIR $NAMESPACE" "Cleaning up Operator resources"
-  /scripts/ci/run-script "delete_objects_incluster $ABS_BUNDLE_PATH $NAMESPACE" "Cleaning up Operator definition"
+  /scripts/ci/legacy/run-script "delete_objects_incluster $DEPLOY_DIR $NAMESPACE" "Cleaning up Operator resources"
+  /scripts/ci/legacy/run-script "delete_objects_incluster $ABS_BUNDLE_PATH $NAMESPACE" "Cleaning up Operator definition"
 fi
 
 if [[ "$CLEAN_MODE" == "NORMAL" ]]; then
-  /scripts/ci/run-script "delete_namespace $NAMESPACE $CLEAN_MODE" "Cleaning up namespace"
+  /scripts/ci/legacy/run-script "delete_namespace $NAMESPACE $CLEAN_MODE" "Cleaning up namespace"
 fi
