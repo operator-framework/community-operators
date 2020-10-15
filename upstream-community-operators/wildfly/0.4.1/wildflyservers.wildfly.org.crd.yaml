@@ -1,0 +1,537 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: wildflyservers.wildfly.org
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.replicas
+    name: Replicas
+    type: integer
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: wildfly.org
+  names:
+    kind: WildFlyServer
+    listKind: WildFlyServerList
+    plural: wildflyservers
+    shortNames:
+    - wfly
+    singular: wildflyserver
+  scope: Namespaced
+  subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: WildFlyServer is the Schema for the wildflyservers API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: WildFlyServerSpec defines the desired state of WildFlyServer
+          properties:
+            applicationImage:
+              description: ApplicationImage is the name of the application image to
+                be deployed
+              type: string
+            configMaps:
+              description: ConfigMaps is a list of ConfigMaps in the same namespace
+                as the WildFlyServer object, which shall be mounted into the WildFlyServer
+                Pods. The ConfigMaps are mounted into /etc/configmaps/<configmap-name>.
+              items:
+                type: string
+              minItems: 1
+              type: array
+              x-kubernetes-list-type: set
+            disableHTTPRoute:
+              description: DisableHTTPRoute disables the creation a route to the HTTP
+                port of the application service (false if omitted)
+              type: boolean
+            env:
+              description: Env contains environment variables for the containers running
+                the WildFlyServer application
+              items:
+                description: EnvVar represents an environment variable present in
+                  a Container.
+                properties:
+                  name:
+                    description: Name of the environment variable. Must be a C_IDENTIFIER.
+                    type: string
+                  value:
+                    description: 'Variable references $(VAR_NAME) are expanded using
+                      the previous defined environment variables in the container
+                      and any service environment variables. If a variable cannot
+                      be resolved, the reference in the input string will be unchanged.
+                      The $(VAR_NAME) syntax can be escaped with a double $$, ie:
+                      $$(VAR_NAME). Escaped references will never be expanded, regardless
+                      of whether the variable exists or not. Defaults to "".'
+                    type: string
+                  valueFrom:
+                    description: Source for the environment variable's value. Cannot
+                      be used if value is not empty.
+                    properties:
+                      configMapKeyRef:
+                        description: Selects a key of a ConfigMap.
+                        properties:
+                          key:
+                            description: The key to select.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the ConfigMap or its key
+                              must be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                      fieldRef:
+                        description: 'Selects a field of the pod: supports metadata.name,
+                          metadata.namespace, metadata.labels, metadata.annotations,
+                          spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP,
+                          status.podIPs.'
+                        properties:
+                          apiVersion:
+                            description: Version of the schema the FieldPath is written
+                              in terms of, defaults to "v1".
+                            type: string
+                          fieldPath:
+                            description: Path of the field to select in the specified
+                              API version.
+                            type: string
+                        required:
+                        - fieldPath
+                        type: object
+                      resourceFieldRef:
+                        description: 'Selects a resource of the container: only resources
+                          limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage,
+                          requests.cpu, requests.memory and requests.ephemeral-storage)
+                          are currently supported.'
+                        properties:
+                          containerName:
+                            description: 'Container name: required for volumes, optional
+                              for env vars'
+                            type: string
+                          divisor:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Specifies the output format of the exposed
+                              resources, defaults to "1"
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          resource:
+                            description: 'Required: resource to select'
+                            type: string
+                        required:
+                        - resource
+                        type: object
+                      secretKeyRef:
+                        description: Selects a key of a secret in the pod's namespace
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                    type: object
+                required:
+                - name
+                type: object
+              minItems: 1
+              type: array
+              x-kubernetes-list-type: atomic
+            envFrom:
+              description: EnvFrom contains environment variables from a source such
+                as a ConfigMap or a Secret
+              items:
+                description: EnvFromSource represents the source of a set of ConfigMaps
+                properties:
+                  configMapRef:
+                    description: The ConfigMap to select from
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                      optional:
+                        description: Specify whether the ConfigMap must be defined
+                        type: boolean
+                    type: object
+                  prefix:
+                    description: An optional identifier to prepend to each key in
+                      the ConfigMap. Must be a C_IDENTIFIER.
+                    type: string
+                  secretRef:
+                    description: The Secret to select from
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                      optional:
+                        description: Specify whether the Secret must be defined
+                        type: boolean
+                    type: object
+                type: object
+              minItems: 1
+              type: array
+              x-kubernetes-list-type: atomic
+            replicas:
+              description: Replicas is the desired number of replicas for the application
+              format: int32
+              minimum: 0
+              type: integer
+            secrets:
+              description: Secrets is a list of Secrets in the same namespace as the
+                WildFlyServer object, which shall be mounted into the WildFlyServer
+                Pods. The Secrets are mounted into /etc/secrets/<secret-name>.
+              items:
+                type: string
+              minItems: 1
+              type: array
+              x-kubernetes-list-type: set
+            serviceAccountName:
+              type: string
+            sessionAffinity:
+              description: SessionAffinity defines if connections from the same client
+                ip are passed to the same WildFlyServer instance/pod each time (false
+                if omitted)
+              type: boolean
+            standaloneConfigMap:
+              description: StandaloneConfigMapSpec defines the desired configMap configuration
+                to obtain the standalone configuration for WildFlyServer
+              properties:
+                key:
+                  description: Key of the config map whose value is the standalone
+                    XML configuration file ("standalone.xml" if omitted)
+                  type: string
+                name:
+                  type: string
+              required:
+              - name
+              type: object
+            storage:
+              description: StorageSpec defines specific storage required for the server
+                own data directory. If omitted, an EmptyDir is used (that will not
+                persist data across pod restart).
+              properties:
+                emptyDir:
+                  description: Represents an empty directory for a pod. Empty directory
+                    volumes support ownership management and SELinux relabeling.
+                  properties:
+                    medium:
+                      description: 'What type of storage medium should back this directory.
+                        The default is "" which means to use the node''s default medium.
+                        Must be an empty string (default) or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
+                      type: string
+                    sizeLimit:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      description: 'Total amount of local storage required for this
+                        EmptyDir volume. The size limit is also applicable for memory
+                        medium. The maximum usage on memory medium EmptyDir would
+                        be the minimum value between the SizeLimit specified here
+                        and the sum of memory limits of all containers in a pod. The
+                        default is nil which means that the limit is undefined. More
+                        info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  type: object
+                volumeClaimTemplate:
+                  description: VolumeClaimTemplate defines the template to store WildFlyServer
+                    standalone data directory. The name of the template is derived
+                    from the WildFlyServer name.  The corresponding volume will be
+                    mounted in ReadWriteOnce access mode. This template should be
+                    used to specify specific Resources requirements in the template
+                    spec.
+                  properties:
+                    apiVersion:
+                      description: 'APIVersion defines the versioned schema of this
+                        representation of an object. Servers should convert recognized
+                        schemas to the latest internal value, and may reject unrecognized
+                        values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                      type: string
+                    kind:
+                      description: 'Kind is a string value representing the REST resource
+                        this object represents. Servers may infer this from the endpoint
+                        the client submits requests to. Cannot be updated. In CamelCase.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    metadata:
+                      description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
+                      type: object
+                    spec:
+                      description: 'Spec defines the desired characteristics of a
+                        volume requested by a pod author. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                      properties:
+                        accessModes:
+                          description: 'AccessModes contains the desired access modes
+                            the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                          items:
+                            type: string
+                          type: array
+                        dataSource:
+                          description: This field requires the VolumeSnapshotDataSource
+                            alpha feature gate to be enabled and currently VolumeSnapshot
+                            is the only supported data source. If the provisioner
+                            can support VolumeSnapshot data source, it will create
+                            a new volume and data will be restored to the volume at
+                            the same time. If the provisioner does not support VolumeSnapshot
+                            data source, volume will not be created and the failure
+                            will be reported as an event. In the future, we plan to
+                            support more data source types and the behavior of the
+                            provisioner may change.
+                          properties:
+                            apiGroup:
+                              description: APIGroup is the group for the resource
+                                being referenced. If APIGroup is not specified, the
+                                specified Kind must be in the core API group. For
+                                any other third-party types, APIGroup is required.
+                              type: string
+                            kind:
+                              description: Kind is the type of resource being referenced
+                              type: string
+                            name:
+                              description: Name is the name of resource being referenced
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          type: object
+                        resources:
+                          description: 'Resources represents the minimum resources
+                            the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                          properties:
+                            limits:
+                              additionalProperties:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: 'Limits describes the maximum amount of
+                                compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              type: object
+                            requests:
+                              additionalProperties:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: 'Requests describes the minimum amount
+                                of compute resources required. If Requests is omitted
+                                for a container, it defaults to Limits if that is
+                                explicitly specified, otherwise to an implementation-defined
+                                value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              type: object
+                          type: object
+                        selector:
+                          description: A label query over volumes to consider for
+                            binding.
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector
+                                requirements. The requirements are ANDed.
+                              items:
+                                description: A label selector requirement is a selector
+                                  that contains values, a key, and an operator that
+                                  relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector
+                                      applies to.
+                                    type: string
+                                  operator:
+                                    description: operator represents a key's relationship
+                                      to a set of values. Valid operators are In,
+                                      NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: values is an array of string values.
+                                      If the operator is In or NotIn, the values array
+                                      must be non-empty. If the operator is Exists
+                                      or DoesNotExist, the values array must be empty.
+                                      This array is replaced during a strategic merge
+                                      patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: matchLabels is a map of {key,value} pairs.
+                                A single {key,value} in the matchLabels map is equivalent
+                                to an element of matchExpressions, whose key field
+                                is "key", the operator is "In", and the values array
+                                contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
+                        storageClassName:
+                          description: 'Name of the StorageClass required by the claim.
+                            More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                          type: string
+                        volumeMode:
+                          description: volumeMode defines what type of volume is required
+                            by the claim. Value of Filesystem is implied when not
+                            included in claim spec. This is a beta feature.
+                          type: string
+                        volumeName:
+                          description: VolumeName is the binding reference to the
+                            PersistentVolume backing this claim.
+                          type: string
+                      type: object
+                    status:
+                      description: 'Status represents the current information/status
+                        of a persistent volume claim. Read-only. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                      properties:
+                        accessModes:
+                          description: 'AccessModes contains the actual access modes
+                            the volume backing the PVC has. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                          items:
+                            type: string
+                          type: array
+                        capacity:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: Represents the actual resources of the underlying
+                            volume.
+                          type: object
+                        conditions:
+                          description: Current Condition of persistent volume claim.
+                            If underlying persistent volume is being resized then
+                            the Condition will be set to 'ResizeStarted'.
+                          items:
+                            description: PersistentVolumeClaimCondition contails details
+                              about state of pvc
+                            properties:
+                              lastProbeTime:
+                                description: Last time we probed the condition.
+                                format: date-time
+                                type: string
+                              lastTransitionTime:
+                                description: Last time the condition transitioned
+                                  from one status to another.
+                                format: date-time
+                                type: string
+                              message:
+                                description: Human-readable message indicating details
+                                  about last transition.
+                                type: string
+                              reason:
+                                description: Unique, this should be a short, machine
+                                  understandable string that gives the reason for
+                                  condition's last transition. If it reports "ResizeStarted"
+                                  that means the underlying persistent volume is being
+                                  resized.
+                                type: string
+                              status:
+                                type: string
+                              type:
+                                description: PersistentVolumeClaimConditionType is
+                                  a valid value of PersistentVolumeClaimCondition.Type
+                                type: string
+                            required:
+                            - status
+                            - type
+                            type: object
+                          type: array
+                        phase:
+                          description: Phase represents the current phase of PersistentVolumeClaim.
+                          type: string
+                      type: object
+                  type: object
+              type: object
+          required:
+          - applicationImage
+          - replicas
+          type: object
+        status:
+          description: WildFlyServerStatus defines the observed state of WildFlyServer
+          properties:
+            hosts:
+              items:
+                type: string
+              type: array
+              x-kubernetes-list-type: set
+            pods:
+              items:
+                description: PodStatus defines the observed state of pods running
+                  the WildFlyServer application
+                properties:
+                  name:
+                    type: string
+                  podIP:
+                    type: string
+                  state:
+                    description: Represent the state of the Pod, it is used especially
+                      during scale down.
+                    enum:
+                    - ACTIVE
+                    - SCALING_DOWN_RECOVERY_INVESTIGATION
+                    - SCALING_DOWN_RECOVERY_DIRTY
+                    - SCALING_DOWN_CLEAN
+                    type: string
+                required:
+                - name
+                - podIP
+                - state
+                type: object
+              type: array
+              x-kubernetes-list-type: atomic
+            replicas:
+              description: Replicas is the actual number of replicas for the application
+              format: int32
+              type: integer
+            scalingdownPods:
+              description: "Represents the number of pods which are in scaledown process
+                what particular pod is scaling down can be verified by PodStatus \n
+                Read-only."
+              format: int32
+              type: integer
+          required:
+          - replicas
+          - scalingdownPods
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
