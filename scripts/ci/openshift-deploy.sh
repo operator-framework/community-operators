@@ -6,7 +6,7 @@ set -e #fail in case of non zero return
 DO_NOT_RUN=false
 export PATH=$PATH:/tmp/operator-test/bin
 mkdir -p /tmp/operator-test/bin
-curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/operator-test/bin oc
+curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/operator-test/bin oc --skip-old-files
 chmod ug+x /tmp/operator-test/bin/oc
 #oc get pods --all-namespaces|grep -i olm
 
