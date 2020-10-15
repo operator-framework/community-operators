@@ -2,19 +2,19 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"monitoring.coreos.com/v1","kind":"Prometheus","metadata":{"name":"example","labels":{"prometheus":"k8s"}},"spec":{"replicas":2,"serviceAccountName":"prometheus-k8s","securityContext":
-      {}, "serviceMonitorSelector":{},"ruleSelector":{},"alerting":{"alertmanagers":[{"namespace":"monitoring","name":"alertmanager-main","port":"web"}]}}},{"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"name":"example","labels":{"k8s-app":"prometheus"}},"spec":{"selector":{"matchLabels":{"k8s-app":"prometheus"}},"endpoints":[{"port":"web","interval":"30s"}]}},{"apiVersion":"monitoring.coreos.com/v1","kind":"PodMonitor","metadata":{"name":"example","labels":{"k8s-app":"prometheus"}},"spec":{"selector":{"matchLabels":{"k8s-app":"prometheus"}},"podMetricsEndpoints":[{"port":"web","interval":"30s"}]}},{"apiVersion":"monitoring.coreos.com/v1","kind":"Alertmanager","metadata":{"name":"alertmanager-main"},"spec":{"replicas":3,
-      "securityContext": {}}},{"apiVersion":"monitoring.coreos.com/v1","kind":"PrometheusRule","metadata":{"creationTimestamp":null,"labels":{"prometheus":"example","role":"alert-rules"},"name":"prometheus-example-rules"},"spec":{"groups":[{"name":"./example.rules","rules":[{"alert":"ExampleAlert","expr":"vector(1)"}]}]}}]'
+    alm-examples: '[{"apiVersion":"monitoring.coreos.com/v1","kind":"Prometheus","metadata":{"name":"example","labels":{"prometheus-bundle-test":"k8s"}},"spec":{"replicas":2,"serviceAccountName":"prometheus-bundle-test-k8s","securityContext":
+      {}, "serviceMonitorSelector":{},"ruleSelector":{},"alerting":{"alertmanagers":[{"namespace":"monitoring","name":"alertmanager-main","port":"web"}]}}},{"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"name":"example","labels":{"k8s-app":"prometheus-bundle-test"}},"spec":{"selector":{"matchLabels":{"k8s-app":"prometheus-bundle-test"}},"endpoints":[{"port":"web","interval":"30s"}]}},{"apiVersion":"monitoring.coreos.com/v1","kind":"PodMonitor","metadata":{"name":"example","labels":{"k8s-app":"prometheus-bundle-test"}},"spec":{"selector":{"matchLabels":{"k8s-app":"prometheus-bundle-test"}},"podMetricsEndpoints":[{"port":"web","interval":"30s"}]}},{"apiVersion":"monitoring.coreos.com/v1","kind":"Alertmanager","metadata":{"name":"alertmanager-main"},"spec":{"replicas":3,
+      "securityContext": {}}},{"apiVersion":"monitoring.coreos.com/v1","kind":"PrometheusRule","metadata":{"creationTimestamp":null,"labels":{"prometheus-bundle-test":"example","role":"alert-rules"},"name":"prometheus-bundle-test-example-rules"},"spec":{"groups":[{"name":"./example.rules","rules":[{"alert":"ExampleAlert","expr":"vector(1)"}]}]}}]'
     capabilities: Deep Insights
     categories: Monitoring
     certified: 'false'
-    containerImage: quay.io/coreos/prometheus-operator:v0.32.0
+    containerImage: quay.io/coreos/prometheus-bundle-test-operator:v0.32.0
     createdAt: 2019-09-04 12:00:00
     description: Manage the full lifecycle of configuring and managing Prometheus
       and Alertmanager servers.
-    repository: https://github.com/coreos/prometheus-operator
+    repository: https://github.com/coreos/prometheus-bundle-test-operator
     support: Frederic Branczyk
-  name: prometheusoperator.0.32.0
+  name: prometheus-bundle-testoperator.0.32.0
   namespace: placeholder
 spec:
   customresourcedefinitions:
@@ -22,7 +22,7 @@ spec:
     - description: A running Prometheus instance
       displayName: Prometheus
       kind: Prometheus
-      name: prometheuses.monitoring.coreos.com
+      name: prometheus-bundle-testes.monitoring.coreos.com
       resources:
       - kind: StatefulSet
         version: v1beta2
@@ -64,9 +64,9 @@ spec:
         and alerting rules.
       displayName: Prometheus Rule
       kind: PrometheusRule
-      name: prometheusrules.monitoring.coreos.com
+      name: prometheus-bundle-testrules.monitoring.coreos.com
       version: v1
-    - description: Configures prometheus to monitor a particular k8s service
+    - description: Configures prometheus-bundle-test to monitor a particular k8s service
       displayName: Service Monitor
       kind: ServiceMonitor
       name: servicemonitors.monitoring.coreos.com
@@ -85,7 +85,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:endpointList
       version: v1
-    - description: Configures prometheus to monitor a particular pod
+    - description: Configures prometheus-bundle-test to monitor a particular pod
       displayName: Pod Monitor
       kind: PodMonitor
       name: podmonitors.monitoring.coreos.com
@@ -179,16 +179,16 @@ spec:
   install:
     spec:
       deployments:
-      - name: prometheus-operator
+      - name: prometheus-bundle-test-operator
         spec:
           replicas: 1
           selector:
             matchLabels:
-              k8s-app: prometheus-operator
+              k8s-app: prometheus-bundle-test-operator
           template:
             metadata:
               labels:
-                k8s-app: prometheus-operator
+                k8s-app: prometheus-bundle-test-operator
             spec:
               containers:
               - args:
@@ -196,14 +196,14 @@ spec:
                 - -manage-crds=false
                 - -logtostderr=true
                 - --config-reloader-image=quay.io/coreos/configmap-reload@sha256:e2fd60ff0ae4500a75b80ebaa30e0e7deba9ad107833e8ca53f0047c42c5a057
-                - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader@sha256:f1e57817dcfdb2c76e8a154b39180c6c8f3f16b990fe9cc41bee34cca0784a64
+                - --prometheus-bundle-test-config-reloader=quay.io/coreos/prometheus-bundle-test-config-reloader@sha256:f1e57817dcfdb2c76e8a154b39180c6c8f3f16b990fe9cc41bee34cca0784a64
                 env:
                 - name: NAMESPACES
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: quay.io/coreos/prometheus-operator@sha256:ed3ec0597c2d5b7102a7f62c661a23d8e4b34d910693fc23fd40bfb1d9404dcf
-                name: prometheus-operator
+                image: quay.io/coreos/prometheus-bundle-test-operator@sha256:ed3ec0597c2d5b7102a7f62c661a23d8e4b34d910693fc23fd40bfb1d9404dcf
+                name: prometheus-bundle-test-operator
                 ports:
                 - containerPort: 8080
                   name: http
@@ -219,7 +219,7 @@ spec:
                   readOnlyRootFilesystem: true
               nodeSelector:
                 beta.kubernetes.io/os: linux
-              serviceAccount: prometheus-operator
+              serviceAccount: prometheus-bundle-test-operator
       permissions:
       - rules:
         - apiGroups:
@@ -239,7 +239,7 @@ spec:
           - configmaps
           verbs:
           - get
-        serviceAccountName: prometheus-k8s
+        serviceAccountName: prometheus-bundle-test-k8s
       - rules:
         - apiGroups:
           - apiextensions.k8s.io
@@ -251,12 +251,12 @@ spec:
           - monitoring.coreos.com
           resources:
           - alertmanagers
-          - prometheuses
-          - prometheuses/finalizers
+          - prometheus-bundle-testes
+          - prometheus-bundle-testes/finalizers
           - alertmanagers/finalizers
           - servicemonitors
           - podmonitors
-          - prometheusrules
+          - prometheus-bundle-testrules
           verbs:
           - '*'
         - apiGroups:
@@ -296,7 +296,7 @@ spec:
           - namespaces
           verbs:
           - get
-        serviceAccountName: prometheus-operator
+        serviceAccountName: prometheus-bundle-test-operator
     strategy: deployment
   installModes:
   - supported: true
@@ -308,21 +308,21 @@ spec:
   - supported: false
     type: AllNamespaces
   keywords:
-  - prometheus
+  - prometheus-bundle-test
   - monitoring
   - tsdb
   - alerting
   - observability
   labels:
-    alm-owner-prometheus: prometheusoperator
-    alm-status-descriptors: prometheusoperator.0.32.0
+    alm-owner-prometheus-bundle-test: prometheus-bundle-testoperator
+    alm-status-descriptors: prometheus-bundle-testoperator.0.32.0
   links:
   - name: Prometheus
-    url: https://www.prometheus.io/
+    url: https://www.prometheus-bundle-test.io/
   - name: Documentation
-    url: https://github.com/coreos/prometheus-operator/tree/master/Documentation
+    url: https://github.com/coreos/prometheus-bundle-test-operator/tree/master/Documentation
   - name: Prometheus Operator
-    url: https://github.com/coreos/prometheus-operator
+    url: https://github.com/coreos/prometheus-bundle-test-operator
   maintainers:
   - email: openshift-operators@redhat.com
     name: Red Hat
@@ -332,5 +332,5 @@ spec:
     name: Red Hat
   selector:
     matchLabels:
-      alm-owner-prometheus: prometheusoperator
+      alm-owner-prometheus-bundle-test: prometheus-bundle-testoperator
   version: 0.32.0
