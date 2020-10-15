@@ -49,7 +49,7 @@ git --no-pager log -m -1 --name-only --first-parent $COMMIT
 declare -A CHANGED_FILES
 ##community only
 echo "changed community files:"
-CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || ( echo '******* No community operator (Openshift) modified, no reason to deploy on Openshift *******'; DO_NOT_RUN=true; exit 0)
+CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || { echo '******* No community operator (Openshift) modified, no reason to deploy on Openshift *******'; DO_NOT_RUN=true; exit 0; }
 echo
 
 echo "DO_NOT_RUN=$DO_NOT_RUN"
