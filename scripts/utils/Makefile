@@ -69,21 +69,21 @@ dependencies.install.crictl: ## Install crictl
 	@echo "Installed"
 
 olm.install: ## Install OLM to your cluster
-	@scripts/ci/run-script "scripts/ci/install-olm" "Install OLM"
+	@scripts/ci/legacy/run-script "scripts/ci/legacy/install-olm" "Install OLM"
 
 operator.configmap.build: check_path ## Build catalog configmap
-	@scripts/ci/make-tmp
-	@scripts/ci/run-script "scripts/ci/build-catalog-configmap" "Make catalog configmap"
+	@scripts/ci/legacy/make-tmp
+	@scripts/ci/legacy/run-script "scripts/ci/legacy/build-catalog-configmap" "Make catalog configmap"
 
 operator.install: check_path
-	@scripts/ci/make-tmp
+	@scripts/ci/legacy/make-tmp
 	@make operator.verify
-	@scripts/ci/testscript-wrapper "false"
+	@scripts/ci/legacy/testscript-wrapper "false"
 
 operator.test: check_path ## Operator test which run courier and scorecard
-	@scripts/ci/make-tmp
+	@scripts/ci/legacy/make-tmp
 	@make operator.verify
-	@scripts/ci/testscript-wrapper
+	@scripts/ci/legacy/testscript-wrapper
 
 operator.verify: check_path ## Run only courier
-	@scripts/ci/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Lint operator metadata" "false"
+	@scripts/ci/legacy/run-script "operator-courier verify --ui_validate_io ${OP_PATH}" "Lint operator metadata" "false"
