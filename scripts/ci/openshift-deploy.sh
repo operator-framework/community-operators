@@ -3,7 +3,8 @@
 
 set -e #fail in case of non zero return
 
-#DO_NOT_RUN=false
+DO_NOT_RUN=false
+
 #export PATH=$PATH:/tmp/operator-test/bin
 #mkdir -p /tmp/operator-test/bin
 #curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/operator-test/bin oc --skip-old-files
@@ -70,7 +71,7 @@ if [ "$DO_NOT_RUN" = false ] ; then
 
   mkdir -p /tmp/playbooks2
   cd /tmp/playbooks2
-  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER oc_bin_path=oc
+  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path=oc
   echo "Variable summary:"
   echo "OP_NAME=$OP_NAME"
   echo "OP_VER=$OP_VER"
