@@ -4,13 +4,12 @@
 set -e #fail in case of non zero return
 
 DO_NOT_RUN=false
-SUBDIR_ARG=""
+OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
+SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
+echo "SUBDIR_ARG = $SUBDIR_ARG"
 
-which oc || { echo 'which oc not found'; }
-whereis oc || { echo 'whereis oc not found'; }
-
-#looking for oc
-{ OC_ARG='-e oc_bin_path=oc'; oc get pods --all-namespaces|grep -i olm; } || { OC_ARG='-e oc_bin_path=/tmp/operator-test/bin/oc'; /tmp/operator-test/bin/oc get pods --all-namespaces|grep -i olm; } || { OC_ARG='-e oc_bin_path=oc'; OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1); SUBDIR_ARG="-e work_subdir_name=$OC_DIR_CORE"; echo "SUBDIR_ARG = $SUBDIR_ARG"; }
+#which oc || { echo 'which oc not found'; }
+#whereis oc || { echo 'whereis oc not found'; }
 
 if [ -z ${OC_DIR_CORE+x} ]; then
 { echo "old oc installations:"; ls "/tmp/oc-*"; } || { echo "no old oc found"; echo; }
@@ -82,7 +81,7 @@ if [ "$DO_NOT_RUN" = false ] ; then
 
   mkdir -p /tmp/playbooks2
   cd /tmp/playbooks2
-  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER $OC_ARG SUBDIR_ARG
+  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path=oc SUBDIR_ARG
   echo "Variable summary:"
   echo "OP_NAME=$OP_NAME"
   echo "OP_VER=$OP_VER"
