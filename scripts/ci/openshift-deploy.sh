@@ -81,7 +81,7 @@ if [ "$DO_NOT_RUN" = false ] ; then
 
   mkdir -p /tmp/playbooks2
   cd /tmp/playbooks2
-  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path=oc SUBDIR_ARG
+  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path=oc $SUBDIR_ARG
   echo "Variable summary:"
   echo "OP_NAME=$OP_NAME"
   echo "OP_VER=$OP_VER"
