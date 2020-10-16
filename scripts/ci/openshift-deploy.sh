@@ -3,12 +3,23 @@
 
 set -e #fail in case of non zero return
 
-#DO_NOT_RUN=false
-#export PATH=$PATH:/tmp/operator-test/bin
+DO_NOT_RUN=false
+
+which oc || { echo 'which oc not found'; }
+whereis oc || { echo 'whereis oc not found'; }
+
+#looking for oc
+{ OC_ARG='-e oc_bin_path=oc'; oc get pods --all-namespaces|grep -i olm; } || { OC_ARG='-e oc_bin_path=/tmp/operator-test/bin/oc'; /tmp/operator-test/bin/oc get pods --all-namespaces|grep -i olm; } || { OC_ARG='-e oc_bin_path=oc'; OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1); }
+
+if [ -z ${OC_DIR_CORE+x} ]; then
+{ echo "old oc installations:"; ls "/tmp/oc-*"; } || { echo "no old oc found"; echo; }
+export PATH=$PATH:/tmp/oc-$OC_DIR_CORE/bin
 #mkdir -p /tmp/operator-test/bin
-#curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/operator-test/bin oc --skip-old-files
-#chmod ug+x /tmp/operator-test/bin/oc
-##oc get pods --all-namespaces|grep -i olm
+mkdir -p /tmp/oc-$OC_DIR_CORE/bin
+curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/oc-$OC_DIR_CORE/bin oc --skip-old-files
+chmod ug+x /tmp/oc-$OC_DIR_CORE/bin/oc
+#oc get pods --all-namespaces|grep -i olm
+fi
 
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
 
@@ -70,7 +81,7 @@ if [ "$DO_NOT_RUN" = false ] ; then
 
   mkdir -p /tmp/playbooks2
   cd /tmp/playbooks2
-  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER oc_bin_path=oc
+  ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER $OC_ARG
   echo "Variable summary:"
   echo "OP_NAME=$OP_NAME"
   echo "OP_VER=$OP_VER"
