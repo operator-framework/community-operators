@@ -5,7 +5,7 @@ set -e #fail in case of non zero return
 
 DO_NOT_RUN=false
 OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
-SUBDIR_ARG="-e work_subdir_name=$OC_DIR_CORE"
+SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
 
 #which oc || { echo 'which oc not found'; }
