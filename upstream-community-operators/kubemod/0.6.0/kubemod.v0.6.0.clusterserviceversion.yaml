@@ -102,7 +102,7 @@ spec:
     - name: KubeMod
       email: kubemod@googlegroups.com
   provider:
-    name: ''
+    name: KubeMod
   labels: {}
   selector:
     matchLabels: {}
@@ -154,7 +154,8 @@ spec:
     spec:
       permissions: []
       clusterPermissions:
-      - rules:
+      - serviceAccountName: kubemod-operator
+        rules:
         - apiGroups:
           - api.kubemod.io
           resources:
@@ -190,12 +191,49 @@ spec:
                   app.kubernetes.io/component: kubemod-operator
                   control-plane: controller-manager
               spec:
-                serviceAccountName: default
+                serviceAccountName: kubemod-operator
+
+                volumes:
+                  - emptyDir: {}
+                    name: cert
+
+                securityContext:
+                  # 65532:65532 = nonroot:nonroot which is the operator's container user
+                  # runAsUser: 65532
+                  # runAsGroup: 65532
+                  fsGroup: 65532
+
+                initContainers:
+                  - name: init-cert
+                    image: 'kubemod/kubemod-crt:v1.0.0'
+                    command:
+                      - sh
+                      - -c
+                      - |-
+                        cd /kubemod-crt \
+                        && cfssl gencert -initca ca-csr.json | cfssljson -bare ca \
+                        && cfssl gencert \
+                          -ca=ca.pem \
+                          -ca-key=ca-key.pem \
+                          -config=ca-config.json \
+                          -hostname=kubemod-webhook-service.kubemod-system.svc \
+                          -profile=server \
+                          server-csr.json | cfssljson -bare server \
+                        && cp server.pem /tmp/k8s-webhook-server/serving-certs/tls.crt \
+                        && cp server-key.pem /tmp/k8s-webhook-server/serving-certs/tls.key \
+                        && chown 65532:65532 /tmp/k8s-webhook-server/serving-certs/tls.crt \
+                        && chown 65532:65532 /tmp/k8s-webhook-server/serving-certs/tls.key
+
+                    volumeMounts:
+                      - mountPath: /tmp/k8s-webhook-server/serving-certs
+                        name: cert
+
                 containers:
-                  - command:
-                      - /manager
+                  - name: manager
                     image: 'kubemod/kubemod:v0.6.0'
-                    name: manager
+                    command:
+                      - /manager
+                    
                     ports:
                       - containerPort: 9443
                         name: webhook-server
@@ -210,13 +248,9 @@ spec:
                     volumeMounts:
                       - mountPath: /tmp/k8s-webhook-server/serving-certs
                         name: cert
-                        readOnly: true
+                  
                 terminationGracePeriodSeconds: 10
-                volumes:
-                  - name: cert
-                    secret:
-                      defaultMode: 420
-                      secretName: webhook-server-cert
+
   installModes:
     - type: OwnNamespace
       supported: true
