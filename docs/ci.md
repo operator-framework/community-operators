@@ -2,12 +2,12 @@
 
 Operators submitted to this repo are automatically tested on a Kubernetes cluster before being merged. The Kubernetes distribution used for testing depends on which directory the operator is submitted to. Ideally all tests should pass before merging.
 
-You can test operators locally using [following](https://github.com/redhat-operator-ecosystem/operator-test-playbooks/doc/upstream/users/README.md)
+You can test operators locally using [following](https://github.com/redhat-operator-ecosystem/operator-test-playbooks/blob/upstream-community/doc/upstream/users/README.md)
  documentation.
 
 ### CI test scripts
 
-Test scripts are written in Ansible and located [here](https://github.com/redhat-operator-ecosystem/operator-test-playbooks/).
+Test scripts are written in Ansible and located in our upstream-community [branch](https://github.com/redhat-operator-ecosystem/operator-test-playbooks/tree/upstream-community).
 
 There are 3 test types. List of tests are shown in the following table.
 
