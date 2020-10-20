@@ -1,0 +1,194 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: xrootdclusters.xrootd.xrootd.org
+spec:
+  group: xrootd.xrootd.org
+  names:
+    kind: XrootdCluster
+    listKind: XrootdClusterList
+    plural: xrootdclusters
+    singular: xrootdcluster
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: XrootdCluster is the Schema for the xrootdclusters API. This denotes a single Xrootd cluster configured with requested version, xrd config and other relevant configurable options.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: XrootdClusterSpec defines the desired state of XrootdCluster
+            properties:
+              config:
+                description: XrootdConfigSpec defines the config spec used to generate xrootd.cf
+                type: object
+              redirector:
+                description: XrootdRedirectorSpec defines the desired state of Xrootd redirectors
+                properties:
+                  replicas:
+                    default: 1
+                    description: The desired number of redirector pods for the xrootd cluster
+                    format: int32
+                    minimum: 1
+                    type: integer
+                type: object
+              version:
+                description: Version must be name of XrootdVersion CR instance which defines the xrootd protcol image to use in the cluster pods. The requested XrootdVersion instance must be installed in the target namespace using XrootdVersion CRD.
+                pattern: .+
+                type: string
+              worker:
+                description: XrootdWorkerSpec defines the desired state of Xrootd workers
+                properties:
+                  replicas:
+                    default: 1
+                    description: The desired number of worker pods for the xrootd cluster
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  storage:
+                    description: The desired storage class to use for Dynamic Persistent Volume Provisioning for Worker pods
+                    properties:
+                      capacity:
+                        description: Capacity must be a storage capacity and should be a valid quantity (ex, 1Gi)
+                        type: string
+                      class:
+                        default: standard
+                        description: Class must be a storage class
+                        type: string
+                    type: object
+                type: object
+            required:
+            - version
+            type: object
+          status:
+            description: XrootdClusterStatus defines the observed state of XrootdCluster
+            properties:
+              conditions:
+                description: Condition keeps track of all cluster conditions, if they exist.
+                items:
+                  description: ClusterCondition represents one current condition of the xrootd cluster.
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status to another.
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      type: string
+                    message:
+                      description: A human readable message indicating details about the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of cluster condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentXrootdProtocol:
+                description: CurrentXrootdProtocol tracks the currently-used xrootd protocol info
+                properties:
+                  image:
+                    description: Image is the currently used image for xrootd containers
+                    type: string
+                  version:
+                    description: Version is the current xrootd version used in the cluster
+                    type: string
+                required:
+                - image
+                - version
+                type: object
+              phase:
+                description: Phase is the current phase of the cluster
+                type: string
+              reason:
+                description: Reason explains the current phase of the cluster.
+                type: string
+              redirectorStatus:
+                description: MemberStatus defines the observed status of Xrootd member (worker/redirector)
+                properties:
+                  pods:
+                    description: PodStatus defines the status of each of the member Pods for the specific component of xrootd cluster
+                    properties:
+                      ready:
+                        description: Ready are the xrootd members that are ready to serve requests The member names are the same as the xrootd pod names
+                        items:
+                          type: string
+                        type: array
+                      unready:
+                        description: Unready are the xrootd members not ready to serve requests
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - ready
+                    - unready
+                    type: object
+                  size:
+                    description: Size is the current size of the cluster
+                    type: integer
+                required:
+                - pods
+                - size
+                type: object
+              workerStatus:
+                description: MemberStatus defines the observed status of Xrootd member (worker/redirector)
+                properties:
+                  pods:
+                    description: PodStatus defines the status of each of the member Pods for the specific component of xrootd cluster
+                    properties:
+                      ready:
+                        description: Ready are the xrootd members that are ready to serve requests The member names are the same as the xrootd pod names
+                        items:
+                          type: string
+                        type: array
+                      unready:
+                        description: Unready are the xrootd members not ready to serve requests
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - ready
+                    - unready
+                    type: object
+                  size:
+                    description: Size is the current size of the cluster
+                    type: integer
+                required:
+                - pods
+                - size
+                type: object
+            required:
+            - currentXrootdProtocol
+            - phase
+            - redirectorStatus
+            - workerStatus
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
