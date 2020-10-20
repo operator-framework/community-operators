@@ -2,17 +2,33 @@
 
 Operators submitted to this repo are automatically tested on a Kubernetes cluster before being merged. The Kubernetes distribution used for testing depends on which directory the operator is submitted to. Ideally all tests should pass before merging.
 
+You can test operators locally using [following](https://github.com/redhat-operator-ecosystem/operator-test-playbooks/doc/upstream/users/README.md)
+ documentation.
+
 ### CI test scripts
 
-Operators are tested using several scripts found in the [`scripts/ci/`][scripts-ci] directory. When a PR is updated or modified, the CI configuration calls a `Makefile` which provides multiple targets to test deployment and execution of your Operator. For each operator updated in a PR the following targets are executed:
+Test scripts are written in Ansible and located [here](https://github.com/redhat-operator-ecosystem/operator-test-playbooks/).
 
-- `operator.verify` - lints the Operator metadata (CSV, `package.yaml` and CRDs)
+There are 3 test types. List of tests are shown in the following table.
 
-- `operator.install` - packages the Operator as part of the community catalog and tries to deploy it using OLM
+|Test type|Description|
+|:--------|:----------|
+|kiwi|Full operator test|
+|lemon|Full test of operator to be deployed from scratch|
+|orange|Full test of operator to be deployed with existing bundles in quay registry|
+|all|kiwi,lemon,orange|
 
-- `operator.test` - executes `operator.install` and then runs [scorecard][sdk-scorecard] against the deployed Operator.
+#### kiwi - full operator test
+* linting
+* checking operator format
+* scorecard
+* temporary deploy single operator on Kind cluster
 
-You can also run this pipeline locally by running the `Makefile` on your local machine. Follow our [documentation][test-script-docs] for more details.
+#### lemon
+Test if deploy is possible from the scratch. I means creating bundle images and index image.
+
+#### orange
+Test if release pipeline can handle current operator configuration before release is triggered.
 
 #### OLM
 
