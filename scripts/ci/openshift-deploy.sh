@@ -80,7 +80,7 @@ echo "OP_VER=$OP_VER"
 #test
 OP_NAME=aqua
 OP_VER=1.0.2
-COMMIT=1234
+COMMIT=v1.0.2
 echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
 #deploy start
