@@ -86,7 +86,7 @@ echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 #deploy start
 mkdir -p /tmp/playbooks2
 cd /tmp/playbooks2
-ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path=/tmp/oc-$OC_DIR_CORE/bin/oc -e commit_tag=$COMMIT -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG
+ansible-pull -d /tmp/.ansible-pulled -vv -U https://github.com/J0zi/operator-test-playbooks -C RHO-716-deploy-on-openshift -vv -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$COMMIT -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
