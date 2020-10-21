@@ -11,15 +11,15 @@ echo "SUBDIR_ARG = $SUBDIR_ARG"
 #which oc || { echo 'which oc not found'; }
 #whereis oc || { echo 'whereis oc not found'; }
 
-if [ -z ${OC_DIR_CORE+x} ]; then
-{ echo "old oc installations:"; ls "/tmp/oc-*"; } || { echo "no old oc found"; echo; }
-export PATH=$PATH:/tmp/oc-$OC_DIR_CORE/bin
-#mkdir -p /tmp/operator-test/bin
-mkdir -p /tmp/oc-$OC_DIR_CORE/bin
-curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/oc-$OC_DIR_CORE/bin oc --skip-old-files
-chmod ug+x /tmp/oc-$OC_DIR_CORE/bin/oc
-#oc get pods --all-namespaces|grep -i olm
-fi
+#if [ -z ${OC_DIR_CORE+x} ]; then
+#{ echo "old oc installations:"; ls "/tmp/oc-*"; } || { echo "no old oc found"; echo; }
+#export PATH=$PATH:/tmp/oc-$OC_DIR_CORE/bin
+##mkdir -p /tmp/operator-test/bin
+#mkdir -p /tmp/oc-$OC_DIR_CORE/bin
+#curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/oc-$OC_DIR_CORE/bin oc --skip-old-files
+#chmod ug+x /tmp/oc-$OC_DIR_CORE/bin/oc
+##oc get pods --all-namespaces|grep -i olm
+#fi
 
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
 
