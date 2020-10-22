@@ -8,22 +8,9 @@ OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
 
-#which oc || { echo 'which oc not found'; }
-#whereis oc || { echo 'whereis oc not found'; }
-
-#if [ -z ${OC_DIR_CORE+x} ]; then
-#{ echo "old oc installations:"; ls "/tmp/oc-*"; } || { echo "no old oc found"; echo; }
-#export PATH=$PATH:/tmp/oc-$OC_DIR_CORE/bin
-##mkdir -p /tmp/operator-test/bin
-#mkdir -p /tmp/oc-$OC_DIR_CORE/bin
-#curl https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.6/linux/oc.tar.gz | tar xvzf - -C /tmp/oc-$OC_DIR_CORE/bin oc --skip-old-files
-#chmod ug+x /tmp/oc-$OC_DIR_CORE/bin/oc
-##oc get pods --all-namespaces|grep -i olm
-#fi
-
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
 
-##temp test
+##temp test for development to test on a stable commit
 #echo "Need to clone test branch, cloning..."
 #mkdir -p /tmp/oper-for-me-test
 #cd /tmp/oper-for-me-test
@@ -33,7 +20,7 @@ TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community
 #ls
 #TARGET_PATH='/tmp/oper-for-me-test/community-operators/community-operators'
 
-##clone again to suppress caching
+##clone again to suppress caching during pr on ci-operator repo
 #echo "Need to clone actual branch, cloning..."
 #mkdir -p /tmp/oper-for-me-test
 #cd /tmp/oper-for-me-test
@@ -76,12 +63,11 @@ echo "OP_VER=$OP_VER"
 
 #detection end
 
-#TODO: comment out
 #test
-OP_NAME=aqua
-OP_VER=1.0.2
-COMMIT=1234
-echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
+#OP_NAME=aqua
+#OP_VER=1.0.2
+#COMMIT=1234
+#echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
 #deploy start
 mkdir -p /tmp/playbooks2
