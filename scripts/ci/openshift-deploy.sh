@@ -3,11 +3,11 @@
 
 set -e #fail in case of non zero return
 
-DO_NOT_RUN=false
 OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
 
+pwd
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
 
 ##temp test for development to test on a stable commit
@@ -34,7 +34,7 @@ TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community
 cd "$TARGET_PATH"
 pwd
 #TODO: check
-COMMIT=$(git --no-pager log -n1 --format=format:"%H" | tail -n 1)
+COMMIT=$(git --no-pager log -n1 --pretty=format:%h | tail -n 1)
 echo
 echo "Target commit $COMMIT"
 
@@ -47,7 +47,7 @@ git --no-pager log -m -1 --name-only --first-parent $COMMIT
 declare -A CHANGED_FILES
 ##community only
 echo "changed community files:"
-CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || { echo '******* No community operator (Openshift) modified, no reason to deploy on Openshift *******'; DO_NOT_RUN=true; exit 0; }
+CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || { echo '******* No community operator (Openshift) modified, no reason to deploy on Openshift *******'; exit 0; }
 echo
 
 for sf in ${CHANGED_FILES[@]}; do
