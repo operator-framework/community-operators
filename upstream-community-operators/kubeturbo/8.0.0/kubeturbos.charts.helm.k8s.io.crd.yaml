@@ -1,0 +1,131 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kubeturbos.charts.helm.k8s.io
+spec:
+  group: charts.helm.k8s.io
+  names:
+    kind: Kubeturbo
+    listKind: KubeturboList
+    plural: kubeturbos
+    singular: kubeturbo
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1
+  versions:
+    # Each version can be enabled/disabled by Served flag.
+    # One and only one version must be marked as the storage version.
+    - name: v1
+      served: true
+      storage: true
+    - name: v1alpha1
+      served: true
+      storage: false
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values.
+            More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase.
+            More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            replicaCount:
+              description: Kubeturbo replicaCount
+              type: integer
+            image:
+              description: Kubeturbo image details for deployments outside of RH Operator Hub
+              properties:
+                repository:
+                  description: Container repository. default is docker hub
+                  type: string
+                tag:
+                  description: Kubeturbo container image tag
+                  type: string
+                pullPolicy:
+                  description: Define pull policy, Always is default
+                  type: string
+            serverMeta:
+              description: Configuration for Turbo Server
+              properties:
+                version:
+                  description: Turbo Server major version
+                  type: string
+                turboServer:
+                  description: URL for Turbo Server endpoint
+                  type: string
+            restAPIConfig:
+              description: Credentials to register probe with Turbo Server
+              properties:
+                turbonomicCredentialsSecretName:
+                  description: Name of k8s secret that contains the turbo credentials
+                  type: string
+                opsManagerUserName:
+                  description: Turbo admin user id
+                  type: string
+                opsManagerPassword:
+                  description: Turbo admin user password
+                  type: string
+            HANodeConfig:
+              description: Create HA placement policy for Node to Hypervisor by node role. Master is default
+              properties:
+                nodeRoles:
+                  description: Node role names
+                  type: string, quote
+            targetConfig:
+              description: Optional target configuration
+              properties:
+                targetName:
+                  description: Optional target name for registration
+                  type: string
+            args:
+              description: Kubeturbo command line arguments
+              properties:
+                logginglevel:
+                  description: Define logging level, default is info = 2
+                  type: integer
+                kubelethttps:
+                  description: Identify if kubelet requires https
+                  type: boolean
+                kubeletport:
+                  description: Identify kubelet port
+                  type: integer
+                stitchuuid:
+                  description: Identify if using uuid or ip for stitching
+                  type: boolean
+                sccsupport:
+                  description: Allow kubeturbo to execute actions in OCP
+                  type: string
+            resources:
+              description: Kubeturbo resource configuration
+              properties:
+                limits:
+                  description: Define limits
+                  properties:
+                    memory:
+                      description: Define memory limits in Gi or Mi, include units
+                      type: string
+                    cpu:
+                      description: Define cpu limits in cores or millicores, include units
+                      type: string
+                requests:
+                  description: Define requests
+                  properties:
+                    memory:
+                      description: Define memory requests in Gi or Mi, include units
+                      type: string
+                    cpu:
+                      description: Define cpu requests in cores or millicores, include units
+                      type: string
