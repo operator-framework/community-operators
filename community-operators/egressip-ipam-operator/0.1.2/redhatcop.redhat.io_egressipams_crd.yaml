@@ -1,0 +1,171 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: egressipams.redhatcop.redhat.io
+spec:
+  group: redhatcop.redhat.io
+  names:
+    kind: EgressIPAM
+    listKind: EgressIPAMList
+    plural: egressipams
+    singular: egressipam
+  scope: Cluster
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: EgressIPAM is the Schema for the egressipams API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: EgressIPAMSpec defines the desired state of EgressIPAM
+          properties:
+            cidrAssignments:
+              description: CIDRAssignments is a set of CIDRs. Namespaces will receive
+                one available IP from each of this CIDRs.
+              items:
+                properties:
+                  CIDR:
+                    description: kubebuilder:validation:Pattern=^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/(3[0-2]|2[0-9]|1[0-9]|[0-9]))?$
+                      CIDR a CIDR. IPs in this CIDR will be added to the nodes selected
+                      by the topology label and value. These IPs must be routable
+                      when attached to the selected nodes
+                    pattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(3[0-2]|[1-2][0-9]|[0-9]))$
+                    type: string
+                  labelValue:
+                    description: LabelValue the label value, which together with the
+                      TopologyLabel select the nodes that will carry the IPs from
+                      this CIDR
+                    type: string
+                  reservedIPs:
+                    description: This does not work kubebuilder:validation:Pattern=`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`
+                      ReservedIPs a set of IPs in the CIDR that are reserved for other
+                      purposes and cannot be assigned.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                required:
+                - CIDR
+                - labelValue
+                type: object
+              type: array
+              x-kubernetes-list-map-keys:
+              - CIDR
+              x-kubernetes-list-type: map
+            nodeSelector:
+              description: NodeSelector is a selector that allows to subset which
+                nodes will be managed by this EgressIPAM
+              properties:
+                matchExpressions:
+                  description: matchExpressions is a list of label selector requirements.
+                    The requirements are ANDed.
+                  items:
+                    description: A label selector requirement is a selector that contains
+                      values, a key, and an operator that relates the key and values.
+                    properties:
+                      key:
+                        description: key is the label key that the selector applies
+                          to.
+                        type: string
+                      operator:
+                        description: operator represents a key's relationship to a
+                          set of values. Valid operators are In, NotIn, Exists and
+                          DoesNotExist.
+                        type: string
+                      values:
+                        description: values is an array of string values. If the operator
+                          is In or NotIn, the values array must be non-empty. If the
+                          operator is Exists or DoesNotExist, the values array must
+                          be empty. This array is replaced during a strategic merge
+                          patch.
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - key
+                    - operator
+                    type: object
+                  type: array
+                matchLabels:
+                  additionalProperties:
+                    type: string
+                  description: matchLabels is a map of {key,value} pairs. A single
+                    {key,value} in the matchLabels map is equivalent to an element
+                    of matchExpressions, whose key field is "key", the operator is
+                    "In", and the values array contains only "value". The requirements
+                    are ANDed.
+                  type: object
+              type: object
+            topologyLabel:
+              description: TopologyLabel is the label that needs to identified nodes
+                that will carry egressIPs in the CIDRAssignments. Each label value
+                should map to a CIDR in the CIDRAssignments.
+              type: string
+          required:
+          - topologyLabel
+          type: object
+        status:
+          description: EgressIPAMStatus defines the observed state of EgressIPAM
+          properties:
+            conditions:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file Add custom validation using kubebuilder
+                tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+              items:
+                description: "Condition represents an observation of an object's state.
+                  Conditions are an extension mechanism intended to be used when the
+                  details of an observation are not a priori known or would not apply
+                  to all instances of a given Kind. \n Conditions should be added
+                  to explicitly convey properties that users and components care about
+                  rather than requiring those properties to be inferred from other
+                  observations. Once defined, the meaning of a Condition can not be
+                  changed arbitrarily - it becomes part of the API, and has the same
+                  backwards- and forwards-compatibility concerns of any other part
+                  of the API."
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    description: ConditionReason is intended to be a one-word, CamelCase
+                      representation of the category of cause of the current status.
+                      It is intended to be used in concise output, such as one-line
+                      kubectl get output, and in summarizing occurrences of causes.
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    description: "ConditionType is the type of the condition and is
+                      typically a CamelCased word or short phrase. \n Condition types
+                      should indicate state in the \"abnormal-true\" polarity. For
+                      example, if the condition indicates when a policy is invalid,
+                      the \"is valid\" case is probably the norm, so the condition
+                      should be called \"Invalid\"."
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
