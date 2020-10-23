@@ -1,0 +1,110 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: targetendpoints.wso2.com
+spec:
+  group: wso2.com
+  names:
+    kind: TargetEndpoint
+    listKind: TargetEndpointList
+    plural: targetendpoints
+    singular: targetendpoint
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: TargetEndpoint is the Schema for the targetendpoints API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: TargetEndpointSpec defines the desired state of TargetEndpoint
+          properties:
+            applicationProtocol:
+              description: Protocol of the application. Supports "http" and "https".
+              type: string
+            deploy:
+              description: Deployment details.
+              properties:
+                cpuLimit:
+                  type: string
+                dockerImage:
+                  type: string
+                maxReplicas:
+                  format: int32
+                  type: integer
+                memoryLimit:
+                  type: string
+                minReplicas:
+                  format: int32
+                  type: integer
+                name:
+                  type: string
+                reqMemory:
+                  type: string
+                requestCPU:
+                  type: string
+              required:
+              - dockerImage
+              - name
+              type: object
+            mode:
+              description: Mode of the Target Endpoint. Supports "privateJet", "sidecar",
+                "serverless". Default value "privateJet"
+              type: string
+            ports:
+              description: List of optional ports of the target endpoint. First port
+                should be the port of the target endpoint which is referred in swagger
+                definition.
+              items:
+                description: Port represents ports of the Target Endpoint
+                properties:
+                  name:
+                    description: The name of this port within the service. This must
+                      be a DNS_LABEL. All ports within a ServiceSpec must have unique
+                      names.
+                    type: string
+                  port:
+                    description: The port that will be exposed by this service.
+                    format: int32
+                    type: integer
+                  targetPort:
+                    description: Port that is targeted to expose.
+                    format: int32
+                    type: integer
+                required:
+                - name
+                - port
+                - targetPort
+                type: object
+              type: array
+          required:
+          - applicationProtocol
+          - deploy
+          - ports
+          type: object
+        status:
+          description: TargetEndpointStatus defines the observed state of TargetEndpoint
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
