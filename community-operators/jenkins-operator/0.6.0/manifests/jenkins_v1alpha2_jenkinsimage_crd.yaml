@@ -1,0 +1,135 @@
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: jenkinsimages.jenkins.io
+spec:
+  group: jenkins.io
+  names:
+    kind: JenkinsImage
+    listKind: JenkinsImageList
+    plural: jenkinsimages
+    singular: jenkinsimage
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: JenkinsImage is the Schema for the jenkinsimages API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: JenkinsImageSpec defines the desired state of JenkinsImage
+          properties:
+            defaultUpdateCenter:
+              description: DefaultUpdateCenter is a customer update center url from
+                which all plugins will be downloaded. if not specified, https://updates.jenkins.io/
+                is used
+              type: string
+            from:
+              description: A JenkinsImage definition
+              properties:
+                name:
+                  description: The Image name
+                  type: string
+                registry:
+                  description: The registry to pull from or push to this image in
+                    the form fully.qdn/myrepository/ Image name will be appended for
+                    push
+                  type: string
+                secret:
+                  description: Secret is an optional reference to a secret in the
+                    same namespace to use for pushing to or pulling from the registry.
+                  type: string
+                tag:
+                  description: The tag name
+                  type: string
+              required:
+              - name
+              type: object
+            plugins:
+              description: Plugins list
+              items:
+                description: Defines Jenkins Plugin structure
+                properties:
+                  name:
+                    type: string
+                  updateCenter:
+                    description: UpdateCenter is a specific update center url from
+                      which this plugin will be downloaded. If not specified, DefaultUpdateCenter
+                      is used.
+                    type: string
+                  version:
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
+            to:
+              description: A JenkinsImage definition
+              properties:
+                name:
+                  description: The Image name
+                  type: string
+                registry:
+                  description: The registry to pull from or push to this image in
+                    the form fully.qdn/myrepository/ Image name will be appended for
+                    push
+                  type: string
+                secret:
+                  description: Secret is an optional reference to a secret in the
+                    same namespace to use for pushing to or pulling from the registry.
+                  type: string
+                tag:
+                  description: The tag name
+                  type: string
+              required:
+              - name
+              type: object
+          required:
+          - from
+          - to
+          type: object
+        status:
+          description: JenkinsImageStatus defines the observed state of JenkinsImage
+          properties:
+            builds:
+              items:
+                properties:
+                  image:
+                    type: string
+                  installedPlugins:
+                    type: string
+                  md5sum:
+                    type: string
+                type: object
+              type: array
+            phase:
+              type: string
+          required:
+          - builds
+          - phase
+          type: object
+      type: object
+  version: v1alpha2
+  versions:
+  - name: v1alpha2
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
