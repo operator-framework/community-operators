@@ -1,0 +1,242 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: infinispans.infinispan.org
+spec:
+  group: infinispan.org
+  names:
+    kind: Infinispan
+    listKind: InfinispanList
+    plural: infinispans
+    singular: infinispan
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Infinispan is the Schema for the infinispans API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: InfinispanSpec defines the desired state of Infinispan
+          properties:
+            autoscale:
+              description: Autoscale describe autoscaling configuration for the cluster
+              properties:
+                maxMemUsagePercent:
+                  type: integer
+                maxReplicas:
+                  format: int32
+                  type: integer
+                minMemUsagePercent:
+                  type: integer
+                minReplicas:
+                  format: int32
+                  type: integer
+              required:
+              - maxMemUsagePercent
+              - maxReplicas
+              - minMemUsagePercent
+              - minReplicas
+              type: object
+            container:
+              description: InfinispanContainerSpec specify resource requirements per
+                container
+              properties:
+                cpu:
+                  type: string
+                extraJvmOpts:
+                  type: string
+                memory:
+                  type: string
+              type: object
+            expose:
+              description: ExposeSpec describe how Infinispan will be exposed externally
+              properties:
+                host:
+                  type: string
+                nodePort:
+                  format: int32
+                  type: integer
+                type:
+                  description: Type specifies different exposition methods for data
+                    grid
+                  enum:
+                  - NodePort
+                  - LoadBalancer
+                  - Route
+                  type: string
+              required:
+              - type
+              type: object
+            image:
+              type: string
+            logging:
+              properties:
+                categories:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+            replicas:
+              format: int32
+              type: integer
+            security:
+              description: InfinispanSecurity info for the user application connection
+              properties:
+                endpointEncryption:
+                  description: EndpointEncryption configuration
+                  properties:
+                    certSecretName:
+                      type: string
+                    certServiceName:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  type: object
+                endpointSecretName:
+                  type: string
+              type: object
+            service:
+              description: InfinispanServiceSpec specify configuration for specific
+                service
+              properties:
+                container:
+                  description: InfinispanServiceContainerSpec resource requirements
+                    specific for service
+                  properties:
+                    storage:
+                      type: string
+                  required:
+                  - storage
+                  type: object
+                replicationFactor:
+                  format: int32
+                  type: integer
+                sites:
+                  properties:
+                    local:
+                      properties:
+                        expose:
+                          description: ExposeSpec describe how Infinispan will be
+                            exposed externally
+                          properties:
+                            host:
+                              type: string
+                            nodePort:
+                              format: int32
+                              type: integer
+                            type:
+                              description: Type specifies different exposition methods
+                                for data grid
+                              enum:
+                              - NodePort
+                              - LoadBalancer
+                              - Route
+                              type: string
+                          required:
+                          - type
+                          type: object
+                        name:
+                          type: string
+                      required:
+                      - expose
+                      - name
+                      type: object
+                    locations:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          secretName:
+                            type: string
+                          url:
+                            type: string
+                        required:
+                        - name
+                        - secretName
+                        - url
+                        type: object
+                      type: array
+                  required:
+                  - local
+                  type: object
+                type:
+                  type: string
+              required:
+              - type
+              type: object
+          required:
+          - replicas
+          type: object
+        status:
+          description: InfinispanStatus defines the observed state of Infinispan
+          properties:
+            conditions:
+              description: 'Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file'
+              items:
+                description: InfinispanCondition define a condition of the cluster
+                properties:
+                  message:
+                    description: Human-readable message indicating details about last
+                      transition.
+                    type: string
+                  status:
+                    description: Status is the status of the condition.
+                    type: string
+                  type:
+                    description: Type is the type of the condition.
+                    type: string
+                required:
+                - message
+                - status
+                - type
+                type: object
+              type: array
+            replicasWantedAtRestart:
+              format: int32
+              type: integer
+            security:
+              description: InfinispanSecurity info for the user application connection
+              properties:
+                endpointEncryption:
+                  description: EndpointEncryption configuration
+                  properties:
+                    certSecretName:
+                      type: string
+                    certServiceName:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  type: object
+                endpointSecretName:
+                  type: string
+              type: object
+            statefulSetName:
+              type: string
+          required:
+          - security
+          - statefulSetName
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
