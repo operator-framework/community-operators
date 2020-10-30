@@ -70,6 +70,21 @@ echo "OP_VER=$OP_VER"
 #COMMIT=1234
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
+cd community-operators/aqua
+
+podman --version
+/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true # or buildah
+/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true # or buildah
+podman pull centos:8|true
+
+#export OP_STREAM=community-operators
+#export OP_VERSION=$OP_VER
+#export OP_NAME=$OP_NAME
+#export OP_OSR_HAH= #"quay.io/operator_testing|$OP_TOKEN|$COMMIT"
+#export STORAGE_DRIVER=vfs
+#bash <(curl -sL https://raw.githubusercontent.com/J0zi/operator-test-playbooks/upstream-community/test/osr_test.sh)
+##solve secret or local registry (empty token)
+
 #deploy start
 mkdir -p /tmp/playbooks2
 cd /tmp/playbooks2
