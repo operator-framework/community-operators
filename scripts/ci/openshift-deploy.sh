@@ -70,7 +70,8 @@ echo "OP_VER=$OP_VER"
 #COMMIT=1234
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
-cd community-operators/aqua
+ls
+cd aqua
 
 podman --version
 /tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true # or buildah
