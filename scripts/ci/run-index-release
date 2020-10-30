@@ -8,6 +8,7 @@ AUTH_PARAMS=''
 GENERATE_OP_CONF=1
 FORCE_RELEASE=0
 MODE_CHANGE=${MODE_CHANGE-0}
+OP_DELETE=${OP_DELETE-0}
 OP_UNCOMPLETE=/tmp/operators_uncomplete-localhost.yaml
 MY_OP_BASE_DIR="/tmp/oper/community-operators"
 
@@ -41,9 +42,18 @@ if [ -n "$2" ];then
   MY_OP_NAME=$(echo $2 | cut -d '/' -f 2)
   MY_OP_VER=$(echo $2 | cut -d '/' -f 3)
 
-  if [ -n $MY_OP_STREAM ] && [ -n $MY_OP_NAME ] && [ -n $MY_OP_VER ];then
-    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,deploy_bundles \
-    -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME -e operator_version=$MY_OP_VER $BUNDLE_FORCE_PARAMS $AUTH_PARAMS -e bundle_force_rebuild=true
+  if [ -n $MY_OP_STREAM ] && [ -n $MY_OP_NAME ] &&;then
+    if  [ -n $MY_OP_VER ]; then
+      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,deploy_bundles \
+      -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME -e operator_version=$MY_OP_VER $BUNDLE_FORCE_PARAMS $AUTH_PARAMS -e bundle_force_rebuild=true
+    else
+      if [[ $OP_DELETE -eq 1 ]];then
+        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,remove_operator \
+        -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME $BUNDLE_FORCE_PARAMS $AUTH_PARAMS
+      else
+        echo "Trying to delete operator $2 !!! Define 'export OP_DELETE=1' to perform delete "
+      fi
+    fi
   else
     echo "Error: stream/operator/version '$2' is not defined correctly !!! "
   fi
