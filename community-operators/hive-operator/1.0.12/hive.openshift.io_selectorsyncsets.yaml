@@ -1,0 +1,202 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: selectorsyncsets.hive.openshift.io
+spec:
+  group: hive.openshift.io
+  names:
+    kind: SelectorSyncSet
+    listKind: SelectorSyncSetList
+    plural: selectorsyncsets
+    shortNames:
+    - sss
+    singular: selectorsyncset
+  scope: Cluster
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: SelectorSyncSet is the Schema for the SelectorSyncSet API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SelectorSyncSetSpec defines the SyncSetCommonSpec resources
+            and patches to sync along with a ClusterDeploymentSelector indicating
+            which clusters the SelectorSyncSet applies to in any namespace.
+          properties:
+            applyBehavior:
+              description: ApplyBehavior indicates how resources in this syncset will
+                be applied to the target cluster. The default value of "Apply" indicates
+                that resources should be applied using the 'oc apply' command. If
+                no value is set, "Apply" is assumed. A value of "CreateOnly" indicates
+                that the resource will only be created if it does not already exist
+                in the target cluster. Otherwise, it will be left alone. A value of
+                "CreateOrUpdate" indicates that the resource will be created/updated
+                without the use of the 'oc apply' command, allowing larger resources
+                to be synced, but losing some functionality of the 'oc apply' command
+                such as the ability to remove annotations, labels, and other map entries
+                in general.
+              enum:
+              - ""
+              - Apply
+              - CreateOnly
+              - CreateOrUpdate
+              type: string
+            clusterDeploymentSelector:
+              description: ClusterDeploymentSelector is a LabelSelector indicating
+                which clusters the SelectorSyncSet applies to in any namespace.
+              properties:
+                matchExpressions:
+                  description: matchExpressions is a list of label selector requirements.
+                    The requirements are ANDed.
+                  items:
+                    description: A label selector requirement is a selector that contains
+                      values, a key, and an operator that relates the key and values.
+                    properties:
+                      key:
+                        description: key is the label key that the selector applies
+                          to.
+                        type: string
+                      operator:
+                        description: operator represents a key's relationship to a
+                          set of values. Valid operators are In, NotIn, Exists and
+                          DoesNotExist.
+                        type: string
+                      values:
+                        description: values is an array of string values. If the operator
+                          is In or NotIn, the values array must be non-empty. If the
+                          operator is Exists or DoesNotExist, the values array must
+                          be empty. This array is replaced during a strategic merge
+                          patch.
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - key
+                    - operator
+                    type: object
+                  type: array
+                matchLabels:
+                  additionalProperties:
+                    type: string
+                  description: matchLabels is a map of {key,value} pairs. A single
+                    {key,value} in the matchLabels map is equivalent to an element
+                    of matchExpressions, whose key field is "key", the operator is
+                    "In", and the values array contains only "value". The requirements
+                    are ANDed.
+                  type: object
+              type: object
+            patches:
+              description: Patches is the list of patches to apply.
+              items:
+                description: SyncObjectPatch represents a patch to be applied to a
+                  specific object
+                properties:
+                  apiVersion:
+                    description: APIVersion is the Group and Version of the object
+                      to be patched.
+                    type: string
+                  kind:
+                    description: Kind is the Kind of the object to be patched.
+                    type: string
+                  name:
+                    description: Name is the name of the object to be patched.
+                    type: string
+                  namespace:
+                    description: Namespace is the Namespace in which the object to
+                      patch exists. Defaults to the SyncSet's Namespace.
+                    type: string
+                  patch:
+                    description: Patch is the patch to apply.
+                    type: string
+                  patchType:
+                    description: PatchType indicates the PatchType as "strategic"
+                      (default), "json", or "merge".
+                    type: string
+                required:
+                - apiVersion
+                - kind
+                - name
+                - patch
+                type: object
+              type: array
+            resourceApplyMode:
+              description: ResourceApplyMode indicates if the Resource apply mode
+                is "Upsert" (default) or "Sync". ApplyMode "Upsert" indicates create
+                and update. ApplyMode "Sync" indicates create, update and delete.
+              type: string
+            resources:
+              description: Resources is the list of objects to sync from RawExtension
+                definitions.
+              items:
+                type: object
+              type: array
+            secretMappings:
+              description: Secrets is the list of secrets to sync along with their
+                respective destinations.
+              items:
+                description: SecretMapping defines a source and destination for a
+                  secret to be synced by a SyncSet
+                properties:
+                  sourceRef:
+                    description: SourceRef specifies the name and namespace of a secret
+                      on the management cluster
+                    properties:
+                      name:
+                        description: Name is the name of the secret
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace where the secret lives.
+                          If not present for the source secret reference, it is assumed
+                          to be the same namespace as the syncset with the reference.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  targetRef:
+                    description: TargetRef specifies the target name and namespace
+                      of the secret on the target cluster
+                    properties:
+                      name:
+                        description: Name is the name of the secret
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace where the secret lives.
+                          If not present for the source secret reference, it is assumed
+                          to be the same namespace as the syncset with the reference.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                required:
+                - sourceRef
+                - targetRef
+                type: object
+              type: array
+          type: object
+        status:
+          description: SelectorSyncSetStatus defines the observed state of a SelectorSyncSet
+          type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
