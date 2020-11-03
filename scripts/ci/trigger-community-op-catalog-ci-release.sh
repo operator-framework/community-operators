@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-eval $(scripts/ci/ansible-env)
+source scripts/ci/ansible-env
 
 curl -s -X POST \
      -H "Content-Type: application/json" \
