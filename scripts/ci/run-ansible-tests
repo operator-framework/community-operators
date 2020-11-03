@@ -1,21 +1,31 @@
 #!/usr/bin/env bash
 
-source scripts/ci/ansible-env
+set -e
 
-if [ -z "${OP_PATH}" ] ;
-  then
-    echo "No operator modification detected. Exiting."
-    exit 0
-  else
-    echo "Detected modified Operator in ${OP_PATH}"
-    echo "Detected modified Operator version ${OP_VER}"
+NO_OPERATOR=0 #related to ansible-env
+scripts/ci/ansible-env
+
+if [ -f /tmp/vars-op-path ]; then
+  source /tmp/vars-op-path
+
+  if [ -z "${OP_PATH}" ] ;
+    then
+      echo "No operator modification detected. Exiting."
+      exit 0
+    else
+      echo "Detected modified Operator in ${OP_PATH}"
+      echo "Detected modified Operator version ${OP_VER}"
+    fi
+
+  if [ "$STREAM_NAME" = "upstream-community-operators" ] ; then CHECK_WITH='-e production_registry_namespace=quay.io/operatorhubio'
+  else CHECK_WITH='-e production_registry_namespace=quay.io/openshift-community-operators'
   fi
 
-if [ "$STREAM_NAME" = "upstream-community-operators" ] ; then CHECK_WITH='-e production_registry_namespace=quay.io/operatorhubio'
-else CHECK_WITH='-e production_registry_namespace=quay.io/openshift-community-operators'
+  [ "$STREAM_NAME" = "community-operators" ] && EXTRA="-e test_skip_deploy=true"
+
+  ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS \
+  -e operator_dir=$(pwd)/$OP_PATH -e operator_version=$OP_VER -e catalog_repo_dir=$(pwd) --tags host_build,pure_test $CHECK_WITH $EXTRA
+else
+     echo "The file /tmp/vars-op-path does not exist."
+     exit 1
 fi
-
-[ "$STREAM_NAME" = "community-operators" ] && EXTRA="-e test_skip_deploy=true"
-
-ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS \
--e operator_dir=$(pwd)/$OP_PATH -e operator_version=$OP_VER -e catalog_repo_dir=$(pwd) --tags host_build,pure_test $CHECK_WITH $EXTRA
