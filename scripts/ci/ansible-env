@@ -52,10 +52,36 @@ for sf in ${CHANGED_FILES[@]}; do
   fi
 done
 echo
+echo
+if [ "$UPSTREAM_SET" -eq "0" ]; then
+   if [ "$COMMUNITY_SET" -eq "0" ]; then
+     echo "No operator modified, exiting, no need to test/release."; echo; echo;
+
+      cat <<EOF >/tmp/vars-op-path
+export NO_OPERATOR=1
+export PR_COMMIT=$PR_COMMIT #for traffic light
+EOF
+
+     exit 0;
+   fi
+fi
+
+echo
+
+if [ -z "${OP_PATH+xxx}" ]; then
+  echo OP_PATH is not set at all;
+  exit 1
+fi
+
+cat <<EOF >/tmp/vars-op-path
 export OP_PATH=$OP_PATH
 export OP_NAME=$OP_NAME
 export OP_VER=$OP_VER
+export PR_COMMIT=$PR_COMMIT
+EOF
 
+echo "UPSTREAM_SET=$UPSTREAM_SET"
+echo "COMMUNITY_SET=$COMMUNITY_SET"
 echo "OP_PATH=$OP_PATH"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"

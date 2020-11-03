@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 # Stop all tests by red light, operator not modified
 
-source scripts/ci/ansible-env
-git log|head -n 100
-echo
-echo "N-1 commit:"
-git log -n2 --format=format:"%H" | tail -n 1
-echo "Diffs detected:"
-git log -m -1 --name-only --first-parent $PR_COMMIT
+set -e
 
-if [ -n "${OP_PATH}" ];
-  then
-    echo "Found modified operator. Green light."
-    exit 0
-  else
-    echo "Operator not modified, no need to run tests. Red light."
-    exit 1
+NO_OPERATOR=0 #related to ansible-env
+scripts/ci/ansible-env
+
+if [ -f /tmp/vars-op-path ]; then
+     source /tmp/vars-op-path
+
+    git log|head -n 100
+    echo
+    echo "N-1 commit:"
+    git log -n2 --format=format:"%H" | tail -n 1
+    echo "Diffs detected:"
+    git log -m -1 --name-only --first-parent $PR_COMMIT
+
+    if [ -n "${OP_PATH}" ];
+      then
+        echo "Found modified operator. Green light."
+        exit 0
+      else
+        echo "Operator not modified, no need to run tests. Red light."
+        exit 1
+    fi
+
+else
+     echo "The file /tmp/vars-op-path does not exist."
+     exit 1
 fi

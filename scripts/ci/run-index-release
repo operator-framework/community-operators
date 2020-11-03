@@ -1,80 +1,92 @@
 #!/usr/bin/env bash
-set -e #fail in case of non zero return
+set -e
 
-source scripts/ci/ansible-env
+NO_OPERATOR=0 #related to ansible-env
+scripts/ci/ansible-env
 
-INDEX_CHECK_PARAMS=''
-AUTH_PARAMS=''
-GENERATE_OP_CONF=1
-FORCE_RELEASE=0
-MODE_CHANGE=${MODE_CHANGE-0}
-OP_DELETE=${OP_DELETE-0}
-OP_UNCOMPLETE=/tmp/operators_uncomplete-localhost.yaml
-MY_OP_BASE_DIR="/tmp/oper/community-operators"
+if [ -f /tmp/vars-op-path ]; then
+    source /tmp/vars-op-path
+    if [ "$NO_OPERATOR" -gt "0"  ]; then
+     exit 0 # no need to test/release, no operator modified
+    fi
 
-case "$1" in
+    INDEX_CHECK_PARAMS=''
+    AUTH_PARAMS=''
+    GENERATE_OP_CONF=1
+    FORCE_RELEASE=0
+    MODE_CHANGE=${MODE_CHANGE-0}
+    OP_DELETE=${OP_DELETE-0}
+    OP_UNCOMPLETE=/tmp/operators_uncomplete-localhost.yaml
+    MY_OP_BASE_DIR="/tmp/oper/community-operators"
 
--u)  echo "Index fix upstream pipeline"
-        STREAM_NAME='upstream-community-operators'
-        INDEX_CHECK_PARAMS='-e bundle_index_image=quay.io/operatorhubio/catalog -e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME
-        AUTH_PARAMS='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
-        BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/operatorhubio"
-    ;;
--c)  echo "Index fix community pipeline"
-        STREAM_NAME='community-operators'
-        INDEX_CHECK_PARAMS='-e bundle_index_image=quay.io/openshift-community-operators/catalog -e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME
-        # AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
-        AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog"
-        # BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
-        BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators"
-    ;;
-*) echo "Syntax: $0 [-u|c]"
-   echo "options:"
-   echo "u     upstream - Run index fix upstream pipeline"
-   echo "c     community - Run index fix community pipeline"
-   echo
+    case "$1" in
 
-esac
+    -u)  echo "Index fix upstream pipeline"
+            STREAM_NAME='upstream-community-operators'
+            INDEX_CHECK_PARAMS='-e bundle_index_image=quay.io/operatorhubio/catalog -e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME
+            AUTH_PARAMS='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
+            BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/operatorhubio"
+        ;;
+    -c)  echo "Index fix community pipeline"
+            STREAM_NAME='community-operators'
+            INDEX_CHECK_PARAMS='-e bundle_index_image=quay.io/openshift-community-operators/catalog -e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME
+            # AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
+            AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog"
+            # BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
+            BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators"
+        ;;
+    *) echo "Syntax: $0 [-u|c]"
+       echo "options:"
+       echo "u     upstream - Run index fix upstream pipeline"
+       echo "c     community - Run index fix community pipeline"
+       echo
 
-# In case one adds stream/operator/version as second parameter
-if [ -n "$2" ];then
-  MY_OP_STREAM=$(echo $2 | cut -d '/' -f 1)
-  MY_OP_NAME=$(echo $2 | cut -d '/' -f 2)
-  MY_OP_VER=$(echo $2 | cut -d '/' -f 3)
+    esac
 
-  if [ -n $MY_OP_STREAM ] && [ -n $MY_OP_NAME ];then
-    if  [ ! -z $MY_OP_VER ]; then
-      echo "Fixing bundle and index for operator '$2' ..."
-      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,deploy_bundles \
-      -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME -e operator_version=$MY_OP_VER $BUNDLE_FORCE_PARAMS $AUTH_PARAMS -e bundle_force_rebuild=true
-    else
-      if [[ $OP_DELETE -eq 1 ]];then
-        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,remove_operator \
-        -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME $BUNDLE_FORCE_PARAMS $AUTH_PARAMS
+    # In case one adds stream/operator/version as second parameter
+    if [ -n "$2" ];then
+      MY_OP_STREAM=$(echo $2 | cut -d '/' -f 1)
+      MY_OP_NAME=$(echo $2 | cut -d '/' -f 2)
+      MY_OP_VER=$(echo $2 | cut -d '/' -f 3)
+
+      if [ -n $MY_OP_STREAM ] && [ -n $MY_OP_NAME ];then
+        if  [ ! -z $MY_OP_VER ]; then
+          echo "Fixing bundle and index for operator '$2' ..."
+          ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,deploy_bundles \
+          -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME -e operator_version=$MY_OP_VER $BUNDLE_FORCE_PARAMS $AUTH_PARAMS -e bundle_force_rebuild=true
+        else
+          if [[ $OP_DELETE -eq 1 ]];then
+            ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,remove_operator \
+            -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME $BUNDLE_FORCE_PARAMS $AUTH_PARAMS
+          else
+            echo "Trying to delete operator $2 !!! Define 'export OP_DELETE=1' to perform delete "
+          fi
+        fi
       else
-        echo "Trying to delete operator $2 !!! Define 'export OP_DELETE=1' to perform delete "
+        echo "Error: stream/operator/version '$2' is not defined correctly !!! "
+      fi
+
+    else
+
+      echo "Only update graph mode with no version change: MODE_CHANGE=$MODE_CHANGE"
+
+      echo "Index fix pipeline starting"
+      rm -f $OP_UNCOMPLETE
+      if [[ $MODE_CHANGE -eq 0 ]] ; then
+        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,index_check $INDEX_CHECK_PARAMS
+      else
+        echo "operator_base_dir: $(pwd)/$STREAM_NAME\noperators" > "$OP_UNCOMPLETE"
+        echo "operators:" >> "$OP_UNCOMPLETE"
+        echo "- $OP_NAME" >> "$OP_UNCOMPLETE"
+        ANSIBLE_EXTRA_TAGS="host_build,"
+      fi
+      if [ -f $OP_UNCOMPLETE ];then
+        cat $OP_UNCOMPLETE
+        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags ${ANSIBLE_EXTRA_TAGS}deploy_bundles -e operators_config=$OP_UNCOMPLETE $AUTH_PARAMS -e index_force_update=true -e strict_mode=true
       fi
     fi
-  else
-    echo "Error: stream/operator/version '$2' is not defined correctly !!! "
-  fi
 
 else
-
-  echo "Only update graph mode with no version change: MODE_CHANGE=$MODE_CHANGE"
-
-  echo "Index fix pipeline starting"
-  rm -f $OP_UNCOMPLETE
-  if [[ $MODE_CHANGE -eq 0 ]] ; then
-    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,index_check $INDEX_CHECK_PARAMS
-  else
-    echo "operator_base_dir: $(pwd)/$STREAM_NAME\noperators" > "$OP_UNCOMPLETE"
-    echo "operators:" >> "$OP_UNCOMPLETE"
-    echo "- $OP_NAME" >> "$OP_UNCOMPLETE"
-    ANSIBLE_EXTRA_TAGS="host_build,"
-  fi
-  if [ -f $OP_UNCOMPLETE ];then
-    cat $OP_UNCOMPLETE
-    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags ${ANSIBLE_EXTRA_TAGS}deploy_bundles -e operators_config=$OP_UNCOMPLETE $AUTH_PARAMS -e index_force_update=true -e strict_mode=true
-  fi
+     echo "The file /tmp/vars-op-path does not exist."
+     exit 1
 fi
