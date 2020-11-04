@@ -2,7 +2,7 @@
 set -e
 
 NO_OPERATOR=0 #related to ansible-env
-scripts/ci/ansible-env
+scripts/ci/ansible-env release
 
 if [ -f /tmp/vars-op-path ]; then
      source /tmp/vars-op-path

@@ -5,8 +5,15 @@ set -e
 unset OP_PATH
 unset OP_VER
 [ -e /tmp/op_ver ] && rm /tmp/op_ver
-#export PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)
-export PR_COMMIT=$(git --no-pager log --oneline| head -n 1 | awk '{print $3}')
+
+if [ "$1" = "release" ]; then
+  echo "Running in release mode."
+  export PR_COMMIT=$(git log -n1 --format=format:"%H" | tail -n 1)
+else
+  echo "Running in PR (test) mode."
+  #export PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)
+  export PR_COMMIT=$(git --no-pager log --oneline| head -n 1 | awk '{print $3}')
+fi
 export MODE_CHANGE=0 # targeting ci.yaml
 
 echo "PR_COMMIT=$PR_COMMIT"
