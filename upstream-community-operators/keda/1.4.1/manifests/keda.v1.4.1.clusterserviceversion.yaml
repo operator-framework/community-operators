@@ -1,18 +1,18 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: keda.v1.2.0
+  name: keda.v1.4.1
   namespace: placeholder
   annotations:
     alm-examples: >-
-      [{"apiVersion":"keda.k8s.io/v1alpha1","kind":"KedaController","metadata":{"name":"keda","namespace":"keda"},"spec":{"watchNamespace":"","logLevel":"info","logLevelMetrics":"0"}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"TriggerAuthentication","metadata":{"name":"example-triggerauth","namespace":"example-namespace"},"spec":{"secretTargetRef":[{"key":"example-role-key","name":"example-secret-name","parameter":"exmaple-secret-parameter"}]}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"ScaledObject","metadata":{"name":"example-scaledobject","labels":{"deploymentName":"example-deployment"}},"spec":{"scaleTargetRef":{"deploymentName":"example-deployment","containerName":"example-container"},"pollingInterval":30,"cooldownPeriod":300,"minReplicaCount":0,"maxReplicaCount":100,"triggers":[{"type":"example-trigger","metadata":{"namespace":"examle-namespace"}}]}}]
+      [{"apiVersion":"keda.k8s.io/v1alpha1","kind":"KedaController","metadata":{"name":"keda","namespace":"keda"},"spec":{"watchNamespace":"","logLevel":"info","logLevelMetrics":"0","logTimeFormat":"epoch"}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"TriggerAuthentication","metadata":{"name":"example-triggerauthentication","namespace":"example-namespace"},"spec":{"secretTargetRef":[{"key":"example-role-key","name":"example-secret-name","parameter":"exmaple-secret-parameter"}]}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"ScaledObject","metadata":{"name":"example-scaledobject"},"spec":{"scaleTargetRef":{"deploymentName":"example-deployment","containerName":"example-container"},"pollingInterval":30,"cooldownPeriod":300,"minReplicaCount":0,"maxReplicaCount":100,"triggers":[{"type":"example-trigger","metadata":{"namespace":"examle-namespace"}}]}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"TriggerAuthentication","metadata":{"name":"example-triggerauth","namespace":"example-namespace"},"spec":{"secretTargetRef":[{"key":"example-role-key","name":"example-secret-name","parameter":"exmaple-secret-parameter"}]}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"ScaledObject","metadata":{"name":"example-scaledobject","labels":{"deploymentName":"example-deployment"}},"spec":{"scaleTargetRef":{"deploymentName":"example-deployment","containerName":"example-container"},"pollingInterval":30,"cooldownPeriod":300,"minReplicaCount":0,"maxReplicaCount":100,"triggers":[{"type":"example-trigger","metadata":{"namespace":"examle-namespace"}}]}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"TriggerAuthentication","metadata":{"name":"example-triggerauthentication"},"spec":{"secretTargetRef":[{"parameter":"exmaple-secret-parameter","name":"example-secret-name","key":"example-role-key"}]}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"ScaledObject","metadata":{"name":"example-scaledobject"},"spec":{"scaleTargetRef":{"deploymentName":"example-deployment","containerName":"example-container"},"pollingInterval":30,"cooldownPeriod":300,"minReplicaCount":0,"maxReplicaCount":100,"triggers":[{"type":"example-trigger","metadata":{"namespace":"examle-namespace"}}]}},{"apiVersion":"keda.k8s.io/v1alpha1","kind":"KedaController","metadata":{"name":"keda","namespace":"keda"},"spec":{"watchNamespace":"","logLevel":"info","logLevelMetrics":"0"}}]
     categories: Cloud Provider
     certified: 'false'
-    createdAt: '2020-02-06T00:00:00.000Z'
+    createdAt: '2020-04-24T00:00:00.000Z'
     description: 'Operator that provides KEDA, a Kubernetes-based event driver autoscaler'
-    containerImage: 'docker.io/kedacore/keda-olm-operator:1.2.0'
-    support: 'KEDA Community'
-    capabilities: Basic Install
+    containerImage: 'docker.io/kedacore/keda-olm-operator:1.4.1'
+    support: KEDA Community
+    capabilities: Seamless Upgrades
     repository: 'https://github.com/kedacore/keda-olm-operator'
 spec:
   displayName: KEDA
@@ -27,23 +27,28 @@ spec:
 
     ## About this Operator
 
-    The KEDA Operator deploys and manages installation of KEDA Controller in the cluster.
-    Install this operator and follow installation instructions
-    on how to install KEDA in you cluster.
+    The KEDA Operator deploys and manages installation of KEDA Controller in the
+    cluster. Install this operator and follow installation instructions on how
+    to install KEDA in you cluster.
 
     ### How to install KEDA in the cluster
 
-    The installation of KEDA is triggered by the creation of `KedaController` resource. 
+    The installation of KEDA is triggered by the creation of `KedaController`
+    resource. 
 
-    Only resource named `keda` in namespace `keda` will
-    trigger the installation, reconfiguration or removal of the KEDA
-    Controller resource.
+    Only resource named `keda` in namespace `keda` will trigger the
+    installation, reconfiguration or removal of the KEDA Controller resource.
 
 
     There could be only one KEDA Controller in the cluster. 
 
+
+
+
+
   maturity: alpha
-  version: 1.2.0
+  version: 1.4.1
+  skips: []
   minKubeVersion: 1.13.0
   keywords:
     - keda
@@ -76,7 +81,7 @@ spec:
         displayName: KedaController
         kind: KedaController
         version: v1alpha1
-        description: >
+        description: |
           Represents an installation of a particular version of KEDA Controller.
         resources:
           - version: v1
@@ -87,14 +92,23 @@ spec:
             kind: ReplicaSet
           - version: v1
             kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
         specDescriptors:
           - path: logLevel
-            description: Log Level
+            description: Log Level for KEDA Operator
             displayName: Log Level
             x-descriptors:
               - 'urn:alm:descriptor:com.tectonic.ui:text'
+          - displayName: Log Format
+            description: Log Format for KEDA Operator
+            path: logTimeFormat
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
           - path: logLevelMetrics
-            description: Log Level Metrics
+            description: Log Level for KEDA Metrics Server
             displayName: Log Level Metrics
             x-descriptors:
               - 'urn:alm:descriptor:com.tectonic.ui:text'
@@ -149,8 +163,8 @@ spec:
         kind: ScaledObject
         version: v1alpha1
         description: >-
-          Defines how KEDA should scale your application
-          and what the triggers are
+          Defines how KEDA should scale your application and what the triggers
+          are
         resources:
           - version: v1
             kind: Deployment
@@ -290,6 +304,12 @@ spec:
                 - '*'
               verbs:
                 - '*'
+            - apiGroups: 
+                - route.openshift.io
+              resources:
+                - routes
+              verbs:
+                - list
       deployments:
         - name: keda-olm-operator
           spec:
@@ -305,7 +325,7 @@ spec:
                 serviceAccountName: keda-olm-operator
                 containers:
                   - name: keda-olm-operator
-                    image: 'docker.io/kedacore/keda-olm-operator:1.2.0'
+                    image: 'docker.io/zroubalik/keda-olm-operator:1.4.1'
                     command:
                       - keda-olm-operator
                     imagePullPolicy: Always
