@@ -33,7 +33,6 @@ TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community
 
 cd "$TARGET_PATH"
 pwd
-#TODO: check
 COMMIT=$(git --no-pager log -n1 --pretty=format:%h | tail -n 1)
 echo
 echo "Target commit $COMMIT"
@@ -74,8 +73,15 @@ ls
 cd aqua
 
 podman --version
-/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true # or buildah
-/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true # or buildah
+echo
+/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true
+echo
+/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true
+echo
+podman build -f ../jenkins-operator/0.6.0/Dockerfile community-operators/jenkins-operator/0.6.0|true
+echo
+buildah bud -f ../jenkins-operator/0.6.0/Dockerfile community-operators/jenkins-operator/0.6.0|true
+echo
 podman pull centos:8|true
 
 #export OP_STREAM=community-operators
