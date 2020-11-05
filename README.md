@@ -50,9 +50,7 @@ Similarly, to update your operator you need to submit a PR with any changes to y
 
 Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](./docs/ci.md). The pipeline will actually run the same `Makefile` commands you use to test locally.
 
-You can help speed up the review of your PR by testing locally, either [manually](./docs/testing-operators.md) or [using scripts](./docs/using-scripts.md)
-
-Tests not passing? Check [here](docs/using-scripts.md#troubleshooting).
+You can help speed up the review of your PR by testing locally, either [manually](./docs/testing-operators.md) or [using scripts](./docs/using-current-test-suite.md). For troubleshooting failing tests consult the [manual test steps](./docs/testing-operators.md).
 
 ## Reporting Bugs
 
