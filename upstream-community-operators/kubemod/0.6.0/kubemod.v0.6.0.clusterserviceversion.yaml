@@ -1,0 +1,253 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: kubemod.v0.6.0
+  namespace: placeholder
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "api.kubemod.io/v1beta1",
+          "kind": "ModRule",
+          "metadata": {
+              "name": "my-modrule"
+          },
+          "spec": {
+              "type": "Patch",
+              "match": [
+                {
+                    "select": "$.kind",
+                    "matchValue": "Deployment"
+                },
+                {
+                    "select": "$.metadata.labels.app",
+                    "matchValue": "nginx"
+                },
+                {
+                    "select": "$.spec.template.spec.containers[*].image",
+                    "matchRegex": "nginx:1\\.14\\..*"
+                },
+                {
+                    "select": "$.spec.template.spec.securityContext.runAsNonRoot == true",
+                    "negate": true
+                }
+              ],
+              "patch": [
+                {
+                    "op": "add",
+                    "path": "/metadata/annotations/my-annotation",
+                    "value": "whatever"
+                },
+                {
+                    "op": "add",
+                    "path": "/spec/template/spec/securityContext",
+                    "value": "fsGroup: 101\nrunAsGroup: 101\nrunAsUser: 101\nrunAsNonRoot: true"
+                }
+              ]
+          }
+        }
+      ]
+
+    categories: 'Application Runtime,  Developer Tools, Integration & Delivery'
+    certified: 'false'
+    createdAt: '2020-10-16T12:00:00+00:00'
+    description: Universal Kubernetes resource mutator
+    containerImage: 'kubemod/kubemod:v0.6.0'
+    support: KubeMod Community
+    capabilities: Full Lifecycle
+    repository: 'https://github.com/kubemod/kubemod'
+spec:
+  displayName: KubeMod
+  description: |-
+    KubeMod unlocks the power of [Kubernetes Mutating
+    Webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)
+    by introducing `ModRule` - a custom Kubernetes resource which allows you to
+    intercept the creation of any Kubernetes object and apply targeted
+    modifications to it before it is deployed to the cluster.
+
+
+    ### Use KubeMod to
+
+    * Customize opaque Helm charts and Kubernetes operators
+
+    * Build a system of policy rules to reject misbehaving resources
+
+    * Develop your own sidecar container injections - no coding required
+
+    ### Operator features
+
+    * **Matching** - powerful matching mechanism based on [JSON Path](https://goessner.net/articles/JsonPath/) select expressions evaluated against
+      any type of Kubernetes resource at the time the resource is deployed.
+    * **Patching** - ability to patch the object using a series of [RFC6902 JSON Patch](http://tools.ietf.org/html/rfc6902) operations.
+    * **Templating** - the patch values are evaluated as Golang templates executed in the context of the matched Kubernetes object.
+    * **Resource rejection** - ability to reject the deployment of resources which match certain criteria.
+    * **Sandboxing** - each ModRule applies only to objects created in the namespace where the ModRule is deployed.
+
+    ### Motivation and use cases
+
+    See [documentation](https://github.com/kubemod/kubemod#motivation-and-use-cases) for more information.
+
+    ### Before you start
+
+    Namespace `kubemod-system` must be created before the operator is installed.
+
+  maturity: beta
+  version: 0.6.0
+  replaces: ''
+  skips: []
+  minKubeVersion: 1.9.0
+  keywords:
+    - mutating
+  maintainers:
+    - name: KubeMod
+      email: kubemod@googlegroups.com
+  provider:
+    name: KubeMod
+  labels: {}
+  selector:
+    matchLabels: {}
+  links:
+    - name: Documentation
+      url: 'https://github.com/kubemod/kubemod#kubemod'
+
+  icon:
+    - base64data: >-
+        PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8IURPQ1RZUEUgc3ZnICBQVUJMSUMgJy0vL1czQy8vRFREIFNWRyAxLjEgVGlueS8vRU4nICAnaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEtdGlueS5kdGQnPgo8c3ZnIGJhc2VQcm9maWxlPSJ0aW55IiBoZWlnaHQ9IjUxMnB4IiB3aWR0aD0iNTEycHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB4bWw6c3BhY2U9InByZXNlcnZlIgogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgPGc+CiAgICA8Zz4KICAgICAgPGc+CiAgICAgICAgPHBvbHlnb24gZmlsbD0iIzBBNzdCNyIgcG9pbnRzPSIxMjMsMzAzLjE5MyAxMjMsMTg0Ljk3MyAyNywxMzYuNjU1IDI3LDI1NC44NzUgICAgIi8+CiAgICAgICAgPHBvbHlnb24gZmlsbD0iI0VFNzdCNyIgcG9pbnRzPSIxNDYsMzE0Ljg1NSAyNDIsMzYzLjE5MyAyNDIsMjQ0Ljk2NyAxNDYsMTk2LjYzNiAgICAiLz4KICAgICAgICA8cG9seWdvbiBmaWxsPSIjMEE3N0I3IiBwb2ludHM9IjE0NiwzNDMuNDI4IDE0Niw0NjEuNjM1IDI0Miw1MDkuOTIgMjQyLDM5MS43NTIgICAgIi8+CiAgICAgICAgPHBvbHlnb24gZmlsbD0iIzBBNzdCNyIgcG9pbnRzPSIxMjMsMzMxLjc2NSAyNywyODMuNDUzIDI3LDQwMS42MjIgMTIzLDQ0OS45NDYgICAgIi8+CiAgICAgIDwvZz4KICAgICAgPGc+CiAgICAgICAgPHBvbHlnb24gZmlsbD0iIzBBNzdCNyIgcG9pbnRzPSIzOTAsMzAzLjE5MyAzOTAsMTg0Ljk3MyA0ODYsMTM2LjY1NSA0ODYsMjU0Ljg3NSAgICAiLz4KICAgICAgICA8cG9seWdvbiBmaWxsPSIjRUU3N0I3IiBwb2ludHM9IjM2NywzMTQuODU1IDI3MSwzNjMuMTkzIDI3MSwyNDQuOTY3IDM2NywxOTYuNjM2ICAgICIvPgogICAgICAgIDxwb2x5Z29uIGZpbGw9IiMwQTc3QjciIHBvaW50cz0iMzY3LDM0My40MjggMzY3LDQ2MS42MzUgMjcxLDUwOS45MiAyNzEsMzkxLjc1MiAgICAiLz4KICAgICAgICA8cG9seWdvbiBmaWxsPSIjMEE3N0I3IiBwb2ludHM9IjM5MCwzMzEuNzY1IDQ4NiwyODMuNDUzIDQ4Niw0MDEuNjIyIDM5MCw0NDkuOTQ2ICAgICIvPgogICAgICA8L2c+CiAgICA8L2c+CiAgICA8Zz4KICAgICAgPHBvbHlnb24gZmlsbD0iIzBBNzdCNyIgcG9pbnRzPSIyNTUuNzk2LDk0LjIxNCAzNTMuOTcxLDQ2LjExIDI1NS43MTgsMS4zMDUgMTU3LjczOCw0Ni44NDQgICAiLz4KICAgICAgPHBvbHlnb24gZmlsbD0iIzBBNzdCNyIgcG9pbnRzPSIyODAuMzYsMTA2LjA3OCAzODUuOTE5LDE1Ny4wNzEgNDg0LjA3NCwxMDUuNDY3IDM3OC41MTYsNTcuMzEyICAgIi8+CiAgICAgIDxwb2x5Z29uIGZpbGw9IiNFRTc3QjciIHBvaW50cz0iMjU1LjgxNSwxMTguMjU5IDE1MC42NzksMTcwLjQ5MyAyNTUuOTc4LDIyNS40MTUgMzYxLjM3MywxNzAuMDA2ICAgIi8+CiAgICAgIDxwb2x5Z29uIGZpbGw9IiMwQTc3QjciIHBvaW50cz0iMjMxLjI3NiwxMDYuMjQgMTMzLjI5Niw1OC4yMDEgMjguNjI3LDEwNi44NSAxMjYuMjEyLDE1Ny43MzMgICAiLz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPgo=
+      mediatype: image/svg+xml
+  customresourcedefinitions:
+    owned:
+      - name: modrules.api.kubemod.io
+        displayName: ModRule
+        kind: ModRule
+        version: v1beta1
+        description: Mod Rule
+        resources:
+          - version: v1
+            kind: Deployment
+          - version: v1
+            kind: Service
+          - version: v1
+            kind: ReplicaSet
+          - version: v1
+            kind: Pod
+          - version: v1
+            kind: Secret
+          - version: v1
+            kind: ConfigMap
+        specDescriptors:
+          - path: match
+            description: Match
+            displayName: Match
+            x-descriptors: []
+          - path: patch
+            description: Patch
+            displayName: Patch
+            x-descriptors: []
+          - path: type
+            description: Type
+            displayName: Type
+            x-descriptors: []
+        statusDescriptors: []
+    required: []
+  install:
+    strategy: deployment
+    spec:
+      permissions: []
+      clusterPermissions:
+      - serviceAccountName: kubemod-operator
+        rules:
+        - apiGroups:
+          - api.kubemod.io
+          resources:
+          - modrules
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - api.kubemod.io
+          resources:
+          - modrules/status
+          verbs:
+          - get
+          - patch
+          - update
+
+      deployments:
+        - name: kubemod-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app.kubernetes.io/component: kubemod-operator
+                control-plane: controller-manager
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/component: kubemod-operator
+                  control-plane: controller-manager
+              spec:
+                serviceAccountName: kubemod-operator
+
+                volumes:
+                  - emptyDir: {}
+                    name: cert
+
+                securityContext:
+                  # 65532:65532 = nonroot:nonroot which is the operator's container user
+                  runAsUser: 65532
+                  runAsGroup: 65532
+                  fsGroup: 65532
+
+                initContainers:
+                  - name: init-cert
+                    image: 'kubemod/kubemod-crt:v1.1.0'
+                    command:
+                      - sh
+                      - -c
+                      - |-
+                        cd /kubemod-crt \
+                        && ./cert-generate.sh \
+                        && cp server.pem /tmp/k8s-webhook-server/serving-certs/tls.crt \
+                        && cp server-key.pem /tmp/k8s-webhook-server/serving-certs/tls.key
+
+                    volumeMounts:
+                      - mountPath: /tmp/k8s-webhook-server/serving-certs
+                        name: cert
+
+                containers:
+                  - name: manager
+                    image: 'kubemod/kubemod:v0.6.0'
+                    command:
+                      - /manager
+                    
+                    ports:
+                      - containerPort: 9443
+                        name: webhook-server
+                        protocol: TCP
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 100Mi
+                      requests:
+                        cpu: 100m
+                        memory: 20Mi
+                    volumeMounts:
+                      - mountPath: /tmp/k8s-webhook-server/serving-certs
+                        name: cert
+                  
+                terminationGracePeriodSeconds: 10
+
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: false
+    - type: AllNamespaces
+      supported: false
