@@ -32,7 +32,7 @@ You can leverage the `Makefile` at the top-level directory of this repository to
 
 `make operator.test OP_PATH=upstream-community-operators/my-operator`
 
-Tests not passing? Check [here](docs/using-scripts.md#troubleshooting).
+Tests not passing? Check [here](https://github.com/redhat-operator-ecosystem/operator-test-playbooks/blob/upstream-community/doc/upstream/README.md).
 
 ## Preview your Operator on OperatorHub.io
 
