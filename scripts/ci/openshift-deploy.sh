@@ -91,6 +91,8 @@ buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|tr
 echo
 echo "podman pull:"
 podman pull centos:8|true
+echo
+echo
 
 #export OP_STREAM=community-operators
 #export OP_VERSION=$OP_VER
