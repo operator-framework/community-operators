@@ -20,14 +20,19 @@ spec:
   description: |-
     This operator for Starboard automatically updates security report resources in response to workload and other
     changes on a Kubernetes cluster - for example, initiating a vulnerability scan when a new pod is started. Please see
-    the [Starboard](https://github.com/aquasecurity/starboard) repo for more info about the Starboard project, which manages a variety of security tools to make their reports accessible as Kubernetes custom resources.
+    the [Starboard](https://github.com/aquasecurity/starboard) repo for more info about the Starboard project, which
+    manages a variety of security tools to make their reports accessible as Kubernetes custom resources.
 
     ## Deployment
 
     ### Determine install mode
 
     The Starboard Operator supports all install modes as defined by the Operator Lifecycle Manager spec. You'll need an
-    OperatorGroup to denote which namespaces the operator should watch.
+    OperatorGroup to denote which namespaces the operator should watch. Start by creating the operator's namespace:
+
+    ```
+    kubectl create ns starboard-operator
+    ```
 
     ### OwnNamespace
 
@@ -39,10 +44,10 @@ spec:
     kind: OperatorGroup
     metadata:
       name: starboard
-      namespace: operators
+      namespace: starboard-operator
     spec:
       targetNamespaces:
-      - operators
+      - starboard-operator
     EOF
     ```
 
@@ -56,7 +61,7 @@ spec:
     kind: OperatorGroup
     metadata:
       name: starboard
-      namespace: operators
+      namespace: starboard-operator
     spec:
       targetNamespaces:
       - foo
@@ -73,7 +78,7 @@ spec:
     kind: OperatorGroup
     metadata:
       name: starboard
-      namespace: operators
+      namespace: starboard-operator
     spec:
       targetNamespaces:
       - foo
@@ -92,7 +97,7 @@ spec:
     kind: OperatorGroup
     metadata:
       name: starboard
-      namespace: operators
+      namespace: starboard-operator
     spec: {}
     EOF
     ```
@@ -113,12 +118,12 @@ spec:
     kind: Subscription
     metadata:
       name: starboard-operator
-      namespace: operators
+      namespace: starboard-operator
     spec:
       channel: alpha
       name: starboard-operator
-      source: upstream-community-operators
-      sourceNamespace: marketplace
+      source: operatorhubio-catalog
+      sourceNamespace: olm
     EOF
     ```
 
@@ -132,7 +137,7 @@ spec:
 
     ```
     $ kubectl create secret generic starboard-operator \
-      --namespace operators \
+      --namespace starboard-operator \
       --from-literal OPERATOR_SCANNER_AQUA_CSP_USERNAME=$AQUA_CONSOLE_USERNAME \
       --from-literal OPERATOR_SCANNER_AQUA_CSP_PASSWORD=$AQUA_CONSOLE_PASSWORD \
       --from-literal OPERATOR_SCANNER_AQUA_CSP_VERSION=$AQUA_VERSION \
@@ -148,12 +153,12 @@ spec:
     kind: Subscription
     metadata:
       name: starboard-operator
-      namespace: operators
+      namespace: starboard-operator
     spec:
       channel: alpha
       name: starboard-operator
-      source: upstream-community-operators
-      sourceNamespace: marketplace
+      source: operatorhubio-catalog
+      sourceNamespace: olm
       config:
         env:
         - name: OPERATOR_SCANNER_TRIVY_ENABLED
