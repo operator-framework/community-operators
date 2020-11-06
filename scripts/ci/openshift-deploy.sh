@@ -72,17 +72,27 @@ echo "OP_VER=$OP_VER"
 ls
 cd aqua
 
+echo "**** Temp tests: ***"
+echo
+echo "podman version:"
 podman --version
 echo
+echo "opm alpha bundle build - podman:"
 /tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true
 echo
+echo "opm alpha bundle build - buildah:"
 /tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true
 echo
-podman build -f ../jenkins-operator/0.6.0/Dockerfile community-operators/jenkins-operator/0.6.0|true
+echo "podman build:"
+podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
 echo
-buildah bud -f ../jenkins-operator/0.6.0/Dockerfile community-operators/jenkins-operator/0.6.0|true
+echo "buildah build:"
+buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
 echo
+echo "podman pull:"
 podman pull centos:8|true
+echo
+echo
 
 #export OP_STREAM=community-operators
 #export OP_VERSION=$OP_VER
