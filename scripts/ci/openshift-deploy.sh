@@ -77,19 +77,22 @@ echo
 echo "podman version:"
 podman --version
 echo
-echo "opm alpha bundle build - podman:"
+echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman:"
 /tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true
 echo
-echo "opm alpha bundle build - buildah:"
+echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah:"
 /tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true
 echo
-echo "podman build:"
+echo "podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
 podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
 echo
-echo "buildah build:"
+echo "buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
 buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
 echo
-echo "podman pull:"
+echo "buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
+buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
+echo
+echo "podman pull centos:8:"
 podman pull centos:8|true
 echo
 echo
