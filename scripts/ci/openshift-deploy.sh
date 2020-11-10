@@ -37,7 +37,7 @@ COMMIT=$(git --no-pager log -n1 --pretty=format:%h | tail -n 1)
 echo
 echo "Target commit $COMMIT"
 
-echo "git log"
+echo "git log:"
 git --no-pager log --oneline|head
 echo
 echo "Source commit details:"
@@ -69,7 +69,6 @@ echo "OP_VER=$OP_VER"
 #COMMIT=1234
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
-ls
 cd aqua
 
 echo "**** Temp tests: ***"
