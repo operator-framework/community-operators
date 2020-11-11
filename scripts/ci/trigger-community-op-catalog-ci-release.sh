@@ -11,7 +11,7 @@ if [ -f /tmp/vars-op-path ]; then
      fi
 
      echo "STREAM_NAME=$STREAM_NAME OP_NAME=$OP_NAME OP_VER=$OP_VER"
-     echo "PR_NUMBER=$PR_NUMBER OP_VER_UPDATE=$OP_VER_UPDATE OP_RECREATE=$OP_RECREATE"
+     echo "PR_NUMBER=$PR_NUMBER OP_VER_OVERWRITE=$OP_VER_OVERWRITE OP_RECREATE=$OP_RECREATE"
 
      curl -s -X POST \
      -H "Content-Type: application/json" \
