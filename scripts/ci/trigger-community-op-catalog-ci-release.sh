@@ -10,6 +10,9 @@ if [ -f /tmp/vars-op-path ]; then
        exit 0 # no need to test/release, no operator modified
      fi
 
+     echo "STREAM_NAME=$STREAM_NAME OP_NAME=$OP_NAME OP_VER=$OP_VER"
+     echo "PR_NUMBER=$PR_NUMBER OP_VER_UPDATE=$OP_VER_UPDATE OP_RECREATE=$OP_RECREATE"
+
      curl -s -X POST \
      -H "Content-Type: application/json" \
      -H "Accept: application/json" \
@@ -23,6 +26,7 @@ else
      echo "The file /tmp/vars-op-path does not exist."
      exit 1
 fi
+
 
 
 # This will execute version overwrite
