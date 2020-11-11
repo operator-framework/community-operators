@@ -29,6 +29,21 @@ echo
 echo "Source commit details:"
 git --no-pager log -m -1 --name-only --first-parent $PR_COMMIT
 
+export OP_VER_OVERWRITE=0
+export OP_RECREATE=0
+export PR_NUMBER=$TRAVIS_PULL_REQUEST
+echo "Before PR_NUMBER=$PR_NUMBER"
+[[ "$PR_NUMBER" == "false" ]] && export PR_NUMBER=$(git --no-pager log --oneline | head -n 1 | cut -d '(' -f 2 | cut -d '#' -f 2 | cut -d ')' -f 1)
+echo "After PR_NUMBER=$PR_NUMBER"
+if [[ -n "$PR_NUMBER" ]]; then
+  for l in $(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$REPO | jq '.labels[].name ' -r);do
+    echo "Checking lable '$l' ..."
+    [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
+    [[ "$l" = "allow/operator-recreate" ]] && export OP_RECREATE=1
+  done
+fi
+echo "PR_NUMBER=$PR_NUMBER OP_VER_OVERWRITE=$OP_VER_OVERWRITE OP_RECREATE=$OP_RECREATE"
+
 declare -A CHANGED_FILES
 
 CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $PR_COMMIT|awk 'NR > 8 { print }'|grep '/' 2>&1)
@@ -92,6 +107,9 @@ export OP_VER=$OP_VER
 export PR_COMMIT=$PR_COMMIT
 export STREAM_NAME=$STREAM_NAME
 export RUN_UPSTREAM=$RUN_UPSTREAM
+export OP_VER_OVERWRITE=$OP_VER_OVERWRITE
+export OP_RECREATE=$OP_RECREATE
+export PR_NUMBER=$PR_NUMBER
 EOF
 
 echo "exported:"
