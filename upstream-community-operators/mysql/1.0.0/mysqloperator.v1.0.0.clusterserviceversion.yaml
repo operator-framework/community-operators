@@ -1,0 +1,353 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: mysqloperator.v1.0.0
+  annotations:
+    certified: "false"
+    support: grds.cloud
+    categories: Database
+    capabilities: Full Lifecycle
+    description: Enterprise open source MySQL-as-a-Service
+    createdAt: 2020-11-10 19:40Z
+    containerImage: grds/mysql-operator:1.0.0
+    repository: https://github.com/GrdsCloud
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "mysql.grds.cloud/v1",
+          "kind": "MysqlCluster",
+          "metadata": {
+            "name": "mysqlcluster-sample"
+          },
+          "spec": {
+            "clusterSpec": {
+              "mode": "HACluster",
+              "version": "5.7"
+            },
+            "databaseResource": {
+              "resources": {
+                "limits": {
+                  "cpu": "1",
+                  "memory": "2Gi"
+                },
+                "requests": {
+                  "cpu": "0.5",
+                  "memory": "1Gi"
+                }
+              },
+              "storage": {
+                "size": 21474836480
+              }
+            },
+            "replicas": 2,
+            "slaveReplicas": 0
+          }
+        }
+      ]
+spec:
+  displayName: GrdsCloud MySQL for Kubernetes
+  provider:
+    name: Grds Cloud
+  keywords:
+  - database
+  - sql
+  - operator
+  - grds cloud
+  description: |-
+    With Grds MySQL Operator,you can run MySQL "statelessly" in cloud native environment
+
+    Today more and more users begin to build their applitions based on kubernetes infrastructure，
+    we know that MySQL is a typical stateful software app,
+    it's not easy to build a scalable and high available MySQL cluster in kubernetes environment.
+    now with Grds MySQL Operator,you can run MySQL "statelessly" in cloud native environment,just like your stateless apps.
+
+    Key Feature:
+    - **Quickly build** a containered MySQL Cluster or single instance,parameterizable cpu/memory/io configuration.
+
+    - **High-Availability**, automated inspect database failure,align and repair asynced binlog,elect new master instance.
+
+    - **Disaster Recovery**, backup task schedule，onekey media recover.
+
+    - **SlowSQL Analyst**，automated collect and analyze application SQL，supply optimization suggestions.
+
+    ## Before You Begin
+
+    - MySQL operator requires Kubernetes v1.14.x or later.
+
+    - For the [Helm-based installation](#deploy-mysql-operator-with-helm) you need Helm v3.21.0 or later
+
+    ### Deploy the MySQL operator from Kubernetes Manifests
+
+    Complete the following steps to deploy the MySQL operator using Kubernetes manifests. Alternatively, you can also [install the operator using Helm](#deploy-mysql-operator-with-helm).
+
+    1. Create a controlNamespace called "grds".
+
+      ```bash
+      kubectl create ns grds
+      ```
+
+    2. Create a ServiceAccount and install cluster roles.
+
+      ```bash
+      kubectl -n grds create -f https://raw.githubusercontent.com/GrdsCloud/mysql-operator-docs/master/manifests/rbac.yaml
+      ```
+
+    3. Apply the ClusterResources.
+
+      ```bash
+      kubectl -n grds create -f https://raw.githubusercontent.com/GrdsCloud/mysql-operator-docs/master/manifests/mysql.grds.cloud_mysqlclusters.yaml
+      ```
+
+    4. Deploy the MySQL operator.
+
+      ```bash
+     kubectl -n grds create -f https://raw.githubusercontent.com/GrdsCloud/mysql-operator-docs/master/manifests/config.yaml
+     kubectl -n grds create -f https://raw.githubusercontent.com/GrdsCloud/mysql-operator-docs/master/manifests/deployment.yaml
+      ```
+
+    ### Deploy MySQL operator with Helm
+
+    <p align="center"><img src="./images/helm2.svg" width="150"></p>
+    <p align="center">
+
+    Complete the following steps to deploy the MySQL operator using Helm.
+    Alternatively, you can also [install the operator using Kubernetes manifests.](#deploy-the-mysql-operator-from-kubernetes-manifests)
+
+    > Note: For the Helm-based installation you need [Helm](https://helm.sh/docs/intro/install/#helm) v3.2.4 or later.
+
+    1. Add operator chart repository.
+      - Helm v3
+      ```bash
+      helm repo add grdscloud-stable https://grdscloud.github.io/charts/
+      helm repo update
+      ```
+
+    2. Install the MySQL Operator
+
+      ```bash
+      helm upgrade --install --wait --create-namespace --namespace grds mysql-operator grdscloud-stable/mysql-operator
+      ```
+
+    ## After You Install
+
+    Once the MySQL Operator is installed in your Kubernetes cluster
+
+    ### Check the MySQL operator deployment
+
+    To verify that the installation was successful, complete the following steps.
+
+    1. Check the status of the pods. You should see a new mysql-operator pod
+
+      ```bash
+      $ kubectl get pods -n grds
+      NAME                                        READY   STATUS    RESTARTS   AGE
+      mysql-operator-76c44cdc5c-lw4z6             1/1     Running   0          53s
+      ```
+
+    2. Check the CRDs. You should see the following MySQL cluster CRDs.
+    mysql-cluster-crd.png
+
+      ```bash
+      $ kubectl get crd | grep grds
+      NAME                                    CREATED AT
+      mysqlclusters.mysql.grds.cloud          2020-10-28T09:53:01Z
+      ```
+  version: 1.0.0
+  links:
+  - name: Grds Cloud
+    url: http://www.grds.cloud
+  - name: Documentation
+    url: https://github.com/GrdsCloud/mysql-operator-docs
+  maintainers:
+  - name: Grds Cloud
+    email: info@grds.cloud
+  minKubeVersion: 1.11.0
+  maturity: alpha
+  labels:
+    alm-owner-enterprise-app: mysql-operator
+    alm-status-descriptors: mysql-operator.v1.0.0
+  customresourcedefinitions:
+    owned:
+    - description: MysqlCluster is the Schema for the mysqlclusters API
+      displayName: Mysql Cluster
+      kind: MysqlCluster
+      name: mysqlclusters.mysql.grds.cloud
+      version: v1
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: true
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: mysql-operator
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          verbs:
+          - get
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - get
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - endpoints
+          - pods
+          - pods/exec
+          - pods/log
+          - replicasets
+          - secrets
+          - services
+          - persistentvolumeclaims
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+          - deletecollection
+        - apiGroups:
+          - apps
+          resources:
+          - statefulset
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+          - deletecollection
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          - cronjobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+          - deletecollection
+        - apiGroups:
+          - mysql.grds.cloud
+          resources:
+          - mysqlclusters
+          - backups
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+          - deletecollection
+      deployments:
+      - name: mysql-operator
+        spec:
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: mysql-operator
+              vendor: grdscloud
+          replicas: 1
+          template:
+            metadata:
+              name: mysql-operator
+              labels:
+                app.kubernetes.io/name: mysql-operator
+                vendor: grdscloud
+            spec:
+              terminationGracePeriodSeconds: 10
+              serviceAccountName: mysql-operator
+              containers:
+                - name: operator
+                  image: docker.io/grds/mysql-operator:v1.0.0
+                  imagePullPolicy: IfNotPresent
+                  command:
+                    - /manager
+                  args:
+                    - --enable-leader-election
+                    - --use-env-config
+                  env:
+                    - name: NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: DATABASE_IMAGE_PREFIX
+                      value: docker.io/grds/mysql
+                    - name: QFB_IMAGE_VERSION
+                      value: v1.0.0
+                    - name: BACKUP_TRIGGER_IMAGE
+                      value: docker.io/grds/qfb-backup-job:$QFB_IMAGE_VERSION
+                    - name: QFB_IMAGE_PREFIX
+                      value: docker.io/grds/qfb-mysql
+                    - name: LEADER_IMAGE
+                      value: docker.io/grds/mysqlleader:v1.0.0
+                  volumeMounts:
+                    - name: localtime
+                      mountPath: /etc/localtime
+                    - name: logdir
+                      mountPath: /var/log/operator
+              volumes:
+                - name: localtime
+                  hostPath:
+                    path: /usr/share/zoneinfo/Asia/Shanghai
+                - name: logdir
+                  hostPath:
+                    path: /apps/logs/grds/operator/
+                    type: DirectoryOrCreate
+              affinity:
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchLabels:
+                          app: database-operator
+                      topologyKey: kubernetes.io/hostname
+              tolerations:
+                - effect: NoSchedule
+                  key: grds/node
+                  operator: Exists
+                - effect: NoSchedule
+                  key: node-role.kubernetes.io/master
+                  operator: Exists
+  icon:
+  - mediatype: image/png
+    base64data: iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAMAAACahl6sAAADAFBMVEX///8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf8Umf89RAiAAAABAHRSTlMAFjRQb42gssPU4e70//bj2Mi3onFWORRIdZ3w8cyecEISAzVyqN3iq3M3BCix7/M+i9rekZPp6pcBHoLc4H8cAkuz/AzfC4Xtj/WQhxAGUdsjuyR393nRLn36+QUlxyFbVwiZmyDL6+g7ZGb+vV9MJhENGCJKYHv9hqXQljiYz/uhudKKD4jOuMplzcFnE8aMiezVYwdhugp4SVRZMQl6abQfrFhoFSuf0yxeM/J+L5X4yWqB5jKUbh215SmjPHYnpNmpWiowjlJNrxqEF2u/bMB0Ym2q5098P7ZVG0E9RjaATg6n5KYZ1i1DOtewxMKtvEVTR11EQJy+rsVckpqDLGaMAQAADxNJREFUeAHU0YNxBFAYAOGz/7Nt27Yd23b/w1QQP+XrYGc5eHB5fIFQJJZIZXK5AgCUcpVao9UJ9QYjl/M/mMwWq8YGn7A7nC63h+UGr88fCMI3hcKRaIzFirggkYQfSmn1cbZWpDNZ+KVc3u1lJMNYKMKflMrpCvWKaq0OCDSaLZoV7U63B4j0Ep02pYy+awBIDVxDChnc0RiQG9e4pDMmSsBiOiOZ4pmnAJtUbUEoYxlJAlbjyJJEx2oN2K3N2DM2NoEI8RbWjNi2EgjZ2Y3h6+DtAUGOfVw7Dg6BqKPmMY6Ok1Mg7vQMfcd5CiiwXSDOuLwCSq4vUXbcOICa2xa6jvQdUHT/gKrj8QioOnpCklERwi88516sB69vxnfWzEE5gyAIwjELsZ1ybNtGISjEtm3bto0/fryU42zP3bzA13eLnu2ZetOGRiWHhqbmbJWW1raiTK92KbQOhiic2klVbe/qruqJ/osX61jZ29dPZQ7IrijRgzTFoWGzEYBqNjpWTeKOR8v7j4YJglj/+CTBYZomDXIptXFEVoKawpWmZ0yp+NmquWrchhuk/8fsGKriO+8sMRYsLKIaU5L7xSl9oMTS8oqMR8OqNiizJlFhXR88vREyzTGgbg5T2pDmu+PY0Y3gKFabkKlUF0hZJqh+6GwxdW0DtkOQZtEOnZyMdG7adhmbM3tAjA4hW9c+8B8HgbxZ4VBTrHlEZNrlih33mD+9bfsJZU9oayM2d5dT/v/YzRcbZeIZAbhSKsTts49mAtzPrRB/uSBERmGu9bxkHxjlwAOjZBh6JTxWI7x/sd5aQ4gp/dcgtvlGUJZueY/V3b0lLSqMYdNTB8F7QcHqVqn5D/TA+Aihn/6HuLpzzotynpG6q+tVrqv4/A2IY770/189dhibTK+J/yhZTbn4hL4dV7xXdxdwUeb7GsAf3EYecHdtwEA2RxlbX27N/Yx1sDsoF1sHO8bm4rLukbvitrGyzYbd3cWCLXZ3d3saJAZ4/++8Nej5fnq645crsv/lJkf3mfXRyuJZx9VREeBV/guyarV5pRJr4kTPwOvjvlsryMDZ5q3715+LLu6TDtMU74efaVmL9RvkP6c2vrxonrv38u9vxm1yG6lur1iiYNbzEfqyXe5h+nWzykzolih33+/fU4H/VpiizLZwFhQev3w11LOkQtH/UkF4JU/lUn3e3dwc2lig5MuaFHN09Uwu1fryHzEw2Toq6AwTVI1lPvavuzaA6RKKUyxNgmHJI8PpakK5dHjCdoptTIBhfzSki/YvV4Fn7PAx5++MQI9qdFFrXRl4Sm2KfQeDpJ0+zOV8Y4ANHrPDl0LVJBgTvYu5fMdEwpM+pVDdFBgi7fZhjl6LveBRCSEU+gaGDN3DHL33NoKH7aXQ9zBkn5XZ/DKS4Wm2/6KIdQUMGLSf2Q4s/xKed5BCh2DAYW8+9Vm7qSgKRyjSMAa6WbbbmcV3ewKKRA8nRY5Ct9AoZnGWPwZzNIqeeTx1X8l27RZ/1Kxdu+CvWp7oEaEy4hAoQa+TvZjljS0wKuHUrNO/xpbwYWEbLcgjNaTIMOhk+w8nM7U6AyOaVwrutqs3qe7LYS1FkqBTSjwzBRioGD17fO+5mg668zryjKHIdOhz6jwzXbgIfYb2737JQXUuI4ftAAU+l6BL//YkWeIK9Dg26//8qEFT5LhKkb7Qw/InkvQd0QKaxZzcdo0aLbEh2xQK1GsBHSq3Icmk9dBqx6TrPtShD7L9JwVqQIdf/pOkb7AN2rQtd8NJfZrhqaoUcKyHdif9Sb4aCU2i2yVSv454qiIFbkK7vl3IsBdt0MCr5EIa4iiDLCspMAla2T4kuac11Ev+ZqWdRpVCJsscyutSBhrF3CJ9dtug2uxu/jRBU2Q6RYGPodGgV8k/t4VajX5OpDkWItOLZn2JrPiczpERUKnHlBCaJdwCAOcoz+kFTS6fp99xqFTsRzuVhK/6/Hb5/2i387t2Nd76zUl3VgNAQ8oLhCZ9QphWGercuU2R8PFvHvqp2BAJLprP+LELFd0FsIMCH0GLsmFdSkpQ5V4SZcUFLrvfKQKyVtSPcxdhv0OBstCgVLj3WKjyIIkywncdetgISma3otg5AMGU50yAevvs30+GGsXasLAJ26ZPhVvNV1JoAoBHlDca6i2K+1aCCm03OViAPTYjFOpEVKPIAhuwkPLqQ7X3PisLFZpPCWd+vteHT4Z6U0dTJB0YRXlfQK1p46Phnm1SL+bjfDz8LLRZH0aB94FB3pQ1Gyq12zAV7s2MYj7XpoVCu85KQavDdspwToU6e8vBvea14+hizvzZ0GUwBSoKC0prQZ0vBsC9rkvo4vNFg6HXecobCQAR/8/CYqHKyV/gVvRt5umy/zgM2EV5j5Bph5/gGLd+mKwpy8O6i9NhSDfKe4IsS8NY0AiYo/Ue5mr13VQY9N+U9xhPnbGzgP4wg215GHNMvGuDYX0pL1FYeT0AJuhxU9DToNt9yquJHI2Z3/swbnMAsyXdgVFnT7zY/fUACngL47+RMOrsGmabOACGRLy//MJGB5X4YzCyBe2nqyEwqPTbfKqEodaMBvdG/qU93fLHOOSIuEUXCTAkqHMcsyxZZIFeLR6OjIqjKv5YMCPvfK8wz2AYMeQxs1hPN4BOrXdXs1I1B1zLGlocYS4YcfwAMznevAhdbFc/vURtQL6LXC32m3FHpHVxzBQ1FnoEVarfm5ohf9426BGzWaDX2SfM1PuvErQLOj6mN3Wwwko2OSbTK50AnQZeIknn/ObQrtNLq6iPP/xJ3paQZy6z7IA+00NIsmcxaJa+dwJ16413SDIYLjIcJNkaekjt7CStGTZoFHTG2Mwxb5QgyQWd4KJ/F5JVoMPUcyR5JBQaDTm9isZcww2ZxqWT/uRBaJceSLJeV2hUbE04jbqBNGb5G1xd9uYn0KyTH8n9KdBEmr6HChwHJq4c9aflMx70Kfbg7ot/n+CgvDSUZxZHKlylJ56GVtPnkE1+gia2n8ZTIO61C+1a/h6D/OZSXnnU4FP+Q+GqQUtotNtOfn8RWtg++JyyvC9kVImBnO6U9yGCmS3xSxggTSGtfaGFlPoaZTTs/sExCMVSXkmkMscy6NfiAvnnSGjxMIqF+KQtioSihpTXEjOZqxT0OnubzmYR0GDLGyyoV4UzMXCjkZPyZmIQcwWshz5DRtPvITQoMz+O+a2q/TAI7pWmwCDAn7laJUCPHq34/WSoZ9sdwnysax4EQZV+lOcPIJB52gRBuy2r4tpJUK9KIF0528xqALXGKeQ7f6WL2tCsymfnT0C95vWddHF+bjo0GE15vwIINla1sTYgPgWqSf3r0sXjGRHQIsFOecEAHtBVeHVoUsnaOAiqRT/Ol1vYAo1OUuAKgBTmU68tNCjbO1VnD8nbGYOh2YcUSAEAP+bTKgWqTR9dFaoN3cVcgR8EQYcJlOeHTG8xv44JUGn6/rO6ekj2PIAu6Q7KewuZMlhAbAuocu+0DWqteMwcH5+ATv0okIFMs1nQBgkqjE2FaqlNmK3NWOgWT4HZyBRk1VWG8sNlqNWoO7PdOAz9JnehPGuQsNO4A9yxTYVaS0vwqY7DYMQkdy1HGSxsEcwilQxnFu99NhjyF+W3CNCahTn+CjEdcUdaOyTDmPUUaY1sNVmY/SDMsLVmdivMRRjVjAKtlHtCwx/AuOHtmSlqNgxL7kWB2shxmHLCjsOgmArM1Pu+BOMmUeQhctiWUE7YQxhybKEwnK2d9Jq4WcFtv3HYYRhwdYk4nK3dAIrURp4+lBdWHbr1XUDSp2IQzLGQImuRR/KmPJ8T0MfyN5L8OhomOUkRbxtc/IMC1rXQY3A8ySZfSTCJ1JMi/4CraAcFrFehXegEiuOnenxDEcdQlT8sWetLaHXqABnwBczz5dsUiUd+LU0cvHnXl4z9ASbqQKEXkJ+lFkWsoZrD8gtKSjDRD2EUeduCAjIo9Ao0kBqTn8+Dqa5TKAMFNQih0AyoFvErOWYqTFWKQiENUEhjCtXzgkpTV/KzMzCXVy8KNUZhF30p9ATqDN7FqFCY7AmFfC9CxhSKfQI1Ki90bIuAyX6m2DbI8TI6cmfH6M8OwmyXfSnk4wVZIylW4izcCS2R+APMdvaSjmGglQMo9q4EZa0bvhwDs0lpFAuorGtQ2CEoWu29COb7bypYB5GYhrpHt62f2Afm6+ogdc05aUkF4Sch1DYtHearFE7q/JqOp4Kw9yHQukYyzHfZnwrioaSt8sDJSMj6YZYE81WtSwXtI42MAD0fCRln58ED2p43NNXfMp5Kzq9HYS3gAVX9qGS8BW7MtlNJ760oEjPrUol9tvHBxVdQBA6HUNFiuGdJoqIufeFxXRdQUZLFjOHe/EiCR0lzHVQ0Z6imrhmxW2fhQWfT6MYsqPSIbtQsBo/Zco1ulDdxJcGC3RI84+cwutHzS6gWWo/upHnBA8o8oTv1QqFBJTvdqXsXpvupLt2x3zF/kcr1FTBVaBrd++75X20zwkr3mkEraQNV8B5ugymko62owgYJmrWIpRoT78EEdwKpRmwL6DA1iaok3rUV0UKupEbQJSGR6lzbF2NkRVpHqpOYAJ1SfqNKTZr+rndpXS+q9FsKdEsZTdWS9k2GRs37veqgWollYMDknlTPHpuxAqoN+eTjcKr3l+YwZPBjauGYuO1gZbjV6F6NiU5qEdsABn35FjVyTpjfd2kyBGJmf9FtdBw12hQDw6Rm1MFZK7784p//qDI0pTmA5EGTI8cOm9W5e/zbTurQTIIZJsXxmYqbBJM86MVnqNcDmCa0J5+ZnqEwUcwjPiOPYmCuWQF8BgJmwXRDk1jkoobCAyyL41ik4hZb4BnFxrMIjS8Gj7FM82UR8Z1mgSdF3maRuD0QnpbqTY/zTkURSC4XQo8KWZeMolG5mZUeY202GUUn5SVfeoTvS14oWjsaN6HpmjS+iKLXKONtmurtjEZ4NoIOrrTTJPbvDwbhGVrR2Zsm8J67As+abW3tJTRkSe21NjwXbIf/1oo6tfrbQxueJ213r/ShRj4rd7fFc8gyO+Pceap0/q2M2RY8x1KulKwQ6E8F/oEVSl7xwr+HQTPvBteoUO3GtVrFi4eRYcWL17p2o1qFGsF3Zw6CR/wTNtJhkdiml4MAAAAASUVORK5CYII=
