@@ -29,7 +29,7 @@ if [[ $OP_VER_OVERWRITE -eq 1 ]];then
 fi
 
 
-if [[ $OP_VER_OVERWRITE -eq 1 ]];then
+if [[ $OP_RECREATE -eq 1 ]];then
   # This will execute operator delet
   curl -s -X POST \
        -H "Content-Type: application/json" \
