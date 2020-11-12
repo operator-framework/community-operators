@@ -10,7 +10,7 @@ if [ "$NO_OPERATOR" -gt "0"  ]; then
   exit 0 # no need to test/release, no operator modified
 fi
 
-[[ $OP_VER_OVERWRITE -eq 1 ]] && [[ $OP_RECREATE ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' cannot be set simultaneously !!!"; exit 1; }
+[[ $OP_VER_OVERWRITE -eq 1 ]] && [[ $OP_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' cannot be set simultaneously !!!"; exit 1; }
 
 echo "STREAM_NAME=$STREAM_NAME OP_NAME=$OP_NAME OP_VER=$OP_VER"
 echo "OP_PR_NUMBER=$OP_PR_NUMBER OP_VER_OVERWRITE=$OP_VER_OVERWRITE OP_RECREATE=$OP_RECREATE"
