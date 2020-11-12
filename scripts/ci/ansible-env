@@ -33,8 +33,11 @@ git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT
 export OP_VER_OVERWRITE=0
 export OP_RECREATE=0
 export OP_FORCE_DEPLOY_ON_K8S=0
-export OP_PR_NUMBER=$TRAVIS_PULL_REQUEST
+export OP_PR_NUMBER=${TRAVIS_PULL_REQUEST-false}
+
 [[ "$OP_PR_NUMBER" == "false" ]] && export OP_PR_NUMBER=$(git --no-pager log --oneline | head -n 1 | cut -d '(' -f 2 | cut -d '#' -f 2 | cut -d ')' -f 1)
+echo $OP_PR_NUMBER
+
 if [[ -n "$OP_PR_NUMBER" ]]; then
   for l in $(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r);do
     echo "Checking label '$l' ..."
@@ -75,8 +78,6 @@ for sf in ${CHANGED_FILES[@]}; do
   else
       echo "Edited files outside upstream-community-operators/community-operators !!! "
   fi
-
-
 done
 echo
 echo
@@ -120,6 +121,6 @@ if [ -f $INPUT_ENV_SCRIPT ]; then
   cat $INPUT_ENV_SCRIPT
 else
   echo "Error: Build system has problem to prepare environment from git information !!!"
-  echo "  'The file '$INPUT_ENV_SCRIPT' does not exist.'"
+  echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
   exit 1
-done
+fi
