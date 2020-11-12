@@ -22,7 +22,7 @@ if [[ $OP_VER_OVERWRITE -eq 1 ]];then
       -H "Accept: application/json" \
       -H "Travis-API-Version: 3" \
       -H "Authorization: token $FRAMEWORK_AUTOMATION_ON_TRAVIS"  \
-      -d "{\"request\":{\"branch\":\"job/$STREAM_NAME-update\",\"message\":\"$OP_NAME ($OP_VER) [OVERWRITE]\",\"config\":{\"env\":{\"jobs\":[\"OP_STREAM_NAME_VER=$STREAM_NAME/$OP_NAME/$OP_VER\"]}}}}"  \
+      -d "{\"request\":{\"branch\":\"job/$STREAM_NAME-update\",\"message\":\"[OVERWRITE] $OP_NAME ($OP_VER)\",\"config\":{\"env\":{\"jobs\":[\"OP_STREAM_NAME_VER=$STREAM_NAME/$OP_NAME/$OP_VER\"]}}}}"  \
       https://api.travis-ci.com/repo/operator-framework%2Fcommunity-operator-catalog/requests
       echo -e "\nRelease pipeline has been triggered on operator-framework/community-operator-catalog"
   exit 0
@@ -36,7 +36,7 @@ if [[ $OP_RECREATE -eq 1 ]];then
        -H "Accept: application/json" \
        -H "Travis-API-Version: 3" \
        -H "Authorization: token $FRAMEWORK_AUTOMATION_ON_TRAVIS"  \
-       -d "{\"request\":{\"branch\":\"job/$STREAM_NAME-update\",\"message\":\"$OP_NAME [DELETE]\",\"config\":{\"env\":{\"jobs\":[\"OP_STREAM_NAME_VER=$STREAM_NAME/$OP_NAME\",\"OP_DELETE=1\"]}}}}"  \
+       -d "{\"request\":{\"branch\":\"job/$STREAM_NAME-update\",\"message\":\"[DELETE] $OP_NAME\",\"config\":{\"env\":{\"jobs\":[\"OP_STREAM_NAME_VER=$STREAM_NAME/$OP_NAME\",\"OP_DELETE=1\"]}}}}"  \
        https://api.travis-ci.com/repo/operator-framework%2Fcommunity-operator-catalog/requests
        echo -e "\nRelease pipeline has been triggered on operator-framework/community-operator-catalog"
   sleep 10
@@ -47,6 +47,6 @@ curl -s -X POST \
 -H "Accept: application/json" \
 -H "Travis-API-Version: 3" \
 -H "Authorization: token $FRAMEWORK_AUTOMATION_ON_TRAVIS"  \
--d "{\"request\":{\"branch\":\"$STREAM_NAME\",\"message\":\"$OP_NAME ($OP_VER) [RELEASE]\"}}"  \
+-d "{\"request\":{\"branch\":\"$STREAM_NAME\",\"message\":\"[RELEASE] $OP_NAME ($OP_VER)\"}}"  \
 https://api.travis-ci.com/repo/operator-framework%2Fcommunity-operator-catalog/requests
 echo -e "\nRelease pipeline has been triggered on operator-framework/community-operator-catalog"
