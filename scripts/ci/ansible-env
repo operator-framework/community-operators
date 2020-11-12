@@ -3,6 +3,7 @@
 set -e
 unset OP_PATH
 unset OP_VER
+export INPUT_ENV_SCRIPT="/tmp/vars-op-path"
 
 function setName {
       if [ $(echo $sf| awk -F'/' '{print NF}') -ge 3 ]; then OP_NAME="$(echo "$sf" | awk -F'/' '{ print $2 }')"; fi
@@ -14,39 +15,38 @@ function setName {
 
 if [ "$1" = "release" ]; then
   echo "Running in release mode."
-  export PR_COMMIT=$(git log -n1 --format=format:"%H" | tail -n 1)
+  export OP_PR_COMMIT=$(git log -n1 --format=format:"%H" | tail -n 1)
 else
   echo "Running in PR (test) mode."
-  #export PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)
-  export PR_COMMIT=$(git --no-pager log --oneline| head -n 1 | awk '{print $3}')
+  #export OP_PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)
+  export OP_PR_COMMIT=$(git --no-pager log --oneline| head -n 1 | awk '{print $3}')
 fi
 export MODE_CHANGE=0 # targeting ci.yaml
 
-echo "PR_COMMIT=$PR_COMMIT"
+echo "OP_PR_COMMIT=$OP_PR_COMMIT"
 echo "git log"
 git --no-pager log --oneline|head
 echo
 echo "Source commit details:"
-git --no-pager log -m -1 --name-only --first-parent $PR_COMMIT
+git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT
 
 export OP_VER_OVERWRITE=0
 export OP_RECREATE=0
-export PR_NUMBER=$TRAVIS_PULL_REQUEST
-echo "Before PR_NUMBER=$PR_NUMBER"
-[[ "$PR_NUMBER" == "false" ]] && export PR_NUMBER=$(git --no-pager log --oneline | head -n 1 | cut -d '(' -f 2 | cut -d '#' -f 2 | cut -d ')' -f 1)
-echo "After PR_NUMBER=$PR_NUMBER"
-if [[ -n "$PR_NUMBER" ]]; then
-  for l in $(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$PR_NUMBER | jq '.labels[].name ' -r);do
-    echo "Checking lable '$l' ..."
+export OP_FORCE_DEPLOY_ON_K8S=0
+export OP_PR_NUMBER=$TRAVIS_PULL_REQUEST
+[[ "$OP_PR_NUMBER" == "false" ]] && export OP_PR_NUMBER=$(git --no-pager log --oneline | head -n 1 | cut -d '(' -f 2 | cut -d '#' -f 2 | cut -d ')' -f 1)
+if [[ -n "$OP_PR_NUMBER" ]]; then
+  for l in $(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r);do
+    echo "Checking label '$l' ..."
     [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
     [[ "$l" = "allow/operator-recreate" ]] && export OP_RECREATE=1
+    [[ "$l" = "test/force-deploy-on-kubernetes" ]] && export OP_FORCE_DEPLOY_ON_K8S=1
   done
 fi
-echo "PR_NUMBER=$PR_NUMBER OP_VER_OVERWRITE=$OP_VER_OVERWRITE OP_RECREATE=$OP_RECREATE"
 
 declare -A CHANGED_FILES
 
-CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $PR_COMMIT|awk 'NR > 8 { print }'|grep '/' 2>&1)
+CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT|awk 'NR > 8 { print }'|grep '/' 2>&1)
 echo "CHANGED_FILES:"
 echo ${CHANGED_FILES[@]}
 echo
@@ -84,9 +84,9 @@ if [ "$UPSTREAM_SET" -eq "0" ]; then
    if [ "$COMMUNITY_SET" -eq "0" ]; then
      echo "No operator modified, exiting, no need to test/release."; echo; echo;
 
-      cat <<EOF >/tmp/vars-op-path
+      cat <<EOF >$INPUT_ENV_SCRIPT
 export NO_OPERATOR=1
-export PR_COMMIT=$PR_COMMIT #for traffic light
+export OP_PR_COMMIT=$OP_PR_COMMIT #for traffic light
 EOF
 
      exit 0;
@@ -100,17 +100,26 @@ if [ -z "${OP_PATH+xxx}" ]; then
 #  exit 1
 fi
 
-cat <<EOF >/tmp/vars-op-path
+[[ $OP_VER_OVERWRITE -eq 1 ]] && [[ $OP_RECREATE ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' cannot be set simultaneously !!!"; exit 1; }
+
+cat <<EOF >$INPUT_ENV_SCRIPT
 export OP_PATH=$OP_PATH
 export OP_NAME=$OP_NAME
 export OP_VER=$OP_VER
-export PR_COMMIT=$PR_COMMIT
+export OP_PR_COMMIT=$OP_PR_COMMIT
 export STREAM_NAME=$STREAM_NAME
 export RUN_UPSTREAM=$RUN_UPSTREAM
+export OP_PR_NUMBER=$OP_PR_NUMBER
 export OP_VER_OVERWRITE=$OP_VER_OVERWRITE
 export OP_RECREATE=$OP_RECREATE
-export PR_NUMBER=$PR_NUMBER
+export OP_FORCE_DEPLOY_ON_K8S=$OP_FORCE_DEPLOY_ON_K8S
 EOF
 
-echo "exported:"
-cat /tmp/vars-op-path
+if [ -f $INPUT_ENV_SCRIPT ]; then
+  echo "ENVIRONMENT INFO:"
+  cat $INPUT_ENV_SCRIPT
+else
+  echo "Error: Build system has problem to prepare environment from git information !!!"
+  echo "  'The file '$INPUT_ENV_SCRIPT' does not exist.'"
+  exit 1
+done

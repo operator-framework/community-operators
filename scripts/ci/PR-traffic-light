@@ -4,28 +4,22 @@
 set -e
 
 NO_OPERATOR=0 #related to ansible-env
-scripts/ci/ansible-env
+INPUT_ENV_SCRIPT=${INPUT_ENV_SCRIPT-"/tmp/vars-op-path"}
+scripts/ci/ansible-env || { echo "Error in preparing operator environment !!! Contact admins."; exit 1; }
+source $INPUT_ENV_SCRIPT
 
-if [ -f /tmp/vars-op-path ]; then
-     source /tmp/vars-op-path
+[[ $OP_VER_OVERWRITE -eq 1 ]] && [[ $OP_RECREATE ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' cannot be set simultaneously !!!"; exit 1; }
 
-    git log|head -n 100
-    echo
-    echo "N-1 commit:"
-    git log -n2 --format=format:"%H" | tail -n 1
-    echo "Diffs detected:"
-    git log -m -1 --name-only --first-parent $PR_COMMIT
-
-    if [ -n "${OP_NAME}" ];
-      then
-        echo "Found modified operator. Green light."
-        exit 0
-      else
-        echo "Operator not modified, no need to run tests. Red light."
-        exit 1
-    fi
-
+git log|head -n 100
+echo
+echo "N-1 commit:"
+git log -n2 --format=format:"%H" | tail -n 1
+echo "Diffs detected:"
+git log -m -1 --name-only --first-parent $OP_PR_COMMIT
+if [ -n "${OP_NAME}" ];then
+  echo "Found modified operator. Green light."
+  exit 0
 else
-     echo "The file /tmp/vars-op-path does not exist."
-     exit 1
+  echo "Operator not modified, no need to run tests. Red light."
+  exit 1
 fi
