@@ -39,12 +39,18 @@ export OP_PR_NUMBER=${TRAVIS_PULL_REQUEST-false}
 echo $OP_PR_NUMBER
 
 if [[ -n "$OP_PR_NUMBER" ]]; then
-  for l in $(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r);do
-    echo "Checking label '$l' ..."
-    [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
-    [[ "$l" = "allow/operator-recreate" ]] && export OP_RECREATE=1
-    [[ "$l" = "test/force-deploy-on-kubernetes" ]] && export OP_FORCE_DEPLOY_ON_K8S=1
-  done
+  OP_PR_LABELS=$(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r)
+  if [[ $? -eq 0 ]];then
+    for l in $(echo $OP_PR_LABELS);do
+      echo "Checking label '$l' ..."
+      [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
+      [[ "$l" = "allow/operator-recreate" ]] && export OP_RECREATE=1
+      [[ "$l" = "test/force-deploy-on-kubernetes" ]] && export OP_FORCE_DEPLOY_ON_K8S=1
+    done
+  else
+    echo "Failed to query labels from PR=$OP_PR_NUMBER !!!"
+    echo "    Tried command 'curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r'"
+  fi
 fi
 
 declare -A CHANGED_FILES
