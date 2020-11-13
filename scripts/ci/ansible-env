@@ -4,6 +4,7 @@ set -e
 unset OP_PATH
 unset OP_VER
 export INPUT_ENV_SCRIPT="/tmp/vars-op-path"
+OP_CI_YML_ONLY_CHANGED="false"
 
 function setName {
       if [ $(echo $sf| awk -F'/' '{print NF}') -ge 3 ]; then OP_NAME="$(echo "$sf" | awk -F'/' '{ print $2 }')"; fi
@@ -108,6 +109,10 @@ echo
 
 [[ $OP_VER_OVERWRITE -eq 1 ]] && [[ $OP_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' cannot be set simultaneously !!!"; exit 1; }
 
+#only ci.yaml was changed:
+CI_YML_CHECK=$(echo ${CHANGED_FILES[0]}|rev|awk -F'/' '{print $1}'|rev)
+echo "CI_YML_CHECK=$CI_YML_CHECK"
+[[ -z "$OP_VER" ]] && [[ -z ${CHANGED_FILES[1]} ]] && [[ "$CI_YML_CHECK" == "ci.yaml" ]] && { export OP_CI_YML_ONLY_CHANGED="true"; }
 cat <<EOF > $INPUT_ENV_SCRIPT
 export OP_PATH=$OP_PATH
 export OP_NAME=$OP_NAME
@@ -119,6 +124,7 @@ export OP_PR_NUMBER=$OP_PR_NUMBER
 export OP_VER_OVERWRITE=$OP_VER_OVERWRITE
 export OP_RECREATE=$OP_RECREATE
 export OP_FORCE_DEPLOY_ON_K8S=$OP_FORCE_DEPLOY_ON_K8S
+export OP_CI_YML_ONLY_CHANGED=$OP_CI_YML_ONLY_CHANGED
 EOF
 
 if [ -f $INPUT_ENV_SCRIPT ]; then
