@@ -39,6 +39,7 @@ export OP_PR_NUMBER=${TRAVIS_PULL_REQUEST-false}
 echo $OP_PR_NUMBER
 
 if [[ -n "$OP_PR_NUMBER" ]]; then
+  set +e
   OP_PR_LABELS=$(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r)
   if [[ $? -eq 0 ]];then
     echo "$OP_PR_LABELS"
@@ -50,8 +51,11 @@ if [[ -n "$OP_PR_NUMBER" ]]; then
     done
   else
     echo "Failed to query labels from PR=$OP_PR_NUMBER !!!"
+    echo "$OP_PR_LABELS"
+    echo ""
     echo "    Tried command 'curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r'"
   fi
+  set -e
 fi
 echo "Label check done"
 
