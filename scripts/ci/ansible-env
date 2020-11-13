@@ -19,7 +19,7 @@ if [ "$1" = "release" ]; then
 else
   echo "Running in PR (test) mode."
   #export OP_PR_COMMIT=$(git log -n2 --format=format:"%H" | tail -n 1)
-  export OP_PR_COMMIT=$(git --no-pager log --oneline| head -n 1 | rev | cut -d ' ' -f1)
+  export OP_PR_COMMIT=$(git --no-pager log --oneline| head -n 1 | awk '{print $3}')
 fi
 export MODE_CHANGE=0 # targeting ci.yaml
 
@@ -39,7 +39,6 @@ export OP_PR_NUMBER=${TRAVIS_PULL_REQUEST-false}
 echo $OP_PR_NUMBER
 
 if [[ -n "$OP_PR_NUMBER" ]]; then
-  set +e
   OP_PR_LABELS=$(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r)
   if [[ $? -eq 0 ]];then
     echo "$OP_PR_LABELS"
@@ -51,15 +50,14 @@ if [[ -n "$OP_PR_NUMBER" ]]; then
     done
   else
     echo "Failed to query labels from PR=$OP_PR_NUMBER !!!"
-    echo "$OP_PR_LABELS"
-    echo ""
     echo "    Tried command 'curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r'"
   fi
-  set -e
 fi
 echo "Label check done"
 
 declare -A CHANGED_FILES
+echo "Doing '$git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT'"
+git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT
 echo "git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT|awk 'NR > 8 { print }'|grep '/'"
 CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT|awk 'NR > 8 { print }'|grep '/' 2>&1)
 echo "CHANGED_FILES:"
