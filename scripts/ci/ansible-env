@@ -41,6 +41,7 @@ echo $OP_PR_NUMBER
 if [[ -n "$OP_PR_NUMBER" ]]; then
   OP_PR_LABELS=$(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r)
   if [[ $? -eq 0 ]];then
+    echo "$OP_PR_LABELS"
     for l in $(echo $OP_PR_LABELS);do
       echo "Checking label '$l' ..."
       [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
@@ -52,9 +53,10 @@ if [[ -n "$OP_PR_NUMBER" ]]; then
     echo "    Tried command 'curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r'"
   fi
 fi
+echo "Label check done"
 
 declare -A CHANGED_FILES
-
+echo "git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT|awk 'NR > 8 { print }'|grep '/'"
 CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT|awk 'NR > 8 { print }'|grep '/' 2>&1)
 echo "CHANGED_FILES:"
 echo ${CHANGED_FILES[@]}
