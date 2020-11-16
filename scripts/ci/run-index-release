@@ -7,6 +7,7 @@ GENERATE_OP_CONF=1
 FORCE_RELEASE=0
 MODE_CHANGE=${MODE_CHANGE-0}
 OP_DELETE=${OP_DELETE-0}
+OP_DEBUG=${OP_DEBUG-0}
 OP_UNCOMPLETE=/tmp/operators_uncomplete-localhost.yaml
 MY_OP_BASE_DIR="/tmp/oper/community-operators"
 
@@ -34,6 +35,9 @@ case "$1" in
 
 esac
 
+[[ $OP_DEBUG -eq 1 ]] && VERBOSITY="-v"
+[[ $OP_DEBUG -eq 2 ]] && VERBOSITY="-vv"
+
 # In case one adds stream/operator/version as second parameter
 if [ -n "$2" ];then
   MY_OP_STREAM=$(echo $2 | cut -d '/' -f 1)
@@ -43,13 +47,13 @@ if [ -n "$2" ];then
   if [ -n "$MY_OP_STREAM" ] && [ -n "$MY_OP_NAME" ];then
     if  [ ! -z $MY_OP_VER ]; then
       echo "Fixing bundle and index for operator '$2' ..."
-      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,deploy_bundles \
+      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,deploy_bundles \
       -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME -e operator_version=$MY_OP_VER $BUNDLE_FORCE_PARAMS $AUTH_PARAMS -e bundle_force_rebuild=true
       exit 0
     else
       if [[ $OP_DELETE -eq 1 ]];then
         echo "Removing operator '$2' form index ..."
-        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,remove_operator \
+        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,remove_operator \
         -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME $BUNDLE_FORCE_PARAMS $AUTH_PARAMS
         exit 0
       else
@@ -69,7 +73,7 @@ else
   echo "Index fix pipeline starting"
   rm -f $OP_UNCOMPLETE
   if [[ $MODE_CHANGE -eq 0 ]] ; then
-    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,index_check $INDEX_CHECK_PARAMS
+    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,index_check $INDEX_CHECK_PARAMS
   else
     echo "operator_base_dir: $(pwd)/$STREAM_NAME\noperators" > "$OP_UNCOMPLETE"
     echo "operators:" >> "$OP_UNCOMPLETE"
@@ -78,6 +82,6 @@ else
   fi
   if [ -f $OP_UNCOMPLETE ];then
     cat $OP_UNCOMPLETE
-    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags ${ANSIBLE_EXTRA_TAGS}deploy_bundles -e operators_config=$OP_UNCOMPLETE $AUTH_PARAMS -e index_force_update=true -e strict_mode=true
+    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags ${ANSIBLE_EXTRA_TAGS}deploy_bundles -e operators_config=$OP_UNCOMPLETE $AUTH_PARAMS -e index_force_update=true -e strict_mode=true
   fi
 fi
