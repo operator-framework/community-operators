@@ -2,19 +2,19 @@
 set -e
 
 NO_OPERATOR=0 #related to ansible-env
-scripts/ci/ansible-env
+INPUT_ENV_SCRIPT=${INPUT_ENV_SCRIPT-"/tmp/vars-op-path"}
+scripts/ci/ansible-env || { echo "Error in preparing operator environment !!! Contact admins."; exit 1; }
 
-if [ -f /tmp/vars-op-path ]; then
-    source /tmp/vars-op-path
-    if [ "$NO_OPERATOR" -gt "0"  ]; then
+source $INPUT_ENV_SCRIPT
+
+
+if [ "$NO_OPERATOR" -gt "0"  ]; then
      exit 0 # no need to test/release, no operator modified
-    fi
-
-    RELEASE_TARGET=''
-    GENERATE_OP_CONF=1
-    FORCE_RELEASE=0
-
-    case "$1" in
+fi
+RELEASE_TARGET=''
+GENERATE_OP_CONF=1
+FORCE_RELEASE=0
+case "$1" in
 
     -u)  echo "Release pipeline upstream"
             STREAM_NAME='upstream-community-operators'
@@ -74,39 +74,37 @@ EOT
        echo "s     sample - Testing locally on a sample if release pipeline is working."
        echo
 
-    esac
+esac
 
-    echo "Release pipeline starting"
+echo "Release pipeline starting"
 
-    if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
-
-        git log -m -1 --pretty=format: --name-only --since="1 days ago"
-        git log -m -1 --pretty=format: --name-only --since="1 days ago" | sort | uniq > /tmp/changed-git-files-orig-$STREAM_NAME
-        grep "^$STREAM_NAME" /tmp/changed-git-files-orig-$STREAM_NAME > /tmp/changed-git-files-$STREAM_NAME
-        cat /tmp/changed-git-files-$STREAM_NAME
-        if [ $(cat /tmp/changed-git-files-$STREAM_NAME|wc -l) -gt 0 ]; then
-            # ignore specific files in upstream-community-operators top level like OWNERS
-            awk -F '/' 'NF>2 {print}' /tmp/changed-git-files-$STREAM_NAME > /tmp/changed-git-files-top-lev-$STREAM_NAME
-            awk -F "$STREAM_NAME/" '{ print $2 }' /tmp/changed-git-files-top-lev-$STREAM_NAME > /tmp/changed-git-files-list-$STREAM_NAME
-            awk -F '/' '{ print $1 }' /tmp/changed-git-files-list-$STREAM_NAME|sort|uniq > /tmp/changed-git-files-opnames-$STREAM_NAME
-            sed 's/^/- /' /tmp/changed-git-files-opnames-$STREAM_NAME > /tmp/changed-operators-$STREAM_NAME.yaml
-            sed -i "1ioperator_base_dir: $(pwd)/$STREAM_NAME\noperators:" /tmp/changed-operators-$STREAM_NAME.yaml
-            CHANGED_OPERATORS=`cat /tmp/changed-operators-$STREAM_NAME.yaml`
-        else
-            CHANGED_OPERATORS=''
-            echo "Nothing to release"
-            exit 0
-        fi
-        echo "Input config:"
-        echo "$CHANGED_OPERATORS"
-
-        pwd
-        ls
+if [[ $(echo $GENERATE_OP_CONF) == 1 ]]; then
+    git log -m -1 --pretty=format: --name-only --since="1 days ago"
+    git log -m -1 --pretty=format: --name-only --since="1 days ago" | sort | uniq > /tmp/changed-git-files-orig-$STREAM_NAME
+    grep "^$STREAM_NAME" /tmp/changed-git-files-orig-$STREAM_NAME > /tmp/changed-git-files-$STREAM_NAME
+    cat /tmp/changed-git-files-$STREAM_NAME
+    if [ $(cat /tmp/changed-git-files-$STREAM_NAME|wc -l) -gt 0 ]; then
+        # ignore specific files in upstream-community-operators top level like OWNERS
+        awk -F '/' 'NF>2 {print}' /tmp/changed-git-files-$STREAM_NAME > /tmp/changed-git-files-top-lev-$STREAM_NAME
+        awk -F "$STREAM_NAME/" '{ print $2 }' /tmp/changed-git-files-top-lev-$STREAM_NAME > /tmp/changed-git-files-list-$STREAM_NAME
+        awk -F '/' '{ print $1 }' /tmp/changed-git-files-list-$STREAM_NAME|sort|uniq > /tmp/changed-git-files-opnames-$STREAM_NAME
+        sed 's/^/- /' /tmp/changed-git-files-opnames-$STREAM_NAME > /tmp/changed-operators-$STREAM_NAME.yaml
+        sed -i "1ioperator_base_dir: $(pwd)/$STREAM_NAME\noperators:" /tmp/changed-operators-$STREAM_NAME.yaml
+        CHANGED_OPERATORS=`cat /tmp/changed-operators-$STREAM_NAME.yaml`
+    else
+        CHANGED_OPERATORS=''
+        echo "Nothing to release"
+        exit 0
     fi
-    #fast run, only bundle/index handling using tags
-    ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS --tags host_build,deploy_bundles $RELEASE_TARGET $MY_EXTRA
 
-else
-     echo "The file /tmp/vars-op-path does not exist."
-     exit 1
+    echo "Input config:"
+    echo "$CHANGED_OPERATORS"
+    pwd
+    ls
 fi
+
+[[ $OP_DEBUG -eq 1 ]] && VERBOSITY="-v"
+[[ $OP_DEBUG -eq 2 ]] && VERBOSITY="-vv"
+
+#fast run, only bundle/index handling using tags
+ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,deploy_bundles $RELEASE_TARGET $MY_EXTRA
