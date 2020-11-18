@@ -41,6 +41,7 @@ If you are submitting your Operator in the `upstream-community-operators` direct
 ## Submitting your PR
 
 Review this [checklist](./docs/pull_request_template.md) upon creating a PR and after you acknowledged the contribution guidelines.
+Do not forget to add [ci.yaml](./docs/operator-versioning.md) to the top level of your operator. Otherwise only `semver` mode will be supported. 
 
 ## Update your Operator
 
