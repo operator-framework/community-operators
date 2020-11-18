@@ -41,15 +41,17 @@ if [ -f /tmp/vars-op-path ]; then
                 else CHECK_WITH='-e production_registry_namespace=quay.io/openshift-community-operators'
                 fi
 
-                if [[ $OP_VER_OVERWRITE -eq 1 ]] || [[ $OP_RECREATE -eq 1 ]];then
+                if [[ $OP_VER_OVERWRITE -eq 1 ]] || [[ $OP_RECREATE -eq 1 ]] || [[ $OP_CI_YAML_ONLY_CHANGED -eq 1 ]];then
                     CHECK_WITH="$CHECK_WITH -e fail_on_no_index_change=false -e index_force_update=true"
                 else
                     CHECK_WITH="$CHECK_WITH -e fail_on_no_index_change=true"
                 fi
 
                 [[ $OP_VER_OVERWRITE -eq 1 ]] && CHECK_WITH="$CHECK_WITH -e operator_version=$OP_VER -e bundle_force_rebuild=true"
-
+            else
+                [[ $OP_CI_YAML_ONLY_CHANGED -eq 1 ]] && echo "Running index test 'ci.yaml' changed only ..."
             fi
+
             RELEASE_TARGET="-e operator_dir=$(pwd)/$OP_PATH -e strict_mode=true $CHECK_WITH"
         ;;
     -s)  echo  "Testing if release pipeline is working"
