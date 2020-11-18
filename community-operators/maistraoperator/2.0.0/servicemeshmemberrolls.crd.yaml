@@ -1,0 +1,114 @@
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.0
+  creationTimestamp: null
+  name: servicemeshmemberrolls.maistra.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.annotations.configuredMemberCount
+    description: How many of the total number of member namespaces are configured
+    name: Ready
+    type: string
+  - JSONPath: .status.conditions[?(@.type=="Ready")].reason
+    description: Whether all member namespaces have been configured or why that's
+      not the case
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    description: The age of the object
+    name: Age
+    type: date
+  - JSONPath: .spec.members
+    description: Namespaces that are members of this Control Plane
+    name: Members
+    priority: 1
+    type: string
+  group: maistra.io
+  names:
+    categories:
+    - maistra-io
+    kind: ServiceMeshMemberRoll
+    listKind: ServiceMeshMemberRollList
+    plural: servicemeshmemberrolls
+    shortNames:
+    - smmr
+    singular: servicemeshmemberroll
+  preserveUnknownFields: false
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            members:
+              items:
+                type: string
+              nullable: true
+              type: array
+          type: object
+        status:
+          properties:
+            annotations:
+              additionalProperties:
+                type: string
+              type: object
+            conditions:
+              items:
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                type: object
+              nullable: true
+              type: array
+            configuredMembers:
+              items:
+                type: string
+              nullable: true
+              type: array
+            meshGeneration:
+              format: int64
+              type: integer
+            meshReconciledVersion:
+              type: string
+            observedGeneration:
+              format: int64
+              type: integer
+            pendingMembers:
+              items:
+                type: string
+              nullable: true
+              type: array
+          type: object
+      required:
+      - spec
+      type: object
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
