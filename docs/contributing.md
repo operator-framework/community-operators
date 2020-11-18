@@ -133,9 +133,24 @@ Your CSV versioning should follow [semantic versioning](https://semver.org/) con
 
 ### Updating your existing Operator
 
-Unless of purely cosmectic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator and also reference your previous Operator version like so: `replaces: my-operator.v1.0.0`
+Unless of purely cosmectic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator.
 
-This enables Operator updates being facilitated by OLM on clusters where your Operator is deployed. The CSV being pointed to in the `replaces` property indicates that an existing Operator at that version may be upgraded seamlessly to the new version. It is encouraged to use continuous delivery to update your Operator often as new features are added and bugs are fixed.
+In order to have OLM enable updates to your new Operator version you can choose between three update modes: `semver-mode`, `semver-skippatch-mode` and `replaces-mode`. The default is `semver-mode`. If you want to change the default, place a file called `ci.yaml` in your top-level and set it to either of the two other values. For example:
+
+```yaml
+updateGraph: replaces-mode
+```
+
+#### semver-mode
+OLM treats all your Operator versions with semantic version rules and update them in order of those versions. That is, every version will be replaced by the next higher version according semantic versioning sort order. During an update on the cluster OLM will update all the way to the latest version, one version at a time. To use this, simply specify `spec.version` in your CSV. If you accidentally add `spec.replaces` this will contradict semantic versioning and raise an error.
+
+#### semver-skippatch
+Works like `semver` with a slightly different behavior of OLM on cluster, where instead of updating from e.g. `1.1.0` and an update path according to semver ordering rules like so: `1.1.0 -> 1.1.1 -> 1.1.2`, the update would jump straight to `1.1.2` instead of updating to `1.1.1` first.
+
+#### replaces-mode
+Each Operator bundle not only contains `spec.version` but also points to an older version it can upgrade from via `spec.replaces` key in the CSV file, e.g. `replaces: my-operator.v1.0.0`. From this chain of back pointers OLM computes the update graph at runtime. This allows to omit some versions from the update graph or release special leaf versions.
+
+Regardless of which mode you choose to have OLM create update paths for your Operator, it continuous update your Operator often as new features are added and bugs are fixed.
 
 ### Operator Bundle Editor
 You can now create your Operator bundle using the [bundle editor](https://operatorhub.io/packages). Starting by uploading your Kubernetes YAML manifests, the forms on the page will be populated with all valid information and used to create the new Operator bundle. You can modify or add properties through these forms as well. The result will be a downloadable ZIP file.
