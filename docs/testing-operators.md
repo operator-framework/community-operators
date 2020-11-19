@@ -104,7 +104,7 @@ my-operator
 ...
 ```
 
-In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./contributing.mdd#package-your-operator). We will refer to both formats distinctively below where required.
+In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./contributing.md#package-your-operator). We will refer to both formats distinctively below where required.
 
 > Mixing `packagemanifest` style and `bundle` format style Operator versions in a single Operator package **is not supported**. All versions all need to be in either one or the other format.
 
