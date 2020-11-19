@@ -77,7 +77,9 @@ This repository makes use of the [Operator Framework](https://github.com/operato
 
 ### Packaging format
 
-Your Operator submission will be formatted as a `package` which is a directory named after your Operator, containing a history of all the released versions of your Operator in so called `bundles`. A released version of your Operator is described in a `ClusterServiceVersion` manifest alongside the `CustomResourceDefinitions` of your Operator.
+Your Operator submission can be formatted either following the `packagemanifest` or the newer `bundle` format. The former allows to ship your entire Operator with all its versions in one single directory. The latter allows shipping individual releases in container images. Both are supported but mixing of formats within a single Operator is not allowed. You need to decide for one or the other for your entire Operator listing.
+
+In general a released version of your Operator is described in a `ClusterServiceVersion` manifest alongside the `CustomResourceDefinitions` of your Operator and additional metadata describing your Operator listing.
 
 #### Create a ClusterServiceVersion
 
@@ -85,13 +87,13 @@ To add your operator to any of the supported platforms, you will need to submit 
 
 [Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md). You can also see an example [here](./required-fields.md#example-csv). An Operator's CSV must contain the fields mentioned [here](./required-fields.md#required-fields-for-operatorhub) for it to be displayed properly within the various platforms.
 
-There is one CSV per version of your Operator alongside the CRDs, stored in `bundles`.
+There is one CSV per version of your Operator alongside the CRDs.
 
-#### Create a Bundle
+#### Create a release using the `packagemanifest` format
 
-A `bundle` represents a released version of your Operator. It is a sub-directory in the `package` directory named after the semantic version of your Operator which contains the  `CustomResourceDefinition`s and `ClusterServiceVersion`.
+The `packagemanifest` format is a directory structure in which the top-level directory represents your Operator as a `package`. Below that top-level directory are versioned sub-directories, one for each a released version of your Operator. The sub-directory names follow [semantic version](https://semver.org) of your Operator and contain the `CustomResourceDefinition`s and `ClusterServiceVersion`.
 
-Each released version of your Operator gets a `bundle` directory. The `bundle` directory names correspond the [semantic version](https://semver.org) of your Operator as defined in `spec.version` inside the CSV. The version should also be reflected in the CSV file name for ease of use. It is advised that the `spec.name` field in the CSV is also the same as the package name. Follow the example below, assuming your Operator package is called `my-operator`: 
+The exact version is the one of your Operator as defined in `spec.version` inside the CSV. The version should also be reflected in the CSV file name for ease of use. It is required that the `spec.name` field in the CSV is also the same as the package name. Follow the example below, assuming your Operator package is called `my-operator`: 
 
 ```sh
 $ tree my-operator/
@@ -112,9 +114,6 @@ my-operator
 │   └── my-operator.v1.0.0.clusterserviceversion.yaml
 └── my-operator.package.yaml
 ```
-
-#### Create a package definition
-
 The `package.yaml` is a YAML file at the root level of the package directory. It provides the package name, a selection of channels pointing to potentially different Operator Versions/CSVs and a default channel. The package name is what users on cluster see when they discover Operators available to install. Use channels to allow your users to select a different update cadence, e.g. `stable` vs. `nightly`. If you have only a single channel the use of `defaultChannel` is optional.
 
 An example of `my-operator.package.yaml`:
@@ -131,11 +130,65 @@ defaultChannel: stable
 
 Your CSV versioning should follow [semantic versioning](https://semver.org/) concepts. Again, `packageName`, the suffix of the `package.yaml` file name and the field in `spec.name` in the CSV should all refer to the same Operator name.
 
+#### Create a release using the `bundle` format
+
+Alternatively you can use the `bundle` format, which is nowadays also the default of the Operator-SDK. The `bundle` format has a top-level directory named after your Operator name in the `ClusterServiceVersion` directory. Inside are sub-directories for the individual bundle, named after the [semantic versioning](https://semver.org) release of your Operator.
+
+Unlike the `packagemanifest` format all metadata is defined within the individual release of the Operator. That is, inside each bundle. This includes the channel definitions. Rather than describing the list of available release channels in a top-level `package.yaml` it is compiled dynamically when a bundle is added. The default channel is also defined within the bundle and overwritten by every new bundle you add (this is a known limitation and is being worked on).
+
+Within each version you have your `CustomResourceDefinitions`, `ClusterServiceVersion` file (containing the same name and version of your Operator as defined inside the YAML structure) and some metadata about the bundle. You can [learn more about the bundle format here](https://github.com/operator-framework/operator-registry/blob/master/docs/design/operator-bundle.md) and also see some [examples](https://github.com/operator-framework/operator-registry/tree/master/bundles).
+
+Your directory structure might look like this when using the `bundle` format. Notice that the `Dockerfile` is optionally and actually ignored. The processing pipeline of this site builds a container image for each of your bundle regardless.
+
+```console
+$ tree my-operator/
+
+my-operator/
+├── 0.1.0
+│   ├── manifests
+│   │   ├── my-operator-crd1.crd.yaml
+│   │   ├── my-operator-crd2.crd.yaml
+│   │   ├── my-operator-crd3.crd.yaml
+│   │   └── my-operator.v0.1.0.clusterserviceversion.yaml
+│   ├── metadata
+│   │   └── annotations.yaml
+│   └── Dockerfile
+├── 0.5.0
+│   ├── manifests
+│   │   ├── my-operator-crd1.crd.yaml
+│   │   ├── my-operator-crd2.crd.yaml
+│   │   ├── my-operator-crd3.crd.yaml
+│   │   └── my-operator.v0.5.0.clusterserviceversion.yaml
+│   ├── metadata
+│   │   └── annotations.yaml
+│   └── Dockerfile
+├── 1.0.0
+│   ├── manifests
+│   │   ├── my-operator-crd1.crd.yaml
+│   │   ├── my-operator-crd2.crd.yaml
+│   │   ├── my-operator-crd3.crd.yaml
+│   │   └── my-operator.v1.0.0.clusterserviceversion.yaml
+│   ├── metadata
+│   │   └── annotations.yaml
+│   └── Dockerfile
+└── 2.0.0
+    ├── manifests
+    │   ├── my-operator-crd1.crd.yaml
+    │   ├── my-operator-crd2.crd.yaml
+    │   ├── my-operator-crd3.crd.yaml
+    │   └── my-operator.v2.0.0.clusterserviceversion.yaml
+    ├── metadata
+    │   └── annotations.yaml
+    └── Dockerfile
+...
+```
+If you used `operator-sdk` to develop your Operator you can also leverage its packaging tooling to [create a bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle/#creating-a-bundle).
+
 ### Updating your existing Operator
 
 Unless of purely cosmectic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator.
 
-In order to have OLM enable updates to your new Operator version you can choose between three update modes: `semver-mode`, `semver-skippatch-mode` and `replaces-mode`. The default is `semver-mode`. If you want to change the default, place a file called `ci.yaml` in your top-level and set it to either of the two other values. For example:
+In order to have OLM enable updates to your new Operator version you can choose between three update modes: `semver-mode`, `semver-skippatch-mode` and `replaces-mode`. The default is `semver-mode`. If you want to change the default, place a file called `ci.yaml` in your top-level directory (works for both `packagemanifest` or `bundle` format) and set it to either of the two other values. For example:
 
 ```yaml
 updateGraph: replaces-mode
