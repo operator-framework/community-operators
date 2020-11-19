@@ -148,6 +148,8 @@ For simplicity (and if your Operator has dependencies on other community Operato
 cp -R my-operator/ community-operators/upstream-community-operators/
 ```
 
+You have the choice between two supported file layouts, the `packagemanifest` format and the `bundle` format. [Refer to our contribution guide for more information](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md).
+
 > The name of the directory `my-operator/` needs to match the Operator package name (without the slash) in either `package.yaml` (if you are using the `packagemanifest` format) or the container image label `operators.operatorframework.io.bundle.package.v1` in the `Dockerfile` and `annotations.yaml` (if you are using the `bundle` format).
 
 If you are just adding a new version of your Operator, please create a subdirectory following [semver](https://semver.org) conventions in your existing package directory, for example:
