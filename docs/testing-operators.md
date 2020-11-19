@@ -104,7 +104,7 @@ my-operator
 ...
 ```
 
-In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./contributing.md). We will refer to both formats distinctively below where required.
+In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./contributing.mdd#package-your-operator). We will refer to both formats distinctively below where required.
 
 > Mixing `packagemanifest` style and `bundle` format style Operator versions in a single Operator package **is not supported**. All versions all need to be in either one or the other format.
 
@@ -147,8 +147,6 @@ For simplicity (and if your Operator has dependencies on other community Operato
 ```console
 cp -R my-operator/ community-operators/upstream-community-operators/
 ```
-
-You have the choice between two supported file layouts, the `packagemanifest` format and the `bundle` format. [Refer to our contribution guide for more information](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md).
 
 > The name of the directory `my-operator/` needs to match the Operator package name (without the slash) in either `package.yaml` (if you are using the `packagemanifest` format) or the container image label `operators.operatorframework.io.bundle.package.v1` in the `Dockerfile` and `annotations.yaml` (if you are using the `bundle` format).
 
