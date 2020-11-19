@@ -1,0 +1,353 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    categories: "OpenShift Optional"
+    certified: "false"
+    containerImage: quay.io/openshift-windows/community-windows-machine-config-operator:4.6-0cf7722
+    createdAt: 2020-11-16T18:20:00Z
+    description: An operator that enables Windows container workloads on OKD/OCP
+    operatorframework.io/suggested-namespace: openshift-windows-machine-config-operator
+    repository: https://github.com/openshift/windows-machine-config-operator
+    support: ""
+  name: community-windows-machine-config-operator.v0.1.0
+  namespace: openshift-windows-machine-config-operator
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned: []
+  description: |-
+    ## WARNING
+    Community distribution of the Windows Machine Config Operator.
+
+    This is an alpha build, and is not meant for production workloads.
+
+    Issues with this distribution of WMCO can be opened against the [WMCO repository](https://github.com/openshift/windows-machine-config-operator).
+    Please read through the [troubleshooting doc](https://github.com/openshift/windows-machine-config-operator/blob/community-4.6/docs/TROUBLESHOOTING.md)
+    before opening an issue
+
+    Please ensure that when installing this operator the startingCSV you subscribe to is supported on the
+    version of OKD/OCP you are using. This CSV is meant for OKD/OCP 4.6.
+
+    Upgrading the OKD/OCP cluster from version 4.6 to 4.7 while running this operator is not supported. When upgrading
+    a cluster, remove all Windows MachineSets and uninstall this operator. Once the cluster upgrade process has completed,
+    you may reinstall the operator, and recreate all Windows MachineSets.
+
+    ## Documentation
+
+    ### Introduction
+    The Windows Machine Config Operator configures Windows Machines into nodes, enabling Windows container workloads to
+    be ran within OKD/OCP clusters. The operator is configured to watch for Machines with a `machine.openshift.io/os-id: Windows`
+    label. The way a user will initiate the process is by creating a MachineSet which uses a Windows image with the Docker
+    container runtime installed. The operator will do all the necessary steps to configure the underlying VM so that it can join
+    the cluster as a worker node.
+
+    ### Pre-requisites
+    * OKD/OCP 4.6 cluster running on Azure or AWS, configured with hybrid OVN Kubernetes networking
+
+    ### Usage
+    Once the `openshift-windows-machine-config-operator` namespace has been created, a secret must be created containing
+    the private key that will be used to access the Windows VMs:
+    ```
+    # Create secret containing the private key in the openshift-windows-machine-config-operator namespace
+    oc create secret generic cloud-private-key --from-file=private-key.pem=/path/to/key -n openshift-windows-machine-config-operator
+    ```
+    We strongly recommend not using the same
+    [private key](https://docs.openshift.com/container-platform/4.6/installing/installing_azure/installing-azure-default.html#ssh-agent-using_installing-azure-default)
+    used when installing the cluster
+
+    Below is the example of an Azure Windows MachineSet which can create Windows Machines that the WMCO can react upon.
+    Please note that the windows-user-data secret will be created by the WMCO lazily when it is configuring the first
+    Windows Machine. After that, the windows-user-data will be available for the subsequent MachineSets to be consumed.
+    It might take around 10 minutes for the Windows VM to be configured so that it joins the cluster. Please note that
+    the MachineSet should have following labels:
+    * `machine.openshift.io/os-id: Windows`
+    * `machine.openshift.io/cluster-api-machine-role: worker`
+    * `machine.openshift.io/cluster-api-machine-type: worker`
+
+    The following label, needs to be added to the Machine spec within the MachineSet spec:
+    * `node-role.kubernetes.io/worker: ""`
+
+    Not having these labels will result in the Windows node not being marked as a worker.
+
+    `<infrastructureID>` should be replaced with the output of:
+    ```
+    oc get -o jsonpath='{.status.infrastructureName}{"\n"}' infrastructure cluster
+    ```
+
+    `<location>` should be replaced with a valid Azure location like `centralus`.
+
+    `<zone>` should be replaced with a valid Azure availability zone like `us-east-1a`.
+
+    Please note that on Azure, Windows Machine names cannot be more than 15 characters long.
+    The MachineSet name can therefore not be more than 9 characters long, due to the way Machine names are generated from it.
+
+    ```
+    apiVersion: machine.openshift.io/v1beta1
+    kind: MachineSet
+    metadata:
+      labels:
+        machine.openshift.io/cluster-api-cluster: <infrastructureID>
+      name: winworker
+      namespace: openshift-machine-api
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          machine.openshift.io/cluster-api-cluster: <infrastructureID>
+          machine.openshift.io/cluster-api-machineset: winworker
+      template:
+        metadata:
+          labels:
+            machine.openshift.io/cluster-api-cluster: <infrastructureID>
+            machine.openshift.io/cluster-api-machine-role: worker
+            machine.openshift.io/cluster-api-machine-type: worker
+            machine.openshift.io/cluster-api-machineset: winworker
+            machine.openshift.io/os-id: Windows
+        spec:
+          metadata:
+            labels:
+              node-role.kubernetes.io/worker: ""
+          providerSpec:
+            value:
+              apiVersion: azureproviderconfig.openshift.io/v1beta1
+              credentialsSecret:
+                name: azure-cloud-credentials
+                namespace: openshift-machine-api
+              image:
+                offer: WindowsServer
+                publisher: MicrosoftWindowsServer
+                resourceID: ""
+                sku: 2019-Datacenter-with-Containers
+                version: latest
+              kind: AzureMachineProviderSpec
+              location: <location>
+              managedIdentity: <infrastructureID>-identity
+              networkResourceGroup: <infrastructureID>-rg
+              osDisk:
+                diskSizeGB: 128
+                managedDisk:
+                  storageAccountType: Premium_LRS
+                osType: Windows
+              publicIP: false
+              resourceGroup: <infrastructureID>-rg
+              subnet: <infrastructureID>-worker-subnet
+              userDataSecret:
+                name: windows-user-data
+                namespace: openshift-machine-api
+              vmSize: Standard_D2s_v3
+              vnet: <infrastructureID>-vnet
+              zone: "<zone>"
+    ```
+    Example MachineSet for other cloud providers:
+    - [AWS](https://github.com/openshift/windows-machine-config-operator/blob/4.6-community/docs/machineset-aws.md)
+  displayName: Community Windows Machine Config Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          - nodes
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          - networks
+          verbs:
+          - get
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests
+          - certificatesigningrequests/approval
+          verbs:
+          - get
+          - list
+          - update
+        - apiGroups:
+          - operator.openshift.io
+          resources:
+          - networks
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - signers
+          verbs:
+          - approve
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - machine.openshift.io
+          resources:
+          - machines
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - machine.openshift.io
+          resources:
+          - machinesets
+          verbs:
+          - list
+          - get
+          - watch
+        serviceAccountName: windows-machine-config-operator
+      deployments:
+      - name: windows-machine-config-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: windows-machine-config-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: windows-machine-config-operator
+            spec:
+              containers:
+              - args:
+                - --zap-level=debug
+                - --zap-encoder=console
+                command:
+                - windows-machine-config-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: community-windows-machine-config-operator
+                image: quay.io/openshift-windows/community-windows-machine-config-operator:4.6-0cf7722
+                imagePullPolicy: IfNotPresent
+                name: windows-machine-config-operator
+                resources: {}
+              hostNetwork: true
+              nodeSelector:
+                node-role.kubernetes.io/master: ""
+              serviceAccountName: windows-machine-config-operator
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/master
+                operator: Exists
+              - effect: NoExecute
+                key: node.kubernetes.io/unreachable
+                operator: Exists
+                tolerationSeconds: 120
+              - effect: NoExecute
+                key: node.kubernetes.io/not-ready
+                operator: Exists
+                tolerationSeconds: 120
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          - services/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+          - get
+          - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - windows-machine-config-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - hostnetwork
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: windows-machine-config-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - windows
+  maintainers:
+    - email: team-winc@redhat.com
+      name: Red Hat Windows Containers Team
+  maturity: alpha
+  minKubeVersion: 1.19.0
+  provider:
+    name: Red Hat
+  replaces: community-windows-machine-config-operator.v0.0.1
+  version: 0.1.0
