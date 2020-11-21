@@ -7,7 +7,7 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <link href="../assets/images/favicon.png" rel="shortcut icon"/>
 <meta content="mkdocs-1.1.2, mkdocs-material-5.0.2" name="generator"/>
-<title>Operator Best Practices - Community operators</title>
+<title>Deployment - Community operators</title>
 <link href="../assets/stylesheets/main.c1a4d03f.min.css" rel="stylesheet"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&amp;display=fallback" rel="stylesheet"/>
@@ -19,7 +19,7 @@
 <input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
 <label class="md-overlay" for="__drawer"></label>
 <div data-md-component="skip">
-<a class="md-skip" href="#operator-best-practices">
+<a class="md-skip" href="#operator-deployment">
           Skip to content
         </a>
 </div>
@@ -40,7 +40,7 @@
           </span>
 <span class="md-header-nav__topic md-ellipsis">
             
-              Operator Best Practices
+              Deployment
             
           </span>
 </div>
@@ -114,8 +114,8 @@
       Home
     </a>
 </li>
-<li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" data-md-toggle="nav-2" id="nav-2" type="checkbox"/>
 <label class="md-nav__link" for="nav-2">
       Operator
       <span class="md-nav__icon md-icon">
@@ -174,8 +174,9 @@
       Contribution
     </a>
 </li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../operator-deployment/" title="Deployment">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc" type="checkbox"/>
+<a class="md-nav__link md-nav__link--active" href="./" title="Deployment">
       Deployment
     </a>
 </li>
@@ -191,195 +192,54 @@
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon">
-<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></path></svg>
-</span>
-      Table of contents
-    </label>
-<ul class="md-nav__list" data-md-scrollfix="">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#development">
-    Development
-  </a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#running-on-cluster">
-    Running On-Cluster
-  </a>
-</li>
-</ul>
 </nav>
 </div>
 </div>
 </div>
 <div class="md-content">
 <article class="md-content__inner md-typeset">
-<a class="md-content__button md-icon" href="https://github.com/operator-framework/community-operators/edit/master/docs/best-practices.md" title="Edit this page">
+<a class="md-content__button md-icon" href="https://github.com/operator-framework/community-operators/edit/master/docs/operator-deployment.md" title="Edit this page">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"></path></svg>
 </a>
-<h1 id="operator-best-practices">Operator Best Practices</h1>
-<h2 id="development">Development</h2>
-<p>Considerations for operator developers</p>
-<ul>
-<li>
-<p>An Operator should manage a single type of application, essentially following the UNIX principle: do one thing and do it well.</p>
-</li>
-<li>
-<p>If an application consists of multiple different tiers or components, multiple Operators should be written for each of them. If the application for example consists of Redis, AMQ and MySQL, there should be 3 Operators, not one.</p>
-</li>
-<li>
-<p>If there is significant orchestration and sequencing involved, an Operator should be written that represents the entire stack, in turn delegating to other Operators for orchestrating their part of it.</p>
-</li>
-<li>
-<p>Operators should own a CRD and only one Operator should control a CRD on cluster. Two Operators managing the same CRD calls for trouble. In case where an API exists but with multiple implementations, we typically have a no-op Operator (without any deployment/reconciliation loop) that defines that shared API and other Operators depend on this Operator to provide one implementation of the API, e.g. similar to PVCs or Ingress.</p>
-</li>
-<li>
-<p>Inside an Operator, multiple controllers should be used if multiple CRDs are managed. This helps with separation of concerns and code readability. Note that this doesn't necessarily mean one container image per controller, but rather one reconciliation loop (which could be running as part of the same operator binary) per CRD.</p>
-</li>
-<li>
-<p>An operator shouldn't deploy or manage other operators (such patterns are known as meta or super operators). It's the Operator Lifecycle Manager's job to manage the deployment and lifecycle of operators.</p>
-</li>
-<li>
-<p>If multiple operators must be packaged/shipped as a single entity (via the same CSV), then add all owned and required CRDs, as well as all deployments for operators that manage the owned CRDs, to the same CSV.</p>
-</li>
-<li>
-<p>Writing an Operator involves using the Kubernetes API and there is always the same boilerplate code required to connect and interact with it. Use a framework like Operator-SDK to save yourself time with this and get a suite of tooling to ease development and testing.</p>
-</li>
-<li>
-<p>Operators shouldn’t make any assumptions about the namespace they are deployed in or hard-code names of resources that they expect to already exist.</p>
-</li>
-<li>
-<p>Operators shouldn’t hard code the namespaces they are watching. This should be configurable - having no namespace supplied is interpreted as watching all namespaces</p>
-</li>
-<li>
-<p>Semantic versioning (aka semver) should be used to version an Operator. Operators are long-running workloads on the cluster and it’s APIs are potentially in need of support over a longer period of time. Use the <a href="https://semver.org">semver.org guidelines</a> to help determine when and how to bump versions when there are breaking or non-breaking changes.</p>
-</li>
-<li>
-<p>Kubernetes API versioning guidelines should be used to version Operator CRDs. Use the <a href="https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api_changes.md#so-you-want-to-change-the-api">Kubernetes sig-architecture guidelines</a> to get best practices on when to bump versions and when breaking changes are acceptable.</p>
-</li>
-<li>
-<p>When defining CRDs, you should use OpenAPI spec to create a structural schema for your CRDs.</p>
-</li>
-<li>
-<p>Operators are instrumented to provide useful, actionable metrics to external systems (e.g. monitoring/alerting platforms).  Minimally, metrics should represent the software's health and key performance indicators, as well as support the creation of <a href="https://en.wikipedia.org/wiki/Service_level_indicator">service levels indicators</a> such as throughput, latency, availability, errors, capacity, etc.</p>
-</li>
-</ul>
-<h3>Summary</h3>
-<ul>
-<li>
-<p>One Operator per managed application</p>
-</li>
-<li>
-<p>Multiple operators should be used for complex, multi-tier application stacks</p>
-</li>
-<li>
-<p>CRD can only be owned by a single Operator, shared CRDs should be owned by a separate Operator</p>
-</li>
-<li>
-<p>One controller per custom resource definition</p>
-</li>
-<li>
-<p>Use a framework like Operator SDK</p>
-</li>
-<li>
-<p>Do not hard-code namespaces or resources names</p>
-</li>
-<li>
-<p>Make watch namespace configurable</p>
-</li>
-<li>
-<p>Use semver / observe Kubernetes guidelines on versioning APIs</p>
-</li>
-<li>
-<p>Use OpenAPI spec with structural schema on CRDs</p>
-</li>
-<li>
-<p>Operators expose metrics to external systems</p>
-</li>
-</ul>
-<h2 id="running-on-cluster">Running On-Cluster</h2>
-<p>Considerations for on-cluster behavior</p>
-<ul>
-<li>
-<p>Like all containers on Kubernetes, Operators shouldn’t need to run as root unless absolutely necessary. Operators should come with their own ServiceAccount and not rely on the <code>default</code>.</p>
-</li>
-<li>
-<p>Operators should not self-register their CRDs. These are global resources and careful consideration needs to be taken when setting those up. Also this requires the Operator to have global privileges which is potentially dangerous compared to that little extra convenience.</p>
-</li>
-<li>
-<p>Operators use CRs as the primary interface to the cluster user. As such, at all times, meaningful status information should be written to those objects unless they are solely used to store data in a structured schema.</p>
-</li>
-<li>
-<p>Operators should update according to semver and should be updated frequently.</p>
-</li>
-<li>
-<p>Operators need to support updating managed applications (Operands) that were set up by an older version of the Operator. There are multiple models for this:</p>
-</li>
-<li>
-<p><strong>operator fan-out</strong> - where the operator allows the user to specify the version in the custom resource.</p>
-</li>
-<li>
-<p><strong>single version</strong> - where the operator is tied to the version of the operand.</p>
-</li>
-<li>
-<p><strong>hybrid approach</strong> - where the operator is tied to a range of versions, and the user can select some level of the version.</p>
-</li>
-<li>
-<p>An Operator should not deploy another Operator - an additional component on cluster should take care of this (OLM).</p>
-</li>
-<li>
-<p>When Operators change their APIs, CRD conversion (webhooks) should be used to deal with potentially older instances of them using the previous API version.</p>
-</li>
-<li>
-<p>Operators should make it easy for users to use their APIs - validating and rejecting malformed requests via extensive Open API validation schema on CRDs or via an admission webhook is good practice.</p>
-</li>
-<li>
-<p>The Operator itself should be really modest in its requirements - it should always be able to deploy by deploying its controllers, no user input should be required to start up the Operator.</p>
-</li>
-<li>
-<p>If user input is required to change the configuration of the Operator itself, a Configuration CRD should be used. Init-containers as part of the Operator deployments can be used to create a default instance of those CRs and then the Operator manages their lifecycle.</p>
-</li>
-</ul>
-<h3>Summary:</h3>
-<p>An Operator...</p>
-<ul>
-<li>
-<p>Does not run as root</p>
-</li>
-<li>
-<p>Does not self-register CRDs</p>
-</li>
-<li>
-<p>Does not install other Operators - rely on dependencies via package manager (OLM)</p>
-</li>
-<li>
-<p>Writes meaningful status information on Custom Resources objects unless pure data structure</p>
-</li>
-<li>
-<p>Should be capable of updating from a previous version of the Operator</p>
-</li>
-<li>
-<p>Should be capable of managing an Operand from an older Operator version</p>
-</li>
-<li>
-<p>Uses CRD conversion (webhooks) if API/CRDs change</p>
-</li>
-<li>
-<p>Uses OpenAPI validation / Admission Webhooks to reject invalid CRs</p>
-</li>
-<li>
-<p>Should always be able to deploy and come up without user input</p>
-</li>
-<li>
-<p>Offers (pre)configuration via a “Configuration CR” instantiated by InitContainers</p>
-</li>
-</ul>
+<h1 id="operator-deployment">Operator deployment</h1>
+<p>When operator is merged to master following jobs are done:</p>
+<ol>
+<li>Push to quay (to support old app registry)</li>
+<li>Triggering operator deployment to project <code>operator-framework/community-operator-catalog</code> project</li>
+</ol>
+<p><img alt="Catalog history" src="../images/op_after_merge_01.png"/></p>
+<p>Project <code>operator-framework/community-operator-catalog</code> is used to build catalog images in sequential fashion to prevent race condition when catatlog is built. One can see full history <a href="https://travis-ci.com/github/operator-framework/community-operator-catalog/builds">here</a></p>
+<p><img alt="Catalog history" src="../images/op_deploy_build_history.png"/></p>
+<p>The deployment looks like this</p>
+<p><img alt="Catalog history" src="../images/op_deploy_overview.png"/></p>
+<p>It consists of following steps</p>
+<ol>
+<li>Building bunde and index</li>
+<li>Build image for operatorhub.io page (only for kubernetes-operator)</li>
+<li>Trigger to build operatorhub.io (only for kubernetes-operator)</li>
+</ol>
 </article>
 </div>
 </div>
 </main>
 <footer class="md-footer">
+<div class="md-footer-nav">
+<nav aria-label="Footer" class="md-footer-nav__inner md-grid">
+<a class="md-footer-nav__link md-footer-nav__link--prev" href="../contributing-via-pr/" rel="prev" title="Contribution">
+<div class="md-footer-nav__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></path></svg>
+</div>
+<div class="md-footer-nav__title">
+<div class="md-ellipsis">
+<span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Contribution
+              </div>
+</div>
+</a>
+</nav>
+</div>
 <div class="md-footer-meta md-typeset">
 <div class="md-footer-meta__inner md-grid">
 <div class="md-footer-copyright">
