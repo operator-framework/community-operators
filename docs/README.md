@@ -41,7 +41,7 @@ Do not forget to add [ci.yaml](/operator-versioning.md) to the top level of your
 
 ## Update your Operator
 
-Similarly, to update your operator you need to submit a PR with any changes to your Operator resources. Refere to our [contribution guide](/contributing.md#updating-your-existing-operator) for more details.
+Similarly, to update your operator you need to submit a PR with any changes to your Operator resources. Refere to our [contribution guide](docs/contributing.md#updating-your-existing-operator) for more details.
 
 ## CI Tests your Operator
 

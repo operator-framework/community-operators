@@ -1,6 +1,6 @@
 # Submitting your Operator
 
-:+1::tada: First off, thanks for taking the time to contribute your Operator! :tada::+1:
+!!! important "First off, thanks for taking the time to contribute your Operator!"
 
 ## A primer to Kubernetes Community Operators
 
