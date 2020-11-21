@@ -11,7 +11,8 @@ This project also collects Community Operators that work with OpenShift to be di
 
 The contribution process works off standard git _Pull Requests_. Every PR needs to be signed. The sign-off is a simple line at the end of the explanation for a commit. Your signature certifies that you wrote the patch or otherwise have the right to contribute the material. The rules are pretty simple, if you can certify the below (from [developercertificate.org](https://developercertificate.org/)):
 
-```Developer Certificate of Origin
+```
+Developer Certificate of Origin
 Version 1.1
 
 Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
@@ -93,7 +94,7 @@ There is one CSV per version of your Operator alongside the CRDs.
 
 The `packagemanifest` format is a directory structure in which the top-level directory represents your Operator as a `package`. Below that top-level directory are versioned sub-directories, one for each a released version of your Operator. The sub-directory names follow [semantic version](https://semver.org) of your Operator and contain the `CustomResourceDefinition`s and `ClusterServiceVersion`.
 
-The exact version is the one of your Operator as defined in `spec.version` inside the CSV. The version should also be reflected in the CSV file name for ease of use. It is required that the `spec.name` field in the CSV is also the same as the package name. Follow the example below, assuming your Operator package is called `my-operator`: 
+The exact version is the one of your Operator as defined in `spec.version` inside the CSV. The version should also be reflected in the CSV file name for ease of use. It is required that the `spec.name` field in the CSV is also the same as the package name. Follow the example below, assuming your Operator package is called `my-operator`:
 
 ```sh
 $ tree my-operator/

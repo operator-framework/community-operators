@@ -3,7 +3,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 <!-- **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*-->
 
-- [Overview](#overview)
+<!-- - [Overview](#overview)
 - [Accepted Contribution formats](#accepted-contribution-formats)
   - [*packagemanifest* format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)](#packagemanifest-format-mandatory-for-all-olm-versions-prior-to-0140-and-earlier-supported-on-all-available-versions)
   - [*bundle* format (supported with 0.14.0 or newer)](#bundle-format-supported-with-0140-or-newer)
@@ -31,7 +31,7 @@
   - [3. Install your Operator from OperatorHub](#3-install-your-operator-from-operatorhub)
   - [4. Verify Operator health](#4-verify-operator-health)
 - [Testing with scorecard](#testing-with-scorecard)
-- [Additional Resources](#additional-resources)
+- [Additional Resources](#additional-resources) -->
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 ## Overview
@@ -500,7 +500,7 @@ If it does not appear in this list return to the previous step and check the log
 kubectl get logs packageserver-78c99949df-lf26p -n olm
 ```
 
-In some occassions the Operator definition is in the catalog but cannot be understood due to some malformed package/bundle content. This case the `packageserver` should present a related error message. 
+In some occassions the Operator definition is in the catalog but cannot be understood due to some malformed package/bundle content. This case the `packageserver` should present a related error message.
 If there are errors in this log please raise them in the `operator-registry` [issue tracker](https://github.com/operator-framework/operator-registry) as any problems caused by malformed bundle/packagemanifest metadata should have been caught during catalog creation.
 
 ### 4. Create an OperatorGroup
@@ -531,7 +531,7 @@ kubectl apply -f operator-group.yaml
 
 ### 5. Create a Subscription
 
-The last steps is to ask OLM to install your Operator. A `Subscription` is created to represent the intent to install an Operator and keep it updated (automatically even) with newer version from the catalog. This requires you to tell OLM which Operator, in which version from which channel you want to install and where the catalog is, that contains the Operator. 
+The last steps is to ask OLM to install your Operator. A `Subscription` is created to represent the intent to install an Operator and keep it updated (automatically even) with newer version from the catalog. This requires you to tell OLM which Operator, in which version from which channel you want to install and where the catalog is, that contains the Operator.
 
 Save the following to a file named: `operator-subscription.yaml`:
 
@@ -570,9 +570,9 @@ Watch your Operator being deployed by OLM from the catalog with the following co
 ```console
 $ kubectl get clusterserviceversion -n default -w
 NAME                     DISPLAY          VERSION   REPLACES                PHASE
-my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0   
-my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0   
-my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0   
+my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0
+my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0
+my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0
 my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0      Pending
 my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0      InstallReady
 my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0      Installing
@@ -592,7 +592,7 @@ kubectl get deployment -n default
 
 #### Troubleshooting
 
-If the `ClusterServiceVersion` is in a pending or failed state, problems occurred when trying to install the Operator. There are two common sources: the components that make up the Operator and the Operator binary itself. 
+If the `ClusterServiceVersion` is in a pending or failed state, problems occurred when trying to install the Operator. There are two common sources: the components that make up the Operator and the Operator binary itself.
 
 Problems with the Operator process itself will result in a `Deployment` that is unhealthy, either due to a crashing Operator pod or other image level problems. In this case debug the `Deployment` and Operator logs for any error message. Usually there are either bugs in the Operator or insufficient permissions in the RBAC part of the bundle/package metadata which may crash poorly written Operators.
 
@@ -619,7 +619,7 @@ Events:           <none>
 kubectl describe installplan install-2c8lf -n default
 ```
 
-This will likely be a lengthy output due to the content of every component of the Operator returned. However, in the `.status` block of this object the name and health of every component is displayed. Problems with `InstallPlan` components usually stem from malformed components, insufficient permissions, collisions with existing objects etc. It usually needs to be corrected at the Operator metadata level. 
+This will likely be a lengthy output due to the content of every component of the Operator returned. However, in the `.status` block of this object the name and health of every component is displayed. Problems with `InstallPlan` components usually stem from malformed components, insufficient permissions, collisions with existing objects etc. It usually needs to be corrected at the Operator metadata level.
 
 ## Testing Operator Deployment on OpenShift
 

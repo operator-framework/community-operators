@@ -15,6 +15,6 @@ Once swithed to `semver-mode`, there is no easy way to switch back. It is possib
 ### Example
 ```
 ---
-# Use `replaces-mode` or `semver-mode`. Once you switch to `semver-mode`, there is no easy way back.
-updateGraph: replaces-mode 
+# Use `replaces-mode` or `semver-mode`.
+updateGraph: replaces-mode
 ```
