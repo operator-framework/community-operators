@@ -17,7 +17,7 @@ some_url: https://github.com/operator-framework/community-operators
 This repo is the canonical source for Kubernetes Operators that appear on [OperatorHub.io](https://operatorhub.io), [OpenShift Container Platform](https://openshift.com) and [OKD](https://okd.io).
 
 ## Documentation
-Full documentation is located at [here](https://operator-framework.github.io/community-operators/)
+Full documentation is located via github pages [here](https://operator-framework.github.io/community-operators/)
 
 ## Add your Operator
 
