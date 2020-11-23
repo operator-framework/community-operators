@@ -27,9 +27,12 @@ If you have an existing Operator read our [contribution guidelines](./contributi
 
 ## Test your Operator before submitting a PR
 
-You can use our [test suite](./using-current-test-suite.md) to test your Operator prior to submitting it. Our [test suite](./using-current-test-suite.md) will help you to install it. Then assuming you followed the contribution guide, you can run the entire suite on a Linux or macOS system with `Docker` and [`KIND`](https://github.com/kubernetes-sigs/kind) installed:
+You can use our [test suite](./using-current-test-suite.md) to test your Operator prior to submitting it. Our [test suite](./using-current-test-suite.md) will help you to install it. Then assuming you followed the contribution guide, you can run the entire suite on a Linux or macOS system with `Docker` installed:
 
-`bash <(curl -sL https://cutt.ly/operator-test) all upstream-community-operators/<operoator>/<version>`
+```bash
+bash <(curl -sL https://cutt.ly/operator-test) all \
+upstream-community-operators/<operoator>/<version>
+```
 
 Tests not passing? Check [test suite](./using-current-test-suite.md) for more info.
 
