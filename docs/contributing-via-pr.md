@@ -75,3 +75,6 @@ For openshift operator the test is executed on openshift cluster via `ci/prow/de
 
 !!! note
     The `kiwi` test doesn't include to do same test on k8s cluster in Travis job. This can be forced by specifiyng label `test/force-deploy-on-kubernetes` in PR.
+
+# More information
+More detailed information about our Continues integration process can be found [here](./ci.md)
