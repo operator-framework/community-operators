@@ -37,7 +37,7 @@
 ## Overview
 These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework, when packaged for the Operator Lifecycle Manager. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
 
-> The tests described in this document can also be executed automatically in a single step using a [Makefile](./using-scripts.md).
+> The tests described in this document can also be executed automatically in a single step using a [test suite](./using-current-test-suite.md)
 
 > A previous version of this document required quay.io, `operator-courier` and `operator-marketplace` to conduct the tests. This is no longer required.
 
