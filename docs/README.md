@@ -6,7 +6,7 @@ authors:
     - Jozef Breza
     - Martin Vala
 date: 2020-11-18
-some_url: https://github.com/operator-framework/community-operators
+# some_url: https://github.com/operator-framework/community-operators
 ---
 
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
