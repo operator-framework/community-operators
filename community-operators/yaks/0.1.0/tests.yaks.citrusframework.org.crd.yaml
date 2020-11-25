@@ -1,0 +1,160 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    app: "yaks"
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.8
+  creationTimestamp: null
+  name: tests.yaks.citrusframework.org
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.phase
+    description: The test phase
+    name: Phase
+    type: string
+  - JSONPath: .status.results.summary.total
+    description: The total amount of tests
+    name: Total
+    type: string
+  - JSONPath: .status.results.summary.passed
+    description: Passed tests
+    name: Passed
+    type: string
+  - JSONPath: .status.results.summary.failed
+    description: Failed tests
+    name: Failed
+    type: string
+  - JSONPath: .status.results.summary.skipped
+    description: Skipped tests
+    name: Skipped
+    type: string
+  - JSONPath: .status.errors
+    description: Test error details
+    name: Errors
+    type: string
+  group: yaks.citrusframework.org
+  names:
+    categories:
+    - yaks
+    - testing
+    kind: Test
+    listKind: TestList
+    plural: tests
+    singular: test
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Test is the Schema for the tests API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: TestSpec defines the desired state of Test
+          properties:
+            config:
+              description: SettingsSpec--
+              properties:
+                content:
+                  type: string
+                name:
+                  type: string
+              type: object
+            env:
+              items:
+                type: string
+              type: array
+            resources:
+              items:
+                description: ResourceSpec--
+                properties:
+                  content:
+                    type: string
+                  name:
+                    type: string
+                type: object
+              type: array
+            secret:
+              type: string
+            source:
+              description: SourceSpec--
+              properties:
+                content:
+                  type: string
+                language:
+                  type: string
+                name:
+                  type: string
+              type: object
+          type: object
+        status:
+          description: TestStatus defines the observed state of Test
+          properties:
+            digest:
+              type: string
+            errors:
+              type: string
+            phase:
+              description: TestPhase
+              type: string
+            results:
+              properties:
+                errors:
+                  items:
+                    type: string
+                  type: array
+                summary:
+                  properties:
+                    failed:
+                      type: integer
+                    passed:
+                      type: integer
+                    pending:
+                      type: integer
+                    skipped:
+                      type: integer
+                    total:
+                      type: integer
+                    undefined:
+                      type: integer
+                  required:
+                  - failed
+                  - passed
+                  - pending
+                  - skipped
+                  - total
+                  - undefined
+                  type: object
+                tests:
+                  items:
+                    properties:
+                      classname:
+                        type: string
+                      errorMessage:
+                        type: string
+                      errorType:
+                        type: string
+                      name:
+                        type: string
+                    type: object
+                  type: array
+              type: object
+            testID:
+              type: string
+            version:
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
