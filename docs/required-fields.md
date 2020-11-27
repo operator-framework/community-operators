@@ -60,6 +60,7 @@ For the best user experience, choose from the following categories:
 | Developer Tools |
 | Integration & Delivery |
 | Logging & Tracing |
+| Modernization & Migration |
 | Monitoring |
 | Networking |
 | OpenShift Optional |
