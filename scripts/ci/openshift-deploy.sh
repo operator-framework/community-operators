@@ -72,29 +72,42 @@ echo "OP_VER=$OP_VER"
 cd aqua
 
 echo "**** Temp tests: ***"
+
 echo
-echo "podman version:"
-podman --version
+echo "sec test:"
+ls -la /var/run/cred|true
 echo
-echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman:"
-/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true
-echo
-echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah:"
-/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true
-echo
-echo "podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-echo
-echo "buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-echo
-echo "buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-echo
-echo "podman pull centos:8:"
-podman pull centos:8|true
-echo
-echo
+echo "cat mock scrt"
+cat /var/run/cred/tst|true
+
+#curl -u J0zi:$(cat /var/run/cred/jtkn) \
+#-X POST \
+#-H "Accept: application/vnd.github.v3+json" \
+#https://api.github.com/repos/J0zi/test/dispatches --data '{"event_type": "test-from-robot"}'|true
+
+#echo
+#echo "podman version:"
+#podman --version
+#echo
+#echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman:"
+#/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true
+#echo
+#echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah:"
+#/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true
+#echo
+#echo "podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
+#podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
+#echo
+#echo "buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
+#buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
+#echo
+#echo "buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
+#buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
+#echo
+#echo "podman pull centos:8:"
+#podman pull centos:8|true
+#echo
+#echo
 
 #export OP_STREAM=community-operators
 #export OP_VERSION=$OP_VER
