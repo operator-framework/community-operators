@@ -70,7 +70,9 @@ echo "OP_VER=$OP_VER"
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
 cd aqua
-
+export
+echo
+export|grep 2502
 echo "**** Temp tests: ***"
 
 echo
@@ -80,10 +82,10 @@ echo
 echo "cat mock scrt"
 cat /var/run/cred/tst|true
 
-#curl -u J0zi:$(cat /var/run/cred/jtkn) \
-#-X POST \
-#-H "Accept: application/vnd.github.v3+json" \
-#https://api.github.com/repos/J0zi/test/dispatches --data '{"event_type": "test-from-robot"}'|true
+curl -u J0zi:$(cat /var/run/cred/jtkn) \
+-X POST \
+-H "Accept: application/vnd.github.v3+json" \
+https://api.github.com/repos/J0zi/test/dispatches --data '{"event_type": "test-from-robot"}'|true
 
 #echo
 #echo "podman version:"
