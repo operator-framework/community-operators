@@ -18,31 +18,31 @@ export OP_VER_OVERWRITE=0
 export OP_RECREATE=0
 export OP_FORCE_DEPLOY_ON_K8S=0
 export OP_DEBUG=0
-export OP_PR_NUMBER=${TRAVIS_PULL_REQUEST-false}
+# export OP_PR_NUMBER=${TRAVIS_PULL_REQUEST-false}
 
-[[ "$OP_PR_NUMBER" == "false" ]] && export OP_PR_NUMBER=$(git --no-pager log --oneline | head -n 1 | cut -d '(' -f 2 | cut -d '#' -f 2 | cut -d ')' -f 1)
-echo $OP_PR_NUMBER
+# [[ "$OP_PR_NUMBER" == "false" ]] && export OP_PR_NUMBER=$(git --no-pager log --oneline | head -n 1 | cut -d '(' -f 2 | cut -d '#' -f 2 | cut -d ')' -f 1)
+# echo $OP_PR_NUMBER
 
-if [[ -n "$OP_PR_NUMBER" ]]; then
-  set +e
-  OP_PR_LABELS=$(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r)
-  if [[ $? -eq 0 ]];then
-    echo "$OP_PR_LABELS"
-    for l in $(echo $OP_PR_LABELS);do
-      echo "Checking label '$l' ..."
-      [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
-      [[ "$l" = "allow/operator-recreate" ]] && export OP_RECREATE=1
-      [[ "$l" = "test/force-deploy-on-kubernetes" ]] && export OP_FORCE_DEPLOY_ON_K8S=1
-      [[ "$l" = "verbosity/high" ]] && export OP_DEBUG=1
-      [[ "$l" = "verbosity/debug" ]] && export OP_DEBUG=2
-    done
-  else
-    echo "Failed to query labels from PR=$OP_PR_NUMBER !!!"
-    echo "    Tried command 'curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r'"
-  fi
-  set -e
-fi
-echo "Label check done"
+# if [[ -n "$OP_PR_NUMBER" ]]; then
+#   set +e
+#   OP_PR_LABELS=$(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r)
+#   if [[ $? -eq 0 ]];then
+#     echo "$OP_PR_LABELS"
+#     for l in $(echo $OP_PR_LABELS);do
+#       echo "Checking label '$l' ..."
+#       [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
+#       [[ "$l" = "allow/operator-recreate" ]] && export OP_RECREATE=1
+#       [[ "$l" = "test/force-deploy-on-kubernetes" ]] && export OP_FORCE_DEPLOY_ON_K8S=1
+#       [[ "$l" = "verbosity/high" ]] && export OP_DEBUG=1
+#       [[ "$l" = "verbosity/debug" ]] && export OP_DEBUG=2
+#     done
+#   else
+#     echo "Failed to query labels from PR=$OP_PR_NUMBER !!!"
+#     echo "    Tried command 'curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r'"
+#   fi
+#   set -e
+# fi
+# echo "Label check done"
 
 declare -A CHANGED_FILES
 
