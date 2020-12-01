@@ -85,7 +85,7 @@ cat /var/run/cred/tst|true
 curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/J0zi/test/dispatches --data '{"event_type": "test-from-robot"}'|true
+https://api.github.com/repos/J0zi/test/dispatches --data "{\"event_type\": \"test-from-robot\", \"client_payload\": {\"var_123\": 123, \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
 #echo
 #echo "podman version:"
