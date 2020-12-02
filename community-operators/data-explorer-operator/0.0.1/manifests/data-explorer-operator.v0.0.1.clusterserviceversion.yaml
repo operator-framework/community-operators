@@ -42,7 +42,26 @@ spec:
           x-descriptors:
             - 'urn:alm:descriptor:org.w3:link'
       version: v1alpha1
-  description: Data Explorer provides ready to use pre-configured data science environment for experimentation.Bringing the promise of notebooks to Kubernetes and OpenShift as an Operator pattern.  Deploy in the cloud or your data center or local laptop with ready to use data and notebooks without burdening yourself with installation details. You can work as team or use your own project namespace.
+  description: |
+    Data Explorer provides ready to use pre-configured data science environment for experimentation.Bringing the promise of notebooks to Kubernetes and OpenShift as an Operator pattern.  Deploy in the cloud or your data center or local laptop with ready to use data and notebooks without burdening yourself with installation details. You can work as team or use your own project namespace.
+    
+    ***Pre-Requisite:***
+    
+    Create a secret in the namespace where the operator needs to be installed. 
+    
+    The secret name should be ***aws-access*** and should contain the AWS ACCESS KEY and AWS SECRET ACCESS KEY with S3 access.
+    
+    ```
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: aws-access
+        namespace: '{{ ansible_operator_meta.namespace }}'
+      data:
+        AWS_ACCESS_KEY_ID: YOUR_AWS_KEY
+        AWS_SECRET_ACCESS_KEY: YOUR_AWS_ACCESS_KEY_SECRET
+      type: Opaque
+    ```   
   displayName: Data Explorer Operator
   icon:
   - base64data: >-
@@ -194,7 +213,7 @@ spec:
           - patch
         serviceAccountName: data-explorer-operator
       deployments:
-      - name: data-explorer-operator-data-explorer-operator
+      - name: data-explorer-operator
         spec:
           replicas: 1
           selector:
@@ -223,21 +242,9 @@ spec:
                 - --enable-leader-election
                 - --leader-election-id=data-explorer-operator
                 env:
-                - name: WATCH_NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.annotations['olm.targetNamespaces']
-                - name: POD_NAME
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.name
-                - name: OPERATOR_NAME
-                  value: data-explorer-operator
                 - name: ANSIBLE_GATHERING
                   value: explicit
-                - name: RELATED_IMAGE_JUPYTERHUB_DASHBOARD
-                  value: quay.io/dataexplorer/jupyterhub-dataexplorer-dashboard:12-1-2
-                image: quay.io/dataexplorer/data-explorer-operator:11-17-1
+                image: quay.io/dataexplorer/data-explorer-operator-community:12-2-1
                 imagePullPolicy: Always
                 name: manager
                 resources: {}
