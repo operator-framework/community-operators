@@ -4,24 +4,15 @@ env:
   OP_TEST_DEBUG: 1
   OP_TEST_CONTAINER_OPT: "-t"
   OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/test.sh"
-  # STREAM_NAME: "upstream-community-operators"
-  # OP_NAME: "aqua"
-  # OP_VER: "1.0.2"
 
-on: pull_request
-# Run this workflow every time a new commit pushed to your repository
-# on:
-#  pull_request:
-#    branches:
-#      - master
+on:
+ pull_request:
+   branches:
+     - master
 
 jobs:
-  # Set the job key. The key is displayed as the job name
-  # when a job name is not provided
-  kiwi:
-    # Name the Job
+  test:
     name: "Full operator test"
-    # Set the type of machine to run on
     runs-on: ubuntu-latest
 
     steps:
@@ -32,16 +23,14 @@ jobs:
         # run: scripts/ci/PR-traffic-light
       - id: files
         uses: jitterbit/get-changed-files@v1
-      # - run: |
-      #     for changed_file in ${{ steps.files.outputs.all }}; do
-      #       echo "Do something with this ${changed_file}."
-      #     done
+        continue-on-error: true
       - name: Operator test
         env:
           CHANGED_FILES: "${{ steps.files.outputs.all }}"
+          OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
         run: |
           scripts/ci/PR-env
           [ -f /tmp/vars-op-path ] && source /tmp/vars-op-path || { echo "Error getting opertator variables"; exit 1; }
-          echo "${{ toJson(github.event.pull_request.labels.*.name) }}"
+          echo "OP_TEST_LABELS='$OP_TEST_LABELS'"
           echo scripts/ci/op-test kiwi $STREAM_NAME/$OP_NAME/$OP_VER
           [[ $NO_OPERATOR -eq 1 ]] || scripts/ci/op-test kiwi $STREAM_NAME/$OP_NAME/$OP_VER
