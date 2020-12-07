@@ -79,7 +79,7 @@ echo
 curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/J0zi/test/dispatches --data "{\"event_type\": \"test-from-robot\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
+https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
 sleep 20m
 
@@ -94,30 +94,6 @@ sleep 20m
 #done
 
 
-
-#echo
-#echo "podman version:"
-#podman --version
-#echo
-#echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman:"
-#/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true
-#echo
-#echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah:"
-#/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true
-#echo
-#echo "podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-#podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-#echo
-#echo "buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-#buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-#echo
-#echo "buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-#buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-#echo
-#echo "podman pull centos:8:"
-#podman pull centos:8|true
-#echo
-#echo
 
 #export OP_STREAM=community-operators
 #export OP_VERSION=$OP_VER
