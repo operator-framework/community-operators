@@ -81,6 +81,10 @@ curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -H "Accept: application/vnd.github.v3+json" \
 https://api.github.com/repos/J0zi/test/dispatches --data "{\"event_type\": \"test-from-robot\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
+#wait for temp index to be created from previous API call
+while [ ! $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; do sleep 60s; done
+
+
 #echo
 #echo "podman version:"
 #podman --version
