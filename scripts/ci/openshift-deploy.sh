@@ -81,8 +81,18 @@ curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -H "Accept: application/vnd.github.v3+json" \
 https://api.github.com/repos/J0zi/test/dispatches --data "{\"event_type\": \"test-from-robot\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
+sleep 20m
+
 #wait for temp index to be created from previous API call
-while [ ! $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; do sleep 60s; done
+#while [ ! $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; do sleep 60s; done
+
+#for check_temp_index in {1..30}
+#do
+#  echo "Checking index presence ... $check_temp_index minutes."
+#  if [ $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then break; fi
+#  sleep 60s
+#done
+
 
 
 #echo
