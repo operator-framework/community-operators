@@ -74,7 +74,7 @@ cd aqua
 #echo
 #export|grep 2502
 echo "**** Temp tests: ***"
-OP_TOKEN=$(cat /var/run/cred/jtkn)
+OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
 curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -X POST \
