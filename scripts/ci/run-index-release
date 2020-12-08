@@ -1,26 +1,5 @@
 #!/usr/bin/env bash
 set -e
-set -x
-
-#export AUTOMATION_TOKEN_RELEASE_UPSTREAM=[secure]
-#export AUTOMATION_TOKEN_RELEASE_COMMUNITY=[secure]
-#export AUTOMATION_TOKEN_RELEASE_UPSTREAM_TEST=[secure]
-#export AUTOMATION_TOKEN_RELEASE_COMMUNITY_TEST=[secure]
-export ANSIBLE_BASE_ARGS="-i localhost, local.yml -e ansible_connection=local -e run_upstream=true -e run_remove_catalog_repo=false"
-export ANSIBLE_CONFIG="$PWD/ansible.cfg"
-export ANSIBLE_PULL_BRANCH="temp1"
-export OHIO_REGISTRY_IMAGE="quay.io/operator-framework/upstream-community-operators:latest"
-export CI_OHIO_BRANCH="master"
-export ANSIBLE_VERSION="2.10.1"
-export ANSIBLE_PULL_REPO="https://github.com/J0zi/operator-test-playbooks"
-export GODEBUG="x509ignoreCN=0"
-export ANSIBLE_EXTRA_ARGS="-e operator_courier_version=2.1.11"
-export OHIO_INPUT_CATALOG_IMAGE="quay.io/operatorhubio/catalog:latest"
-export OHIO_REGISTRY_IMAGE="quay.io/operator-framework/upstream-community-operators:dev"
-export CI_OHIO_BRANCH="dev"
-#export CI_OHIO_TRIGGER_TOKEN=[secure]
-#export OHIO_REGISTRY_TOKEN=[secure]
-export OHIO_INPUT_CATALOG_IMAGE="quay.io/openshift-community-operators/catalog:latest"
 
 OPENSHIFT_VERSION_DEFAULTS='4.6 4.7' #space delimited
 COMMUNITY_SPECIAL=''
@@ -32,8 +11,8 @@ MODE_CHANGE=${MODE_CHANGE-0}
 OP_DELETE=${OP_DELETE-0}
 OP_DEBUG=${OP_DEBUG-0}
 OP_UNCOMPLETE=/tmp/operators_uncomplete-localhost.yaml
-#MY_OP_BASE_DIR="/tmp/oper/community-operators"
-MY_OP_BASE_DIR="/tmp/community-operators-for-catalog/community-operators" #temp
+MY_OP_BASE_DIR="/tmp/oper/community-operators"
+#MY_OP_BASE_DIR="/tmp/community-operators-for-catalog/community-operators" #temp
 
 
 case "$1" in
@@ -87,15 +66,15 @@ for CLUSTER_VERSION in $CLUSTER_VERSION_LIST; do
     if [ -n "$MY_OP_STREAM" ] && [ -n "$MY_OP_NAME" ];then
       if  [ ! -z $MY_OP_VER ]; then
         echo "Fixing bundle and index for operator '$2' ..."
-#        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,deploy_bundles \
-        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags deploy_bundles \
+        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,deploy_bundles \
+#        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags deploy_bundles \
         -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME -e operator_version=$MY_OP_VER $BUNDLE_FORCE_PARAMS $AUTH_PARAMS -e bundle_force_rebuild=true
         exit 0
       else
         if [[ $OP_DELETE -eq 1 ]];then
           echo "Removing operator '$2' form index ..."
-#          ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,remove_operator \
-          ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags remove_operator \
+          ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,remove_operator \
+#          ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags remove_operator \
           -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME $BUNDLE_FORCE_PARAMS $AUTH_PARAMS
           exit 0
         else
@@ -121,7 +100,7 @@ for CLUSTER_VERSION in $CLUSTER_VERSION_LIST; do
       echo "operator_base_dir: $(pwd)/$STREAM_NAME\noperators" > "$OP_UNCOMPLETE"
       echo "operators:" >> "$OP_UNCOMPLETE"
       echo "- $OP_NAME" >> "$OP_UNCOMPLETE"
-#      ANSIBLE_EXTRA_TAGS="host_build,"
+      ANSIBLE_EXTRA_TAGS="host_build,"
     fi
     if [ -f $OP_UNCOMPLETE ];then
       cat $OP_UNCOMPLETE
