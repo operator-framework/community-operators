@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -x
 
 #temp
 #export AUTOMATION_TOKEN_RELEASE_UPSTREAM=[secure]
@@ -73,13 +74,15 @@ if [ -n "$2" ];then
   if [ -n "$MY_OP_STREAM" ] && [ -n "$MY_OP_NAME" ];then
     if  [ ! -z $MY_OP_VER ]; then
       echo "Fixing bundle and index for operator '$2' ..."
-      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,deploy_bundles \
+#      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,deploy_bundles \
+      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags deploy_bundles \
       -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME -e operator_version=$MY_OP_VER $BUNDLE_FORCE_PARAMS $AUTH_PARAMS -e bundle_force_rebuild=true
       exit 0
     else
       if [[ $OP_DELETE -eq 1 ]];then
         echo "Removing operator '$2' form index ..."
-        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,remove_operator \
+#        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,remove_operator \
+        ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags remove_operator \
         -e operator_dir=$MY_OP_BASE_DIR/$MY_OP_STREAM/$MY_OP_NAME $BUNDLE_FORCE_PARAMS $AUTH_PARAMS
         exit 0
       else
@@ -99,7 +102,8 @@ else
     echo "Index fix pipeline starting"
     rm -f $OP_UNCOMPLETE
     if [[ $MODE_CHANGE -eq 0 ]] ; then
-      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,index_check $INDEX_CHECK_PARAMS':'$CLUSTER_VERSION
+#      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags host_build,index_check $INDEX_CHECK_PARAMS':'$CLUSTER_VERSION
+      ansible-pull -U $ANSIBLE_PULL_REPO -C $ANSIBLE_PULL_BRANCH $ANSIBLE_BASE_ARGS $ANSIBLE_EXTRA_ARGS $VERBOSITY --tags index_check $INDEX_CHECK_PARAMS':'$CLUSTER_VERSION
     else
       echo "operator_base_dir: $(pwd)/$STREAM_NAME\noperators" > "$OP_UNCOMPLETE"
       echo "operators:" >> "$OP_UNCOMPLETE"
