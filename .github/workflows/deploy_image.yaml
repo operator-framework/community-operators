@@ -6,9 +6,9 @@ env:
   OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/test.sh"
 
 on:
- push:
-   branches:
-     - catalog_workflow
+  push:
+    branches:
+      - catalog_workflow
 #     - master
 
 jobs:
@@ -17,11 +17,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - id: files
-        uses: jitterbit/get-changed-files@v1
-        continue-on-error: true
+      - name: Block until there is no running workflow
+        uses: softprops/turnstyle@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # - name: Operator test deploy
       #   env:
       #     CHANGED_FILES: "${{ steps.files.outputs.all }}"
@@ -40,4 +40,4 @@ jobs:
           token: ${{ secrets.REPO_GHA_PAT }}
           repository: ${{ github.repository }}
           event-type: trigger-deploy-ohio-image
-          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "stream": "upstream-community-operators"}'
