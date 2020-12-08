@@ -4,94 +4,62 @@ metadata:
   annotations:
     operators.openshift.io/infrastructure-features: '["Disconnected"]'
     alm-examples: |-
-      [{
-        "apiVersion": "jenkins.io/v1alpha2",
-        "kind": "Jenkins",
-        "metadata": {
-          "generation" : 1,
-          "name" : "example"
-        },
-        "spec": {
-          "backup": {
-            "action": {},
-            "containerName": "",
-            "interval": 0,
-            "makeBackupBeforePodDeletion": false
+      [
+        {
+          "apiVersion": "jenkins.io/v1alpha2",
+          "kind": "Jenkins",
+          "metadata": {
+            "name": "jenkins-sample"
           },
-          "configurationAsCode": {
-            "enabled": true,
-            "defaultConfig": true,
-            "enableAutoReload": true,
-            "configurations": []
-          },
-          "jenkinsAPISettings": {
-              "authorizationStrategy": "serviceAccount"
-          },
-          "clusterRoles": [
-            {
-              "apiGroup": "rbac.authorization.k8s.io",
-              "kind": "ClusterRole",
-              "name": "edit"
-            }
-          ],
-          "master": {
-            "containers": [{
-              "command": ["/usr/bin/go-init","-main","/usr/libexec/s2i/run"],
-              "env": [
-                {"name": "OPENSHIFT_ENABLE_OAUTH","value": "true"},
-                {"name": "OPENSHIFT_ENABLE_REDIRECT_PROMPT","value": "true"},
-                {"name": "DISABLE_ADMINISTRATIVE_MONITORS","value": "false"},
-                {"name": "KUBERNETES_MASTER","value": "https://kubernetes.default:443"},
-                {"name": "KUBERNETES_TRUST_CERTIFICATES","value": "true"},
-                {"name": "JENKINS_SERVICE_NAME","value": "jenkins-operator-http-example"},
-                {"name": "JNLP_SERVICE_NAME","value": "jenkins-operator-slave-example"},
-                {"name": "JENKINS_UC_INSECURE","value": "false"},
-                {"name": "JENKINS_HOME","value": "/var/lib/jenkins"},
-                {"name": "JAVA_OPTS","value": "-XX:+UnlockExperimentalVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 -Djenkins.install.runSetupWizard=false -Djava.awt.headless=true"}
-              ],
-              "image": "quay.io/redhat-developer/origin-jenkins@sha256:a8e94991bd42290c51310ad1d34554f1d1604813a9f15f8acf96e18f71ff65c7",
-              "imagePullPolicy": "Always",
-              "livenessProbe": {
-                "httpGet": {
-                  "path": "/login",
-                  "port": 8080,
-                  "scheme": "HTTP"
-                },
-                "initialDelaySeconds": 420,
-                "periodSeconds": 360,
-                "timeoutSeconds": 240
-              },
-              "name": "jenkins",
-              "readinessProbe": {
-                "httpGet": {
-                  "path": "/login",
-                  "port": 8080,
-                  "scheme": "HTTP"
-                },
-                "initialDelaySeconds": 3,
-                "periodSeconds": 0,
-                "timeoutSeconds": 240
-              },
-              "resources": {
-                "limits": {"cpu": "600m","memory": "4Gi"},
-                "requests": {"cpu": "500m","memory": "3Gi"}
-              }
-            }]
+          "spec": {
+            "configurationAsCode": {
+              "defaultConfig": true,
+              "enableAutoReload": true,
+              "enabled": true
             },
-            "restore": {"action": {},"containerName": ""},
-            "service": {"port": 8080,"type": "ClusterIP"},
-            "slaveService": {"port": 50000,"type": "ClusterIP"},
-            "serviceAccount": {
-              "annotations": {
-                "serviceaccounts.openshift.io/oauth-redirectreference.jenkins": "{\"kind\":\"OAuthRedirectReference\",\"apiVersion\":\"v1\",\"reference\":{\"kind\":\"Route\",\"name\":\"jenkins-example\"}}"
-              }
+            "master": {
+              "containers": [
+                {
+                  "image": "quay.io/redhat-developer/origin-jenkins:4.7-stable",
+                  "name": "jenkins"
+                }
+              ]
             }
           }
-        }]
+        },
+        {
+          "apiVersion": "jenkins.io/v1alpha2",
+          "kind": "Backup",
+          "metadata": {
+            "name": "backup-sample"
+          },
+          "spec": {
+            "configRef": "default"
+          }
+        },
+        {
+          "apiVersion": "jenkins.io/v1alpha2",
+          "kind": "BackupConfig",
+          "metadata": {
+            "name": "backupconfig-sample"
+          },
+          "spec": {
+            "jenkinsRef": "jenkins-with-backup-sample",
+            "backupOptions": {
+              "config": true,
+              "jobs": true,
+              "plugins": true
+            },
+            "restartAfterRestore":{
+              "enabled": true
+            }
+          }
+        }
+      ]
     capabilities: Basic Install
     categories: Developer Tools
     certified: "true"
-    containerImage: quay.io/redhat-developer/openshift-jenkins-operator@sha256:8917d4159b0ab2a69d0465dff76cbbe75525034e43c9d60d4b5ea519eeb59191
+    containerImage: quay.io/redhat-developer/openshift-jenkins-operator@ssha256:36fd3f695c5be1bd2b7e5b1c706fef23d42a231c93af8bfc6c4f16f4aac3c26d
     description: >-
       Kubernetes native operator which fully manages Jenkins on Openshift.
     repository: https://github.com/redhat-developer/jenkins-operator
@@ -101,9 +69,9 @@ metadata:
 spec:
   relatedImages:
     - name: jenkins-operator
-      image: quay.io/redhat-developer/openshift-jenkins-operator@sha256:8917d4159b0ab2a69d0465dff76cbbe75525034e43c9d60d4b5ea519eeb59191
+      image: quay.io/redhat-developer/openshift-jenkins-operator@sha256:36fd3f695c5be1bd2b7e5b1c706fef23d42a231c93af8bfc6c4f16f4aac3c26d
     - name: jenkins-image
-      image: quay.io/redhat-developer/origin-jenkins@sha256:a8e94991bd42290c51310ad1d34554f1d1604813a9f15f8acf96e18f71ff65c7
+      image: registry.redhat.io/openshift4/ose-jenkins@sha256:0f28b84725a89504ffd3695ad4c2928e4235643b6135021a9b147f039ef943f3
     - name: jenkins-image-builder
       image: quay.io/redhat-developer/openshift-jenkins-image-builder@sha256:473d6dfb011c69f32192e668d86a47c0235791e7e857c870ad70c5e86ec07e8c
     - name: jenkins-kubernetes-sidecar
@@ -113,55 +81,31 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: |+
-        Jenkins custom resource allows creation of Jenkins instances preconfigured for OpenShift.
-      displayName: "Jenkins"
+    - version: v1alpha2
       kind: Jenkins
       name: jenkins.jenkins.io
-      version: v1alpha2
-      resources:
-      - kind: Deployment
-        name: ""
-        version: v1
-      - kind: Service
-        name: ""
-        version: v1
-      - kind: ReplicaSet
-        name: ""
-        version: v1
-      - kind: Pod
-        name: ""
-        version: v1
-      - kind: Secret
-        name: ""
-        version: v1
-      - kind: ConfigMap
-        name: ""
-        version: v1
-    - kind: JenkinsImage
-      version: v1alpha2
+      displayName: Jenkins
+      description: "Jenkins allows creation of Jenkins instances preconfigured for OpenShift."
+    - version: v1alpha2
+      kind: JenkinsImage
       name: jenkinsimages.jenkins.io
-      displayName: "Jenkins Image"
-    - description: BackupWorker is the Schema for the backupworkers API
-      displayName: Backup Worker
-      kind: BackupWorker
-      name: backupworkers.jenkins.io
-      version: v1alpha2
-    - description: Backup represents an performed backup by the Jenkins Operator
-      displayName: Backup
+      displayName: JenkinsImage
+      description: "JenkinsImage helps in building an image with your choice of plugins installed."
+    - version: v1alpha2
       kind: Backup
       name: backups.jenkins.io
-      version: v1alpha2
-    - description: BackupConfig specifies back configuration policy
-      displayName: BackupConfig
+      displayName: Backup
+      description: "Backup triggers a backup operation on a Jenkins instance given in the BackupConfig."
+    - version: v1alpha2
       kind: BackupConfig
       name: backupconfigs.jenkins.io
-      version: v1alpha2
-    - description: Create a Restore object referencing a Backup when you want the Jenkins Operator to restore previously saved data.
-      displayName: Restore
+      displayName: BackupConfig
+      description: "BackupConfig specifies the configuration used by Backup and Restore."
+    - version: v1alpha2
       kind: Restore
       name: restores.jenkins.io
-      version: v1alpha2
+      displayName: Restore
+      description: "Create a Restore object referencing a Backup when you want the Jenkins Operator to restore previously saved data."
   description: |+
     ##What's the Jenkins Operator?
 
@@ -179,7 +123,7 @@ spec:
 
     - Security and hardening
 
-    - Backup and restore for jobs history
+    - Backup and restore
 
   displayName: Jenkins Operator
   icon:
@@ -215,144 +159,133 @@ spec:
                 - name: OPERATOR_NAME
                   value: jenkins-operator
                 - name: DEFAULT_JENKINS_IMAGE
-                  value: quay.io/redhat-developer/origin-jenkins@sha256:a8e94991bd42290c51310ad1d34554f1d1604813a9f15f8acf96e18f71ff65c7
+                  value: quay.io/redhat-developer/origin-jenkins:4.7-stable
                 - name: JENKINS_SIDECAR_IMAGE
                   value: quay.io/redhat-developer/jenkins-kubernetes-sidecar@sha256:590f088f15cc0c010d1730d68780bba3cee692b9c07d9322aa758f733ba08977
                 - name: JENKINS_IMAGE_BUILDER_NAME
                   value: quay.io/redhat-developer/openshift-jenkins-image-builder@sha256:473d6dfb011c69f32192e668d86a47c0235791e7e857c870ad70c5e86ec07e8c
                 - name: JENKINS_BACKUP_IMAGE
                   value: registry.redhat.io/ubi8/ubi-minimal@sha256:c6473956faa4985a41776701993718eb27ab933078bf579768e8ca7d967459ee
-                image: quay.io/redhat-developer/openshift-jenkins-operator@sha256:8917d4159b0ab2a69d0465dff76cbbe75525034e43c9d60d4b5ea519eeb59191
+                image: quay.io/redhat-developer/openshift-jenkins-operator@sha256:36fd3f695c5be1bd2b7e5b1c706fef23d42a231c93af8bfc6c4f16f4aac3c26d
                 imagePullPolicy: IfNotPresent
                 name: jenkins-operator
                 resources: {}
               serviceAccountName: jenkins-operator
       clusterPermissions:
-      - rules:
-        - apiGroups:
-          - '*'
-          resources:
-          - '*'
-          verbs:
-          - get
-          - list
-          - watch
-        - nonResourceURLs:
-          - '*'
-          verbs:
-          - get
-          - list
-        serviceAccountName: jenkins-operator
+        - rules:
+            - apiGroups:
+                - apps
+                - apps.openshift.io
+                - batch
+                - ""
+                - extensionsnetworking.k8s.io
+                - packages.operators.coreos.com
+                - policy
+                - project.openshift.io
+                - quota.openshift.io
+                - rbac.authorization.k8s.io
+                - template.openshift.io
+                - route.openshift.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - jenkins.io
+              resources:
+                - jenkins
+                - jenkins/status
+                - jenkins/finalizers
+              verbs:
+                - '*'
+            - apiGroups:
+                - jenkins.io
+              resources:
+                - backups
+                - backups/status
+                - backupconfigs
+                - backupconfigs/status
+              verbs:
+                - '*'
+            - apiGroups:
+                - jenkins.io
+              resources:
+                - jenkinsimages
+                - jenkinsimages/status
+              verbs:
+                - '*'
+            - apiGroups:
+                - jenkins.io
+              resources:
+                - restores
+                - restores/status
+              verbs:
+                - '*'
+            - apiGroups:
+                - authentication.k8s.io
+              resources:
+                - tokenreviews
+              verbs:
+                - create
+            - apiGroups:
+                - authorization.k8s.io
+              resources:
+                - subjectaccessreviews
+              verbs:
+                - create
+          serviceAccountName: jenkins-operator
       permissions:
-      - rules:
-        - apiGroups:
-          - ""
-          resources:
-            - services
-            - configmaps
-            - secrets
-            - serviceaccounts
-            - endpoints
-            - bindings
-            - persistentvolumes
-            - limitranges
-          verbs:
-            - '*'
-        - apiGroups:
-            - apps
-          resources:
-            - deployments
-            - daemonsets
-            - replicasets
-            - statefulsets
-            - controllerrevisions
-          verbs:
-            - '*'
-        - apiGroups:
-            - rbac.authorization.k8s.io
-          resources:
-            - roles
-            - rolebindings
-          verbs:
-            - get
-            - create
-            - update
-            - list
-            - watch
-        - apiGroups:
-            - ""
-          resources:
-            - pods/portforward
-          verbs:
-            - create
-        - apiGroups:
-            - ""
-          resources:
-            - pods/log
-          verbs:
-            - '*'
-        - apiGroups:
-            - ""
-          resources:
-            - pods
-            - pods/exec
-          verbs:
-            - "*"
-        - apiGroups:
-            - ""
-          resources:
-            - events
-          verbs:
-            - watch
-            - list
-            - create
-            - patch
-        - apiGroups:
-            - apps
-          resourceNames:
-            - jenkins-operator
-          resources:
-            - deployments/finalizers
-          verbs:
-            - update
-        - apiGroups:
-            - jenkins.io
-          resources:
-            - '*'
-          verbs:
-            - '*'
-        - apiGroups:
-            - ""
-          resources:
-            - persistentvolumeclaims
-          verbs:
-            - get
-            - list
-            - watch
-        - apiGroups:
-            - "image.openshift.io"
-          resources:
-            - imagestreams
-          verbs:
-            - '*'
-        - apiGroups:
-            - "build.openshift.io"
-          resources:
-            - builds
-            - buildconfigs
-          verbs:
-            - '*'
-        - apiGroups:
-            - "route.openshift.io"
-          resources:
-            - routes
-          verbs:
-            - get
-            - create
-            - update
-            - list
-            - watch
-        serviceAccountName: jenkins-operator
+        - rules:
+            - apiGroups:
+                - apps
+                - apps.openshift.io
+                - batch
+                - ""
+                - extensionsnetworking.k8s.io
+                - packages.operators.coreos.com
+                - policy
+                - project.openshift.io
+                - quota.openshift.io
+                - rbac.authorization.k8s.io
+                - template.openshift.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - jenkins.io
+              resources:
+                - backups
+                - backups/status
+              verbs:
+                - '*'
+            - apiGroups:
+                - jenkins.io
+              resources:
+                - jenkinsimages
+                - jenkinsimages/status
+              verbs:
+                - '*'
+            - apiGroups:
+                - jenkins.io
+              resources:
+                - restores
+                - restores/status
+              verbs:
+                - '*'
+            - apiGroups:
+                - authentication.k8s.io
+              resources:
+                - tokenreviews
+              verbs:
+                - create
+            - apiGroups:
+                - authorization.k8s.io
+              resources:
+                - subjectaccessreviews
+              verbs:
+                - create
+          serviceAccountName: jenkins-operator
     strategy: deployment
   installModes:
   - supported: true
@@ -377,6 +310,8 @@ spec:
       email: jkhelil@redhat.com
     - name: Vibhav Bobade
       email: vbobade@redhat.com
+    - name: Jitendar Singh
+      email: jitsingh@redhat.com
   maturity: alpha
   minKubeVersion: 1.11.0
   provider:
