@@ -34,33 +34,44 @@ OP_DEBUG=${OP_DEBUG-0}
 OP_UNCOMPLETE=/tmp/operators_uncomplete-localhost.yaml
 MY_OP_BASE_DIR="/tmp/oper/community-operators"
 
-for CLUSTER_VERSION in $CLUSTER_VERSION_LIST; do
-  case "$1" in
 
-  -u)  echo "Index fix upstream pipeline"
-          STREAM_NAME='upstream-community-operators'
-          INDEX_CHECK_PARAMS='-e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME' -e bundle_index_image=quay.io/operatorhubio/catalog'
-          AUTH_PARAMS='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
-          BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/operatorhubio"
-          CLUSTER_VERSION_LIST='latest'
+case "$1" in
+
+-u)  echo "Index fix upstream pipeline"
+        STREAM_NAME='upstream-community-operators'
+        INDEX_CHECK_PARAMS='-e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME' -e bundle_index_image=quay.io/operatorhubio/catalog'
+        AUTH_PARAMS='-e quay_api_token='$AUTOMATION_TOKEN_RELEASE_UPSTREAM' -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog'
+        BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/operatorhubio"
+        CLUSTER_VERSION_LIST='latest'
+    ;;
+-c)  echo "Index fix community pipeline"
+        STREAM_NAME='community-operators'
+        INDEX_CHECK_PARAMS='-e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME' -e bundle_index_image=quay.io/openshift-community-operators/catalog'
+        # AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
+        AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog"
+        # BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
+        BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators"
+        CLUSTER_VERSION_LIST=$OPENSHIFT_VERSION_DEFAULTS
+#          COMMUNITY_SPECIAL="-e use_cluster_filter=true -e bundle_index_image=quay.io/openshift-community-operators/catalog:$CLUSTER_VERSION"
+    ;;
+*) echo "Syntax: $0 [-u|c]"
+   echo "options:"
+   echo "u     upstream - Run index fix upstream pipeline"
+   echo "c     community - Run index fix community pipeline"
+   echo
+
+esac
+
+for CLUSTER_VERSION in $CLUSTER_VERSION_LIST; do
+
+  case "$1" in
+  -u)  echo "Upstream"
       ;;
-  -c)  echo "Index fix community pipeline"
-          STREAM_NAME='community-operators'
-          INDEX_CHECK_PARAMS='-e operator_base_dir='$MY_OP_BASE_DIR'/'$STREAM_NAME' -e bundle_index_image=quay.io/openshift-community-operators/catalog'
-          # AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
-          AUTH_PARAMS="-e quay_api_token=$AUTOMATION_TOKEN_RELEASE_COMMUNITY -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog"
-          # BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators -e mirror_index_images=quay.io/redhat/redhat----community-operator-index|redhat+iib_community|$QUAY_RH_INDEX_PW"
-          BUNDLE_FORCE_PARAMS="-e production_registry_namespace=quay.io/openshift-community-operators"
-          CLUSTER_VERSION_LIST=$OPENSHIFT_VERSION_DEFAULTS
+  -c)  echo "Setting index for community"
           COMMUNITY_SPECIAL="-e use_cluster_filter=true -e bundle_index_image=quay.io/openshift-community-operators/catalog:$CLUSTER_VERSION"
       ;;
-  *) echo "Syntax: $0 [-u|c]"
-     echo "options:"
-     echo "u     upstream - Run index fix upstream pipeline"
-     echo "c     community - Run index fix community pipeline"
-     echo
-
   esac
+
 
   [[ $OP_DEBUG -eq 1 ]] && VERBOSITY="-v"
   [[ $OP_DEBUG -eq 2 ]] && VERBOSITY="-vv"
