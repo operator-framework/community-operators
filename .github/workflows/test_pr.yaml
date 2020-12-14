@@ -1,0 +1,33 @@
+name: kiwi
+
+env:
+  OP_TEST_DEBUG: 1
+  OP_TEST_CONTAINER_OPT: "-t"
+  OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/test.sh"
+
+on:
+ push:
+   branches:
+     - feature/checkpr
+
+jobs:
+  test:
+    name: "Testing pr"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks out a copy of your repository on the ubuntu-latest machine
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
+      - name: Operator test
+        env:
+          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
+          OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+        run: |
+          scripts/ci/actions-env
+          # [ -f /tmp/vars-op-path ] && source /tmp/vars-op-path || { echo "Error getting opertator variables"; exit 1; }
+          export
