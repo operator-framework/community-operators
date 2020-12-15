@@ -9,16 +9,16 @@ env:
   OP_TEST_IMAGE: "quay.io/operator_testing/operator-test-playbooks:master"
   OP_TEST_DRY_RUN: 1
   OP_TEST_PROD: 1
-  OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
   # OP_TEST_LABELS: "allow/ci-changes allow/operator-version-overwrite"
-  OP_TEST_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
+  # OP_TEST_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml upstream-community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
-  OP_TEST_REMOVED_FILES: ""
+  # OP_TEST_REMOVED_FILES: ""
 
 on:
  push:
    branches:
+     - master
      - feature/checkpr
 
 jobs:
@@ -35,9 +35,9 @@ jobs:
         continue-on-error: true
       - name: Operator test
         id: op-traffic-light
-        # env:
-          # OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
-          # OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
+        env:
+          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
         run: |
           scripts/ci/actions-env
     outputs:
@@ -55,7 +55,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Operator test
+      - name: Operator release
         run: |
           echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
@@ -68,7 +68,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Operator test
+      - name: Operator release
         run: |
           echo "orange_v4.6 ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange_v4.6 "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
@@ -81,7 +81,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Operator test
+      - name: Operator release
         run: |
           echo "orange_v4.7 ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
