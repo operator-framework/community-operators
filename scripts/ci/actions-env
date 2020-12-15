@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-export INPUT_ENV_SCRIPT="/tmp/vars-op-path"
+export INPUT_ENV_SCRIPT="/tmp/op-env-vars"
 OP_TEST_ALLOW_CI_CHANGES=${OP_TEST_ALLOW_CI_CHANGES-0}
 
 echo "OP_TEST_MODIFIED_FILES=$OP_TEST_MODIFIED_FILES"
@@ -96,7 +96,7 @@ OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
 echo "Latest : $LATEST"
 echo "OP_TEST_OPERATOR_VERSIONS : $OP_TEST_OPERATOR_VERSIONS"
 
-
+cat <<EOF > $INPUT_ENV_SCRIPT
 export OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB
 export OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI
 export OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS
@@ -106,24 +106,13 @@ export OP_TEST_STREAM_NAME=$OP_TEST_STREAM_NAME
 export OP_TEST_OPERATOR_NAME=$OP_TEST_OPERATOR_NAME
 export OP_TEST_OPERATOR_VERSION=$OP_TEST_OPERATOR_VERSION
 export OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSIONS"
+EOF
 
-
-# cat <<EOF > $INPUT_ENV_SCRIPT
-# export OP_TEST_STREAM_NAME=$OP_TEST_STREAM_NAME
-# export OP_TEST_OPERATOR_NAME=$OP_TEST_OPERATOR_NAME
-# export OP_TEST_OPERATOR_VERSION=$OP_TEST_OPERATOR_VERSION
-# export OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSIONS"
-# EOF
-
-# if [ -f $INPUT_ENV_SCRIPT ]; then
-#   echo "ENVIRONMENT INFO:"
-#   cat $INPUT_ENV_SCRIPT
-#   source $INPUT_ENV_SCRIPT
-# else
-#   echo "Error: Build system has problem to prepare environment from git information !!!"
-#   echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
-#   exit 1
-# fi
+if [ ! -f $INPUT_ENV_SCRIPT ]; then
+  echo "Error: Build system has problem to prepare environment from git information !!!"
+  echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
+  exit 1
+fi
 
 
 
