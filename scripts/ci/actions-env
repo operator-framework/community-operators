@@ -2,6 +2,8 @@
 set -e
 export INPUT_ENV_SCRIPT="/tmp/op-env-vars"
 OP_TEST_ALLOW_CI_CHANGES=${OP_TEST_ALLOW_CI_CHANGES-0}
+OP_TEST_READY=${OP_TEST_READY-1}
+OP_RELEASE_READY=${OP_RELEASE_READY-1}
 
 echo "OP_TEST_MODIFIED_FILES=$OP_TEST_MODIFIED_FILES"
 echo "OP_TEST_REMOVED_FILES=$OP_TEST_REMOVED_FILES"
@@ -56,7 +58,7 @@ for sf in ${OP_TEST_MODIFIED_FILES}; do
   [[ $sf == community-operators* ]] && OP_TEST_CHNAGES_STREAM_COMMUNITY=1
   [[ $sf == upstream-community-operators* ]] && OP_TEST_CHNAGES_STREAM_UPSTREAM=1
 
-  [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; exit 1; }
+  [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_TEST_READY=0; }
 
   FILES="$FILES $(echo $sf | cut -d '/' -f 1-3)"
 
@@ -71,9 +73,9 @@ echo "OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM"
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
 
-[[ $OP_TEST_CHNAGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' labed is not set !!!"; exit 1; }
-[[ $OP_TEST_CHNAGES_CI -eq 1 ]] && [[ $OP_TEST_CHNAGES_CI -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' labed is not set !!!"; exit 1; }
-[[ $OP_TEST_CHNAGES_DOC -eq 1 ]] && [[ $OP_TEST_CHNAGES_DOC -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' labed is not set !!!"; exit 1; }
+[[ $OP_TEST_CHNAGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
+[[ $OP_TEST_CHNAGES_CI -eq 1 ]] && [[ $OP_TEST_CHNAGES_CI -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
+[[ $OP_TEST_CHNAGES_DOC -eq 1 ]] && [[ $OP_TEST_CHNAGES_DOC -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
 [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
@@ -88,7 +90,7 @@ OP_TEST_OPERATOR_VERSIONS=
 for v in $VERSIONS;do
   TMP_OP_NAME=$(echo $v | cut -d '/' -f 2)
   OP_TEST_OPERATOR_VERSIONS="$(echo $v| cut -d '/' -f 3) $OP_TEST_OPERATOR_VERSIONS"
-  [ "$OP_TEST_OPERATOR_NAME" = "$TMP_OP_NAME" ] || { echo "Error: Multiple operators are changed !!! Detected:'$OP_TEST_OPERATOR_NAME' and '$TMP_OP_NAME' !!! Exiting ..."; exit 1; }
+  [ "$OP_TEST_OPERATOR_NAME" = "$TMP_OP_NAME" ] || { echo "Error: Multiple operators are changed !!! Detected:'$OP_TEST_OPERATOR_NAME' and '$TMP_OP_NAME' !!! Exiting ..."; OP_TEST_READY=0; }
 done
 # remove trailing space
 OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
@@ -96,26 +98,30 @@ OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
 echo "Latest : $LATEST"
 echo "OP_TEST_OPERATOR_VERSIONS : $OP_TEST_OPERATOR_VERSIONS"
 
+echo "::set-output name=op_test_ready::${OP_TEST_READY}"
+echo "::set-output name=op_release_ready::${OP_RELEASE_READY}"
 
-echo "::set-output name=op_test_changes_github::${OP_TEST_CHNAGES_GITHUB}"
+echo "::set-output name=op_test_stream::${OP_TEST_STREAM_NAME}"
+echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
+echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
 
-cat <<EOF > $INPUT_ENV_SCRIPT
-export OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB
-export OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI
-export OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS
-export OP_TEST_CHNAGES_STREAM_COMMUNITY=$OP_TEST_CHNAGES_STREAM_COMMUNITY
-export OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM
-export OP_TEST_STREAM_NAME=$OP_TEST_STREAM_NAME
-export OP_TEST_OPERATOR_NAME=$OP_TEST_OPERATOR_NAME
-export OP_TEST_OPERATOR_VERSION=$OP_TEST_OPERATOR_VERSION
-export OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSIONS"
-EOF
+# cat <<EOF > $INPUT_ENV_SCRIPT
+# export OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB
+# export OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI
+# export OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS
+# export OP_TEST_CHNAGES_STREAM_COMMUNITY=$OP_TEST_CHNAGES_STREAM_COMMUNITY
+# export OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM
+# export OP_TEST_STREAM_NAME=$OP_TEST_STREAM_NAME
+# export OP_TEST_OPERATOR_NAME=$OP_TEST_OPERATOR_NAME
+# export OP_TEST_OPERATOR_VERSION=$OP_TEST_OPERATOR_VERSION
+# export OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSIONS"
+# EOF
 
-if [ ! -f $INPUT_ENV_SCRIPT ]; then
-  echo "Error: Build system has problem to prepare environment from git information !!!"
-  echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
-  exit 1
-fi
+# if [ ! -f $INPUT_ENV_SCRIPT ]; then
+#   echo "Error: Build system has problem to prepare environment from git information !!!"
+#   echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
+#   exit 1
+# fi
 
 
 

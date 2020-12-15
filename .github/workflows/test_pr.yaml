@@ -4,6 +4,10 @@ env:
   OP_TEST_DEBUG: 1
   OP_TEST_CONTAINER_OPT: "-t"
   OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/test.sh"
+  # OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+  OP_TEST_LABELS: "allow/ci-changes"
+  OP_TEST_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
+  OP_TEST_REMOVED_FILES: ""
 
 on:
  push:
@@ -24,32 +28,53 @@ jobs:
         continue-on-error: true
       - name: Operator test
         id: op-traffic-light
-        env:
-          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
-          OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
-          OP_TEST_LABELS: "allow/ci-changes"
-          # OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+        # env:
+          # OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          # OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
         run: |
           scripts/ci/actions-env
     outputs:
-      op_test_changes_github: "${{ steps.op-traffic-light.outputs.op_test_changes_github }}"
+      op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
+      op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
+      op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
+      op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
+      op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
 
   test-kiwi:
     needs: pr-check
-    if: needs.pr-check.outputs.op_test_changes_github == '0'
+    if: needs.pr-check.outputs.op_test_ready == '1'
     runs-on: ubuntu-latest
     steps:
-      - name: Operator test
+      - name: "Full operator test"
         run: |
-          echo "${{ needs.pr-check.outputs.op_test_changes_github }}"
-          export
-  test-kiwi2:
+          echo "${{ needs.pr-check.outputs.op_test_ready }}"
+          echo "${{ needs.pr-check.outputs.op_release_ready }}"
+          echo "${{ needs.pr-check.outputs.op_test_stream }}"
+          echo "${{ needs.pr-check.outputs.op_test_name }}"
+          echo "${{ needs.pr-check.outputs.op_test_version }}"
+
+  test-lemon:
     needs: pr-check
     if: needs.pr-check.outputs.op_test_changes_github == '1'
     runs-on: ubuntu-latest
     steps:
-      - name: Operator test
+      - name: "Operator test deploy from scratch"
         run: |
-          echo "${{ needs.pr-check.outputs.op_test_changes_github }}"
-          export
+          echo "${{ needs.pr-check.outputs.op_test_ready }}"
+          echo "${{ needs.pr-check.outputs.op_release_ready }}"
+          echo "${{ needs.pr-check.outputs.op_test_stream }}"
+          echo "${{ needs.pr-check.outputs.op_test_name }}"
+          echo "${{ needs.pr-check.outputs.op_test_version }}"
 
+  test-orange-latest:
+    needs: pr-check
+    if: needs.pr-check.outputs.op_test_changes_github == '1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Operator test deploy
+        run: |
+          echo "${{ needs.pr-check.outputs.op_test_ready }}"
+          echo "${{ needs.pr-check.outputs.op_release_ready }}"
+          echo "${{ needs.pr-check.outputs.op_test_stream }}"
+          echo "${{ needs.pr-check.outputs.op_test_name }}"
+          echo "${{ needs.pr-check.outputs.op_test_version }}"
