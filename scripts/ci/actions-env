@@ -1,11 +1,133 @@
 #!/bin/bash
 set -e
-export INPUT_ENV_SCRIPT="/tmp/vars-op-path"
+export INPUT_ENV_SCRIPT="/tmp/op-env-vars"
+OP_TEST_ALLOW_CI_CHANGES=${OP_TEST_ALLOW_CI_CHANGES-0}
+OP_TEST_READY=${OP_TEST_READY-1}
+OP_RELEASE_READY=${OP_RELEASE_READY-0}
 
 echo "OP_TEST_MODIFIED_FILES=$OP_TEST_MODIFIED_FILES"
 echo "OP_TEST_REMOVED_FILES=$OP_TEST_REMOVED_FILES"
 echo "OP_TEST_LABELS=$OP_TEST_LABELS"
 
+
+for l in $(echo $OP_TEST_LABELS);do
+  echo "Checking label '$l' ..."
+  [[ "$l" = "allow/ci-changes" ]] && export OP_TEST_ALLOW_CI_CHANGES=1
+done
+
+OP_TEST_CHNAGES_OPERATOR=
+OP_TEST_CHNAGES_OPERATOR_VERSIONS_MODIFIED=
+OP_TEST_CHNAGES_OPERATOR_VERSIONS_REMOVED=
+
+
+# Handle removed files
+if [ -n "$OP_TEST_REMOVED_FILES" ];then
+
+  # Some files are removed
+  # TODO : OP_TEST_CHNAGES_OPERATOR_VERSIONS_REMOVED
+
+  # Handle removed only files
+  if [ -z $OP_TEST_MODIFIED_FILES ];then
+    # check if only ci.yaml was removed
+
+    #
+
+    echo "Files removed, but nothing to test"
+    exit 0
+  fi
+fi
+
+# Only MODIFIED_FILES here
+# No files were removed.
+#OP_TEST_STREAM
+OP_TEST_CHNAGES_GITHUB=0
+OP_TEST_CHNAGES_CI=0
+OP_TEST_CHNAGES_DOCS=0
+OP_TEST_CHNAGES_STREAM_COMMUNITY=0
+OP_TEST_CHNAGES_STREAM_UPSTREAM=0
+
+
+FILES=
+for sf in ${OP_TEST_MODIFIED_FILES}; do
+  echo $sf
+  # Check if .github/ dir is modified
+  [[ $sf == .github* ]] && OP_TEST_CHNAGES_GITHUB=1 && continue
+  [[ $sf == scripts* ]] && OP_TEST_CHNAGES_CI=1 && continue
+  [[ $sf == docs* ]] && OP_TEST_CHNAGES_DOCS=1 && continue
+
+  [[ $sf == community-operators* ]] && OP_TEST_CHNAGES_STREAM_COMMUNITY=1
+  [[ $sf == upstream-community-operators* ]] && OP_TEST_CHNAGES_STREAM_UPSTREAM=1
+
+  [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_TEST_READY=0; }
+
+  FILES="$FILES $(echo $sf | cut -d '/' -f 1-3)"
+
+  # Check if outdside of "community-operators" and "upstream-community-operators"
+done
+
+echo "OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB"
+echo "OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI"
+echo "OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS"
+echo "OP_TEST_CHNAGES_STREAM_COMMUNITY=$OP_TEST_CHNAGES_STREAM_COMMUNITY"
+echo "OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM"
+
+[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
+
+[[ $OP_TEST_CHNAGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
+[[ $OP_TEST_CHNAGES_CI -eq 1 ]] && [[ $OP_TEST_CHNAGES_CI -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
+[[ $OP_TEST_CHNAGES_DOC -eq 1 ]] && [[ $OP_TEST_CHNAGES_DOC -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
+
+[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
+[[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
+
+
+VERSIONS=$(echo -e "${FILES// /\\n}" | uniq | sort -r)
+LATEST="$(echo -e $VERSIONS | cut -d ' ' -f 1)"
+OP_TEST_OPERATOR_NAME=$(echo $LATEST | cut -d '/' -f 2)
+OP_TEST_OPERATOR_VERSION=$(echo $LATEST | cut -d '/' -f 3)
+
+OP_TEST_OPERATOR_VERSIONS=
+for v in $VERSIONS;do
+  TMP_OP_NAME=$(echo $v | cut -d '/' -f 2)
+  OP_TEST_OPERATOR_VERSIONS="$(echo $v| cut -d '/' -f 3) $OP_TEST_OPERATOR_VERSIONS"
+  [ "$OP_TEST_OPERATOR_NAME" = "$TMP_OP_NAME" ] || { echo "Error: Multiple operators are changed !!! Detected:'$OP_TEST_OPERATOR_NAME' and '$TMP_OP_NAME' !!! Exiting ..."; OP_TEST_READY=0; }
+done
+# remove trailing space
+OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
+
+[[ $OP_TEST_PROD -ge 1 ]] && OP_RELEASE_READY=1
+
+echo "Latest : $LATEST"
+echo "OP_TEST_OPERATOR_VERSIONS : $OP_TEST_OPERATOR_VERSIONS"
+
+echo "::set-output name=op_test_ready::${OP_TEST_READY}"
+echo "::set-output name=op_release_ready::${OP_RELEASE_READY}"
+
+echo "::set-output name=op_test_stream::${OP_TEST_STREAM_NAME}"
+echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
+echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
+
+# cat <<EOF > $INPUT_ENV_SCRIPT
+# export OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB
+# export OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI
+# export OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS
+# export OP_TEST_CHNAGES_STREAM_COMMUNITY=$OP_TEST_CHNAGES_STREAM_COMMUNITY
+# export OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM
+# export OP_TEST_STREAM_NAME=$OP_TEST_STREAM_NAME
+# export OP_TEST_OPERATOR_NAME=$OP_TEST_OPERATOR_NAME
+# export OP_TEST_OPERATOR_VERSION=$OP_TEST_OPERATOR_VERSION
+# export OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSIONS"
+# EOF
+
+# if [ ! -f $INPUT_ENV_SCRIPT ]; then
+#   echo "Error: Build system has problem to prepare environment from git information !!!"
+#   echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
+#   exit 1
+# fi
+
+
+
+exit 0
 # unset OP_PATH
 # unset OP_VER
 # export COMMUNITY_SPECIAL=""
@@ -106,29 +228,4 @@ echo "OP_TEST_LABELS=$OP_TEST_LABELS"
 # # echo "CI_YML_CHECK=$CI_YML_CHECK"
 # # [[ -z "$OP_VER" ]] && [[ -z ${CHANGED_FILES[1]} ]] && [[ "$CI_YML_CHECK" == "ci.yaml" ]] && { export OP_CI_YAML_ONLY_CHANGED="true"; }
 
-cat <<EOF > $INPUT_ENV_SCRIPT
-export OP_PATH=$OP_PATH
-export OP_NAME=$OP_NAME
-export OP_VER=$OP_VER
-export OP_PR_COMMIT=$OP_PR_COMMIT
-export STREAM_NAME=$STREAM_NAME
-export RUN_UPSTREAM=$RUN_UPSTREAM
-export OP_PR_NUMBER=$OP_PR_NUMBER
-export OP_VER_OVERWRITE=$OP_VER_OVERWRITE
-export OP_RECREATE=$OP_RECREATE
-export OP_FORCE_DEPLOY_ON_K8S=$OP_FORCE_DEPLOY_ON_K8S
-export OP_CI_YAML_ONLY_CHANGED=$OP_CI_YAML_ONLY_CHANGED
-export OP_DEBUG=$OP_DEBUG
-export COMMUNITY_SPECIAL="$COMMUNITY_SPECIAL"
-EOF
 
-if [ -f $INPUT_ENV_SCRIPT ]; then
-  echo "ENVIRONMENT INFO:"
-  cat $INPUT_ENV_SCRIPT
-  [ -n "$OP_PATH" ] || echo "Warning: OP_PATH is not set at all"
-  source $INPUT_ENV_SCRIPT
-else
-  echo "Error: Build system has problem to prepare environment from git information !!!"
-  echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
-  exit 1
-fi

@@ -1,0 +1,117 @@
+name: Operator test
+
+env:
+  OP_TEST_DEBUG: 1
+  OP_TEST_CONTAINER_OPT: "-t"
+  # OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/test.sh"
+  OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/feature/orange-release/upstream/test/test.sh"
+  # OP_TEST_IMAGE: "quay.io/operator_testing/operator-test-playbooks:latest"
+  OP_TEST_IMAGE: "quay.io/operator_testing/operator-test-playbooks:master"
+  OP_TEST_PROD: 0
+  OP_TEST_DRY_RUN: 0
+  # OP_TEST_LABELS: "allow/ci-changes allow/operator-version-overwrite"
+  # OP_TEST_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
+  # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml upstream-community-operators/aqua/1.0.2/csv1.yaml"
+  # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
+  # OP_TEST_REMOVED_FILES: ""
+
+on:
+ pull_request:
+   branches:
+     - master
+
+ push:
+   branches:
+     - feature/checkpr
+
+jobs:
+  pr-check:
+    name: "PR-traffic-light"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks out a copy of your repository on the ubuntu-latest machine
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
+      - name: Operator test
+        id: op-traffic-light
+        env:
+          OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
+        run: |
+          scripts/ci/actions-env
+    outputs:
+      op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
+      op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
+      op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
+      op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
+      op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
+
+  test-kiwi:
+    name: "kiwi / Full operator test"
+    needs: pr-check
+    if: needs.pr-check.outputs.op_test_ready == '1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Operator test
+        run: |
+          echo "kiwi ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+          scripts/ci/op-test kiwi "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+
+  test-lemon:
+    name: "lemon / Deploy from scratch"
+    needs: pr-check
+    if: needs.pr-check.outputs.op_test_ready == '1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Operator test
+        run: |
+          echo "lemon ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+          scripts/ci/op-test lemon "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+
+  test-orange-latest:
+    name: "orange / Deploy o7t_k8s latest"
+    needs: pr-check
+    if: needs.pr-check.outputs.op_test_ready == '1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Operator test
+        run: |
+          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+
+  test-orange-openshift_4_6:
+    name: "orange / Deploy o7t v4.6"
+    needs: pr-check
+    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Operator test
+        run: |
+          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+          scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+
+  test-orange-openshift_4_7:
+    name: "orange / Deploy o7t v4.7"
+    needs: pr-check
+    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Operator test
+        run: |
+          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+          scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
