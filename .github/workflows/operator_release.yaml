@@ -10,7 +10,7 @@ env:
   OP_TEST_DRY_RUN: 1
   OP_TEST_PROD: 1
   OP_TEST_LABELS: "allow/ci-changes allow/operator-version-overwrite"
-  # OP_TEST_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
+  OP_TEST_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml upstream-community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_REMOVED_FILES: ""
@@ -143,3 +143,33 @@ jobs:
         run: |
           echo "push_to_quay ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test push_to_quay "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+
+  ohio-page-k8s:
+    name: "Release / operatorhub.io"
+    needs: ohio-image-o7t
+    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    runs-on: ubuntu-latest
+    env:
+      CI_OHIO_BRANCH: "master"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Ohio image
+        run: |
+          echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
+          scripts/ci/trigger-operatorhubio-ci.sh
+
+  ohio-page-o7t:
+    name: "Release / dev.operatorhub.io"
+    needs: ohio-image-o7t
+    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    runs-on: ubuntu-latest
+    env:
+      CI_OHIO_BRANCH: "dev"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Ohio image
+        run: |
+          echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
+          scripts/ci/trigger-operatorhubio-ci.sh
