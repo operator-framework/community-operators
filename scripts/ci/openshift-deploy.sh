@@ -106,7 +106,8 @@ sleep 20m
 #deploy start
 mkdir -p /tmp/playbooks2
 cd /tmp/playbooks2
-ansible-pull -d /tmp/.ansible-pulled -U https://github.com/operator-framework/operator-test-playbooks.git -C master -i localhost, deploy-olm-operator-openshift-upstream.yml -e ANSIBLE_CONFIG=/tmp/.ansible-pulled/upstream/ansible.cfg -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG
+export ANSIBLE_CONFIG=/tmp/.ansible-pulled/upstream/ansible.cfg
+ansible-pull -d /tmp/.ansible-pulled -U https://github.com/operator-framework/operator-test-playbooks.git -C master -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
