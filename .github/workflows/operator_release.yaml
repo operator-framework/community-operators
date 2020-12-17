@@ -33,12 +33,18 @@ jobs:
       - id: files
         uses: jitterbit/get-changed-files@v1
         continue-on-error: true
+      - id: prinfo
+        uses: actions-ecosystem/action-get-merged-pull-request@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Operator test
         id: op-traffic-light
         env:
           OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
           OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
         run: |
+          echo "PR : ${{ steps.prinfo.outputs.number }}"
+          echo "labels : ${{ steps.prinfo.outputs.labels }}"
           scripts/ci/actions-env
     outputs:
       op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
