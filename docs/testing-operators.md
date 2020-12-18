@@ -189,6 +189,9 @@ $ tree .
 ```
 Run the following validation command of the `operator-sdk` from within this directory.
 
+```console
+operator-sdk bundle validate /tmp/my-operator-2.0.0-bundle/ --select-optional name=operatorhub
+```
 
 ### Using operator-sdk to validate your Operator
 
