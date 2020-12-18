@@ -185,6 +185,44 @@ my-operator/
 ```
 If you used `operator-sdk` to develop your Operator you can also leverage its packaging tooling to [create a bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle/#creating-a-bundle).
 
+#### Moving from `packagemanifest` to `bundle` format
+
+Eventually this repository will only accept bundle format at some point in the future. Also the `bundle` format has more features like `semver` mode or, in the future, installing bundles directly outside of a catalog.
+
+Migration of existing content, irregardless of whether the Operator was created with the SDK, can be achieved with the `opm` tool on per Operator version basis. You can download `opm` [here](https://github.com/operator-framework/operator-registry/releases/latest).
+
+Suppose `v2.0.0` is the version of the Operator you want to test convert to bundle format directory with the `opm` tool:
+
+```console
+mkdir /tmp/my-operator-2.0.0-bundle/
+cd /tmp/my-operator-2.0.0-bundle/
+opm alpha bundle build --directory /path/to/my-operator/2.0.0-bundle/ --tag my-operator-bundle:v2.0.0 --output-dir .
+```
+
+This will have generated the bundle format layout in the current working directory `/tmp/my-operator-2.0.0-bundle/`:
+
+```console
+$ tree .
+
+/tmp/my-operator-2.0.0-bundle/
+├── manifests
+│   ├── my-operator-crd1.crd.yaml
+│   ├── my-operator-crd2.crd.yaml
+│   ├── my-operator-crd3.crd.yaml
+│   └── my-operator.v2.0.0.clusterserviceversion.yaml
+├── metadata
+│   └── annotations.yaml
+└── bundle.Dockerfile
+```
+
+You can verify the generated bundle metadata for semantic correctness with the the `operator-sdk` on this directory.
+
+```console
+operator-sdk bundle validate /tmp/my-operator-2.0.0-bundle/ --select-optional name=operatorhub
+```
+
+You can download `operator-sdk` [here](https://github.com/operator-framework/operator-sdk/releases/latest).
+
 ### Updating your existing Operator
 
 Unless of purely cosmectic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator.
