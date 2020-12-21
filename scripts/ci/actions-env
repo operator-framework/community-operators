@@ -6,6 +6,14 @@ OP_TEST_READY=${OP_TEST_READY-1}
 OP_RELEASE_READY=${OP_RELEASE_READY-0}
 OP_TEST_OP_DELETE=${OP_TEST_OP_DELETE-0}
 
+OP_TEST_CHNAGES_GITHUB=0
+OP_TEST_CHNAGES_CI=0
+OP_TEST_CHNAGES_DOCS=0
+OP_TEST_CHNAGES_STREAM_COMMUNITY=0
+OP_TEST_CHNAGES_STREAM_UPSTREAM=0
+OP_TEST_CHNAGES_CI_YAML=0
+
+
 echo "OP_TEST_MODIFIED_FILES=$OP_TEST_MODIFIED_FILES"
 echo "OP_TEST_REMOVED_FILES=$OP_TEST_REMOVED_FILES"
 echo "OP_TEST_LABELS=$OP_TEST_LABELS"
@@ -14,6 +22,7 @@ echo "OP_TEST_LABELS=$OP_TEST_LABELS"
 for l in $(echo $OP_TEST_LABELS);do
   echo "Checking label '$l' ..."
   [[ "$l" = "allow/ci-changes" ]] && export OP_TEST_ALLOW_CI_CHANGES=1
+  [[ "$l" = "allow/operator-recreate" ]] && export OP_TEST_OP_DELETE=1
 done
 
 OP_TEST_CHNAGES_OPERATOR=
@@ -81,7 +90,6 @@ if [ -n "$OP_TEST_REMOVED_FILES" ];then
       echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
       exit 0
     else
-      echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
       echo "Directory '${OP_TEST_STREAM_NAME}/${OP_TEST_OPERATOR_NAME}' is NOT removed. Searching for remaining versions"
       for f in $(find ${OP_TEST_STREAM_NAME}/${OP_TEST_OPERATOR_NAME} -type f);do
         OP_TEST_MODIFIED_FILES="$OP_TEST_MODIFIED_FILES $f"
@@ -96,15 +104,6 @@ if [ -n "$OP_TEST_REMOVED_FILES" ];then
 fi
 
 # Only MODIFIED_FILES here
-# No files were removed.
-#OP_TEST_STREAM
-OP_TEST_CHNAGES_GITHUB=0
-OP_TEST_CHNAGES_CI=0
-OP_TEST_CHNAGES_DOCS=0
-OP_TEST_CHNAGES_STREAM_COMMUNITY=0
-OP_TEST_CHNAGES_STREAM_UPSTREAM=0
-OP_TEST_CHNAGES_CI_YAML=0
-
 
 FILES=
 for sf in ${OP_TEST_MODIFIED_FILES}; do
@@ -129,12 +128,7 @@ for sf in ${OP_TEST_MODIFIED_FILES}; do
   # Check if outdside of "community-operators" and "upstream-community-operators"
 done
 
-echo "OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB"
-echo "OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI"
-echo "OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS"
-echo "OP_TEST_CHNAGES_STREAM_COMMUNITY=$OP_TEST_CHNAGES_STREAM_COMMUNITY"
-echo "OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM"
-echo "OP_TEST_CHNAGES_CI_YAML=$OP_TEST_CHNAGES_CI_YAML"
+
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
 
@@ -165,6 +159,20 @@ OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
 
 echo "Latest : $LATEST"
 echo "OP_TEST_OPERATOR_VERSIONS : $OP_TEST_OPERATOR_VERSIONS"
+echo "OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB"
+echo "OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI"
+echo "OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS"
+echo "OP_TEST_CHNAGES_STREAM_COMMUNITY=$OP_TEST_CHNAGES_STREAM_COMMUNITY"
+echo "OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM"
+
+
+echo "op_test_ready=${OP_TEST_READY}"
+echo "op_release_ready=${OP_RELEASE_READY}"
+echo "op_test_stream=${OP_TEST_STREAM_NAME}"
+echo "op_test_name=${OP_TEST_OPERATOR_NAME}"
+echo "op_test_version=${OP_TEST_OPERATOR_VERSION}"
+echo "op_test_changed_ci_yaml=$OP_TEST_CHNAGES_CI_YAML"
+echo "op_test_op_delete=$OP_TEST_OP_DELETE"
 
 echo "::set-output name=op_test_ready::${OP_TEST_READY}"
 echo "::set-output name=op_release_ready::${OP_RELEASE_READY}"
@@ -174,3 +182,4 @@ echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
 echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
 
 echo "::set-output name=op_test_changed_ci_yaml::${OP_TEST_CHNAGES_CI_YAML}"
+echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
