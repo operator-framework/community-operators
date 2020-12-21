@@ -13,6 +13,8 @@ OP_TEST_CHNAGES_STREAM_COMMUNITY=0
 OP_TEST_CHNAGES_STREAM_UPSTREAM=0
 OP_TEST_CHNAGES_CI_YAML=0
 
+OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
+OP_TEST_RECREATE=${OP_TEST_RECREATE-0}
 
 echo "OP_TEST_MODIFIED_FILES=$OP_TEST_MODIFIED_FILES"
 echo "OP_TEST_REMOVED_FILES=$OP_TEST_REMOVED_FILES"
@@ -22,8 +24,11 @@ echo "OP_TEST_LABELS=$OP_TEST_LABELS"
 for l in $(echo $OP_TEST_LABELS);do
   echo "Checking label '$l' ..."
   [[ "$l" = "allow/ci-changes" ]] && export OP_TEST_ALLOW_CI_CHANGES=1
-  [[ "$l" = "allow/operator-recreate" ]] && export OP_TEST_OP_DELETE=1
+  [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_TEST_VER_OVERWRITE=1
+  [[ "$l" = "allow/operator-recreate" ]] && export OP_TEST_OP_DELETE=1 && export OP_TEST_RECREATE=1
 done
+
+[[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; exit 1; }
 
 OP_TEST_CHNAGES_OPERATOR=
 OP_TEST_CHNAGES_OPERATOR_VERSIONS_MODIFIED=
