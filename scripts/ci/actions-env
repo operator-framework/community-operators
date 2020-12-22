@@ -12,6 +12,7 @@ OP_TEST_CHNAGES_DOCS=0
 OP_TEST_CHNAGES_STREAM_COMMUNITY=0
 OP_TEST_CHNAGES_STREAM_UPSTREAM=0
 OP_TEST_CHNAGES_CI_YAML=0
+OP_TEST_CI_YAML_ONLY=0
 
 OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
 OP_TEST_RECREATE=${OP_TEST_RECREATE-0}
@@ -114,7 +115,7 @@ fi
 
 FILES=
 for sf in ${OP_TEST_MODIFIED_FILES}; do
-  echo $sf
+  echo "$sf"
   # Check if .github/ dir is modified
   [[ $sf == .github* ]] && OP_TEST_CHNAGES_GITHUB=1 && continue
   [[ $sf == scripts* ]] && OP_TEST_CHNAGES_CI=1 && continue
@@ -124,7 +125,7 @@ for sf in ${OP_TEST_MODIFIED_FILES}; do
   [[ $sf == upstream-community-operators* ]] && OP_TEST_CHNAGES_STREAM_UPSTREAM=1
 
   [[ $sf == *package.yaml ]] && continue
-  [[ $sf == *ci.yaml ]] && { OP_TEST_CHNAGES_CI_YAML=1; continue; }
+  [[ $sf == *ci.yaml ]] && OP_TEST_CHNAGES_CI_YAML=1 && continue
 
   [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_TEST_READY=0; }
 
@@ -135,7 +136,7 @@ for sf in ${OP_TEST_MODIFIED_FILES}; do
   # Check if outdside of "community-operators" and "upstream-community-operators"
 done
 
-
+[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OP_TEST_CHNAGES_CI_YAML -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_TEST_READY=0; }
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
 
@@ -147,6 +148,10 @@ done
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
 [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
+
+if [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] || [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]];then
+  [[ $OP_TEST_CHNAGES_CI_YAML -eq 1 ]] && OP_TEST_CI_YAML_ONLY=1 && FILES=${OP_TEST_MODIFIED_FILES}
+fi
 
 VERSIONS=$(echo -e "${FILES// /\\n}" | uniq | sort -r)
 LATEST="$(echo -e $VERSIONS | cut -d ' ' -f 1)"
@@ -164,6 +169,16 @@ OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
 
 [[ $OP_TEST_PROD -ge 1 ]] && OP_RELEASE_READY=1
 
+if [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
+  if [[ $OP_TEST_PROD -ge 1 ]];then
+    OP_TEST_OPERATOR_VERSION="sync"
+    OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSION"
+  else
+    OP_TEST_OPERATOR_VERSION="$(find community-operators/aqua -type f -name "*.clusterserviceversion.yaml" | sort --version-sort | tail -n 1 | cut -d '/' -f 3)"
+    OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSION"
+  fi
+fi
+
 echo "Latest : $LATEST"
 echo "OP_TEST_OPERATOR_VERSIONS : $OP_TEST_OPERATOR_VERSIONS"
 echo "OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB"
@@ -178,7 +193,7 @@ echo "op_release_ready=${OP_RELEASE_READY}"
 echo "op_test_stream=${OP_TEST_STREAM_NAME}"
 echo "op_test_name=${OP_TEST_OPERATOR_NAME}"
 echo "op_test_version=${OP_TEST_OPERATOR_VERSION}"
-echo "op_test_changed_ci_yaml=$OP_TEST_CHNAGES_CI_YAML"
+echo "op_test_ci_yaml_only=$OP_TEST_CI_YAML_ONLY"
 echo "op_test_op_delete=$OP_TEST_OP_DELETE"
 
 echo "::set-output name=op_test_ready::${OP_TEST_READY}"
@@ -188,5 +203,5 @@ echo "::set-output name=op_test_stream::${OP_TEST_STREAM_NAME}"
 echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
 echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
 
-echo "::set-output name=op_test_changed_ci_yaml::${OP_TEST_CHNAGES_CI_YAML}"
+echo "::set-output name=op_test_ci_yaml_only::${OP_TEST_CI_YAML_ONLY}"
 echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
