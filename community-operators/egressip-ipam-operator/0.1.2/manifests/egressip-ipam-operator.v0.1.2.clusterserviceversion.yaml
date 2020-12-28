@@ -8,6 +8,27 @@ metadata:
           "apiVersion": "redhatcop.redhat.io/v1alpha1",
           "kind": "EgressIPAM",
           "metadata": {
+            "name": "egressipam-baremetal"
+          },
+          "spec": {
+            "cidrAssignments": [
+              {
+                "CIDR": "192.169.0.0/24",
+                "labelValue": "true"
+              }
+            ],
+            "nodeSelector": {
+              "matchLabels": {
+                "node-role.kubernetes.io/worker": ""
+              }
+            },
+            "topologyLabel": "egressGateway"
+          }
+        },
+        {
+          "apiVersion": "redhatcop.redhat.io/v1alpha1",
+          "kind": "EgressIPAM",
+          "metadata": {
             "name": "egressipam-aws"
           },
           "spec": {
@@ -32,36 +53,17 @@ metadata:
             },
             "topologyLabel": "failure-domain.beta.kubernetes.io/zone"
           }
-        },
-        {
-          "apiVersion": "redhatcop.redhat.io/v1alpha1",
-          "kind": "EgressIPAM",
-          "metadata": {
-            "name": "egressipam-baremetal"
-          },
-          "spec": {
-            "cidrAssignments": [
-              {
-                "CIDR": "192.169.0.0/24",
-                "labelValue": "true"
-              }
-            ],
-            "nodeSelector": {
-              "node-role.kubernetes.io/worker": ""
-            },
-            "topologyLabel": "egressGateway"
-          }
         }
       ]
     capabilities: Deep Insights
     categories: Networking, Cloud Provider, Security
     certified: "false"
-    containerImage: quay.io/redhat-cop/egressip-ipam-operator:latest
+    containerImage: quay.io/redhat-cop/egressip-ipam-operator:v0.1.2
     createdAt: 03/13/2020
     description: This operator provides automation around manageing egressIPs.
     repository: https://github.com/redhat-cop/egressip-ipam-operator
     support: Best Effort
-  name: egressip-ipam-operator.v0.1.1
+  name: egressip-ipam-operator.v0.1.2
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -71,7 +73,6 @@ spec:
       kind: EgressIPAM
       name: egressipams.redhatcop.redhat.io
       version: v1alpha1
-      displayName: Egress IPAM Configuration
   description: |
     This operator automates the assignment of egressIPs to namespaces.
     Namespaces can opt in to receiving one or more egressIPs with the following annotation `egressip-ipam-operator.redhat-cop.io/egressipam:<egressIPAM>`, where `egressIPAM` is the CRD that controls how egressIPs are assigned.
@@ -221,13 +222,13 @@ spec:
           - list
           - watch
         - apiGroups:
-          - "machine.openshift.io"
+          - machine.openshift.io
           resources:
           - machinesets
           verbs:
-            - get
-            - list
-            - watch          
+          - get
+          - list
+          - watch
         - apiGroups:
           - cloudcredential.openshift.io
           resources:
@@ -266,7 +267,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: egressip-ipam-operator
-                image: quay.io/redhat-cop/egressip-ipam-operator:v0.1.1
+                image: quay.io/redhat-cop/egressip-ipam-operator:v0.1.2
                 imagePullPolicy: Always
                 name: egressip-ipam-operator
                 resources: {}
@@ -331,12 +332,11 @@ spec:
   - name: repository
     url: https://github.com/redhat-cop/egressip-ipam-operator
   - name: containerImage
-    url: https://quay.io/redhat-cop/egressip-ipam-operator
+    url: https://quay.io/redhat-cop/egressip-ipam-operator:v0.1.2
   maintainers:
   - email: rspazzol@redhat.com
     name: Raffaele Spazzoli
   maturity: alpha
   provider:
-    name: Containers & PaaS CoP
-  replaces: egressip-ipam-operator.v0.1.0
-  version: 0.1.1
+    name: Red Hat Community of Practice
+  version: 0.1.2
