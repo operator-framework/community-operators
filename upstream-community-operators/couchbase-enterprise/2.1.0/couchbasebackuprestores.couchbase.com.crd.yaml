@@ -1,0 +1,174 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: couchbasebackuprestores.couchbase.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.capacityUsed
+    name: capacity used
+    type: string
+  - JSONPath: .status.lastRun
+    name: last run
+    type: string
+  - JSONPath: .status.lastSuccess
+    name: last success
+    type: string
+  - JSONPath: .status.duration
+    name: duration
+    type: string
+  - JSONPath: .status.running
+    name: running
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
+  group: couchbase.com
+  names:
+    kind: CouchbaseBackupRestore
+    listKind: CouchbaseBackupRestoreList
+    plural: couchbasebackuprestores
+    shortNames:
+    - cbrestore
+    singular: couchbasebackuprestore
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            backoffLimit:
+              description: Number of times the restore job should try to execute.
+              format: int32
+              type: integer
+            backup:
+              description: the cbbackup we associate this restore with or the cbbackup
+                pvc we want to restore from
+              type: string
+            end:
+              description: struct we use in CouchbaseBackupRestoreSpec to enforce
+                type-safeness
+              properties:
+                int:
+                  minimum: 1
+                  type: integer
+                str:
+                  type: string
+              type: object
+            logRetention:
+              description: Number of hours to hold restore script logs for, everything
+                older will be deleted
+              type: string
+            repo:
+              description: Repo is the backup folder to restore from
+              type: string
+            s3bucket:
+              description: Name of S3 bucket to restore from. If non-empty this overrides
+                local backup
+              type: string
+            start:
+              description: Start and End denote the names of the start and end backups
+                of a time range to restore backups from this will restore these two
+                backups and any backups in between. If we only wish to restore one
+                backup leave end blank or use the same backup for End
+              properties:
+                int:
+                  minimum: 1
+                  type: integer
+                str:
+                  type: string
+              type: object
+          required:
+          - backup
+          - start
+          type: object
+        status:
+          properties:
+            archive:
+              description: Location of Backup Archive
+              type: string
+            backups:
+              description: Backups gives us a full list of all backups and their respective
+                repo locations
+              items:
+                properties:
+                  full:
+                    description: the full backup inside the repo
+                    type: string
+                  incrementals:
+                    description: incremental backups inside the repo
+                    items:
+                      type: string
+                    type: array
+                  name:
+                    description: name of the repo
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
+            duration:
+              description: Duration tells us how long the last restore took
+              type: string
+            failed:
+              description: Failed indicates whether the most recent restore has failed
+              type: boolean
+            job:
+              description: Job tells us which job is running/ran last
+              type: string
+            lastFailure:
+              description: LastFailure tells us the time the last failed restore failed
+              format: date-time
+              type: string
+            lastRun:
+              description: LastRun tells us the time the last restore job started
+              format: date-time
+              type: string
+            lastSuccess:
+              description: LastSuccess gives us the time the last successful restore
+                finished
+              format: date-time
+              type: string
+            output:
+              description: Output reports useful information from the backup_script
+              type: string
+            pod:
+              description: Pod tells us which pod is running/ran last
+              type: string
+            repo:
+              description: Repo is where we are currently performing operations
+              type: string
+            running:
+              description: Running indicates whether a restore is currently being
+                performed
+              type: boolean
+          required:
+          - failed
+          - job
+          - pod
+          - running
+          type: object
+      required:
+      - spec
+      type: object
+  version: v2
+  versions:
+  - name: v2
+    served: true
+    storage: true
+  - name: v1
+    served: false
+    storage: false
