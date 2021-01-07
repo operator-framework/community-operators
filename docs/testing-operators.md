@@ -267,8 +267,8 @@ COPY upstream-community-operators manifests
 RUN /bin/initializer -o ./bundles.db
 
 FROM scratch
-COPY ["nsswitch.conf", "/etc/nsswitch.conf"]
-COPY --from=builder /build/bundles.db /bundles.db
+COPY --from=builder /etc/nsswitch.conf /etc/nsswitch.conf
+COPY --from=builder /bundles.db /bundles.db
 COPY --from=builder /bin/registry-server /registry-server
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
 EXPOSE 50051
@@ -630,14 +630,14 @@ The process to test on OpenShift Container Platform and OKD 4.3 or newer is exac
 
 ### 1. Create the CatalogSource
 
-Create a `CatalogSource` instance in the `openshuft-marketplace` namespace to reference the Operator catalog image that contains your Operator version to test:
+Create a `CatalogSource` instance in the `openshift-marketplace` namespace to reference the Operator catalog image that contains your Operator version to test:
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: my-test-catalog
-  namespace: olm
+  namespace: openshift-marketplace
 spec:
   sourceType: grpc
   image: quay.io/myaccount/my-test-catalog:latest
