@@ -1,0 +1,68 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations: #https://github.com/kubernetes/enhancements/pull/1111
+    "api-approved.kubernetes.io": "unapproved, experimental-only"
+  name: nodefeaturediscoveries.nfd.openshift.io
+spec:
+  group: nfd.openshift.io
+  names:
+    kind: NodeFeatureDiscovery
+    listKind: NodeFeatureDiscoveryList
+    plural: nodefeaturediscoveries
+    singular: nodefeaturediscovery
+  scope: Namespaced
+  preserveUnknownFields: false
+  versions: 
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        description: 'The Node Feature Discovery operator manages detection of hardware features and configuration in a Kubernetes cluster. The operator orchestrates all resources needed to run the NFD DaemonSet (Upstream: https://github.com/kubernetes-sigs/node-feature-discovery)'
+        type: object
+        properties:
+          apiVersion:
+            type: string
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          kind:
+            type: string
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          metadata:
+            type: object
+          spec:
+            description: NodeFeatureDiscoverySpec defines the desired state of NodeFeatureDiscovery
+            type: object
+            required:
+              - operand
+            properties:
+              operand:
+                type: object
+                description: OperandSpec describes configuration options for the NFD operand
+                required: 
+                - image
+                properties:
+                  image:
+                    pattern: '[a-zA-Z0-9\-]+'
+                    type: string
+                  imagePullPolicy:
+                    description: Image pull policy
+                    type: string
+                  namespace:
+                    pattern: '[a-zA-Z0-9\.\-\/]+'
+                    type: string
+              workerConfig:
+                description: NFD configuration files
+                type: object
+                required:
+                  - configData
+                properties:
+                  configData:
+                    description: NFD Worker configuration file
+                    type: string
+          status:
+            type: object
