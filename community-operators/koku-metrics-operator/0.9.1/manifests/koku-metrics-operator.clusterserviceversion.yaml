@@ -1,0 +1,363 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "koku-metrics-cfg.openshift.io/v1alpha1",
+          "kind": "KokuMetricsConfig",
+          "metadata": {
+            "name": "kokumetricscfg-sample"
+          },
+          "spec": {
+            "authentication": {
+              "type": "token"
+            },
+            "packaging": {
+              "max_size_MB": 100
+            },
+            "prometheus_config": {},
+            "source": {
+              "check_cycle": 1440,
+              "create_source": false,
+              "name": "INSERT-SOURCE-NAME"
+            },
+            "upload": {
+              "upload_cycle": 360,
+              "upload_toggle": true
+            }
+          }
+        }
+      ]
+    capabilities: Seamless Upgrades
+    categories: Monitoring
+    certified: "false"
+    containerImage: quay.io/project-koku/koku-metrics-operator:v0.9.1
+    createdAt: "2021-01-08T15:08:27Z"
+    description: A Golang-based OpenShift Operator that generates and uploads OpenShift
+      usage metrics to cost management.
+    operatorframework.io/suggested-namespace: koku-metrics-operator
+    operators.operatorframework.io/builder: operator-sdk-v0.19.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://github.com/project-koku/koku-metrics-operator
+    support: Cost Managment
+  name: koku-metrics-operator.v0.9.1
+  namespace: koku-metrics-operator
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: KokuMetricsConfig is the Schema for the kokumetricsconfig API
+      kind: KokuMetricsConfig
+      name: kokumetricsconfigs.koku-metrics-cfg.openshift.io
+      version: v1alpha1
+  description: |-
+    # v0.9.1-alpha Koku Metrics Operator (Unsupported)
+    ## Introduction
+    The `koku-metrics-operator` is an OpenShift Operator used to obtain OpenShift usage data and upload it to [cost managment](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.5/html/getting_started_with_cost_management/assembly_introduction_cost_management). The Operator queries Prometheus to create metric reports, which are then packaged and uploaded to cost management at [cloud.redhat.com](https://cloud.redhat.com). For more information, reach out to <cost-mgmt@redhat.com>.
+    ## Features and Capabilities
+    The Koku Metrics Operator (`koku-metrics-operator`) collects the metrics required for cost management by:
+    * Querying Prometheus to create reports specific to cost management.
+    * Packaging these reports as a tarball which is uploaded to cost management through cloud.redhat.com.
+    * The operator is also capable of creating a source in cloud.redhat.com. A source is required for cost management to process the upload.
+    #### Limitations (Potential for metrics data loss)
+    * Report storage is not backed by a PersitentVolume. If the operator is redeployed, a gap may be introduced in the usage metrics.
+    * A source **must** exist in cloud.redhat.com for an uploaded payload to be processed by cost management. The operator sends the payload to the Red Hat Insights Ingress service which usually returns successfully, but the operator does not currently confirm with cost management that the payload was processed. After Ingress accepts the uploaded payload, the payload is removed from the operator and is gone forever. If the data within the payload is not processed, a gap will be introduced in the usage metrics.
+    ## Installation
+    The operator must be installed in the `koku-metrics-operator` namespace. Installing the operator through OperatorHub will create the namespace automatically, or it can be created through either the UI or CLI:
+    #### Namespace creation:
+    ##### UI
+    1. On the left navigation pane, select `Administration` -> `Namespaces` -> `Create Namespace`.
+    2. Name the namespace `koku-metrics-operator`.
+    3. Select `Create`.
+    ##### CLI
+    1. Run the following via the CLI to create and use the `koku-metrics-operator` project:
+    ```
+    oc new-project koku-metrics-operator
+    ```
+    #### Operator installation:
+    Ensure that the operator is installed into the `koku-metrics-operator` namespace.
+    
+    ## Configure the koku-metrics-operator
+    The operator can be configured through either the UI or CLI:
+    #### Configure through the UI
+    ##### Configure authentication
+    The default authentication for the operator is `token`. No further steps are required to configure token authentication. If `basic` is the preferred authentication method, a Secret must be created which holds username and password credentials:
+    1. On the left navigation pane, select `Workloads` -> `Secrets` -> select Project: `koku-metrics-operator` -> `Create` -> `Key/Value Secret`
+    2. Give the Secret a name and add 2 keys: `username` and `password` (all lowercase). The values for these keys correspond to cloud.redhat.com credentials.
+    3. Select `Create`.
+    ##### Create the KokuMetricsConfig
+    Configure the koku-metrics-operator by creating a `KokuMetricsConfig`.
+    1. On the left navigation pane, select `Operators` -> `Installed Operators` -> `koku-metrics-operator` -> `KokuMetricsConfig` -> `Create Instance`.
+    2. For `basic` authentication, edit the following values in the spec:
+        * Replace `authentication: type:` with `basic`.
+        * Add the`secret_name` field under `authentication`, and set it equal to the name of the authentication Secret that was created above. The spec should look similar to the following:
+    
+            ```
+              authentication:
+                secret_name: SECRET-NAME
+                type: basic
+            ```
+    
+    3. To configure the koku-metrics-operator to create a cost management source, edit the following values in the `source` field:
+        * Replace `INSERT-SOURCE-NAME` with the preferred name of the source to be created.
+        * Replace the `create_source` field value with `true`.
+    
+        **Note:** if the source already exists, replace `INSERT-SOURCE-NAME` with the existing name, and leave `create_source` as false. This will allow the operator to confirm the source exists.
+    4. Select `Create`.
+    
+    #### Configure through the CLI
+    ##### Configure authentication
+    The default configuration method for the operator to create sources and upload to [cloud.redhat.com](https://cloud.redhat.com/) is `token`. No further steps are required for configuring `token` authentication. If `basic` is the preferred authentication method, a Secret must be created which holds username and password credentials:
+    1. Copy the following into a file called `auth-secret.yaml`:
+    
+        ```
+        kind: Secret
+        apiVersion: v1
+        metadata:
+          name: authentication-secret
+          namespace: koku-metrics-operator
+        data:
+        username: >-
+          Y2xvdWQucmVkaGF0LmNvbSB1c2VybmFtZQ==
+        password: >-
+          Y2xvdWQucmVkaGF0LmNvbSBwYXNzd29yZA==
+        ```
+    
+    2. Replace the metadata.name with the preferred name for the authentication secret.
+    3. Replace the `username` and `password` values with the base64-encoded username and password credentials for logging into cloud.redhat.com.
+    4. Deploy the secret to the `koku-metrics-operator` namespace:
+        ```
+        $ oc create -f auth-secret.yaml
+        ```
+    
+        **Note:** The name of the secret should match the `spec:  authentication:  secret_name` set in the KokuMetricsConfig that is going to be configured in the next steps.
+    
+    ##### Create the KokuMetricsConfig
+    Configure the koku-metrics-operator by creating a `KokuMetricsConfig`.
+    1. Copy the following `KokuMetricsConfig` resource template and save it to a file called `kokumetricsconfig.yaml`:
+    
+        ```
+        apiVersion: koku-metrics-cfg.openshift.io/v1alpha1
+        kind: KokuMetricsConfig
+        metadata:
+          name: kokumetricscfg-sample
+        spec:
+          authentication:
+            type: token
+          packaging:
+            max_size_MB: 100
+          prometheus_config: {}
+          source:
+            check_cycle: 1440,
+            create_source: false,
+            name: INSERT-SOURCE-NAME
+          upload:
+            upload_cycle: 360,
+            upload_toggle: true
+        ```
+    
+    2. To configure the operator to use `basic` authentication, edit the following values in the `kokumetricsconfig.yaml` file:
+        * Replace `authentication: type:` with `basic`.
+        * Add a field called `secret_name` to the authentication field in the spec and set it equal to the name of the authentication secret that was created earlier. The authentication spec should look similar to the following:
+    
+            ```
+              authentication:
+                secret_name: SECRET-NAME
+                type: basic
+            ```
+    
+    3. To configure the koku-metrics-operator to create a cost management source, edit the following values in the `kokumetricsconfig.yaml` file:
+        * Replace `INSERT-SOURCE-NAME` with the preferred name of the source to be created.
+        * Replace `create_source` field value with `true`.
+    
+        **Note:** if the source already exists, replace `INSERT-SOURCE-NAME` with the existing name, and leave `create_source` as false. This will allow the operator to confirm the source exists.
+    4. Deploy the `KokuMetricsConfig` resource:
+        ```
+        $ oc create -f kokumetricsconfig.yaml
+        ```
+    
+    The koku-metrics-operator will now create, package, and upload OpenShift usage reports to cost management.
+  displayName: Koku Metrics Operator
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIyLjEuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAzMDAgMzAwIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAzMDAgMzAwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+Cgkuc3Qwe2ZpbGw6I0VFMDAwMDt9Cjwvc3R5bGU+Cjx0aXRsZT5Db3N0LWljb248L3RpdGxlPgo8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4KPGc+Cgk8Zz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMjM5LjAzNzAzMzEsMTE3LjI3NTE3N2MtMy4yNjU4MDgxLTQxLjk4OTA1MTgtMzguMjU2NjgzMy03NC42NDcyMDE1LTgxLjE3ODgzMy03NC42NDcyMDE1CgkJCWMtMjcuNTI2MTUzNiwwLTUzLjE4NjEyNjcsMTMuOTk2MzQ5My02OC4xMTU1NzAxLDM3LjMyMzYwMDhjLTEuODY2MTgwNCwwLTMuNzMyMzUzMi0wLjQ2NjU0NTEtNi4wNjUwNzg3LTAuNDY2NTQ1MQoJCQljLTM0LjUyNDMzMDEsMC02Mi45ODM1Nzc3LDI3Ljk5MjY5ODctNjIuOTgzNTc3Nyw2Mi45ODM1NjYzczI3Ljk5MjY5ODcsNjIuOTgzNTY2Myw2Mi45ODM1Nzc3LDYyLjk4MzU2NjNoMTYuMzI5MDcxCgkJCWMzLjczMjM2MDgsMCw2Ljk5ODE3NjYtMy4yNjU4MDgxLDYuOTk4MTc2Ni02Ljk5ODE2ODlzLTMuMjY1ODE1Ny02Ljk5ODE2ODktNi45OTgxNzY2LTYuOTk4MTY4OWgtMTYuMzI5MDcxCgkJCWMtMjcuMDU5NjEyMywwLTQ4LjUyMDY3OTUtMjEuOTI3NjI3Ni00OC41MjA2Nzk1LTQ4LjUyMDY3NTdzMjEuOTI3NjEyMy00OC41MjA2ODMzLDQ4LjUyMDY3OTUtNDguNTIwNjgzMwoJCQljMi43OTkyNzA2LDAsNS41OTg1NDEzLDAuNDY2NTQ1MSw4LjM5NzgwNDMsMC45MzMwOTAyYzIuNzk5MjcwNiwwLjQ2NjU0NTEsNi4wNjUwNzg3LTAuOTMzMDkwMiw3LjQ2NDcyMTctMy43MzIzNjA4CgkJCWMxMi4xMzAxNzI3LTIwLjk5NDUyOTcsMzQuNTI0MzMwMS0zNC4wNTc3ODg4LDU4LjMxODEyMjktMzQuMDU3Nzg4OGMzNi44NTcwNzA5LDAsNjcuMTgyNDk1MSwzMC4zMjU0MjA0LDY3LjE4MjQ5NTEsNjcuMTgyNDc5OQoJCQljMCwzLjczMjM1MzIsMy4yNjU4MDgxLDYuOTk4MTc2Niw2Ljk5ODE2ODksNi45OTgxNzY2YzE2LjMyOTA3MSwwLDI5Ljg1ODkwMiwxMy41Mjk4MDA0LDI5Ljg1ODkwMiwyOS44NTg4NzE1CgkJCXMtMTMuNTI5ODMwOSwyOS44NTg4ODY3LTI5Ljg1ODkwMiwyOS44NTg4ODY3Yy0zLjczMjM2MDgsMC02Ljk5ODE2ODksMy4yNjU4MDgxLTYuOTk4MTY4OSw2Ljk5ODE2ODkKCQkJczMuMjY1ODA4MSw2Ljk5ODE2ODksNi45OTgxNjg5LDYuOTk4MTY4OWMyNC4yNjAzMzAyLDAsNDQuMzIxNzYyMS0yMC4wNjE0MTY2LDQ0LjMyMTc2MjEtNDQuMzIxNzYyMQoJCQlDMjc2LjM2MDYyNjIsMTM5LjIwMjc4OTMsMjYwLjAzMTU1NTIsMTIwLjU0MDk5MjcsMjM5LjAzNzAzMzEsMTE3LjI3NTE3N3oiLz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMjA2Ljg0NTQyODUsMjIwLjg0ODE3NWM3LjQ2NDcwNjQtOC44NjQzNjQ2LDExLjY2MzYyLTIwLjUyNzk4NDYsMTEuNjYzNjItMzIuNjU4MTU3MwoJCQljMC0yOC45MjU3OTY1LTIzLjMyNzI0LTUyLjI1MzAzNjUtNTIuMjUzMDM2NS01Mi4yNTMwMzY1cy01Mi4yNTMwNDQxLDIzLjMyNzI0LTUyLjI1MzA0NDEsNTIuMjUzMDM2NQoJCQlzMjMuMzI3MjQ3Niw1Mi4yNTMwNTE4LDUyLjI1MzA0NDEsNTIuMjUzMDUxOGMxMS4xOTcwODI1LDAsMjEuOTI3NjEyMy0zLjczMjM2MDgsMzAuMzI1NDI0Mi05Ljc5NzQzOTZsMzEuNzI1MDUxOSwzMC43OTE5NjE3CgkJCWMxLjM5OTYyNzcsMS4zOTk2Mjc3LDMuMjY1ODIzNCwxLjg2NjE4MDQsNS4xMzE5ODg1LDEuODY2MTgwNGMxLjg2NjE5NTcsMCwzLjczMjM2MDgtMC45MzMwNzUsNS4xMzE5ODg1LTIuMzMyNzMzMgoJCQljMi43OTkyNzA2LTIuNzk5MjU1NCwyLjc5OTI3MDYtNy40NjQ3MDY0LDAtMTAuMjYzOTc3MUwyMDYuODQ1NDI4NSwyMjAuODQ4MTc1eiBNMTI4LjQ2NTg2NjEsMTg4LjE5MDAxNzcKCQkJYzAtMjAuOTk0NTIyMSwxNy4yNjIxNzY1LTM4LjI1NjY5ODYsMzguMjU2Njk4Ni0zOC4yNTY2OTg2czM4LjI1NjY5ODYsMTcuMjYyMTc2NSwzOC4yNTY2OTg2LDM4LjI1NjY5ODYKCQkJcy0xNy4yNjIxNzY1LDM4LjI1NjY5ODYtMzguMjU2Njk4NiwzOC4yNTY2OTg2UzEyOC40NjU4NjYxLDIwOS4xODQ1Mzk4LDEyOC40NjU4NjYxLDE4OC4xOTAwMTc3eiIvPgoJPC9nPgoJPGc+CgkJPHBhdGggY2xhc3M9InN0MCIgZD0iTTE3NC4yODA2Mzk2LDE4NS44NzM2MTE1YzIuMjE2Mjc4MSwwLjY4NjUzODcsNC4xMTAwMzExLDEuODcwNzEyMyw1LjY3NjYzNTcsMy41NTI1MDU1CgkJCWMxLjU2NjYwNDYsMS42ODE4MDg1LDIuNTk4NzA5MSwzLjY0OTI2MTUsMy4wOTE3MzU4LDUuOTAyNDA0OGMwLjQ5NzYxOTYsMi4yNTMxNDMzLDAuMzYzOTk4NCw0LjUyOTMyNzQtMC40MDA4Nzg5LDYuODE5MzM1OQoJCQljLTAuOTE2OTE1OSwyLjUyMDM4NTctMi40ODM1MjA1LDQuNTI5MzEyMS00LjY5OTc5ODYsNi4wMTc1OTM0Yy0yLjIxNjI2MjgsMS40ODgyODEyLTQuNjk1MjA1NywyLjI3MTU3NTktNy40NTA1NzY4LDIuMzQ5ODk5MwoJCQl2NS41MDE1NTY0YzAsMC41MzQ0ODQ5LTAuMTcwNDcxMiwwLjk3MjIxMzctMC41MTE0NTk0LDEuMzE3Nzc5NWMtMC4zNDU1NjU4LDAuMzQ1NTgxMS0wLjc4MzI5NDcsMC41MTYwNjc1LTEuMzIyMzg3NywwLjUxNjA2NzUKCQkJaC0zLjY2NzY5NDFjLTAuNTM0NTAwMSwwLTAuOTcyMjEzNy0wLjE3MDQ4NjUtMS4zMTc3Nzk1LTAuNTE2MDY3NWMtMC4zNDA5NzI5LTAuMzQ1NTY1OC0wLjUxNjA2NzUtMC43ODMyOTQ3LTAuNTE2MDY3NS0xLjMxNzc3OTUKCQkJdi01LjUwMTU1NjRjLTMuNjY3Njk0MSwwLTYuOTg5ODIyNC0xLjE0NzI5MzEtOS45Njg2NTg0LTMuNDM3MzAxNmMtMC4zODI0NDYzLTAuMzgyNDMxLTAuNjEyODIzNS0wLjg0MzIwMDctMC42ODg4NDI4LTEuMzc3NzAwOAoJCQljLTAuMDc2MDM0NS0wLjUzNDQ4NDksMC4xMTUxODg2LTEuMDMyMTA0NSwwLjU3MzYzODktMS40ODgyNTA3bDMuODk1NzgyNS0zLjg5ODA4NjUKCQkJYzAuMzA4NzAwNi0wLjIzMDM5MjUsMC42NjgxMDYxLTAuMzgyNDMxLDEuMDkyMDEwNS0wLjQ1NjE2MTVjMC40MTkyOTYzLTAuMDc4MzIzNCwwLjgyMDE1OTksMC4wMzY4NSwxLjIwMjYwNjIsMC4zNDA5NzI5CgkJCWMxLjE0NzI5MzEsMC43NjQ4NzczLDIuNDQyMDQ3MSwxLjE0NzMwODMsMy44OTM0NjMxLDEuMTQ3MzA4M2g3LjY4MDk1NGMwLjkxNjk0NjQsMCwxLjcwMDI0MTEtMC4zMjI1NDAzLDIuMzQ5ODk5My0wLjk3MjIxMzcKCQkJYzAuNjQ5Njg4Ny0wLjY0OTY4ODcsMC45NzIyMjktMS40NzQ0NTY4LDAuOTcyMjI5LTIuNDY1MTAzMWMwLTAuNjg2NTU0LTAuMjI1NzY5LTEuMzM2MjI3NC0wLjY4NjUzODctMS45NDkwMzU2CgkJCWMtMC40NTYxNjE1LTAuNjEyODIzNS0xLjAzMjExOTgtMS4wMzIxMTk4LTEuNzE4NjQzMi0xLjI2MjQ5NjlsLTExLjgwNDg0MDEtMy40MzczMTY5CgkJCWMtMi41OTg2OTM4LTAuNzY0ODc3My00Ljc3MzUyOTEtMi4xMzc5NTQ3LTYuNTMzNjQ1Ni00LjEyODQ0ODVjLTEuNzU3ODEyNS0xLjk4NTkwMDktMi43ODc2NDM0LTQuMjc1OTI0Ny0zLjA5NDAzOTktNi44NzQ2MzM4CgkJCWMtMC4xNTIwNTM4LTIuNDQ2NjU1MywwLjMwNjM5NjUtNC43MTgyMzEyLDEuMzc1Mzk2Ny02LjgxOTMzNTljMS4wNjg5Njk3LTIuMTAxMDg5NSwyLjU5ODcwOTEtMy43ODI4ODI3LDQuNTg0NjEtNS4wNDUzNzk2CgkJCWMxLjk4NTkwMDktMS4yNTc4ODg4LDQuMjAyMTc5LTEuODg5MTI5Niw2LjY0ODg0OTUtMS44ODkxMjk2aDAuMjI1NzY5di01LjUwMTU0MTEKCQkJYzAtMC41MzQ1MDAxLDAuMTc1MDk0Ni0wLjk3MjIyOSwwLjUxNjA2NzUtMS4zMTc3OTQ4YzAuMzQ1NTY1OC0wLjM0NTU4MTEsMC43ODMyNzk0LTAuNTE2MDUyMiwxLjMxNzc3OTUtMC41MTYwNTIyaDMuNjY3Njk0MQoJCQljMC41MzkwOTMsMCwwLjk3NjgyMTksMC4xNzA0NzEyLDEuMzIyMzg3NywwLjUxNjA1MjJjMC4zNDA5ODgyLDAuMzQ1NTY1OCwwLjUxMTQ1OTQsMC43ODMyOTQ3LDAuNTExNDU5NCwxLjMxNzc5NDh2NS41MDE1NDExCgkJCWMzLjY2NzY5NDEsMCw2Ljk1NzU2NTMsMS4xNDcyOTMxLDkuODYwMzgyMSwzLjQzNzMwMTZjMC40NTYxNzY4LDAuMzgyNDQ2MywwLjcyMzQxOTIsMC44NDMyMDA3LDAuODAxNzQyNiwxLjM3NzY4NTUKCQkJYzAuMDczNzE1MiwwLjUzNDUwMDEtMC4xMTUyMDM5LDAuOTkwNjQ2NC0wLjU3MTM1MDEsMS4zNzMwNzc0bC0zLjg5ODA4NjUsNC4wMTMyNzUxCgkJCWMtMC4zMDg3MTU4LDAuMjMwMzkyNS0wLjY2ODEwNjEsMC4zODI0MzEtMS4wOTIwMTA1LDAuNDU2MTYxNWMtMC40MTkyOTYzLDAuMDc4MzIzNC0wLjgyMDE1OTksMC0xLjIwMjU5MDktMC4yMjU3NjkKCQkJYy0xLjE0MjcxNTUtMC44NDMyMDA3LTIuNDQyMDc3Ni0xLjI2MjQ5NjktMy44OTgwODY1LTEuMjYyNDk2OWgtNy42NzYzNjExYy0wLjkxNjkxNTksMC0xLjcwMDIyNTgsMC4zMjI1MjUtMi4zNDk4OTkzLDAuOTcyMjEzNwoJCQljLTAuNjQ5Njg4NywwLjY0OTY3MzUtMC45NzY4MjE5LDEuNDc0NDQxNS0wLjk3NjgyMTksMi40NjUwODc5YzAsMC42ODY1NTQsMC4yMzAzOTI1LDEuMzM2MjEyMiwwLjY5MTE0NjksMS45NDkwMzU2CgkJCWMwLjQ1NjE2MTUsMC42MTI4MjM1LDEuMDMyMTE5OCwxLjAzMjExOTgsMS43MTg2NTg0LDEuMjYyNDk2OUwxNzQuMjgwNjM5NiwxODUuODczNjExNXoiLz4KCTwvZz4KPC9nPgo8L3N2Zz4K
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - clusterversions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+        serviceAccountName: koku-metrics-manager-role
+      deployments:
+      - name: koku-metrics-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                command:
+                - /manager
+                image: quay.io/project-koku/koku-metrics-operator:v0.9.1
+                name: manager
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 500Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+                terminationMessagePolicy: FallbackToLogsOnError
+                volumeMounts:
+                - mountPath: /tmp/koku-metrics-operator-reports
+                  name: koku-metrics-operator-reports
+              serviceAccountName: koku-metrics-manager-role
+              terminationGracePeriodSeconds: 10
+              volumes:
+              - name: koku-metrics-operator-reports
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: koku-metrics-leader-election-role
+      - rules:
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - endpoints
+          - events
+          - persistentvolumeclaims
+          - pods
+          - secrets
+          - serviceaccounts
+          - services
+          - services/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - koku-metrics-cfg.openshift.io
+          resources:
+          - kokumetricsconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - koku-metrics-cfg.openshift.io
+          resources:
+          - kokumetricsconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+        serviceAccountName: koku-metrics-manager-role
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - cost
+  - management
+  - usage
+  - monitor
+  maintainers:
+  - email: cost-mgmt@redhat.com
+    name: cost-mgmt
+  maturity: alpha
+  provider:
+    name: Red Hat
+  replaces: koku-metrics-operator.v0.9.0
+  version: 0.9.1
