@@ -48,7 +48,7 @@ The logo for your Operator is inlined into the CSV as a base64-encoded string. T
 
 ### Categories
 
-For the best user experience, choose from the following categories:
+For the best user experience, choose from the categories bellow.
 
 | Category  |
 |-----------|
@@ -67,7 +67,7 @@ For the best user experience, choose from the following categories:
 | Storage |
 | Streaming & Messaging |
 
-If none of these categories fit your operator, please open a PR against this repo to edit this doc and we will work with you to propagate this change to [operator-courier](https://github.com/operator-framework/operator-courier) so that your operator can get through CI tests.
+If none of these categories fit your operator, please open a separate PR against [categories.json](https://github.com/operator-framework/community-operators/blob/master/categories.json). Once merged, you can open a PR with your operator assigned to your new category.
 
 ## Example CSV
 
