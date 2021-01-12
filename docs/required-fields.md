@@ -67,7 +67,7 @@ For the best user experience, choose from the categories bellow.
 | Storage |
 | Streaming & Messaging |
 
-If none of these categories fit your operator, please open a separate PR against [categories.json](../categories.json). Once merged, you can open a PR with your operator assigned to your new category.
+If none of these categories fit your operator, please open a separate PR against [categories.json](https://github.com/operator-framework/community-operators/blob/master/categories.json). Once merged, you can open a PR with your operator assigned to your new category.
 
 ## Example CSV
 
