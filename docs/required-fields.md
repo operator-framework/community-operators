@@ -48,24 +48,7 @@ The logo for your Operator is inlined into the CSV as a base64-encoded string. T
 
 ### Categories
 
-For the best user experience, choose from the categories bellow.
-
-| Category  |
-|-----------|
-| AI/Machine Learning |
-| Application Runtime |
-| Big Data |
-| Cloud Provider |
-| Database |
-| Developer Tools |
-| Integration & Delivery |
-| Logging & Tracing |
-| Monitoring |
-| Networking |
-| OpenShift Optional |
-| Security |
-| Storage |
-| Streaming & Messaging |
+For the best user experience, choose from the [categories](https://github.com/operator-framework/community-operators/blob/master/categories.json).
 
 If none of these categories fit your operator, please open a separate PR against [categories.json](https://github.com/operator-framework/community-operators/blob/master/categories.json). Once merged, you can open a PR with your operator assigned to your new category.
 
