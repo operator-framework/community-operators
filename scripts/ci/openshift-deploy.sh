@@ -82,7 +82,16 @@ https://api.github.com/repos/operator-framework/community-operators/dispatches -
 for check_temp_index in {1..40}
 do
   echo "Checking index $QUAY_HASH presence ... $check_temp_index minutes."
-  if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then break; fi
+  if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then
+    break
+  elif [ "$check_temp_index" == 40 ]; then
+    echo
+    echo
+    echo 'Temp index not found, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
+    echo
+    echo
+    exit 1
+  fi
   sleep 60s
 done
 
