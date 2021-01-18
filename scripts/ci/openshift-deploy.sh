@@ -70,9 +70,7 @@ echo "OP_VER=$OP_VER"
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
 cd aqua
-#export
-#echo
-#export|grep 2502
+
 echo "**** Temp tests: ***"
 OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
@@ -81,19 +79,21 @@ curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -H "Accept: application/vnd.github.v3+json" \
 https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
-sleep 20m
-
-#wait for temp index to be created from previous API call
-#while [ ! $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; do sleep 60s; done
-
-#for check_temp_index in {1..30}
-#do
-#  echo "Checking index presence ... $check_temp_index minutes."
-#  if [ $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then break; fi
-#  sleep 60s
-#done
-
-
+for check_temp_index in {1..40}
+do
+  echo "Checking index $QUAY_HASH presence ... $check_temp_index minutes."
+  if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then
+    break
+  elif [ "$check_temp_index" == 40 ]; then
+    echo
+    echo
+    echo 'Temp index not found, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
+    echo
+    echo
+    exit 1
+  fi
+  sleep 60s
+done
 
 #export OP_STREAM=community-operators
 #export OP_VERSION=$OP_VER
