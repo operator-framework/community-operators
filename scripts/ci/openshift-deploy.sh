@@ -3,6 +3,8 @@
 
 set -e #fail in case of non zero return
 
+MAX_LIMIT_FOR_INDEX_WAIT=20
+
 OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
@@ -79,12 +81,13 @@ curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -H "Accept: application/vnd.github.v3+json" \
 https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
-for check_temp_index in {1..40}
-do
-  echo "Checking index $QUAY_HASH presence ... $check_temp_index minutes."
+CHECK_TEMP_INDEX=1
+while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
+  echo "Checking index $QUAY_HASH presence ... $CHECK_TEMP_INDEX minutes."
   if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then
-    break
-  elif [ "$check_temp_index" == 40 ]; then
+   echo "Temp index $QUAY_HASH found."
+   break
+  elif [ "$CHECK_TEMP_INDEX" -eq "$MAX_LIMIT_FOR_INDEX_WAIT" ]; then
     echo
     echo
     echo 'Temp index not found, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
@@ -92,8 +95,10 @@ do
     echo
     exit 1
   fi
-  sleep 60s
+  sleep 1s
+  CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
 done
+
 
 #export OP_STREAM=community-operators
 #export OP_VERSION=$OP_VER
