@@ -7,6 +7,7 @@ FROM scratch
 COPY --from=builder /build/bundles.db /bundles.db
 COPY --from=builder /build/bin/registry-server /registry-server
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
+LABEL operators.operatorframework.io.index.database.v1=/bundles.db
 EXPOSE 50051
 ENTRYPOINT ["/registry-server"]
 CMD ["--database", "/bundles.db"]
