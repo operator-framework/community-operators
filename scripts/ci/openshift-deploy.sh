@@ -95,7 +95,7 @@ while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
     echo
     exit 1
   fi
-  sleep 1s
+  sleep 60s
   CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
 done
 
