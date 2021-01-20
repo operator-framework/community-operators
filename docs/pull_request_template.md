@@ -1,7 +1,4 @@
 Thanks submitting your Operator. Please check below list before you create your Pull Request.
-*************************************************
-**Flat operator directory structure is obsolete from 23-rd of October 2019, only nested directory structure will be accepted.**
-*************************************************
 
 ### New Submissions
 
@@ -13,6 +10,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 * [ ] Have you tested your Operator in all supported [installation modes](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md#operator-metadata)?
 * [ ] Have you considered whether you want use [semantic versioning order](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#updating-your-existing-operator)?
 * [ ] Is your submission [signed](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#sign-your-work)?
+* [ ] Is operator [icon](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#operator-icon) set?
 
 ### Updates to existing Operators
 
