@@ -90,7 +90,7 @@ while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
   elif [ "$CHECK_TEMP_INDEX" -eq "$MAX_LIMIT_FOR_INDEX_WAIT" ]; then
     echo
     echo
-    echo 'Temp index not found, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
+    echo 'Temp index not found. Are your commits squashed? If so, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
     echo
     echo
     exit 1
