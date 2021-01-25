@@ -157,6 +157,7 @@ LATEST="$(echo -e $VERSIONS | cut -d ' ' -f 1)"
 OP_TEST_OPERATOR_NAME=$(echo $LATEST | cut -d '/' -f 2)
 OP_TEST_OPERATOR_VERSION=$(echo $LATEST | cut -d '/' -f 3)
 OP_TEST_OPERATOR_VERSIONS_ALL="$(find $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME -type f -name "*.clusterserviceversion.yaml" | sort --version-sort | cut -d '/' -f 3 | tr '\n' ' ')"
+OP_TEST_OPERATOR_VERSIONS_ALL_LATEST="$(find $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME -type f -name "*.clusterserviceversion.yaml" | sort --version-sort | tail -n 1 | cut -d '/' -f 3)"
 
 OP_TEST_OPERATOR_VERSIONS=
 for v in $VERSIONS;do
@@ -169,7 +170,14 @@ OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
 
 OP_TEST_OPERATOR_VERSIONS_REMOVED=
 for v in $REMOVED_VERSIONS;do
-  [ ! -d $v ] && OP_TEST_OPERATOR_VERSIONS_REMOVED="$(echo $v| cut -d '/' -f 3) $OP_TEST_OPERATOR_VERSIONS_REMOVED"  
+
+  # # check if removed version is not modified also. if yes then we want to have it as removed
+  # IS_VV=0
+  # for vv in $OP_TEST_OPERATOR_VERSIONS;do
+  #   [ "$(echo $v| cut -d '/' -f 3)" = "$vv" ] && IS_VV=1 && break
+  # done
+  # [[ $IS_VV -eq 0 ]] && continue
+  OP_TEST_OPERATOR_VERSIONS_REMOVED="$(echo $v| cut -d '/' -f 3) $OP_TEST_OPERATOR_VERSIONS_REMOVED"  
 done
 # remove trailing space
 OP_TEST_OPERATOR_VERSIONS_REMOVED=$(echo $OP_TEST_OPERATOR_VERSIONS_REMOVED | sed 's/ *$//g')
@@ -185,14 +193,13 @@ if [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
     OP_TEST_OPERATOR_VERSIONS="$OP_TEST_OPERATOR_VERSION"
   fi
 fi
-
-[ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && { echo "Error: Old versions were removed and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; exit 1;  }
-
+[ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && [ "$OP_TEST_OPERATOR_VERSIONS_REMOVED" != "$OP_TEST_OPERATOR_VERSIONS_ALL_LATEST" ] && { echo "Error: Old versions [$OP_TEST_OPERATOR_VERSIONS_REMOVED] were removed and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; exit 1;  }
 
 echo "Latest : $LATEST"
 echo "OP_TEST_OPERATOR_VERSION: $OP_TEST_OPERATOR_VERSION"
 echo "OP_TEST_OPERATOR_VERSIONS : $OP_TEST_OPERATOR_VERSIONS"
 echo "OP_TEST_OPERATOR_VERSIONS_ALL : $OP_TEST_OPERATOR_VERSIONS_ALL"
+echo "OP_TEST_OPERATOR_VERSIONS_ALL_LATEST : $OP_TEST_OPERATOR_VERSIONS_ALL_LATEST"
 echo "OP_TEST_OPERATOR_VERSIONS_REMOVED : $OP_TEST_OPERATOR_VERSIONS_REMOVED"
 echo "OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB"
 echo "OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI"
