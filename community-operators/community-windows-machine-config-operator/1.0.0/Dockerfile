@@ -10,5 +10,7 @@ LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
 LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v0.19.4
 LABEL operators.operatorframework.io.metrics.project_layout=go
 
+LABEL com.redhat.openshift.versions="=v4.6"
+
 COPY manifests /manifests/
 COPY metadata /metadata/
