@@ -2,7 +2,7 @@
 
 ## PR-traffic-light failures:
 #### Operator changes detected with ci changes and 'allow/ci-changes' is not set
-You are unintentionally editing a file which is out of your responsibility, please rebase.
+Do not modify files outside of community-operators and upstream-community-operators, please rebase or fix and push changes.
 
 #### Changes in both 'community-operators' and 'upstream-community-operators' dirs
 Every operator must have separate PR. Separate for Kubernetes (upstream) and separate for Openshift (community). It helps more precise testing and also granular revert if needed. Sometimes just rebase is needed.
@@ -10,7 +10,7 @@ Every operator must have separate PR. Separate for Kubernetes (upstream) and sep
 #### Multiple operators are changed
 Multiple operators in the same stream are updated. This is not allowed. It could be a result of not rebased PR. Please rebase or create separate PR for every operator.
 
-## Kiwi test failures:
+## Package metadata test (kiwi) test failures:
 #### Operator deployment with OLM failed
 
 Could be multiple reasons, but first of all, please check if your operator image can be pulled from a public location. This is the most common root cause for operators failing to start. Tests for this situation are planned in backlog, so pipeline will tell you this in near future automatically.
@@ -32,7 +32,7 @@ This is not an issue, you can ignore it.
 #### ImagePullBackOff
 Unable to pull your operator image.
 
-## Lemon/orange test failures:
+## Operator deploy tests (lemon/oragne) test failures:
 #### All operator versions are already in catalog
 
 You are trying to edit an existing operator version. It is not recommended. But there are some exceptions, where you just edit some description or link. In this case, repository maintainers can set appropriate labels to override such errors and approve release pipeline action to overwrite an existing operator.
