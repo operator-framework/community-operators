@@ -1,7 +1,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: sapcp-operator.v1.0.0
+  name: sapcp-operator.v0.1.9
   namespace: placeholder
   annotations:
     alm-examples: >-
@@ -40,9 +40,9 @@ spec:
 
     2. Create a secret with the obtained credentails in the previous step
   maturity: stable
-  version: 1.0.0
+  version: 0.1.9
   replaces: ''
-  skips: []
+  skips: [ ]
   minKubeVersion: ''
   keywords:
     - sap
@@ -52,9 +52,9 @@ spec:
       email: support@sap.com
   provider:
     name: SAP
-  labels: {}
+  labels: { }
   selector:
-    matchLabels: {}
+    matchLabels: { }
   links:
     - name: SAP Cloud Platform Operator
       url: 'https://github.com/sm-operator/sapcp-operator'
@@ -66,45 +66,43 @@ spec:
     owned:
       - description: Schema to create a service instance in Service Manager.
         displayName: ServiceInstance
+        group: services.cloud.sap.com
         kind: ServiceInstance
         name: serviceinstances.services.cloud.sap.com
         version: v1alpha1
-        specDescriptors: []
-        statusDescriptors: []
         resources:
-          - version: v1
-            kind: Deployment
-          - version: v1
-            kind: Service
-          - version: v1
-            kind: ReplicaSet
-          - version: v1
-            kind: Pod
-          - version: v1
-            kind: Secret
-          - version: v1
-            kind: ConfigMap
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: ConfigMap
+            name: ""
+            version: v1
+          - kind: ServiceBinding
+            name: ""
+            version: v1alpha1
+          - kind: ServiceInstance
+            name: ""
+            version: v1alpha1
       - description: Schema to create a service binding in Service Manage
         displayName: ServiceBinding
+        group: services.cloud.sap.com
         kind: ServiceBinding
         name: servicebindings.services.cloud.sap.com
         version: v1alpha1
-        specDescriptors: []
-        statusDescriptors: []
         resources:
-          - version: v1
-            kind: Deployment
-          - version: v1
-            kind: Service
-          - version: v1
-            kind: ReplicaSet
-          - version: v1
-            kind: Pod
-          - version: v1
-            kind: Secret
-          - version: v1
-            kind: ConfigMap
-    required: []
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: ConfigMap
+            name: ""
+            version: v1
+          - kind: ServiceBinding
+            name: ""
+            version: v1alpha1
+          - kind: ServiceInstance
+            name: ""
+            version: v1alpha1
+    required: [ ]
   install:
     strategy: deployment
     spec:
@@ -127,24 +125,18 @@ spec:
                   k8s-app: sapcp-operator
               spec:
                 containers:
-                  image: 'ghcr.io/sm-operator/sapcp-operator/controller:v0.1.9-alpha'
-                  imagePullPolicy: Always
-                  name: sapcp-operator
-                  resources:
-                    limits:
-                      cpu: 200m
-                      memory: 100Mi
-                    requests:
-                      cpu: 100m
-                      memory: 50Mi
+                - args:
+                  - -logtostderr=true
+                  - -v=5
+                  command:
+                    - ./manager
                   envFrom:
                     - configMapRef:
-                        name: sapcp-operator-config
-                imagePullSecrets:
-                  - name: ''
-                nodeSelector:
-                  beta.kubernetes.io/os: linux
-                serviceAccountName: sapcp-operator
+                      name: sapcp-operator-config
+                  imagePullPolicy: Always
+                  name: sapcp-controllers
+                  serviceAccountName: sapcp-operator
+                  image: ghcr.io/sm-operator/sapcp-operator/controller:v0.1.9-alpha
   installModes:
     - type: OwnNamespace
       supported: false
@@ -154,4 +146,4 @@ spec:
       supported: false
     - type: AllNamespaces
       supported: true
-  apiservicedefinitions: {}
+  apiservicedefinitions: { }
