@@ -123,7 +123,7 @@ for sf in ${OP_TEST_MODIFIED_FILES}; do
   [[ $sf == *package.yaml ]] && continue
   [[ $sf == *ci.yaml ]] && OP_TEST_CHNAGES_CI_YAML=1 && continue
 
-  [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_TEST_READY=0; }
+  [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' Skipping test ..."; OP_TEST_READY=0; }
 
   OPERATOR_PATH=$(echo $sf | cut -d '/' -f 1-3)
   [ -f $OPERATOR_PATH ] && { echo "Operator path '$OPERATOR_PATH' is file and it should be directory !!!"; exit 1; }
@@ -136,11 +136,12 @@ done
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
 
-[[ $OP_TEST_CHNAGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
-[[ $OP_TEST_CHNAGES_CI -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
-[[ $OP_TEST_CHNAGES_DOC -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; }
+[[ $OP_TEST_CHNAGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHNAGES_CI -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHNAGES_DOC -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; exit 1; }
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 || $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Error: Operator changes detected with ci changes and 'allow/ci-changes' is not set !!! Exiting ..."; exit 1; }
+[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 && $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Nothing to test"; exit 0; }
 
 [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
 [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
@@ -148,6 +149,8 @@ done
 if [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] || [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]];then
   [[ $OP_TEST_CHNAGES_CI_YAML -eq 1 ]] && [ ! -n "$FILES" ] && OP_TEST_CI_YAML_ONLY=1 && FILES=${OP_TEST_MODIFIED_FILES}
 fi
+
+
 
 echo "FILES: $FILES"
 
