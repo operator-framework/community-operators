@@ -164,7 +164,7 @@ spec:
             - apiGroups:
                 - services.cloud.sap.com
               resources:
-                - bindings
+                - servicebindings
               verbs:
                 - create
                 - delete
@@ -176,7 +176,7 @@ spec:
             - apiGroups:
                 - services.cloud.sap.com
               resources:
-                - bindings/finalizers
+                - servicebindings/finalizers
               verbs:
                 - create
                 - delete
@@ -188,7 +188,7 @@ spec:
             - apiGroups:
                 - services.cloud.sap.com
               resources:
-                - bindings/status
+                - servicebindings/status
               verbs:
                 - get
                 - patch
@@ -196,19 +196,7 @@ spec:
             - apiGroups:
                 - services.cloud.sap.com
               resources:
-                - services
-              verbs:
-                - create
-                - delete
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
-                - services.cloud.sap.com
-              resources:
-                - services/finalizers
+                - serviceinstances
               verbs:
                 - create
                 - delete
@@ -220,7 +208,19 @@ spec:
             - apiGroups:
                 - services.cloud.sap.com
               resources:
-                - services/status
+                - serviceinstances/finalizers
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - services.cloud.sap.com
+              resources:
+                - serviceinstances/status
               verbs:
                 - get
                 - patch
@@ -248,21 +248,41 @@ spec:
             replicas: 1
             selector:
               matchLabels:
-                k8s-app: sapcp-operator
+                control-plane: controller-manager
+            strategy: { }
             template:
               metadata:
+                creationTimestamp: null
                 labels:
-                  k8s-app: sapcp-operator
+                  control-plane: controller-manager
               spec:
                 containers:
-                - args:
-                  - -logtostderr=true
-                  - -v=5
-                  command:
-                    - ./manager
-                  name: sapcp-controllers
-                  serviceAccountName: sapcp-operator
-                  image: ghcr.io/sm-operator/sapcp-operator/controller:v0.1.9-alpha
+                  - args:
+                      - --metrics-addr=127.0.0.1:8080
+                      - --enable-leader-election
+                    command:
+                      - /manager
+                    image: ghcr.io/sm-operator/sapcp-operator/controller:v0.1.9-alpha
+                    name: manager
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 175Mi
+                      requests:
+                        cpu: 100m
+                        memory: 20Mi
+                  - args:
+                      - --secure-listen-address=0.0.0.0:8443
+                      - --upstream=http://127.0.0.1:8080/
+                      - --logtostderr=true
+                      - --v=10
+                    image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                    name: kube-rbac-proxy
+                    ports:
+                      - containerPort: 8443
+                        name: https
+                    resources: { }
+                terminationGracePeriodSeconds: 10
   installModes:
     - type: OwnNamespace
       supported: true
