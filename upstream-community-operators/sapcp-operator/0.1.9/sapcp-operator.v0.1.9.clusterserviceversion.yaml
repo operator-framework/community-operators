@@ -109,6 +109,15 @@ spec:
       permissions:
         - rules:
             - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+                - get
+                - list
+                - update
+            - apiGroups:
                 - ""
               resources:
                 - configmaps
@@ -271,8 +280,25 @@ spec:
                       - --enable-leader-election
                     command:
                       - /manager
+                    env:
+                      - name: ENABLE_WEBHOOKS
+                        value: "true"
+                      - name: CLUSTER_ID
+                        valueFrom:
+                          configMapKeyRef:
+                            key: CLUSTER_ID
+                            name: sapcp-operator-config
+                      - name: MANAGEMENT_NAMESPACE
+                        valueFrom:
+                          configMapKeyRef:
+                            key: MANAGEMENT_NAMESPACE
+                            name: sapcp-operator-config
                     image: ghcr.io/sm-operator/sapcp-operator/controller:v0.1.9-alpha
                     name: manager
+                    ports:
+                    - containerPort: 9443
+                      name: webhook-server
+                      protocol: TCP
                     resources:
                       limits:
                         cpu: 100m
@@ -290,20 +316,6 @@ spec:
                     ports:
                       - containerPort: 8443
                         name: https
-                      - containerPort: 9443
-                        name: webhook-server
-                        protocol: TCP
-                        resources:
-                          limits:
-                            cpu: 100m
-                            memory: 30Mi
-                          requests:
-                            cpu: 100m
-                            memory: 20Mi
-                        volumeMounts:
-                          - mountPath: /tmp/k8s-webhook-server/serving-certs
-                            name: cert
-                            readOnly: true
                     resources: { }
                 terminationGracePeriodSeconds: 10
   installModes:
