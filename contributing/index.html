@@ -261,6 +261,11 @@
     </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="../troubleshooting/" title="Troubleshooting">
+      Troubleshooting
+    </a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="../ci/" title="Continues Integration">
       Continues Integration
     </a>
@@ -397,7 +402,7 @@ This project also collects Community Operators that work with OpenShift to be di
 <p>In general a released version of your Operator is described in a <code>ClusterServiceVersion</code> manifest alongside the <code>CustomResourceDefinitions</code> of your Operator and additional metadata describing your Operator listing.</p>
 <h4>Create a ClusterServiceVersion</h4>
 <p>To add your operator to any of the supported platforms, you will need to submit metadata for your Operator to be used by the <a href="https://github.com/operator-framework/operator-lifecycle-manager/">Operator Lifecycle Manager</a> (OLM). This is YAML file called <code>ClusterServiceVersion</code> which contains references to all of the CRDs, RBAC rules, <code>Deployment</code> and container image needed to install and securely run your Operator. It also contains user-visible info like a description of its features and supported Kubernetes versions. Note that your Operator's CRDs are shipped in separate manifests alongside the CSV so OLM can register them during installation (your Operator is not supposed to self-register its CRDs).</p>
-<p><a href="https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md">Follow this guide to create an OLM-compatible CSV for your operator</a>. You can also see an example <a href="../required-fields/#example-csv">here</a>. An Operator's CSV must contain the fields mentioned <a href="../required-fields/#required-fields-for-operatorhub">here</a> for it to be displayed properly within the various platforms.</p>
+<p>Follow <a href="https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md">this guide</a> to create an OLM-compatible CSV for your operator. You can also see an example <a href="https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md#example-csv">here</a>. An Operator's CSV must contain the fields mentioned <a href="https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md#required-fields-for-operatorhub">here</a> for it to be displayed properly within the various platforms. If your operator needs new category, follow the instructions about <a href="https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md#categories">categories</a>.</p>
 <p>There is one CSV per version of your Operator alongside the CRDs.</p>
 <h4>Create a release using the <code>packagemanifest</code> format</h4>
 <p>The <code>packagemanifest</code> format is a directory structure in which the top-level directory represents your Operator as a <code>package</code>. Below that top-level directory are versioned sub-directories, one for each a released version of your Operator. The sub-directory names follow <a href="https://semver.org">semantic version</a> of your Operator and contain the <code>CustomResourceDefinition</code>s and <code>ClusterServiceVersion</code>.</p>
@@ -478,6 +483,38 @@ my-operator
 <span class="go">...</span>
 </code></pre></div>
 <p>If you used <code>operator-sdk</code> to develop your Operator you can also leverage its packaging tooling to <a href="https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle/#creating-a-bundle">create a bundle</a>.</p>
+<h4>Moving from <code>packagemanifest</code> to <code>bundle</code> format</h4>
+<p>Eventually this repository will only accept bundle format at some point in the future. Also the <code>bundle</code> format has more features like <code>semver</code> mode or, in the future, installing bundles directly outside of a catalog.</p>
+<p>Migration of existing content, irregardless of whether the Operator was created with the SDK, can be achieved with the <code>opm</code> tool on per Operator version basis. You can download <code>opm</code> <a href="https://github.com/operator-framework/operator-registry/releases/latest">here</a>.</p>
+<p>Suppose <code>v2.0.0</code> is the version of the Operator you want to test convert to bundle format directory with the <code>opm</code> tool:</p>
+<div class="codehilite"><pre><span></span><code><span class="go">mkdir /tmp/my-operator-2.0.0-bundle/</span>
+<span class="go">cd /tmp/my-operator-2.0.0-bundle/</span>
+<span class="go">opm alpha bundle build --directory /path/to/my-operator/2.0.0-bundle/ --tag my-operator-bundle:v2.0.0 --output-dir .</span>
+</code></pre></div>
+<p>This will have generated the bundle format layout in the current working directory <code>/tmp/my-operator-2.0.0-bundle/</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="gp">$</span> tree .
+
+<span class="go">/tmp/my-operator-2.0.0-bundle/</span>
+<span class="go">├── manifests</span>
+<span class="go">│   ├── my-operator-crd1.crd.yaml</span>
+<span class="go">│   ├── my-operator-crd2.crd.yaml</span>
+<span class="go">│   ├── my-operator-crd3.crd.yaml</span>
+<span class="go">│   └── my-operator.v2.0.0.clusterserviceversion.yaml</span>
+<span class="go">├── metadata</span>
+<span class="go">│   └── annotations.yaml</span>
+<span class="go">└── bundle.Dockerfile</span>
+</code></pre></div>
+<p>You can verify the generated bundle metadata for semantic correctness with the the <code>operator-sdk</code> on this directory.</p>
+<div class="codehilite"><pre><span></span><code><span class="go">operator-sdk bundle validate /tmp/my-operator-2.0.0-bundle/ --select-optional name=operatorhub</span>
+</code></pre></div>
+<p>You can download <code>operator-sdk</code> <a href="https://github.com/operator-framework/operator-sdk/releases/latest">here</a>.</p>
+<h4>Operator icon</h4>
+<p>Icon is defined in a CSV as <code>spec.icon</code>. If you don't have own icon, you should use default one:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">  icon:</span>
+<span class="err">    - base64data: "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTguNTEgMjU4LjUxIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2QxZDFkMTt9LmNscy0ye2ZpbGw6IzhkOGQ4Zjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPkFzc2V0IDQ8L3RpdGxlPjxnIGlkPSJMYXllcl8yIiBkYXRhLW5hbWU9IkxheWVyIDIiPjxnIGlkPSJMYXllcl8xLTIiIGRhdGEtbmFtZT0iTGF5ZXIgMSI+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTI5LjI1LDIwQTEwOS4xLDEwOS4xLDAsMCwxLDIwNi40LDIwNi40LDEwOS4xLDEwOS4xLDAsMSwxLDUyLjExLDUyLjExLDEwOC40NSwxMDguNDUsMCwwLDEsMTI5LjI1LDIwbTAtMjBoMEM1OC4xNiwwLDAsNTguMTYsMCwxMjkuMjVIMGMwLDcxLjA5LDU4LjE2LDEyOS4yNiwxMjkuMjUsMTI5LjI2aDBjNzEuMDksMCwxMjkuMjYtNTguMTcsMTI5LjI2LTEyOS4yNmgwQzI1OC41MSw1OC4xNiwyMDAuMzQsMCwxMjkuMjUsMFoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xNzcuNTQsMTAzLjQxSDE0MS42NkwxNTQuOSw2NS43NmMxLjI1LTQuNC0yLjMzLTguNzYtNy4yMS04Ljc2SDEwMi45M2E3LjMyLDcuMzIsMCwwLDAtNy40LDZsLTEwLDY5LjYxYy0uNTksNC4xNywyLjg5LDcuODksNy40LDcuODloMzYuOUwxMTUuNTUsMTk3Yy0xLjEyLDQuNDEsMi40OCw4LjU1LDcuMjQsOC41NWE3LjU4LDcuNTgsMCwwLDAsNi40Ny0zLjQ4TDE4NCwxMTMuODVDMTg2Ljg2LDEwOS4yNCwxODMuMjksMTAzLjQxLDE3Ny41NCwxMDMuNDFaIi8+PC9nPjwvZz48L3N2Zz4="</span>
+<span class="err">      mediatype: "image/svg+xml"</span>
+</code></pre></div>
+<p>Supported formats: svg, jpg, png </p>
 <h3>Updating your existing Operator</h3>
 <p>Unless of purely cosmectic nature, subsequent updates to your Operator should result in new <code>bundle</code> directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the <code>spec.version</code> field to the desired new semantic version of your Operator.</p>
 <p>In order to have OLM enable updates to your new Operator version you can choose between three update modes: <code>semver-mode</code>, <code>semver-skippatch-mode</code> and <code>replaces-mode</code>. The default is <code>semver-mode</code>. If you want to change the default, place a file called <code>ci.yaml</code> in your top-level directory (works for both <code>packagemanifest</code> or <code>bundle</code> format) and set it to either of the two other values. For example:</p>
