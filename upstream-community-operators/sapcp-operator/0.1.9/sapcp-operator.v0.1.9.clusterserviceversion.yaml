@@ -241,9 +241,18 @@ spec:
                 - /metrics
               verbs:
                 - get
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+                - get
+                - list
+                - update
           serviceAccountName: default
       deployments:
-        - name: sapcp-operator
+        - name: sapcp-operator-controller-manager
           spec:
             replicas: 1
             selector:
@@ -281,6 +290,20 @@ spec:
                     ports:
                       - containerPort: 8443
                         name: https
+                      - containerPort: 9443
+                        name: webhook-server
+                        protocol: TCP
+                        resources:
+                          limits:
+                            cpu: 100m
+                            memory: 30Mi
+                          requests:
+                            cpu: 100m
+                            memory: 20Mi
+                        volumeMounts:
+                          - mountPath: /tmp/k8s-webhook-server/serving-certs
+                            name: cert
+                            readOnly: true
                     resources: { }
                 terminationGracePeriodSeconds: 10
   installModes:
@@ -293,3 +316,64 @@ spec:
     - type: AllNamespaces
       supported: true
   apiservicedefinitions: { }
+  webhookdefinitions:
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 443
+      deploymentName: sapcp-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vwebhook.kb.io
+      rules:
+        - apiGroups:
+            - services.cloud.sap.com
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - servicebindings
+      sideEffects: None
+      targetPort: 9443
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-services-cloud-sap-com-v1alpha1-servicebinding1
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 443
+      deploymentName: sapcp-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mwebhook.kb.io
+      rules:
+        - apiGroups:
+            - services.cloud.sap.com
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - serviceinstances
+      sideEffects: None
+      targetPort: 9443
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-services-cloud-sap-com-v1alpha1-serviceinstance
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 443
+      deploymentName: sapcp-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mwebhookbinding.kb.io
+      rules:
+        - apiGroups:
+            - services.cloud.sap.com
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - servicebindings
+      sideEffects: None
+      targetPort: 9443
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-services-cloud-sap-com-v1alpha1-servicebinding
