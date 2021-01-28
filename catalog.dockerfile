@@ -1,5 +1,4 @@
 FROM quay.io/operator-framework/upstream-registry-builder as builder
-RUN ls
 
 COPY upstream-community-operators/sapcp-operator manifests
 RUN /bin/initializer -o ./bundles.db
