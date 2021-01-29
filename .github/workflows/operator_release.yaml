@@ -70,6 +70,7 @@ jobs:
       op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
       op_test_op_delete: "${{ steps.op-traffic-light.outputs.op_test_op_delete }}"
       op_test_labels: "${{ steps.prinfo.outputs.labels }}"
+      op_test_ver_overwrite: "${{ steps.prinfo.outputs.op_test_ver_overwrite }}"
 
   release-k8s_latest:
     name: "Release / k8s latest"
@@ -96,15 +97,22 @@ jobs:
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
-      - name: Operator release
-        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0'
+      - name: Operator release (sync)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
         env:
           OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
         run: |
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-
+      - name: Operator release (operator version overwrite)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
+        env:
+          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+        run: |
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
   # release-openshift_latest:
   #   name: "Release / o7t latest"
   #   needs: pr-check
@@ -146,8 +154,8 @@ jobs:
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange_v4.6 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange_v4.6 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
-      - name: Operator release
-        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0'
+      - name: Operator release (sync)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
         env:
           OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
           OP_TEST_IIB_INSTALL: 1
@@ -156,6 +164,14 @@ jobs:
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange_v4.6 ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange_v4.6 "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+      - name: Operator release (operator version overwrite)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
+        env:
+          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+        run: |
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "orange_v4.6 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test orange_v4.6 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
 
   release-openshift_4_7:
     name: "Release / o7t v4.7"
@@ -182,8 +198,8 @@ jobs:
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange_v4.7 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
-      - name: Operator release
-        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0'
+      - name: Operator release (sync)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
         env:
           OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
           OP_TEST_IIB_INSTALL: 1
@@ -192,6 +208,15 @@ jobs:
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange_v4.7 ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+      - name: Operator release (operator version overwrite)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
+        env:
+          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+        run: |
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "orange_v4.7 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+
 
   ohio-image-k8s:
     name: "Release / k8s ohio image"
