@@ -396,6 +396,99 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - clusterroles
+          - rolebindings
+          - clusterrolebindings
+          verbs:
+          - '*'
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: default
+      deployments:
+      - name: cockroachdb-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                - --leader-election-id=cockroachdb
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: cockroachdb
+                image: quay.io/helmoperators/cockroachdb:v5.0.3
+                name: manager
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 90Mi
+                  requests:
+                    cpu: 100m
+                    memory: 60Mi
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
           - ""
           resources:
           - namespaces
@@ -406,6 +499,7 @@ spec:
           resources:
           - secrets
           - configmaps
+          - serviceaccounts
           verbs:
           - '*'
         - apiGroups:
@@ -453,91 +547,18 @@ spec:
           - pods
           verbs:
           - '*'
-        - verbs:
-          - "*"
-          apiGroups:
-          - "monitoring.coreos.com"
-          resources:
-          - "servicemonitors"
-        - verbs:
-          - "*"
-          apiGroups:
-          - "networking.k8s.io"
-          resources:
-          - "networkpolicies"
         - apiGroups:
-          - authentication.k8s.io
+          - monitoring.coreos.com
           resources:
-          - tokenreviews
+          - servicemonitors
           verbs:
-          - create
+          - '*'
         - apiGroups:
-          - authorization.k8s.io
+          - networking.k8s.io
           resources:
-          - subjectaccessreviews
+          - networkpolicies
           verbs:
-          - create
-        serviceAccountName: default
-      deployments:
-      - name: cockroachdb-controller-manager
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              control-plane: controller-manager
-          strategy: {}
-          template:
-            metadata:
-              labels:
-                control-plane: controller-manager
-            spec:
-              containers:
-              - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=10
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                resources: {}
-              - args:
-                - --metrics-addr=127.0.0.1:8080
-                - --enable-leader-election
-                - --leader-election-id=cockroachdb
-                image: quay.io/helmoperators/cockroachdb:v5.0.3
-                name: manager
-                resources:
-                  limits:
-                    cpu: 100m
-                    memory: 90Mi
-                  requests:
-                    cpu: 100m
-                    memory: 60Mi
-              terminationGracePeriodSeconds: 10
-      permissions:
-      - rules:
-        - apiGroups:
-          - ""
-          resources:
-          - configmaps
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
-        - apiGroups:
-          - ""
-          resources:
-          - events
-          verbs:
-          - create
-          - patch
+          - '*'
         serviceAccountName: default
     strategy: deployment
   installModes:
