@@ -8,11 +8,11 @@ metadata:
     "operatorframework.io/arch.ppc64le": supported
     "operatorframework.io/arch.s390x": supported
   annotations:
-    capabilities: Basic Install
+    capabilities: Seamless Upgrades
     categories: "Database"
     provider: Red Hat
     support: Red Hat
-    containerImage: 
+    containerImage: quay.io/openshift/origin-cluster-nfd-operator:4.7
     createdAt: "2021-01-20T01:18:57.850280817Z"
     certified: "false"
     repository: https://github.com/openshift/cluster-nfd-operator
@@ -37,11 +37,11 @@ metadata:
         }
       ]
     description: This software enables node feature discovery for Kubernetes. It detects hardware features available on each node in a Kubernetes cluster, and advertises those features using node labels.
-    olm.skipRange: ">=4.5.0 <4.8.0"
+    olm.skipRange: ">=4.5.0 <4.7.0"
 spec:
-  displayName: Node Feature Discovery    
+  displayName: "[Test] Node Feature Discovery"
   version: 4.7.0
-  minKubeVersion: 1.19.0
+  minKubeVersion: 1.20.0
   maintainers: 
   - name: "Red Hat"
     email: openshift-psap@redhat.com
@@ -59,7 +59,7 @@ spec:
       description: |
         The NFD operator creates and maintains the Node Feature Discovery (NFD) on Kubernetes. 
         It detects hardware features available on each node in a Kubernetes cluster, and advertises those features using node labels.
-      displayName: Node Feature Discovery    
+      displayName: Node Feature Discovery
   description: |
     The NFD operator creates and maintains the Node Feature Discovery (NFD) on Kubernetes. 
     It detects hardware features available on each node in a Kubernetes cluster, and advertises those features using node labels.
@@ -70,71 +70,40 @@ spec:
     spec:
       clusterPermissions:
       - rules:
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - roles
-          - rolebindings
-          - clusterroles
-          - clusterrolebindings
-          verbs:
-          - '*'
-        - apiGroups:
-          - ""
-          resources:
-          - pods
-          - services
-          - endpoints
-          - persistentvolumeclaims
-          - events
-          - configmaps
-          - secrets
-          - serviceaccounts
-          - nodes
-          verbs:
-          - '*'
-        - apiGroups:
-          - ""
-          resources:
-          - namespaces
-          verbs:
-          - '*'
-        - apiGroups:
-          - apps
-          resources:
-          - deployments
-          - daemonsets
-          - replicasets
-          - statefulsets
-          verbs:
-          - '*'
-        - apiGroups:
-          - monitoring.coreos.com
-          resources:
-          - servicemonitors
-          verbs:
-          - get
-          - create
-        - apiGroups:
-          - nfd.openshift.io
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
-          - policy
-          resourceNames:
-          - nfd-worker
-          resources:
-          - podsecuritypolicies
-          verbs:
-          - use
-        - apiGroups:
-          - security.openshift.io
-          resources:
-          - securitycontextconstraints
-          verbs:
-          - '*'
+        - apiGroups: ["rbac.authorization.k8s.io"]
+          resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+          verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups: [""]
+          resources: ["pods", "services", "endpoints", "persistentvolumeclaims", "events", "configmaps", "secrets", "serviceaccounts",  "nodes"]
+          verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups: [""]
+          resources: ["namespaces"]
+          verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups: ["apps"]
+          resources: ["deployments", "daemonsets", "replicasets", "statefulsets"]
+          verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups: ["monitoring.coreos.com"]
+          resources: ["servicemonitors"]
+          verbs: ["get", "create"]
+        - apiGroups: ["nfd.openshift.io"]
+          resources: ["deployments", "daemonsets", "replicasets", "statefulsets"]
+          verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups: ["policy"]
+          resourceNames: ["nfd-worker"]
+          resources: ["podsecuritypolicies"]
+          verbs: ["use"]
+        - apiGroups: ["security.openshift.io"]
+          resources: ["securitycontextconstraints"]
+          verbs: ["use","create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups: ["nfd.openshift.io", "nfd.openshift.io/finalizers"]
+          resources: ["nodefeaturediscoveries"]
+          verbs: ["use","create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups: ["nfd.openshift.io", "nfd.openshift.io/finalizers"]
+          resources: ["nodefeaturediscoveries","nodefeaturediscoveries/finalizers"]
+          verbs: ["use","create", "delete", "get", "list", "patch", "update", "watch"]
+        - apiGroups:  ["nfd.openshift.io", "nfd.openshift.io/finalizers"]
+          resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings", "pods", "services", "endpoints", "persistentvolumeclaims", "events", "configmaps", "secrets", "serviceaccounts", "serviceaccounts/finalizers", "nodes"]
+          verbs: ["use","create", "delete", "get", "list", "patch", "update", "watch"]
         serviceAccountName: nfd-operator
       deployments:
       - name: nfd-operator
@@ -165,20 +134,12 @@ spec:
                   value: cluster-nfd-operator
                 - name: NODE_FEATURE_DISCOVERY_IMAGE
                   value: quay.io/openshift/origin-node-feature-discovery:4.7
-                image: quay.io/openshift/origin-cluster-nfd-operator:4.7
+                image: quay.io/openshift/origin-cluster-nfd-operator:nfd-47
                 imagePullPolicy: Always
                 name: nfd-operator
                 ports:
                 - containerPort: 60000
                   name: metrics
-                readinessProbe:
-                  exec:
-                    command:
-                    - stat
-                    - /tmp/operator-sdk-ready
-                  failureThreshold: 1
-                  initialDelaySeconds: 4
-                  periodSeconds: 10
                 resources: {}
                 securityContext:
                   allowPrivilegeEscalation: false
@@ -186,9 +147,6 @@ spec:
                     drop:
                     - ALL
                   readOnlyRootFilesystem: true
-                volumeMounts:
-                - mountPath: /tmp
-                  name: tmp
               nodeSelector:
                 node-role.kubernetes.io/master: ""
               serviceAccountName: nfd-operator
@@ -196,9 +154,6 @@ spec:
               - effect: NoSchedule
                 key: node-role.kubernetes.io/master
                 operator: Equal
-              volumes:
-              - emptyDir: {}
-                name: tmp
     strategy: deployment
   installModes:
   - supported: true

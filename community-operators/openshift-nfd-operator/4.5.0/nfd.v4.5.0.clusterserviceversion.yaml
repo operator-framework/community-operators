@@ -10,7 +10,6 @@ metadata:
   annotations:
     capabilities: Basic Install
     categories: "Database"
-    
     provider: Red Hat
     support: Red Hat
     containerImage: 
@@ -31,9 +30,10 @@ metadata:
         }
       ]
     description: This software enables node feature discovery for Kubernetes. It detects hardware features available on each node in a Kubernetes cluster, and advertises those features using node labels.
-    olm.skipRange: ">=4.1.0 <4.6.0"
+    olm.skipRange: ">=4.4.0 <4.6.0"
 spec:
-  displayName: Node Feature Discovery    
+  displayName: "[Test] Node Feature Discovery"    
+  version: 4.5.0
   minKubeVersion: 1.17.0
   maintainers: 
   - name: "Red Hat"
@@ -158,20 +158,12 @@ spec:
                   value: cluster-nfd-operator
                 - name: NODE_FEATURE_DISCOVERY_IMAGE
                   value: quay.io/openshift/origin-node-feature-discovery:4.5
-                image: quay.io/openshift/origin-cluster-nfd-operator:4.5
+                image: quay.io/openshift/origin-cluster-nfd-operator:nfd-45
                 imagePullPolicy: Always
                 name: nfd-operator
                 ports:
                 - containerPort: 60000
                   name: metrics
-                readinessProbe:
-                  exec:
-                    command:
-                    - stat
-                    - /tmp/operator-sdk-ready
-                  failureThreshold: 1
-                  initialDelaySeconds: 4
-                  periodSeconds: 10
                 resources: {}
                 securityContext:
                   allowPrivilegeEscalation: false
@@ -179,9 +171,6 @@ spec:
                     drop:
                     - ALL
                   readOnlyRootFilesystem: true
-                volumeMounts:
-                - mountPath: /tmp
-                  name: tmp
               nodeSelector:
                 node-role.kubernetes.io/master: ""
               serviceAccountName: nfd-operator
@@ -189,9 +178,6 @@ spec:
               - effect: NoSchedule
                 key: node-role.kubernetes.io/master
                 operator: Equal
-              volumes:
-              - emptyDir: {}
-                name: tmp
     strategy: deployment
   installModes:
   - supported: true
@@ -205,4 +191,3 @@ spec:
   maturity: alpha
   provider:
     name: "Red Hat"
-  version: "4.5.0"
