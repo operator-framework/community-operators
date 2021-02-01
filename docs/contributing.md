@@ -86,7 +86,7 @@ In general a released version of your Operator is described in a `ClusterService
 
 To add your operator to any of the supported platforms, you will need to submit metadata for your Operator to be used by the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager/) (OLM). This is YAML file called `ClusterServiceVersion` which contains references to all of the CRDs, RBAC rules, `Deployment` and container image needed to install and securely run your Operator. It also contains user-visible info like a description of its features and supported Kubernetes versions. Note that your Operator's CRDs are shipped in separate manifests alongside the CSV so OLM can register them during installation (your Operator is not supposed to self-register its CRDs).
 
-[Follow this guide to create an OLM-compatible CSV for your operator](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md). You can also see an example [here](./required-fields.md#example-csv). An Operator's CSV must contain the fields mentioned [here](./required-fields.md#required-fields-for-operatorhub) for it to be displayed properly within the various platforms.
+Follow [this guide](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md) to create an OLM-compatible CSV for your operator. You can also see an example [here](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md#example-csv). An Operator's CSV must contain the fields mentioned [here](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md#required-fields-for-operatorhub) for it to be displayed properly within the various platforms. If your operator needs new category, follow the instructions about [categories](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md#categories).
 
 There is one CSV per version of your Operator alongside the CRDs.
 
@@ -222,6 +222,14 @@ operator-sdk bundle validate /tmp/my-operator-2.0.0-bundle/ --select-optional na
 ```
 
 You can download `operator-sdk` [here](https://github.com/operator-framework/operator-sdk/releases/latest).
+#### Operator icon ####
+Icon is defined in a CSV as `spec.icon`. If you don't have own icon, you should use default one:
+```
+  icon:
+    - base64data: "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTguNTEgMjU4LjUxIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2QxZDFkMTt9LmNscy0ye2ZpbGw6IzhkOGQ4Zjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPkFzc2V0IDQ8L3RpdGxlPjxnIGlkPSJMYXllcl8yIiBkYXRhLW5hbWU9IkxheWVyIDIiPjxnIGlkPSJMYXllcl8xLTIiIGRhdGEtbmFtZT0iTGF5ZXIgMSI+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTI5LjI1LDIwQTEwOS4xLDEwOS4xLDAsMCwxLDIwNi40LDIwNi40LDEwOS4xLDEwOS4xLDAsMSwxLDUyLjExLDUyLjExLDEwOC40NSwxMDguNDUsMCwwLDEsMTI5LjI1LDIwbTAtMjBoMEM1OC4xNiwwLDAsNTguMTYsMCwxMjkuMjVIMGMwLDcxLjA5LDU4LjE2LDEyOS4yNiwxMjkuMjUsMTI5LjI2aDBjNzEuMDksMCwxMjkuMjYtNTguMTcsMTI5LjI2LTEyOS4yNmgwQzI1OC41MSw1OC4xNiwyMDAuMzQsMCwxMjkuMjUsMFoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xNzcuNTQsMTAzLjQxSDE0MS42NkwxNTQuOSw2NS43NmMxLjI1LTQuNC0yLjMzLTguNzYtNy4yMS04Ljc2SDEwMi45M2E3LjMyLDcuMzIsMCwwLDAtNy40LDZsLTEwLDY5LjYxYy0uNTksNC4xNywyLjg5LDcuODksNy40LDcuODloMzYuOUwxMTUuNTUsMTk3Yy0xLjEyLDQuNDEsMi40OCw4LjU1LDcuMjQsOC41NWE3LjU4LDcuNTgsMCwwLDAsNi40Ny0zLjQ4TDE4NCwxMTMuODVDMTg2Ljg2LDEwOS4yNCwxODMuMjksMTAzLjQxLDE3Ny41NCwxMDMuNDFaIi8+PC9nPjwvZz48L3N2Zz4="
+      mediatype: "image/svg+xml"
+```
+Supported formats: svg, jpg, png 
 
 ### Updating your existing Operator
 

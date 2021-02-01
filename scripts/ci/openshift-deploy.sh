@@ -3,6 +3,8 @@
 
 set -e #fail in case of non zero return
 
+MAX_LIMIT_FOR_INDEX_WAIT=20
+
 OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
@@ -70,9 +72,7 @@ echo "OP_VER=$OP_VER"
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
 cd aqua
-#export
-#echo
-#export|grep 2502
+
 echo "**** Temp tests: ***"
 OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
@@ -81,18 +81,23 @@ curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -H "Accept: application/vnd.github.v3+json" \
 https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
-sleep 20m
-
-#wait for temp index to be created from previous API call
-#while [ ! $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; do sleep 60s; done
-
-#for check_temp_index in {1..30}
-#do
-#  echo "Checking index presence ... $check_temp_index minutes."
-#  if [ $(curl 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then break; fi
-#  sleep 60s
-#done
-
+CHECK_TEMP_INDEX=1
+while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
+  echo "Checking index $QUAY_HASH presence ... $CHECK_TEMP_INDEX minutes."
+  if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then
+   echo "Temp index $QUAY_HASH found."
+   break
+  elif [ "$CHECK_TEMP_INDEX" -eq "$MAX_LIMIT_FOR_INDEX_WAIT" ]; then
+    echo
+    echo
+    echo 'Temp index not found. Are your commits squashed? If so, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
+    echo
+    echo
+    exit 1
+  fi
+  sleep 60s
+  CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
+done
 
 
 #export OP_STREAM=community-operators

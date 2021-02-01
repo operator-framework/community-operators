@@ -53,7 +53,7 @@ Similarly, to update your operator you need to submit a PR with any changes to y
 
 Upon creating a pull request against this repo, a set of CI pipelines will run, see more details [here](/ci.md). The pipeline will actually run the same commands you use to test locally.
 
-You can help speed up the review of your PR by testing locally, either [manually](./testing-operators.md) or [using scripts](./using-current-test-suite.md). For troubleshooting failing tests consult the [manual test steps](./testing-operators.md).
+You can help speed up the review of your PR by testing locally, either [manually](./testing-operators.md) or [using scripts](./using-current-test-suite.md). For troubleshooting failing tests consult the [manual test steps](./testing-operators.md) or see specific error messages solved in [troubleshooting guide](https://github.com/operator-framework/community-operators/blob/master/docs/troubleshooting.md).
 
 ## Reporting Bugs
 
