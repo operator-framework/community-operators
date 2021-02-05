@@ -24,5 +24,26 @@ When operator is merged to master following scenarios will happen:
 
 ![openshift release summary](images/op_release_o7t.png)
 
-## Operator is publisked
-After this process your operator should be published.
+## Operator is published
+After this process, your operator will be published.
+
+### Index image location
+
+For Openshift: 
+
+`registry.redhat.io/redhat/community-operator-index:v4.6`
+`registry.redhat.io/redhat/community-operator-index:v4.7`
+`registry.redhat.io/redhat/community-operator-index:latest` - this is a clone of `v4.6` from historical reasons as it always was a clone of `v4.6`. Will be deprecated in the future.
+
+For Kubernetes:
+
+`quay.io/operatorhubio/catalog:latest`
+
+### Bundle images location
+For Openshift:
+
+`quay.io/openshift-community-operators/`
+
+For Kubernetes:
+
+`quay.io/operatorhubio/`
