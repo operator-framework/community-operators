@@ -8,9 +8,6 @@ metadata:
           "apiVersion": "kfdef.apps.kubeflow.org/v1",
           "kind": "KfDef",
           "metadata": {
-            "annotations": {
-              "kfctl.kubeflow.io/force-delete": "false"
-            },
             "name": "opendatahub",
             "namespace": "opendatahub"
           },
@@ -33,24 +30,6 @@ metadata:
                   }
                 },
                 "name": "odhseldon"
-              },
-              {
-                "kustomizeConfig": {
-                  "repoRef": {
-                    "name": "manifests",
-                    "path": "ai-library/cluster"
-                  }
-                },
-                "name": "ai-library-cluster"
-              },
-              {
-                "kustomizeConfig": {
-                  "repoRef": {
-                    "name": "manifests",
-                    "path": "ai-library/operator"
-                  }
-                },
-                "name": "ai-library-operator"
               },
               {
                 "kustomizeConfig": {
@@ -116,16 +95,7 @@ metadata:
                     "path": "radanalyticsio/spark/cluster"
                   }
                 },
-                "name": "radanalyticsio-cluster"
-              },
-              {
-                "kustomizeConfig": {
-                  "repoRef": {
-                    "name": "manifests",
-                    "path": "radanalyticsio/spark/operator"
-                  }
-                },
-                "name": "radanalyticsio-spark-operator"
+                "name": "radanalyticsio-spark-cluster"
               },
               {
                 "kustomizeConfig": {
@@ -207,21 +177,29 @@ metadata:
                   }
                 },
                 "name": "odhargo"
+              },
+              {
+                "kustomizeConfig": {
+                  "repoRef": {
+                    "name": "manifests",
+                    "path": "odh-dashboard"
+                  }
+                },
+                "name": "odh-dashboard"
               }
             ],
             "repos": [
               {
                 "name": "kf-manifests",
-                "uri": "https://github.com/opendatahub-io/manifests/tarball/v1.0-branch-openshift"
+                "uri": "https://github.com/opendatahub-io/manifests/tarball/master"
               },
               {
                 "name": "manifests",
-                "uri": "https://github.com/opendatahub-io/odh-manifests/tarball/v0.8.0"
+                "uri": "https://github.com/opendatahub-io/odh-manifests/tarball/v0.9.0"
               }
             ],
-            "version": "v0.8.0"
-          },
-          "status": {}
+            "version": "v0.9-branch-openshift"
+          }
         }
       ]
     capabilities: Basic Install
@@ -229,10 +207,10 @@ metadata:
     description: "Open Data Hub Operator for deployment and management of Open Data Hub and Kubeflow on OpenShift"
     support: Open Data Hub
     repository: https://github.com/opendatahub-io/opendatahub-operator
-    createdAt: '2020-08-31T00:00:00Z'
-    containerImage: quay.io/opendatahub/opendatahub-operator:v0.8.0
+    createdAt: '2020-11-09T00:00:00Z'
+    containerImage: quay.io/opendatahub/opendatahub-operator:v0.9.0
     certified: 'False'
-  name: opendatahub-operator.v0.8.0
+  name: opendatahub-operator.v0.9.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -251,15 +229,17 @@ spec:
     projects share some components, but can be mostly seen as an extension of each other to provide as complete a solution as possible for both hobby and enterprise users.
 
     ### Components
-    * JupyterHub v3.0.7 - Open source multi-user notebook platform w/ GPU support. ***NEW*** Notebook with support Elyra and JupyterLab
+    * Open Data Hub Dashboard - ***NEW*** A web dashboard that displays installed Open Data Hub components with easy access to component UIs and documentation
+    * JupyterHub v3.0.7 - Open source multi-user notebook platform w/ GPU support.
+    * Elyra v0.0.5 - JupyterLab notebooks with support for AI workflows
     * Apache Spark v2.4.5 - Unified analytics engine for large-scale data processing
-    * Prometheus v2.7.1 - Monitoring and alerting tool
-    * Grafana v6.2.4 - Data visualization and monitoring
+    * Prometheus v2.16.0 - Monitoring and alerting tool
+    * Grafana v7.1.1 - Data visualization and monitoring
     * Airflow v1.10.2 - Workflow management
     * AI-Library v0.6.0 - An open source collection of machine learning algorithms
     * Seldon v1.2.0 - Open source platform for deploying machine learning models
     * Argo v2.7.0 - Container-native Workflow Engine
-    * Apache Superset v0.34.0 - Open source application for data exploration and visualization
+    * Apache Superset v0.30.0 - Open source application for data exploration and visualization
     * Apache Kafka v2.4.0 - The open source stream processing platform
 
     #### Mixing ODH and Kubeflow
@@ -271,7 +251,7 @@ spec:
 
     Channel `beta` offers the latest version of Open Data Hub operator. It is based on Kubeflow Operator and Kustomize for deployment configuration. This version is compatible with [Open Data Hub manifests](https://github.com/opendatahub-io/odh-manifests/) as well as [Kubeflow manifests](https://github.com/opendatahub-io/manifests). This channel will offer new components and features.
 
-    To deploy Kubeflow, use [this example](https://github.com/opendatahub-io/manifests/blob/v1.0-branch-openshift/kfdef/kfctl_openshift.yaml).
+    To deploy Kubeflow, use [this example](https://github.com/kubeflow/manifests/blob/master/kfdef/kfctl_openshift.v1.2.0.yaml).
 
     #### Legacy
 
@@ -325,7 +305,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: opendatahub-operator
-                image: quay.io/opendatahub/opendatahub-operator:v0.8.0
+                image: quay.io/opendatahub/opendatahub-operator:v0.9.0
                 imagePullPolicy: Always
                 name: opendatahub-operator
                 resources: {}
@@ -361,9 +341,8 @@ spec:
     - OpenShift
     - Open Data Hub
     - opendatahub
-  version: 0.8.0
-  replaces: opendatahub-operator.v0.7.0
+  version: 0.9.0
+  replaces: opendatahub-operator.v0.8.0
   selector:
     matchLabels:
       component: opendatahub-operator
-
