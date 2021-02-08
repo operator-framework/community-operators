@@ -71,6 +71,7 @@ jobs:
       op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
       op_test_ver_overwrite: "${{ steps.op-traffic-light.outputs.op_test_ver_overwrite }}"
       op_test_op_delete: "${{ steps.op-traffic-light.outputs.op_test_op_delete }}"
+      op_release_delete_appreg: "${{ steps.op-traffic-light.outputs.op_release_delete_appreg }}"
 
   release-k8s_latest:
     name: "Release / k8s latest"
@@ -255,8 +256,10 @@ jobs:
   push-to-quay-o7t:
     name: "Release / o7t push to quay"
     needs: pr-check
-    if: needs.pr-check.outputs.op_test_ready == '1'
+    if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
     runs-on: ubuntu-latest
+    env:
+      DELETE_APPREG: "${{ needs.pr-check.outputs.op_release_delete_appreg }}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
