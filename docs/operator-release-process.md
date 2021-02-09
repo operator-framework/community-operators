@@ -6,7 +6,7 @@
 ![Release workflow](images/op_action_release.png)
 
 When operator is merged to master following scenarios will happen: 
-## For k8s case (upstream-community-operators)
+## For a k8s case (upstream-community-operators)
 
 1. Push to quay (to support old app registry)
 1. Build index image for k8s
@@ -15,10 +15,10 @@ When operator is merged to master following scenarios will happen:
 
 ![k8s release summary](images/op_release_k8s.png)
 
-## For openshift case (community-operators)
+## For an Openshift case (community-operators)
 
 1. Push to quay (to support old app registry)
-1. Build index image for different openshift versions (v4.6 and v4.7 in this case) and multiarch image is also is produced.
+1. Build index image for different Openshift versions (v4.6 and v4.7 in this case) and multiarch image is also is produced.
 1. Build image image for dev.operatorhub.io page (for development purposes only)
 1. Deploy dev.operatorhub.io page (for development purposes only)
 

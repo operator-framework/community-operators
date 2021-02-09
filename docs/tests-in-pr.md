@@ -24,9 +24,9 @@ Full operator tests
     - from packagemanifest format
     - from bundle format
 - Sanity check of operator version (when multiple only last test is done)
-- Validation of using `operator-sdk validate`
+- Validation using `operator-sdk validate`
 - Building temporary catalog with one operator version in it
-- Deployment of opeator on kind (k8s) cluster (only for kuberbetes-operator)
+- Deployment of operator on kind (k8s) cluster (only for kuberbetes-operator)
 
 #### [lemon] - Test of operator to be deployed from scratch
 Test if deploy is possible from the scratch. I means creating bundle images and index image.
@@ -37,7 +37,7 @@ Test if deploy is possible from the scratch. I means creating bundle images and 
 #### [orange] - Test of operator to be deployed with existing bundles in quay registry
 Test if operator can be added to index from existing bundles from production (quay.io)
 
-- Build current opeator version locally
+- Build current operator version locally
 - Use older versions from from quay.io
 - Build catalog
 

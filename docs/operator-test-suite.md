@@ -43,7 +43,7 @@ upstream-community-operators/aqua/1.0.2
 
 ## Running tests from official 'community-operators' repo
 
-Following example will run 'kiwi' and 'lemon' tests on 'aqua' operator with version '1.0.2' from 'community-operators (openshift)' directory. 'community-operators' project will be taken from git repo 'https://github.com/operator-framework/community-operators' and 'master' branch
+Following example will run 'kiwi' and 'lemon' tests on 'aqua' operator with version '1.0.2' from 'community-operators (Openshift)' directory. 'community-operators' project will be taken from git repo 'https://github.com/operator-framework/community-operators' and 'master' branch
 ```
 cd <community-operators>
 bash <(curl -sL https://cutt.ly/WhkV76k) \
