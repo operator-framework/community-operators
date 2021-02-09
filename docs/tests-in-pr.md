@@ -18,21 +18,32 @@ There are 3 test types. List of tests are shown in the following table.
 |orange|Full test of operator to be deployed with existing bundles in quay registry|
 |all|kiwi,lemon,orange|
 
-#### kiwi - full operator test
-* linting
-* checking operator format
-* scorecard
-* temporary deploy single operator on Kind cluster
+#### [kiwi] - Full operator test 
+Full operator tests
+- Building bundle image
+    - from packagemanifest format
+    - from bundle format
+- Sanity check of operator version (when multiple only last test is done)
+- Validation using `operator-sdk validate`
+- Building temporary catalog with one operator version in it
+- Deployment of operator on kind (k8s) cluster (only for kuberbetes-operator)
 
-#### lemon
+#### [lemon] - Test of operator to be deployed from scratch
 Test if deploy is possible from the scratch. I means creating bundle images and index image.
 
-#### orange
-Test if release pipeline can handle current operator configuration before release is triggered.
+- Build all bundle images
+- Build catalog
+
+#### [orange] - Test of operator to be deployed with existing bundles in quay registry
+Test if operator can be added to index from existing bundles from production (quay.io)
+
+- Build current operator version locally
+- Use older versions from from quay.io
+- Build catalog
 
 #### OLM
 
-Deployment with the OLM involves creating several required manifest files to create `CustomResourceDefinitions` (CRD's) and the operators' `Deployment` using its `ClusterServiceVersion` (CSV) in-cluster. `test-operator` will create a [`operator-registry`][registry] Docker image containing the operators' bundled manifests, and `CatalogSource` and `Subscription` manifests that allow the OLM to find the registry image and deploy a particular CSV from the registry, respectively.
+Deployment with the [OLM](https://github.com/operator-framework/operator-lifecycle-manager) involves creating several required manifest files to create `CustomResourceDefinitions` (CRD's) and the operators' `Deployment` using its `ClusterServiceVersion` (CSV) in-cluster. `test-operator` will create a [`operator-registry`][registry] Docker image containing the operators' bundled manifests, and `CatalogSource` and `Subscription` manifests that allow the OLM to find the registry image and deploy a particular CSV from the registry, respectively.
 
 Failure to successfully deploy an operator using the OLM results in test failure, as all operators are expected to be deployable in this manner.
 
@@ -75,7 +86,7 @@ Operators submitted to the `community-operators/` directory are tested against a
 [scorecard-test-docs]:https://github.com/operator-framework/operator-sdk/blob/master/doc/test-framework/scorecard.md#basic-operator
 [courier]:https://github.com/operator-framework/operator-courier/
 [kind]:https://github.com/kubernetes-sigs/kind
-[travis-ci]:https://travis-ci.org/
+[github-actions]:https://docs.github.com/en/actions
 [ci-operator]: https://github.com/openshift/release/tree/master/ci-operator
 [scripts-ci]:../scripts/ci/
 [registry-bundle]:https://github.com/operator-framework/operator-registry#manifest-format

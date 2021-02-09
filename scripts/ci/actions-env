@@ -7,12 +7,12 @@ OP_RELEASE_READY=${OP_RELEASE_READY-0}
 OP_TEST_OP_DELETE=${OP_TEST_OP_DELETE-0}
 DELETE_APPREG=${DELETE_APPREG-0}
 
-OP_TEST_CHNAGES_GITHUB=0
-OP_TEST_CHNAGES_CI=0
-OP_TEST_CHNAGES_DOCS=0
-OP_TEST_CHNAGES_STREAM_COMMUNITY=0
-OP_TEST_CHNAGES_STREAM_UPSTREAM=0
-OP_TEST_CHNAGES_CI_YAML=0
+OP_TEST_CHANGES_GITHUB=0
+OP_TEST_CHANGES_CI=0
+OP_TEST_CHANGES_DOCS=0
+OP_TEST_CHANGES_STREAM_COMMUNITY=0
+OP_TEST_CHANGES_STREAM_UPSTREAM=0
+OP_TEST_CHANGES_CI_YAML=0
 OP_TEST_CI_YAML_ONLY=0
 
 OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
@@ -32,28 +32,28 @@ done
 
 [[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; exit 1; }
 
-OP_TEST_CHNAGES_OPERATOR=
-OP_TEST_CHNAGES_OPERATOR_VERSIONS_MODIFIED=
-OP_TEST_CHNAGES_OPERATOR_VERSIONS_REMOVED=
+OP_TEST_CHANGES_OPERATOR=
+OP_TEST_CHANGES_OPERATOR_VERSIONS_MODIFIED=
+OP_TEST_CHANGES_OPERATOR_VERSIONS_REMOVED=
 
 
 # Handle removed files
 if [ -n "$OP_TEST_REMOVED_FILES" ];then
 
   # Some files are removed
-  # TODO : OP_TEST_CHNAGES_OPERATOR_VERSIONS_REMOVED
+  # TODO : OP_TEST_CHANGES_OPERATOR_VERSIONS_REMOVED
   FILES=
   for sf in ${OP_TEST_REMOVED_FILES}; do
     echo $sf
     # Check if .github/ dir is modified
-    [[ $sf == .github* ]] && OP_TEST_CHNAGES_GITHUB=1 && continue
-    [[ $sf == scripts* ]] && OP_TEST_CHNAGES_CI=1 && continue
-    [[ $sf == docs* ]] && OP_TEST_CHNAGES_DOCS=1 && continue
-    [[ $sf == community-operators* ]] && OP_TEST_CHNAGES_STREAM_COMMUNITY=1
-    [[ $sf == upstream-community-operators* ]] && OP_TEST_CHNAGES_STREAM_UPSTREAM=1
+    [[ $sf == .github* ]] && OP_TEST_CHANGES_GITHUB=1 && continue
+    [[ $sf == scripts* ]] && OP_TEST_CHANGES_CI=1 && continue
+    [[ $sf == docs* ]] && OP_TEST_CHANGES_DOCS=1 && continue
+    [[ $sf == community-operators* ]] && OP_TEST_CHANGES_STREAM_COMMUNITY=1
+    [[ $sf == upstream-community-operators* ]] && OP_TEST_CHANGES_STREAM_UPSTREAM=1
     [[ $sf == *package.yaml ]] && continue
-    [[ $sf == *ci.yaml ]] && { OP_TEST_CHNAGES_CI_YAML=1; continue; }
-    [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_RELEASE_READY=0; }
+    [[ $sf == *ci.yaml ]] && { OP_TEST_CHANGES_CI_YAML=1; continue; }
+    [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_RELEASE_READY=0; }
     FILES="$FILES $(echo $sf | cut -d '/' -f 1-3)"
     # Check if outdside of "community-operators" and "upstream-community-operators"
   done
@@ -63,8 +63,8 @@ if [ -n "$OP_TEST_REMOVED_FILES" ];then
     OP_RELEASE_READY=1
 
 
-    [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
-    [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
+    [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
+    [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
 
     VERSIONS=$(echo -e "${FILES// /\\n}" | uniq | sort -r)
     LATEST="$(echo -e $VERSIONS | cut -d ' ' -f 1)"
@@ -73,14 +73,14 @@ if [ -n "$OP_TEST_REMOVED_FILES" ];then
 
     OP_TEST_READY=0
 
-    [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
+    [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
 
     echo "::set-output name=op_test_ready::${OP_TEST_READY}"
     echo "::set-output name=op_release_ready::${OP_RELEASE_READY}"
     echo "::set-output name=op_test_stream::${OP_TEST_STREAM_NAME}"
     echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
     echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
-    echo "::set-output name=op_test_changed_ci_yaml::${OP_TEST_CHNAGES_CI_YAML}"
+    echo "::set-output name=op_test_changed_ci_yaml::${OP_TEST_CHANGES_CI_YAML}"
     echo "::set-output name=op_test_ver_overwrite::${OP_TEST_VER_OVERWRITE}"
     
     echo "Files removed only."
@@ -118,18 +118,18 @@ FILES=
 for sf in ${OP_TEST_MODIFIED_FILES}; do
   echo "$sf"
   # Check if .github/ dir is modified
-  [[ $sf == .github* ]] && OP_TEST_CHNAGES_GITHUB=1 && continue
-  [[ $sf == scripts* ]] && OP_TEST_CHNAGES_CI=1 && continue
-  [[ $sf == docs* ]] && OP_TEST_CHNAGES_DOCS=1 && continue
+  [[ $sf == .github* ]] && OP_TEST_CHANGES_GITHUB=1 && continue
+  [[ $sf == scripts* ]] && OP_TEST_CHANGES_CI=1 && continue
+  [[ $sf == docs* ]] && OP_TEST_CHANGES_DOCS=1 && continue
 
-  [[ $sf == community-operators* ]] && OP_TEST_CHNAGES_STREAM_COMMUNITY=1
-  [[ $sf == upstream-community-operators* ]] && OP_TEST_CHNAGES_STREAM_UPSTREAM=1
+  [[ $sf == community-operators* ]] && OP_TEST_CHANGES_STREAM_COMMUNITY=1
+  [[ $sf == upstream-community-operators* ]] && OP_TEST_CHANGES_STREAM_UPSTREAM=1
 
   [[ $sf == *package.yaml ]] && continue
-  [[ $sf == *ci.yaml ]] && OP_TEST_CHNAGES_CI_YAML=1 && continue
+  [[ $sf == *ci.yaml ]] && OP_TEST_CHANGES_CI_YAML=1 && continue
   [[ $sf == *mkdocs.yml ]] && continue
 
-  [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' Skipping test ..."; OP_TEST_READY=0; }
+  [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' Skipping test ..."; OP_TEST_READY=0; }
 
   OPERATOR_PATH=$(echo $sf | cut -d '/' -f 1-3)
   [ -f $OPERATOR_PATH ] && { echo "Operator path '$OPERATOR_PATH' is file and it should be directory !!!"; exit 1; }
@@ -138,22 +138,21 @@ for sf in ${OP_TEST_MODIFIED_FILES}; do
   # Check if outdside of "community-operators" and "upstream-community-operators"
 done
 
-[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OP_TEST_CHNAGES_CI_YAML -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Skipping test ..."; OP_TEST_READY=0; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OP_TEST_CHANGES_CI_YAML -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Skipping test ..."; OP_TEST_READY=0; }
 
-[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
 
-[[ $OP_TEST_CHNAGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; exit 1; }
-[[ $OP_TEST_CHNAGES_CI -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; exit 1; }
-[[ $OP_TEST_CHNAGES_DOC -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' labed is not set !!!"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHANGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' label is not set !!!"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHANGES_CI -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' label is not set !!!"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHANGES_DOCS -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' label is not set !!!"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 || $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Error: Operator changes detected with ci changes and 'allow/ci-changes' is not set !!! Exiting ..."; exit 1; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 && $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Nothing to test"; exit 0; }
 
-[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 || $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Error: Operator changes detected with ci changes and 'allow/ci-changes' is not set !!! Exiting ..."; exit 1; }
-[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 && $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Nothing to test"; exit 0; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
+[[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
 
-[[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
-[[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
-
-if [[ $OP_TEST_CHNAGES_STREAM_COMMUNITY -eq 1 ]] || [[ $OP_TEST_CHNAGES_STREAM_UPSTREAM -eq 1 ]];then
-  [[ $OP_TEST_CHNAGES_CI_YAML -eq 1 ]] && [ ! -n "$FILES" ] && OP_TEST_CI_YAML_ONLY=1 && FILES=${OP_TEST_MODIFIED_FILES}
+if [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] || [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]];then
+  [[ $OP_TEST_CHANGES_CI_YAML -eq 1 ]] && [ ! -n "$FILES" ] && OP_TEST_CI_YAML_ONLY=1 && FILES=${OP_TEST_MODIFIED_FILES}
 fi
 
 
@@ -203,11 +202,11 @@ echo "OP_TEST_OPERATOR_VERSIONS : $OP_TEST_OPERATOR_VERSIONS"
 echo "OP_TEST_OPERATOR_VERSIONS_ALL : $OP_TEST_OPERATOR_VERSIONS_ALL"
 echo "OP_TEST_OPERATOR_VERSIONS_ALL_LATEST : $OP_TEST_OPERATOR_VERSIONS_ALL_LATEST"
 echo "OP_TEST_OPERATOR_VERSIONS_REMOVED : $OP_TEST_OPERATOR_VERSIONS_REMOVED"
-echo "OP_TEST_CHNAGES_GITHUB=$OP_TEST_CHNAGES_GITHUB"
-echo "OP_TEST_CHNAGES_CI=$OP_TEST_CHNAGES_CI"
-echo "OP_TEST_CHNAGES_DOC=$OP_TEST_CHNAGES_DOCS"
-echo "OP_TEST_CHNAGES_STREAM_COMMUNITY=$OP_TEST_CHNAGES_STREAM_COMMUNITY"
-echo "OP_TEST_CHNAGES_STREAM_UPSTREAM=$OP_TEST_CHNAGES_STREAM_UPSTREAM"
+echo "OP_TEST_CHANGES_GITHUB=$OP_TEST_CHANGES_GITHUB"
+echo "OP_TEST_CHANGES_CI=$OP_TEST_CHANGES_CI"
+echo "OP_TEST_CHANGES_DOC=$OP_TEST_CHANGES_DOCS"
+echo "OP_TEST_CHANGES_STREAM_COMMUNITY=$OP_TEST_CHANGES_STREAM_COMMUNITY"
+echo "OP_TEST_CHANGES_STREAM_UPSTREAM=$OP_TEST_CHANGES_STREAM_UPSTREAM"
 
 
 echo "op_test_ready=${OP_TEST_READY}"
