@@ -1,0 +1,220 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "maistra.io/v1alpha1",
+          "kind": "Session",
+          "metadata": {
+            "name": "session-sample"
+          },
+          "spec": {
+            "ref": [
+              {
+                "name": "ratings-v1"
+              }
+            ],
+            "route": {
+              "name": "end-user",
+              "type": "header",
+              "value": "jason"
+            }
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.3.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: istio-workspace-operator.v0.0.5
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: Session
+      name: sessions.maistra.io
+      version: v1alpha1
+  description: Installs istio-workspace
+  displayName: Istio Workspace
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - endpoints
+          - events
+          - persistentvolumeclaims
+          - pods
+          - secrets
+          - services
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - deployments
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resourceNames:
+          - istio-workspace
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - '*'
+        - apiGroups:
+          - istio.openshift.com
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - maistra.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - maistra.io
+          resources:
+          - sessions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - maistra.io
+          resources:
+          - sessions/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - maistra.io
+          resources:
+          - sessions/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - create
+          - get
+        - apiGroups:
+          - networking.istio.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: istio-workspace
+      deployments:
+      - name: istio-workspace-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: istio-workspace
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - serve
+                command:
+                - ike
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: istio-workspace
+                image: quay.io/maistra/istio-workspace:v0.0.5
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8282
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: istio-workspace
+                readinessProbe:
+                  failureThreshold: 10
+                  httpGet:
+                    path: /readyz
+                    port: 8282
+                  initialDelaySeconds: 2
+                  periodSeconds: 20
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 30Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+              serviceAccountName: istio-workspace
+              terminationGracePeriodSeconds: 30
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - istio
+  - telepresence
+  links:
+  - name: Istio Workspace Operator
+    url: https://istio-workspace-operator.domain
+  maintainers:
+  - email: aslak@redhat.com
+    name: Aslak Knutsen
+  - email: bartosz@redhat.com
+    name: Bartosz Majsak
+  maturity: alpha
+  provider:
+    name: Red Hat aka Two Grumpy Basement Guys (and a blanket)
+  version: 0.0.5
