@@ -16,8 +16,8 @@ IS_TEST_VALID=0
 for t in $OPA_VALID_TESTS;do
   [[ $OPA_TEST_TYPE == $t* ]] && IS_TEST_VALID=1
 done
-
 echo "IS_TEST_VALID=$IS_TEST_VALID"
+[[ $IS_TEST_VALID -eq 0 ]] && { echo "Error: Test type '$OPA_TEST_TYPE' is not supprted !!! Supported types are '$OPA_VALID_TESTS' ."; exit 1; }
 
 export OP_TEST_DEBUG=${OP_TEST_DEBUG-1}
 export OP_TEST_CONTAINER_OPT=${OP_TEST_CONTAINER_OPT-"-t"}
@@ -31,11 +31,21 @@ export OP_TEST_LABELS=${OP_TEST_LABELS-"$OPA_PR_LABELS"}
 MYPWD=$(pwd)
 echo "MYPWD=$MYPWD"
 MY_BASENAME=$(basename $MYPWD)
-echo "$MY_BASENAME != $OPA_REPO_DIR"
-if [ "$MY_BASENAME" != "$OPA_REPO_DIR" ];then
-    echo "$OPA_REPO $OPA_BRANCH"
-    [ -d $OPA_REPO_DIR ] || git clone $OPA_REPO --branch $OPA_BRANCH
-    cd $OPA_REPO_DIR
+
+[ -n "$OPA_STREAM" ] && { echo "Error: \$OPA_STREAM is empty !!! "; exit 1; }
+[ -n "$OPA_NAME" ] && { echo "Error: \$OPA_NAME is empty !!! "; exit 1; }
+[ -n "$OPA_VERSION" ] && { echo "Error: \$OPA_VERSION is empty !!! "; exit 1; }
+
+if [ ! -d $MYPWD/$OPA_STREAM ];then
+  echo "Cloing repo '$OPA_REPO' with branch '$OPA_BRANCH'"
+  git clone $OPA_REPO --branch $OPA_BRANCH
+  cd $OPA_REPO_DIR
+fi
+
+if [ ! -f scripts/ci/op-test ];then
+  mkdir -p scripts/ci/
+  curl -O scripts/ci/op-test https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/op-test
+  chmod +x scripts/ci/op-test
 fi
 
 ls -al 
