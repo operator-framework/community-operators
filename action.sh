@@ -32,9 +32,9 @@ MYPWD=$(pwd)
 echo "MYPWD=$MYPWD"
 MY_BASENAME=$(basename $MYPWD)
 
-[ -n "$OPA_STREAM" ] && { echo "Error: \$OPA_STREAM is empty !!! "; exit 1; }
-[ -n "$OPA_NAME" ] && { echo "Error: \$OPA_NAME is empty !!! "; exit 1; }
-[ -n "$OPA_VERSION" ] && { echo "Error: \$OPA_VERSION is empty !!! "; exit 1; }
+[ -n "$OPA_STREAM" ] || { echo "Error: \$OPA_STREAM is empty !!! "; exit 1; }
+[ -n "$OPA_NAME" ] || { echo "Error: \$OPA_NAME is empty !!! "; exit 1; }
+[ -n "$OPA_VERSION" ] || { echo "Error: \$OPA_VERSION is empty !!! "; exit 1; }
 
 if [ ! -d $MYPWD/$OPA_STREAM ];then
   echo "Cloing repo '$OPA_REPO' with branch '$OPA_BRANCH'"
