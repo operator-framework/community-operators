@@ -46,7 +46,7 @@ if [ -n "$OPA_OPERATOR_DIR" ];then
   echo "Creating operator directory structure from '$OPA_OPERATOR_DIR' to '$OPA_STREAM/$OPA_NAME/$OPA_VERSION'"
   rm -rf $OPA_STREAM/$OPA_NAME/$OPA_VERSION
   mkdir -p $OPA_STREAM/$OPA_NAME/$OPA_VERSION
-  cp -a $OPA_OPERATOR_DIR/* $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
+  cp -a ../$OPA_OPERATOR_DIR/* $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
   ls -al $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
 fi
 
