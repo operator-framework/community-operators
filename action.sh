@@ -42,6 +42,13 @@ if [ ! -d $MYPWD/$OPA_STREAM ];then
   cd $OPA_REPO_DIR
 fi
 
+if [ -n "$OPA_OPERATOR_DIR" ];then
+  echo "Creating operator directory structure from '$OPA_OPERATOR_DIR' to '$OPA_STREAM/$OPA_NAME/$OPA_VERSION'"
+  rm -rf $OPA_STREAM/$OPA_NAME/$OPA_VERSION
+  mkdir -p $OPA_STREAM/$OPA_NAME/$OPA_VERSION
+  cp -a $OPA_OPERATOR_DIR/* $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
+fi
+
 if [ ! -f scripts/ci/op-test ];then
   mkdir -p scripts/ci/
   curl -O scripts/ci/op-test https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/op-test
