@@ -47,6 +47,7 @@ if [ -n "$OPA_OPERATOR_DIR" ];then
   rm -rf $OPA_STREAM/$OPA_NAME/$OPA_VERSION
   mkdir -p $OPA_STREAM/$OPA_NAME/$OPA_VERSION
   cp -a $OPA_OPERATOR_DIR/* $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
+  ls -al $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
 fi
 
 if [ ! -f scripts/ci/op-test ];then
@@ -54,9 +55,6 @@ if [ ! -f scripts/ci/op-test ];then
   curl -O scripts/ci/op-test https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/op-test
   chmod +x scripts/ci/op-test
 fi
-
-ls -al 
-export
 
 echo scripts/ci/op-test $OPA_TEST_TYPE "$OPA_STREAM/$OPA_NAME/$OPA_VERSION"
 scripts/ci/op-test $OPA_TEST_TYPE "$OPA_STREAM/$OPA_NAME/$OPA_VERSION"
