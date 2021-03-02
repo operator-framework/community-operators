@@ -24,15 +24,6 @@ on:
      - master
 
 jobs:
-  comenter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: mshick/add-pr-comment@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          message: /ok-to-test
-          allow-repeats: true
   pr-check:
     if: ${{ github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'allow/test-in-draft-mode') }}
     name: "PR-traffic-light"
@@ -166,3 +157,16 @@ jobs:
         run: |
           echo "orange_v4.7 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
           scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+
+  finalizer:
+    name: "Finalizer - community"
+    needs: [ pr-check, test-orange-openshift_4_6, test-orange-openshift_4_7, test-lemon-openshift_4_6, test-lemon-openshift_4_7, test-kiwi ]
+    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mshick/add-pr-comment@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          message: /ok-to-test
+          allow-repeats: false
