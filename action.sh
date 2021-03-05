@@ -48,6 +48,8 @@ if [ -n "$OPA_OPERATOR_VERSION_PATH" ];then
   mkdir -p $OPA_STREAM/$OPA_NAME/$OPA_VERSION
   cp -a ../$OPA_OPERATOR_VERSION_PATH/* $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
   ls -al $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
+  [ -f $OPA_PACKAGE_PATH ] && cp -f $OPA_PACKAGE_PATH $OPA_STREAM/$OPA_NAME/
+  [ -f $OPA_CI_PATH ] && cp -f $OPA_CI_PATH $OPA_STREAM/$OPA_NAME/
 fi
 
 if [ ! -f scripts/ci/op-test ];then
