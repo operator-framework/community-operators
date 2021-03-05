@@ -50,6 +50,7 @@ if [ -n "$OPA_OPERATOR_VERSION_PATH" ];then
   ls -al $OPA_STREAM/$OPA_NAME/$OPA_VERSION/
   [ -n "$OPA_PACKAGE_PATH" ] && [ -f $OPA_PACKAGE_PATH ] && cp -f $OPA_PACKAGE_PATH $OPA_STREAM/$OPA_NAME/
   [ -n "$OPA_CI_PATH" ] && [ -f $OPA_CI_PATH ] && cp -f $OPA_CI_PATH $OPA_STREAM/$OPA_NAME/
+  ls -al $OPA_STREAM/$OPA_NAME
 fi
 
 if [ ! -f scripts/ci/op-test ];then
