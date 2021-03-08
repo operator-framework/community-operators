@@ -4,10 +4,7 @@ This action runs community operator tests.
 
 # What's new
 
-- Supported tests
-  - kiwi
-  - lemon
-  - orange
+- Supported tests (kiwi, lemon, orange)
 - Own [community-operators](https://github.com/operator-framework/community-operators.git) fork and branch supported
 - Run test from own repository. Doesn't have to be [community-operators](https://github.com/operator-framework/community-operators.git). More info in [op-action-examples](https://github.com/mvalarh/op-action-examples)
 
@@ -112,6 +109,7 @@ This action runs community operator tests.
 
 ## Test 'kiwi' aqua operator version 5.3.0 for in upstream-community-operators in own project
 Test single version of operator from custom project. Follwoing will happen:
+
 - Action will clone `https://github.com/operator-framework/community-operators.git` in to master branch (controlled by `repo:` and `branch:`)
 - Enters directory `community-operators` (controlled by `repo-dir:`)
 - Removes directory `upstream-community-operators/aqua/5.3.0`
