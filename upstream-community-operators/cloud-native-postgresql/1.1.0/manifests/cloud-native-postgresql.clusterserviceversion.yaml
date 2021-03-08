@@ -1,0 +1,865 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "postgresql.k8s.enterprisedb.io/v1",
+          "kind": "Backup",
+          "metadata": {
+            "name": "backup-sample"
+          },
+          "spec": {
+            "cluster": {
+              "name": "cluster-sample"
+            }
+          }
+        },
+        {
+          "apiVersion": "postgresql.k8s.enterprisedb.io/v1",
+          "kind": "Cluster",
+          "metadata": {
+            "name": "cluster-sample"
+          },
+          "spec": {
+            "instances": 3,
+            "primaryUpdateStrategy": "unsupervised",
+            "storage": {
+              "size": "1Gi"
+            }
+          }
+        },
+        {
+          "apiVersion": "postgresql.k8s.enterprisedb.io/v1",
+          "kind": "ScheduledBackup",
+          "metadata": {
+            "name": "scheduledbackup-sample"
+          },
+          "spec": {
+            "cluster": {
+              "name": "cluster-sample"
+            },
+            "schedule": "0 0 0 * * *"
+          }
+        }
+      ]
+    capabilities: Full Lifecycle
+    categories: Database
+    certified: "true"
+    containerImage: quay.io/enterprisedb/cloud-native-postgresql:1.1.0
+    createdAt: "2020-09-01T11:43:00Z"
+    description: Operator to manage Postgres high availability clusters with a primary/standby architecture.
+    operators.operatorframework.io/builder: operator-sdk-v1.1.0
+    operators.operatorframework.io/project_layout: go
+    support: EnterpriseDB Corporation
+    olm.skipRange: '>=0.6.0 <1.1.0'
+  name: cloud-native-postgresql.v1.1.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - description: PostgreSQL backup manager
+        displayName: Backups
+        kind: Backup
+        name: backups.postgresql.k8s.enterprisedb.io
+        specDescriptors:
+          - description: The PostgreSQL cluster name to backup
+            displayName: Cluster Name
+            path: cluster.name
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Clusters
+        statusDescriptors:
+          - description: Current backupphase
+            displayName: Phase
+            path: phase
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes.phase
+        version: v1
+      - description: PostgreSQL cluster manager
+        displayName: Cluster
+        kind: Cluster
+        name: clusters.postgresql.k8s.enterprisedb.io
+        specDescriptors:
+          - description: Number of instances required in the cluster
+            displayName: Instances
+            path: instances
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:podCount
+          - description: Minimum number of instances required in synchronous replication with the primary. Undefined or 0 allow writes to complete when no standby is available.
+            displayName: Min Synchronous Replicas
+            path: minSyncReplicas
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: The target value for the synchronous replication quorum, that can be decreased if the number of ready standbys is lower than this. Undefined or 0 disable synchronous replication.
+            displayName: Max Synchronous Replicas
+            path: maxSyncReplicas
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: The time in seconds that is allowed for a PostgreSQL instance to successfully start up (default 30)
+            displayName: Maximum Start Delay
+            path: startDelay
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: The time in seconds that is allowed for a PostgreSQL instance node to gracefully shutdown (default 30)
+            displayName: Maximum Stop Delay
+            path: stopDelay
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: Secret for pulling the image. If empty no secret will be used
+            displayName: Image Pull Secret
+            path: imagePullSecrets
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+              - urn:alm:descriptor:io.kubernetes:Secret
+          - description: Name of the container image
+            displayName: Image Name
+            path: imageName
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: Postgres user Id used inside the container
+            displayName: Postgres UID
+            path: postgresUID
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: Postgres group Id used inside the container
+            displayName: Postgres GID
+            path: postgresGID
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - displayName: Primary Update Strategy
+            path: primaryUpdateStrategy
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+              - urn:alm:descriptor:com.tectonic.ui:select:supervised
+              - urn:alm:descriptor:com.tectonic.ui:select:unsupervised
+          - displayName: Description
+            path: description
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: StorageClass to use for database data (PGDATA). Applied after evaluating the PVC template, if available.
+            displayName: Storage Class
+            path: storage.storageClass
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:StorageClass
+          - description: Storage size for database data (PGDATA). (default size 1G)
+            displayName: Storage Size
+            path: storage.size
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - description: Template to be used to generate the Persistent Volume Claim
+            displayName: PVC template
+            path: storage.pvcTemplate
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: S3-compatible object storage Endpoint. If empty S3 default it's used
+            displayName: Object Storage Endpoint
+            path: backup.endpointURL
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: Access Key ID
+            displayName: Access Key ID
+            path: backup.s3Credentials.accessKeyId
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Secret
+          - description: Secret Access Key
+            displayName: Secret Access Key
+            path: backup.s3Credentials.secretAccessKey
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Secret
+          - displayName: pg_hba rule
+            path: postgresql.pg_hba[0]
+          - displayName: PostgreSQL configuration parameter
+            path: postgresql.parameters[0]
+          - path: backup.s3Credentials.secretAccessKey.name
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Secret
+          - path: backup.s3Credentials.accessKeyId.name
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Secret
+        statusDescriptors:
+          - description: Status Pods
+            displayName: Working Pods
+            path: instancesStatus
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:podStatuses
+          - description: License Status, trial or official
+            displayName: Licenses Status
+            path: licenseStatus.licen
+            x-descriptors:
+              - urn:alm:descriptor:text
+          - description: License expiration date
+            displayName: Licenses expiration date
+            path: licenseStatus.licenseExpiration
+            x-descriptors:
+              - urn:alm:descriptor:text
+          - description: License is Valid
+            displayName: License is Valid
+            path: licenseStatus.valid
+            x-descriptors:
+              - urn:alm:descriptor:text
+          - description: Current Primary Pod
+            displayName: Current Primary Pod
+            path: currentPrimary
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Pod
+          - description: Service for written process
+            displayName: Write Service
+            path: writeService
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Service
+          - description: Service for read process
+            displayName: Read Service
+            path: readService
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Service
+          - description: Current cluster phase
+            displayName: Phase
+            path: phase
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes.phase
+          - description: Current phase reason
+            displayName: Phase Reason
+            path: phaseReason
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes.phase:reason
+        version: v1
+      - description: PostgreSQL backups schedule
+        displayName: Scheduled Backups
+        kind: ScheduledBackup
+        name: scheduledbackups.postgresql.k8s.enterprisedb.io
+        specDescriptors:
+          - description: The PostgreSQL cluster to backup
+            displayName: Cluster name
+            path: cluster.name
+            x-descriptors:
+              - urn:alm:descriptor:io.kubernetes:Clusters
+          - description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+            displayName: Schedule
+            path: schedule
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - description: If this is true, the schedule is suspended, defaults to False
+            displayName: Schedule is suspended
+            path: suspend
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+        statusDescriptors:
+          - description: When it's the next backup scheduled
+            displayName: Next backup
+            path: nextScheduleTime
+          - description: When it was the last backup
+            displayName: Last backup
+            path: lastScheduleTime
+        version: v1
+  description: |
+    Cloud Native PostgreSQL is an operator designed by EnterpriseDB
+    to manage PostgreSQL workloads on any supported Kubernetes
+    cluster running in private, public, or hybrid cloud environments,
+    including OpenShift.
+    Cloud Native PostgreSQL adheres to DevOps principles and concepts
+    such as declarative configuration and immutable infrastructure.
+
+    It defines a new Kubernetes resource called "Cluster" representing a PostgreSQL
+    cluster made up of a single primary and an optional number of replicas that co-exist
+    in a chosen Kubernetes namespace for High Availability and offloading of
+    read-only queries.
+
+    Applications that reside in the same Kubernetes cluster can access the
+    PostgreSQL database using a service which is solely managed by the operator,
+    without having to worry about changes of the primary role following a failover
+    or a switchover. Applications that reside outside the Kubernetes cluster need
+    to configure an Ingress object to expose the service via TCP.
+
+    Cloud Native PostgreSQL works with PostgreSQL (13, 12, 11 and 10) and
+    EDB Postgres Advanced (13, 12, 11 and 10), and it is available under
+    the EnterpriseDB Limited Use License.
+    You can evaluate Cloud Native PostgreSQL for free.
+    You need a valid license key to use Cloud Native PostgreSQL in production.
+
+    # Main features
+
+    * Direct integration with Kubernetes API server for High Availability, without requiring an external tool
+    * Self-Healing capability, through:
+        * failover of the primary instance by promoting the most aligned replica
+        * automated recreation of a replica
+    * Planned switchover of the primary instance by promoting a selected replica
+    * Scale up/down capabilities
+    * Definition of an arbitrary number of instances (minimum 1 - one primary server)
+    * Definition of the read-write service, to connect your applications to the only primary server of the cluster
+    * Definition of the read-only service, to connect your applications to any of the instances for reading workloads
+    * Support for Local Persistent Volumes with PVC templates
+    * Reuse of Persistent Volumes storage in Pods
+    * Rolling updates for PostgreSQL minor versions and operator upgrades
+    * TLS connections and client certificate authentication
+    * Continuous backup to an S3 compatible object store
+    * Full recovery and Point-In-Time recovery from an S3 compatible object store backup
+    * Support for Synchronous Replicas
+    * Support for node affinity via nodeSelector
+    * Standard output logging of PostgreSQL error messages
+  displayName: Cloud Native PostgreSQL
+  icon:
+    - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDI1LjAuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiCgkgdmlld0JveD0iMCAwIDEwODguMDQgMzU3LjI2IiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMDg4LjA0IDM1Ny4yNjsiIHhtbDpzcGFjZT0icHJlc2VydmUiPgo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPgoJLnN0MHtmaWxsOiMxMjE2NDY7fQoJLnN0MXtmaWxsOiNGRjNFMDA7fQoJLnN0MntmaWxsOiNGRkZGRkY7fQo8L3N0eWxlPgo8ZyBpZD0iTGF5ZXJfMSI+Cgk8Zz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMjkxLjgsMjQ0OC43NGgtMTIuNjN2MzYuMTZjLTMuMzgsMC42OC03LjYsMS4wMS0xMi42NywxLjAxYy01LjE4LDAtOS40LTAuMzQtMTIuNjctMS4wMXYtMTE0LjU1bDEuMTItMS4xOAoJCQljOS4yNS0wLjIyLDE2LjkyLTAuMzksMjMuMDQtMC41MWM2LjExLTAuMTEsMTAuNzYtMC4xNywxMy45NS0wLjE3YzUuODQsMCwxMS4xOCwwLjg0LDE2LjAyLDIuNTNjNC44MywxLjY5LDguOTUsNC4yMiwxMi4zNSw3LjYKCQkJYzMuNCwzLjM4LDYuMDMsNy41OCw3Ljg5LDEyLjU5YzEuODYsNS4wMSwyLjc5LDEwLjc5LDIuNzksMTcuMzJjMCw2LjUzLTAuOTYsMTIuMzEtMi44OCwxNy4zMmMtMS45Miw1LjAxLTQuNTgsOS4yMS04LDEyLjU5CgkJCWMtMy40MSwzLjM4LTcuNTQsNS45NC0xMi4zOSw3LjY5QzMwMi44NSwyNDQ3Ljg3LDI5Ny41NSwyNDQ4Ljc0LDI5MS44LDI0NDguNzR6IE0yNzkuMTYsMjM4OS4xdjM5LjM3CgkJCWMyLjk5LTAuMTEsNS4zNy0wLjE5LDcuMTQtMC4yNWMxLjc2LTAuMDYsMi45MS0wLjA4LDMuNDUtMC4wOGMyLjg5LDAsNS4yOS0wLjUzLDcuMjItMS42YzEuOTItMS4wNywzLjQ3LTIuNDgsNC42NS00LjIyCgkJCWMxLjE4LTEuNzUsMi4wMy0zLjgsMi41Ny02LjE3YzAuNTMtMi4zNywwLjgtNC44NCwwLjgtNy40M2MwLTIuNDgtMC4yNy00LjktMC44LTcuMjdjLTAuNTQtMi4zNi0xLjM2LTQuNDUtMi40OS02LjI1CgkJCWMtMS4xMi0xLjgtMi41OS0zLjI0LTQuNDEtNC4zMWMtMS44Mi0xLjA3LTMuOTYtMS42LTYuNDItMS42Yy0yLjQ2LDAtNC42NSwwLTYuNTgsMEMyODIuMzcsMjM4OS4yNywyODAuNjYsMjM4OS4yMSwyNzkuMTYsMjM4OS4xCgkJCXoiLz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMzU1Ljk5LDI0NzYuNzljLTExLjM3LTEwLjAyLTE3LjA2LTI2LjUzLTE3LjA2LTQ5LjVjMC05LjkxLDEuMDktMTguNjEsMy4yNy0yNi4xCgkJCWMyLjE4LTcuNDksNS4zMS0xMy43Nyw5LjQxLTE4Ljg0YzQuMDktNS4wNyw5LjA2LTguOSwxNC45MS0xMS40OWM1Ljg0LTIuNTksMTIuNDQtMy44OSwxOS43Ny0zLjg5YzcuMzMsMCwxMy45NSwxLjMsMTkuODUsMy44OQoJCQljNS45LDIuNTksMTAuODksNi40NSwxNC45OSwxMS41N2M0LjA5LDUuMTMsNy4yMywxMS40Myw5LjQxLDE4LjkyYzIuMTgsNy40OSwzLjI3LDE2LjE0LDMuMjcsMjUuOTNjMCw5LjgtMS4wOSwxOC40NS0zLjI3LDI1LjkzCgkJCWMtMi4xOCw3LjQ5LTUuMzIsMTMuNzctOS40MSwxOC44NGMtNC4wOSw1LjA3LTkuMDksOC45LTE0Ljk5LDExLjQ5Yy01LjksMi41OS0xMi41MSwzLjg5LTE5Ljg1LDMuODkKCQkJQzM3NC4xNiwyNDg3LjQzLDM2NC4wNiwyNDgzLjg4LDM1NS45OSwyNDc2Ljc5eiBNMzY4LjksMjQ1My40N2MyLjg3LDguNzksOC42NiwxMy4xOCwxNy4zOCwxMy4xOGM0LjM2LDAsNy44OS0xLjE1LDEwLjYtMy40NgoJCQljMi43MS0yLjMxLDQuODMtNS4yNCw2LjM4LTguNzljMS41NC0zLjU1LDIuNTgtNy41MiwzLjExLTExLjkxYzAuNTMtNC4zOSwwLjgtOC43MywwLjgtMTMuMDFjMC0zLjk0LTAuMTMtOC4zMy0wLjQtMTMuMTgKCQkJYy0wLjI3LTQuODQtMS4wNC05LjM4LTIuMzEtMTMuNmMtMS4yNy00LjIyLTMuMjktNy43Ny02LjA2LTEwLjY0Yy0yLjc2LTIuODctNi44LTQuMzEtMTIuMTItNC4zMWMtNS4xLDAtOS4wMSwxLjM4LTExLjcyLDQuMTQKCQkJYy0yLjcxLDIuNzYtNC43Myw2LjE3LTYuMDYsMTAuMjJjLTEuMzMsNC4wNS0yLjE1LDguMzYtMi40NywxMi45M2MtMC4zMiw0LjU2LTAuNDgsOC41OS0wLjQ4LDEyLjA4YzAsNS4xOCwwLjI0LDkuOCwwLjcyLDEzLjg1CgkJCUMzNjYuNzUsMjQ0NS4wMiwzNjcuNjIsMjQ0OS4xOSwzNjguOSwyNDUzLjQ3eiIvPgoJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik00NTYuNSwyNDczLjc0bC0xOC44MS0xMDIuNzJjNS4xLTIuMDMsOS42Mi0zLjA0LDEzLjU1LTMuMDRjNC40NiwwLDcuNywxLjA0LDkuNzIsMy4xMwoJCQljMi4wMiwyLjA4LDMuNDUsNiw0LjMsMTEuNzRsNi43LDQzLjU5YzIuMDIsMTMuMDcsMy4yOSwyMi4xOSwzLjgzLDI3LjM3YzAuNTMsNS4xOCwwLjg4LDcuODksMS4wNCw4LjExCgkJCWMwLjE2LDAuMjMsMC41LDAuMzQsMS4wNCwwLjM0bDEzLjIzLTkwLjU2YzMuOTMtMC43OSw5LjQxLTEuMTgsMTYuNDItMS4xOGM3LjAxLDAsMTIuNDMsMC40LDE2LjI2LDEuMThsMTIuMTIsODguMzYKCQkJYzAuMSwxLjAxLDAuMjksMS42MywwLjU2LDEuODZjMC4yNiwwLjIzLDAuNjYsMC4zNCwxLjIsMC4zNGMwLjk2LTEwLjU5LDIuNTUtMjIuNTgsNC43OC0zNS45OWw4LjkzLTU2Ljc3CgkJCWMzLjA4LTAuNjgsNi42NC0xLjAxLDEwLjY4LTEuMDFjNC44OSwwLDkuMTksMC42MiwxMi45MSwxLjg2bDEuMTIsMS41MmwtMjEuMDQsMTEyLjg2Yy02LjkxLDAuNzktMTMuMzksMS4xOC0xOS40NSwxLjE4CgkJCWMtNi4wNiwwLTEwLjM2LTAuNzktMTIuOTEtMi4zNmMtMi41NS0xLjU4LTQuMi00Ljg0LTQuOTQtOS44bC01LjQyLTM2LjY2Yy0xLjkxLTEzLjI5LTMuNDUtMjYuMzYtNC42Mi0zOS4yaC0xLjEyCgkJCWMtMS4xNywxMC45My0yLjkyLDIzLjk5LTUuMjYsMzkuMmwtNy4xNyw0Ny42NGMtNy4yMywwLjc5LTEzLjc5LDEuMTgtMTkuNjksMS4xOHMtMTAuMTItMC43OS0xMi42Ny0yLjM2CgkJCUM0NTkuMjEsMjQ4MS45Nyw0NTcuNDUsMjQ3OC43LDQ1Ni41LDI0NzMuNzR6Ii8+CgkJPHBhdGggY2xhc3M9InN0MCIgZD0iTTYxMi4xOSwyNDUwLjc3bC0wLjE2LDEyLjE2djAuMTdjNC44Ny0wLjIyLDguNzktMC4zNCwxMS43Ni0wLjM0aDM2Ljg2YzAsNC4xNy0wLjE2LDcuMzgtMC40OCw5LjYzCgkJCWMtMS4yOCw4LjY3LTYuNywxMy4wMS0xNi4yNiwxMy4wMUg2MDEuNWMtNC41NywwLTguMTYtMS40MS0xMC43Ni00LjIyYy0yLjYxLTIuODEtMy45MS02LjY0LTMuOTEtMTEuNDl2LTk5LjAxbDEuMTItMS4xOGg2OC43MQoJCQljMC42NCwzLjI3LDAuOTYsNi44MiwwLjk2LDEwLjY0YzAsMy44My0wLjc0LDcuODMtMi4yMywxMmgtNDMuMzdsMC4xNiwxMi4xN3YxMS44M2MyLjc1LTAuMTEsNi4zNS0wLjE3LDEwLjc5LTAuMTdoMjQuMjgKCQkJYzAuOTYsMy4xNiwxLjQzLDYuNzYsMS40MywxMC44MWMwLDQuMDUtMC40OCw3Ljc3LTEuNDMsMTEuMTVoLTM1LjA3VjI0NTAuNzd6Ii8+CgkJPHBhdGggY2xhc3M9InN0MCIgZD0iTTc0OS45LDI0MDUuMTVjMCwzLjcyLTAuNTMsNy4yNC0xLjU5LDEwLjU2Yy0xLjA2LDMuMzItMi40Nyw2LjMxLTQuMjIsOC45NWMtMS43NSwyLjY1LTMuODMsNC45Ni02LjIyLDYuOTMKCQkJYy0yLjM5LDEuOTctNC44NiwzLjQ2LTcuNDEsNC40OGM1LjUyLDIuMTQsOS42Miw3LjMyLDEyLjI4LDE1LjU0bDQuNzgsMTQuMzZjMS44MSw1LjYzLDQuNDYsOS44LDcuOTcsMTIuNQoJCQljLTEuNTksMi4yNS0zLjk5LDQuMTQtNy4xNyw1LjY2Yy0zLjE5LDEuNTItNi43LDIuMjgtMTAuNTIsMi4yOGMtMy44MywwLTYuOC0xLjE2LTguOTMtMy40NmMtMi4xMy0yLjMxLTQuMDktNi4zNC01LjktMTIuMDgKCQkJbC01Ljc0LTE3Ljc0Yy0xLjE3LTMuMzgtMi43NC01Ljk3LTQuNy03Ljc3Yy0xLjk3LTEuOC00LjkyLTIuNy04Ljg1LTIuN2gtNi41NHY0Mi4yNGMtMy40LDAuNjgtNy42NSwxLjAxLTEyLjc1LDEuMDEKCQkJcy05LjMtMC4zNC0xMi41OS0xLjAxdi0xMTQuNTVsMS4xMi0xLjE4YzkuMjUtMC4yMiwxNy4wMy0wLjM5LDIzLjM1LTAuNTFjNi4zMi0wLjExLDExLjI5LTAuMTcsMTQuOTEtMC4xNwoJCQljNS44NCwwLDExLjE2LDAuNzYsMTUuOTQsMi4yOGM0Ljc4LDEuNTIsOC44NSwzLjgsMTIuMiw2Ljg0YzMuMzUsMy4wNCw1Ljk1LDYuODcsNy44MSwxMS40OQoJCQlDNzQ4Ljk3LDIzOTMuNzIsNzQ5LjksMjM5OS4wNyw3NDkuOSwyNDA1LjE1eiBNNjk3LjEzLDIzODguNTl2MzMuMjhjNC43OCwwLDguODctMC4wOCwxMi4yOC0wLjI1YzMuNC0wLjE3LDYuMTQtMC44NSw4LjIxLTIuMDQKCQkJYzIuMDctMS4xOSwzLjY0LTIuODYsNC43LTUuMDFjMS4wNi0yLjE1LDEuNTktNS4yNiwxLjU5LTkuMzRjMC0xMC45OC01LTE2LjQ3LTE0Ljk5LTE2LjQ3Yy0yLjQ1LDAtNC42NSwwLTYuNjIsMAoJCQlDNzAwLjM0LDIzODguNzYsNjk4LjYyLDIzODguNyw2OTcuMTMsMjM4OC41OXoiLz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNODQ5LjAyLDIzOTEuOTdsMC4xNiwxMi40OHY4MC40NWMtMy41OSwwLjY4LTcuODcsMS4wMS0xMi44MywxLjAxYy00Ljk2LDAtOS4xNC0wLjM0LTEyLjUxLTEuMDF2LTkyLjkyCgkJCWwtMTAuMiwwLjE3aC0xNi40MmMtMC42NC0zLjI5LTAuOTYtNy4wNi0wLjk2LTExLjMyYzAtNC4yNiwwLjMyLTguMDMsMC45Ni0xMS4zMmg3OC43NWMwLjg1LDIuOTUsMS4yOCw2LjUzLDEuMjgsMTAuNzMKCQkJYzAsNC4yLTEuMDYsNy4yMy0zLjE5LDkuMTFjLTIuMTMsMS44Ny01LjUzLDIuODEtMTAuMiwyLjgxaC00LjYybC0xMC4wNC0wLjE3SDg0OS4wMnoiLz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNODk0LjUzLDI0NzYuNzljLTExLjM3LTEwLjAyLTE3LjA2LTI2LjUzLTE3LjA2LTQ5LjVjMC05LjkxLDEuMDktMTguNjEsMy4yNy0yNi4xCgkJCWMyLjE4LTcuNDksNS4zMS0xMy43Nyw5LjQxLTE4Ljg0YzQuMDktNS4wNyw5LjA2LTguOSwxNC45MS0xMS40OWM1Ljg0LTIuNTksMTIuNDQtMy44OSwxOS43Ny0zLjg5YzcuMzMsMCwxMy45NSwxLjMsMTkuODUsMy44OQoJCQljNS45LDIuNTksMTAuODksNi40NSwxNC45OSwxMS41N2M0LjA5LDUuMTMsNy4yMywxMS40Myw5LjQxLDE4LjkyYzIuMTgsNy40OSwzLjI3LDE2LjE0LDMuMjcsMjUuOTNjMCw5LjgtMS4wOSwxOC40NS0zLjI3LDI1LjkzCgkJCWMtMi4xOCw3LjQ5LTUuMzIsMTMuNzctOS40MSwxOC44NGMtNC4wOSw1LjA3LTkuMDksOC45LTE0Ljk5LDExLjQ5Yy01LjksMi41OS0xMi41MSwzLjg5LTE5Ljg1LDMuODkKCQkJQzkxMi43LDI0ODcuNDMsOTAyLjYsMjQ4My44OCw4OTQuNTMsMjQ3Ni43OXogTTkwNy40NCwyNDUzLjQ3YzIuODcsOC43OSw4LjY2LDEzLjE4LDE3LjM4LDEzLjE4YzQuMzYsMCw3Ljg5LTEuMTUsMTAuNi0zLjQ2CgkJCWMyLjcxLTIuMzEsNC44My01LjI0LDYuMzgtOC43OWMxLjU0LTMuNTUsMi41OC03LjUyLDMuMTEtMTEuOTFjMC41My00LjM5LDAuOC04LjczLDAuOC0xMy4wMWMwLTMuOTQtMC4xNC04LjMzLTAuNC0xMy4xOAoJCQljLTAuMjctNC44NC0xLjA0LTkuMzgtMi4zMS0xMy42Yy0xLjI3LTQuMjItMy4yOS03Ljc3LTYuMDYtMTAuNjRjLTIuNzYtMi44Ny02LjgtNC4zMS0xMi4xMi00LjMxYy01LjEsMC05LjAxLDEuMzgtMTEuNzIsNC4xNAoJCQljLTIuNzEsMi43Ni00LjczLDYuMTctNi4wNiwxMC4yMmMtMS4zMyw0LjA1LTIuMTUsOC4zNi0yLjQ3LDEyLjkzYy0wLjMyLDQuNTYtMC40OCw4LjU5LTAuNDgsMTIuMDhjMCw1LjE4LDAuMjQsOS44LDAuNzIsMTMuODUKCQkJQzkwNS4yOSwyNDQ1LjAyLDkwNi4xNiwyNDQ5LjE5LDkwNy40NCwyNDUzLjQ3eiIvPgoJCTxnPgoJCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMjkxLjM3LDI1OTguNzRoLTEyLjYzdjM2LjE2Yy0zLjM4LDAuNjgtNy42LDEuMDEtMTIuNjcsMS4wMWMtNS4xOCwwLTkuNC0wLjM0LTEyLjY3LTEuMDF2LTExNC41NQoJCQkJbDEuMTItMS4xOGM5LjI1LTAuMjIsMTYuOTItMC4zOSwyMy4wNC0wLjUxYzYuMTEtMC4xMSwxMC43Ni0wLjE3LDEzLjk1LTAuMTdjNS44NCwwLDExLjE4LDAuODQsMTYuMDIsMi41MwoJCQkJYzQuODMsMS42OSw4Ljk1LDQuMjIsMTIuMzUsNy42YzMuNCwzLjM4LDYuMDMsNy41OCw3Ljg5LDEyLjU5YzEuODYsNS4wMSwyLjc5LDEwLjc5LDIuNzksMTcuMzJjMCw2LjUzLTAuOTYsMTIuMzEtMi44OCwxNy4zMgoJCQkJYy0xLjkyLDUuMDEtNC41OCw5LjIxLTgsMTIuNTljLTMuNDEsMy4zOC03LjU0LDUuOTQtMTIuMzksNy42OUMzMDIuNDMsMjU5Ny44NywyOTcuMTIsMjU5OC43NCwyOTEuMzcsMjU5OC43NHogTTI3OC43NCwyNTM5LjEKCQkJCXYzOS4zN2MyLjk5LTAuMTEsNS4zNy0wLjIsNy4xNC0wLjI1YzEuNzYtMC4wNSwyLjkxLTAuMDgsMy40NS0wLjA4YzIuODksMCw1LjI5LTAuNTMsNy4yMi0xLjZjMS45Mi0xLjA3LDMuNDctMi40OCw0LjY1LTQuMjIKCQkJCWMxLjE4LTEuNzQsMi4wMy0zLjgsMi41Ny02LjE3YzAuNTMtMi4zNywwLjgtNC44NCwwLjgtNy40M2MwLTIuNDgtMC4yNy00LjktMC44LTcuMjdjLTAuNTQtMi4zNi0xLjM2LTQuNDUtMi40OS02LjI1CgkJCQljLTEuMTItMS44LTIuNTktMy4yNC00LjQxLTQuMzFjLTEuODItMS4wNy0zLjk2LTEuNi02LjQyLTEuNmMtMi40NiwwLTQuNjUsMC02LjU4LDAKCQkJCUMyODEuOTUsMjUzOS4yNywyODAuMjMsMjUzOS4yMSwyNzguNzQsMjUzOS4xeiIvPgoJCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMzU1LjU2LDI2MjYuNzljLTExLjM3LTEwLjAyLTE3LjA2LTI2LjUzLTE3LjA2LTQ5LjVjMC05LjkxLDEuMDktMTguNjEsMy4yNy0yNi4xCgkJCQljMi4xOC03LjQ5LDUuMzEtMTMuNzcsOS40MS0xOC44NGM0LjA5LTUuMDcsOS4wNi04LjksMTQuOTEtMTEuNDljNS44NC0yLjU5LDEyLjQ0LTMuODksMTkuNzctMy44OWM3LjMzLDAsMTMuOTUsMS4zLDE5Ljg1LDMuODkKCQkJCWM1LjksMi41OSwxMC44OSw2LjQ1LDE0Ljk5LDExLjU3YzQuMDksNS4xMyw3LjIzLDExLjQzLDkuNDEsMTguOTJjMi4xOCw3LjQ5LDMuMjcsMTYuMTQsMy4yNywyNS45M2MwLDkuOC0xLjA5LDE4LjQ1LTMuMjcsMjUuOTMKCQkJCWMtMi4xOCw3LjQ5LTUuMzIsMTMuNzctOS40MSwxOC44NGMtNC4wOSw1LjA3LTkuMDksOC45LTE0Ljk5LDExLjQ5Yy01LjksMi41OS0xMi41MSwzLjg5LTE5Ljg1LDMuODkKCQkJCUMzNzMuNzMsMjYzNy40MywzNjMuNjQsMjYzMy44OCwzNTUuNTYsMjYyNi43OXogTTM2OC40NywyNjAzLjQ3YzIuODcsOC43OSw4LjY2LDEzLjE4LDE3LjM4LDEzLjE4YzQuMzYsMCw3Ljg5LTEuMTUsMTAuNi0zLjQ2CgkJCQljMi43MS0yLjMxLDQuODMtNS4yNCw2LjM4LTguNzljMS41NC0zLjU1LDIuNTgtNy41MiwzLjExLTExLjkxYzAuNTMtNC4zOSwwLjgtOC43MywwLjgtMTMuMDFjMC0zLjk0LTAuMTMtOC4zMy0wLjQtMTMuMTgKCQkJCWMtMC4yNy00Ljg0LTEuMDQtOS4zOC0yLjMxLTEzLjZjLTEuMjctNC4yMi0zLjI5LTcuNzctNi4wNi0xMC42NGMtMi43Ni0yLjg3LTYuOC00LjMxLTEyLjEyLTQuMzFjLTUuMSwwLTkuMDEsMS4zOC0xMS43Miw0LjE0CgkJCQljLTIuNzEsMi43Ni00LjczLDYuMTctNi4wNiwxMC4yMmMtMS4zMyw0LjA1LTIuMTUsOC4zNi0yLjQ3LDEyLjkzYy0wLjMyLDQuNTYtMC40OCw4LjU5LTAuNDgsMTIuMDhjMCw1LjE4LDAuMjQsOS44LDAuNzIsMTMuODUKCQkJCUMzNjYuMzIsMjU5NS4wMiwzNjcuMiwyNTk5LjE5LDM2OC40NywyNjAzLjQ3eiIvPgoJCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNDM3LjI2LDI2MjQuOTNjMC4zMi0zLjcyLDEuNDEtNy40MywzLjI3LTExLjE1YzEuODYtMy43Miw0LjA3LTYuNzYsNi42Mi05LjEyCgkJCQljMTEuMzcsNy4zMiwyMi4xNiwxMC45OCwzMi4zNiwxMC45OGM0LjQ2LDAsNy43My0xLjA3LDkuOC0zLjIxYzIuMDctMi4xNCwzLjExLTQuNzksMy4xMS03Ljk0YzAtNS4yOS0zLjM1LTkuNDYtMTAuMDQtMTIuNQoJCQkJbC0xOC44MS04LjQ1Yy03LjMzLTMuNDktMTIuOTctNy42OS0xNi45LTEyLjU5Yy0zLjkzLTQuOS01LjktMTEuMTItNS45LTE4LjY3YzAtNS4xOCwwLjk4LTkuOTEsMi45NS0xNC4xOQoJCQkJYzEuOTctNC4yOCw0LjczLTgsOC4yOS0xMS4xNWMzLjU2LTMuMTUsNy43OC01LjYsMTIuNjctNy4zNWM0Ljg5LTEuNzQsMTAuMzEtMi42MiwxNi4yNi0yLjYyYzExLjksMCwyMy45MSwzLjIxLDM2LjAzLDkuNjMKCQkJCWMtMC41Myw4LjY3LTMuNCwxNS40My04LjYxLDIwLjI3Yy0xMC44NC01LjUyLTIwLjQxLTguMjgtMjguNy04LjI4Yy00LjI1LDAtNy40NCwxLjAxLTkuNTYsMy4wNGMtMi4xMywyLjAzLTMuMTksNC4zNC0zLjE5LDYuOTMKCQkJCWMwLDQuMzksMy4xMyw3Ljk0LDkuNDEsMTAuNjRsMTkuMTMsOC42MmM4LjA4LDMuNjEsMTQuMTEsOC4yMiwxOC4wOSwxMy44NWMzLjk5LDUuNjMsNS45OCwxMi4xNiw1Ljk4LDE5LjYKCQkJCWMwLDUuMy0wLjksMTAuMTQtMi43MSwxNC41M2MtMS44MSw0LjM5LTQuNDksOC4xOS04LjA1LDExLjRjLTMuNTYsMy4yMS04LDUuNzItMTMuMzEsNy41MmMtNS4zMiwxLjgtMTEuNTMsMi43LTE4LjY1LDIuNwoJCQkJQzQ2Mi45OCwyNjM3LjQzLDQ0OS44LDI2MzMuMjcsNDM3LjI2LDI2MjQuOTN6Ii8+CgkJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik01ODAuNTksMjU0MS45N2wwLjE2LDEyLjQ4djgwLjQ1Yy0zLjU5LDAuNjgtNy44NywxLjAxLTEyLjgzLDEuMDFjLTQuOTYsMC05LjE0LTAuMzQtMTIuNTEtMS4wMXYtOTIuOTIKCQkJCWwtMTAuMiwwLjE3aC0xNi40MmMtMC42NC0zLjI5LTAuOTYtNy4wNi0wLjk2LTExLjMyczAuMzItOC4wMywwLjk2LTExLjMyaDc4Ljc1YzAuODUsMi45NSwxLjI4LDYuNTMsMS4yOCwxMC43MwoJCQkJYzAsNC4yLTEuMDYsNy4yMy0zLjE5LDkuMTFjLTIuMTMsMS44Ny01LjUzLDIuODEtMTAuMiwyLjgxaC00LjYybC0xMC4wNC0wLjE3SDU4MC41OXoiLz4KCQkJPHBhdGggY2xhc3M9InN0MCIgZD0iTTY1NS43OSwyNTY5LjM0bDI1LjAzLTAuMTdjMTEuMjYsMCwxNi45LDUuNjMsMTYuOSwxNi45djQ0LjQzYy0xMy43MSw0LjYyLTI4LjExLDYuOTMtNDMuMiw2LjkzCgkJCQljLTcuNjUsMC0xNC40My0xLjM1LTIwLjMzLTQuMDVjLTUuOS0yLjctMTAuODQtNi41OS0xNC44My0xMS42NmMtMy45OS01LjA3LTYuOTktMTEuMjktOS4wMS0xOC42NwoJCQkJYy0yLjAyLTcuMzgtMy4wMy0xNS43NC0zLjAzLTI1LjA5YzAtMTAuMjUsMS40MS0xOS4xOCw0LjIyLTI2Ljc4YzIuODEtNy42LDYuNTktMTMuOTQsMTEuMzItMTkuMDEKCQkJCWM0LjczLTUuMDcsMTAuMTgtOC44NywxNi4zNC0xMS40YzYuMTYtMi41MywxMi41OS0zLjgsMTkuMjktMy44YzEzLjgxLDAsMjYuNzgsNC4wNSwzOC45LDEyLjE2Yy0wLjExLDEuOC0wLjUxLDMuNjMtMS4yLDUuNDkKCQkJCWMtMC42OSwxLjg2LTEuNTQsMy42Ni0yLjU1LDUuNDFjLTEuMDEsMS43NS0yLjE4LDMuMzItMy41MSw0LjczYy0xLjMzLDEuNDEtMi42OCwyLjYyLTQuMDYsMy42MwoJCQkJYy04LjgyLTYuMDgtMTcuNzUtOS4xMi0yNi43OC05LjEyYy0xNy4zMiwwLTI1Ljk4LDEyLjg0LTI1Ljk4LDM4LjUyYzAsMjUuNTcsOC44NywzOC4zNSwyNi42MiwzOC4zNWMyLjQ0LDAsNC44MS0wLjExLDcuMDktMC4zNAoJCQkJYzIuMjgtMC4yMyw0LjU0LTAuNTYsNi43OC0xLjAxdi0xMS4zMmMwLTIuNTksMC4wMi00Ljg0LDAuMDgtNi43NmMwLjA1LTEuOTEsMC4xMy0zLjU1LDAuMjQtNC45aC03Ljk3CgkJCQljLTQuNTcsMC03LjczLTAuOTMtOS40OS0yLjc5Yy0xLjc1LTEuODYtMi42My00Ljc2LTIuNjMtOC43QzY1NC4wMywyNTc2Ljk1LDY1NC42MiwyNTczLjI5LDY1NS43OSwyNTY5LjM0eiIvPgoJCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNzkwLjA5LDI1NTUuMTVjMCwzLjcyLTAuNTMsNy4yNC0xLjU5LDEwLjU2Yy0xLjA2LDMuMzItMi40Nyw2LjMxLTQuMjIsOC45NQoJCQkJYy0xLjc1LDIuNjUtMy44Myw0Ljk2LTYuMjIsNi45M2MtMi4zOSwxLjk3LTQuODYsMy40Ni03LjQxLDQuNDhjNS41MiwyLjE0LDkuNjIsNy4zMiwxMi4yOCwxNS41NGw0Ljc4LDE0LjM2CgkJCQljMS44MSw1LjYzLDQuNDYsOS44LDcuOTcsMTIuNWMtMS41OSwyLjI1LTMuOTksNC4xNC03LjE3LDUuNjZjLTMuMTksMS41Mi02LjcsMi4yOC0xMC41MiwyLjI4Yy0zLjgzLDAtNi44LTEuMTYtOC45My0zLjQ2CgkJCQljLTIuMTMtMi4zMS00LjA5LTYuMzQtNS45LTEyLjA4bC01Ljc0LTE3Ljc0Yy0xLjE3LTMuMzgtMi43NC01Ljk3LTQuNy03Ljc3Yy0xLjk3LTEuOC00LjkyLTIuNy04Ljg1LTIuN2gtNi41NHY0Mi4yNAoJCQkJYy0zLjQsMC42OC03LjY1LDEuMDEtMTIuNzUsMS4wMXMtOS4zLTAuMzQtMTIuNTktMS4wMXYtMTE0LjU1bDEuMTItMS4xOGM5LjI1LTAuMjIsMTcuMDMtMC4zOSwyMy4zNS0wLjUxCgkJCQljNi4zMi0wLjExLDExLjI5LTAuMTcsMTQuOTEtMC4xN2M1Ljg0LDAsMTEuMTYsMC43NiwxNS45NCwyLjI4YzQuNzgsMS41Miw4Ljg1LDMuOCwxMi4yLDYuODRjMy4zNSwzLjA0LDUuOTUsNi44Nyw3LjgxLDExLjQ5CgkJCQlDNzg5LjE1LDI1NDMuNzIsNzkwLjA5LDI1NDkuMDcsNzkwLjA5LDI1NTUuMTV6IE03MzcuMzIsMjUzOC41OXYzMy4yOGM0Ljc4LDAsOC44Ny0wLjA4LDEyLjI4LTAuMjUKCQkJCWMzLjQtMC4xNyw2LjE0LTAuODUsOC4yMS0yLjA0YzIuMDctMS4xOSwzLjY0LTIuODYsNC43LTUuMDFjMS4wNi0yLjE1LDEuNTktNS4yNiwxLjU5LTkuMzRjMC0xMC45OC01LTE2LjQ3LTE0Ljk5LTE2LjQ3CgkJCQljLTIuNDUsMC00LjY1LDAtNi42MiwwQzc0MC41MywyNTM4Ljc2LDczOC44LDI1MzguNzEsNzM3LjMyLDI1MzguNTl6Ii8+CgkJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik04MzAuMjcsMjYwMC43N2wtMC4xNiwxMi4xNnYwLjE3YzQuODctMC4yMiw4Ljc5LTAuMzQsMTEuNzYtMC4zNGgzNi44NmMwLDQuMTctMC4xNiw3LjM4LTAuNDgsOS42MwoJCQkJYy0xLjI4LDguNjctNi43LDEzLjAxLTE2LjI2LDEzLjAxaC00Mi40MWMtNC41NywwLTguMTYtMS40MS0xMC43Ni00LjIyYy0yLjYxLTIuODEtMy45MS02LjY0LTMuOTEtMTEuNDl2LTk5LjAxbDEuMTItMS4xOGg2OC43MQoJCQkJYzAuNjQsMy4yNywwLjk2LDYuODIsMC45NiwxMC42NGMwLDMuODMtMC43NCw3LjgzLTIuMjMsMTJoLTQzLjM3bDAuMTYsMTIuMTd2MTEuODNjMi43NS0wLjExLDYuMzUtMC4xNywxMC43OS0wLjE3aDI0LjI4CgkJCQljMC45NiwzLjE1LDEuNDQsNi43NiwxLjQ0LDEwLjgxYzAsNC4wNS0wLjQ4LDcuNzctMS40NCwxMS4xNWgtMzUuMDdWMjYwMC43N3oiLz4KCQkJPHBhdGggY2xhc3M9InN0MCIgZD0iTTg4Ny4wMywyNjI0LjkzYzAuMzItMy43MiwxLjQxLTcuNDMsMy4yNy0xMS4xNWMxLjg2LTMuNzIsNC4wNy02Ljc2LDYuNjItOS4xMgoJCQkJYzExLjM3LDcuMzIsMjIuMTYsMTAuOTgsMzIuMzYsMTAuOThjNC40NiwwLDcuNzMtMS4wNyw5LjgtMy4yMWMyLjA3LTIuMTQsMy4xMS00Ljc5LDMuMTEtNy45NGMwLTUuMjktMy4zNS05LjQ2LTEwLjA0LTEyLjUKCQkJCWwtMTguODEtOC40NWMtNy4zMy0zLjQ5LTEyLjk3LTcuNjktMTYuOS0xMi41OWMtMy45My00LjktNS45LTExLjEyLTUuOS0xOC42N2MwLTUuMTgsMC45OC05LjkxLDIuOTUtMTQuMTkKCQkJCWMxLjk3LTQuMjgsNC43My04LDguMjktMTEuMTVjMy41Ni0zLjE1LDcuNzgtNS42LDEyLjY3LTcuMzVjNC44OS0xLjc0LDEwLjMxLTIuNjIsMTYuMjYtMi42MmMxMS45LDAsMjMuOTEsMy4yMSwzNi4wMyw5LjYzCgkJCQljLTAuNTMsOC42Ny0zLjQsMTUuNDMtOC42MSwyMC4yN2MtMTAuODQtNS41Mi0yMC40MS04LjI4LTI4LjctOC4yOGMtNC4yNSwwLTcuNDQsMS4wMS05LjU2LDMuMDRjLTIuMTMsMi4wMy0zLjE5LDQuMzQtMy4xOSw2LjkzCgkJCQljMCw0LjM5LDMuMTMsNy45NCw5LjQxLDEwLjY0bDE5LjEzLDguNjJjOC4wOCwzLjYxLDE0LjExLDguMjIsMTguMDksMTMuODVjMy45OSw1LjYzLDUuOTgsMTIuMTYsNS45OCwxOS42CgkJCQljMCw1LjMtMC45LDEwLjE0LTIuNzEsMTQuNTNjLTEuODEsNC4zOS00LjQ5LDguMTktOC4wNSwxMS40Yy0zLjU2LDMuMjEtOCw1LjcyLTEzLjMxLDcuNTJjLTUuMzIsMS44LTExLjUzLDIuNy0xOC42NSwyLjcKCQkJCUM5MTIuNzUsMjYzNy40Myw4OTkuNTcsMjYzMy4yNyw4ODcuMDMsMjYyNC45M3oiLz4KCQkJPGc+CgkJCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNOTg4LjA5LDI1MTUuODZ2Mi45OWgtNS40NXYxNS4wOGgtMy4zOHYtMTUuMDhoLTUuNDV2LTIuOTlIOTg4LjA5eiBNMTAwNi41MiwyNTMzLjkzbC0wLjYzLTEwLjYzCgkJCQkJYy0wLjA2LTEuNC0wLjA2LTMuMTItMC4xMy01LjA1aC0wLjE5Yy0wLjQ0LDEuNTktMC45NCwzLjcyLTEuNDQsNS4zOGwtMy4wNywxMC4wM2gtMy41MWwtMy4wNy0xMC4zCgkJCQkJYy0wLjMxLTEuMzktMC44MS0zLjUyLTEuMTktNS4xMWgtMC4xOWMwLDEuNjYtMC4wNiwzLjM5LTAuMTMsNS4wNWwtMC42MywxMC42M2gtMy4yNmwxLjI1LTE4LjA3aDUuMDhsMi45NSw4Ljg0CgkJCQkJYzAuMzgsMS40LDAuNjksMi43MiwxLjEzLDQuNThoMC4wNmMwLjQ0LTEuNjYsMC44MS0zLjE5LDEuMTktNC41MmwyLjk1LTguOWg0Ljg5bDEuMzIsMTguMDdIMTAwNi41MnoiLz4KCQkJPC9nPgoJCTwvZz4KCTwvZz4KCTxnPgoJCTxnPgoJCQk8Y2lyY2xlIGNsYXNzPSJzdDEiIGN4PSIxNzcuNTgiIGN5PSIxNzcuNTgiIHI9IjE3Ny41OCIvPgoJCTwvZz4KCQk8Zz4KCQkJPGc+CgkJCQk8cGF0aCBjbGFzcz0ic3QyIiBkPSJNMjg0LjE0LDE2OC44OWM2LjY3LTYuNTYsMTAuODgtMTUuNTUsMTAuODgtMjUuMDhjMC0xNy43Ny0xNC42LTMwLjctMzIuNjEtMjguODhsLTI3LjM4LDIuNzYKCQkJCQljLTIuODksMC4yOS01LjIzLDIuODQtNS4yMyw1LjY4djQ3Ljk2djYuMDd2NDcuOTZjMCwyLjg1LDIuMzQsNC45Miw1LjIzLDQuNjNsMjcuMzgtMi43NmMxOC4wMS0xLjgyLDMyLjYxLTE3LjcsMzIuNjEtMzUuNDZ2MAoJCQkJCUMyOTUuMDEsMTgyLjI0LDI5MC44MSwxNzQuMTEsMjg0LjE0LDE2OC44OXoiLz4KCQkJPC9nPgoJCQk8Zz4KCQkJCTxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0xMjAuODksMTE3LjdsLTI3LjM4LTIuNzdjLTE4LjAxLTEuODItMzIuNjEsMTEuMTItMzIuNjEsMjguOTFjMCw5LjU0LDQuMiwxOC41MywxMC44OCwyNS4xCgkJCQkJYy02LjY3LDUuMjItMTAuODgsMTMuMzYtMTAuODgsMjIuOXYwYzAsMTcuNzgsMTQuNiwzMy42OCwzMi42MSwzNS40OWwyNy4zOCwyLjc3YzIuODksMC4yOSw1LjIzLTEuNzgsNS4yMy00LjYzdi00OHYtNi4wOHYtNDgKCQkJCQlDMTI2LjEyLDEyMC41MywxMjMuNzgsMTE3Ljk5LDEyMC44OSwxMTcuN3oiLz4KCQkJPC9nPgoJCQk8Zz4KCQkJCTxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0xNzcuNjUsMTQwLjQ4aC0yNy4zN2MtMi44OSwwLTUuMjMsMi4zNC01LjIzLDUuMjR2NzEuMjR2Ny4yNGMwLDMuMDYsMi4xLDYuMTMsNS4xNCw2LjEzaDI3LjQ3CgkJCQkJYy0wLjI5LDUuNzEtOC4xMSwxMi42My0yNi40NSwxNC42N2wtMi4wOCwwLjE5Yy0xLjI0LDAuMTMtNC4wOCwwLTQuMDgsNS4zN3YxLjQyYzAsMi44OSwyLjI2LDUuNDQsNS4xNSw1LjQ0aDI3LjM4CgkJCQkJYzE4LjAxLDAsMzIuNjgtMTcuNDQsMzIuNjgtMzUuNDl2LTQ4Ljc0QzIxMC4yNywxNTUuMTIsMTk1LjY3LDE0MC40OCwxNzcuNjUsMTQwLjQ4eiIvPgoJCQk8L2c+CgkJPC9nPgoJPC9nPgoJPGc+CgkJPGc+CgkJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0xMDYyLjMsNzIuM3YzLjUzaC02LjQ0djE3LjhoLTMuOTl2LTE3LjhoLTYuNDNWNzIuM0gxMDYyLjN6IE0xMDg0LjA0LDkzLjYybC0wLjc0LTEyLjU0CgkJCQljLTAuMDctMS42NS0wLjA3LTMuNjktMC4xNS01Ljk2aC0wLjIyYy0wLjUyLDEuODgtMS4xMSw0LjM5LTEuNyw2LjM1bC0zLjYyLDExLjg0aC00LjE0bC0zLjYyLTEyLjE1CgkJCQljLTAuMzctMS42NS0wLjk2LTQuMTUtMS40MS02LjA0aC0wLjIyYzAsMS45Ni0wLjA3LDQtMC4xNSw1Ljk2bC0wLjc0LDEyLjU0aC0zLjg1bDEuNDgtMjEuMzNoNS45OWwzLjQ4LDEwLjQzCgkJCQljMC40NCwxLjY1LDAuODEsMy4yMSwxLjMzLDUuNDFoMC4wN2MwLjUyLTEuOTYsMC45Ni0zLjc2LDEuNDEtNS4zM2wzLjQ4LTEwLjUxaDUuNzdsMS41NSwyMS4zM0gxMDg0LjA0eiIvPgoJCTwvZz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNDY3LjM2LDE5OS43OXY0OS41MmgxMTguODhjMi4wNiwwLDQuODEsMi45MSw0LjgxLDUuMXYzMS4zMmMwLDIuMTgtMi43NSw1LjEtNC44MSw1LjFINDI0Ljc2CgkJCWMtMi4wNiwwLTQuMTItMi4xOC00LjEyLTQuMzdWNzYuNzJjMC0yLjE4LDIuMDYtNC4zNyw0LjEyLTQuMzdoMTYxLjQ4YzIuMDYsMCw0LjgxLDIuOTEsNC44MSw1LjF2MzEuMzJjMCwyLjE4LTIuNzUsNS4xLTQuODEsNS4xCgkJCUg0NjcuMzZ2NDQuNDJoMTA4LjU3YzIuMDYsMCw0LjgxLDIuOTEsNC44MSw1LjF2MzEuMzJjMCwyLjE4LTIuNzUsNS4xLTQuODEsNS4xSDQ2Ny4zNnoiLz4KCQk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNjI1LjI0LDI5MC44M2MtMi4wNiwwLTQuMTItMi4xOC00LjEyLTQuMzdWNzYuNzJjMC0yLjE4LDIuMDYtNC4zNyw0LjEyLTQuMzdoODYuOTMKCQkJYzY1LjI4LDAsMTE0LjA3LDQyLjYsMTE0LjA3LDEwOS4yNGMwLDY1LjkxLTQxLjIzLDEwOS4yNC0xMTMuMzgsMTA5LjI0SDYyNS4yNHogTTY2Ny44NCwxMTMuODZ2MTM1LjQ2aDQ1LjAxCgkJCWM0My42MywwLDY2LjY1LTI2LjIyLDY2LjY1LTY3LjczYzAtNDEuNTEtMjguMTctNjcuNzMtNjcuMzQtNjcuNzNINjY3Ljg0eiIvPgoJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik04NjAuNTYsMjkwLjgzYy0yLjA2LDAtNC4xMi0yLjE4LTQuMTItNC4zN1Y3Ni43MmMwLTIuMTgsMi4wNi00LjM3LDQuMTItNC4zN2gxMDUuNDgKCQkJYzQ2LjczLDAsNzEuNDcsMjYuMjIsNzEuNDcsNjAuMDhjMCwxNy40OC02LjUzLDMxLjMyLTE3Ljg3LDQxLjE1djAuNzNjMTYuMTUsMTAuOTIsMjUuNzcsMjguNCwyNS43Nyw1MC45OAoJCQljMCw0MS44OC0yOC44Niw2NS41NC03OC4zNCw2NS41NEg4NjAuNTZ6IE05MDMuMTcsMTEzLjg2djQ0LjQyaDU5Ljc4YzIwLjYyLDAsMjcuODMtMTAuMTksMjcuODMtMjEuODUKCQkJYzAtMTIuMzgtOS4yOC0yMi41OC0zMS4yNy0yMi41OEg5MDMuMTd6IE05NjIuMjYsMjQ5LjMxYzI2LjExLDAsMzYuNDItOC43NCwzNi40Mi0yNi4yMmMwLTE2LjAyLTExLjY4LTI2Ljk1LTM3LjQ1LTI2Ljk1aC01OC4wNwoJCQl2NTMuMTZIOTYyLjI2eiIvPgoJPC9nPgo8L2c+CjxnIGlkPSJMYXllcl8yIj4KPC9nPgo8L3N2Zz4K
+      mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - pods/exec
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - pods/status
+              verbs:
+                - get
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - create
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - serviceaccounts
+              verbs:
+                - create
+                - patch
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - services
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - mutatingwebhookconfigurations
+              verbs:
+                - get
+                - list
+                - update
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - validatingwebhookconfigurations
+              verbs:
+                - get
+                - list
+                - update
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+              verbs:
+                - get
+                - list
+                - update
+            - apiGroups:
+                - batch
+              resources:
+                - jobs
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - watch
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+                - get
+                - update
+            - apiGroups:
+                - policy
+              resources:
+                - poddisruptionbudgets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - postgresql.k8s.enterprisedb.io
+              resources:
+                - backups
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - postgresql.k8s.enterprisedb.io
+              resources:
+                - backups/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - postgresql.k8s.enterprisedb.io
+              resources:
+                - clusters
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - postgresql.k8s.enterprisedb.io
+              resources:
+                - clusters/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - postgresql.k8s.enterprisedb.io
+              resources:
+                - clusters/status
+              verbs:
+                - get
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - postgresql.k8s.enterprisedb.io
+              resources:
+                - scheduledbackups
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - postgresql.k8s.enterprisedb.io
+              resources:
+                - scheduledbackups/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - rolebindings
+              verbs:
+                - create
+                - patch
+                - update
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+              verbs:
+                - create
+                - patch
+                - update
+            - apiGroups:
+                - security.openshift.io
+              resourceNames:
+                - nonroot
+              resources:
+                - securitycontextconstraints
+              verbs:
+                - use
+          serviceAccountName: postgresql-operator-manager
+      deployments:
+        - name: postgresql-operator-controller-manager
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                control-plane: controller-manager
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  control-plane: controller-manager
+              spec:
+                containers:
+                  - args:
+                      - --enable-leader-election
+                    command:
+                      - /manager
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: WEBHOOK_CERT_DIR
+                        value: /apiserver.local.config/certificates
+                      - name: OPERATOR_IMAGE_NAME
+                        value: quay.io/enterprisedb/cloud-native-postgresql:1.1.0
+                      - name: OPERATOR_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                    image: quay.io/enterprisedb/cloud-native-postgresql:1.1.0
+                    name: manager
+                    ports:
+                      - containerPort: 9443
+                        name: webhook-server
+                        protocol: TCP
+                    resources: {}
+                imagePullSecrets:
+                  - name: postgresql-operator-pull-secret
+                serviceAccountName: postgresql-operator-manager
+                terminationGracePeriodSeconds: 10
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: true
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  keywords:
+    - postgresql
+    - postgres
+    - database
+    - sql
+    - cloud
+    - native
+    - edb
+    - enterprisedb
+    - cnp
+  links:
+    - name: Cloud Native Postgresql
+      url: https://www.enterprisedb.com/products/postgresql-on-kubernetes-ha-clusters-k8s-containers-scalable
+    - name: Documentation
+      url: https://docs.enterprisedb.io/cloud-native-postgresql/
+  maintainers:
+    - email: sales@enterprisedb.com
+      name: Sales
+    - email: support@enterprisedb.com
+      name: Support
+  maturity: stable
+  provider:
+    name: EnterpriseDB Corporation
+  version: 1.1.0
+  webhookdefinitions:
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vcluster.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - clusters
+      sideEffects: None
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-postgresql-k8s-enterprisedb-io-v1-cluster
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vclusterv1alpha1.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - clusters
+      sideEffects: None
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-postgresql-k8s-enterprisedb-io-v1alpha1-cluster
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vbackup.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - backups
+      sideEffects: None
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-postgresql-k8s-enterprisedb-io-v1-backup
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vbackupv1alpha1.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - backups
+      sideEffects: None
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-postgresql-k8s-enterprisedb-io-v1alpha1-backup
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vscheduledbackup.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - scheduledbackups
+      sideEffects: None
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-postgresql-k8s-enterprisedb-io-v1-scheduledbackup
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vscheduledbackupv1alpha1.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - scheduledbackups
+      sideEffects: None
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-postgresql-k8s-enterprisedb-io-v1alpha1-scheduledbackup
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mcluster.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - clusters
+      sideEffects: None
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-postgresql-k8s-enterprisedb-io-v1-cluster
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mclusterv1alpha1.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - clusters
+      sideEffects: None
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-postgresql-k8s-enterprisedb-io-v1alpha1-cluster
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mbackup.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - backups
+      sideEffects: None
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-postgresql-k8s-enterprisedb-io-v1-backup
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mbackupv1alpha1.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - backups
+      sideEffects: None
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-postgresql-k8s-enterprisedb-io-v1alpha1-backup
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mscheduledbackup.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - scheduledbackups
+      sideEffects: None
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-postgresql-k8s-enterprisedb-io-v1-scheduledbackup
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 9443
+      deploymentName: postgresql-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mscheduledbackupv1alpha1.kb.io
+      rules:
+        - apiGroups:
+            - postgresql.k8s.enterprisedb.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - scheduledbackups
+      sideEffects: None
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-postgresql-k8s-enterprisedb-io-v1alpha1-scheduledbackup
