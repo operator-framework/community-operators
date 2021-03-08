@@ -126,6 +126,8 @@ Test single version of operator from custom project. Follwoing will happen:
     stream: 'upstream-community-operators'
     name: 'aqua'
     version: '5.3.0'
+    repo: 'https://github.com/operator-framework/community-operators.git'
+    branch: 'master'
     operator-version-path: my/op/manifest
     package-path: my/op/aqua-operator.package.yaml
     ci-path: my/op/ci.yaml
