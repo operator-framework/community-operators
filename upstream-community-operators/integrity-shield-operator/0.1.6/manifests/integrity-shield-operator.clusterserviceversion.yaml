@@ -1,0 +1,431 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "apis.integrityshield.io/v1alpha1",
+          "kind": "IntegrityShield",
+          "metadata": {
+            "finalizers": [
+              "cleanup.finalizers.integrityshield.io"
+            ],
+            "name": "integrity-shield-server"
+          },
+          "spec": {
+            "keyConfig": [
+              {
+                "name": "sample-signer-keyconfig",
+                "secretName": "keyring-secret"
+              }
+            ],
+            "shieldConfig": {
+              "inScopeNamespaceSelector": {
+                "exclude": [
+                  "kube-*",
+                  "openshift-*"
+                ],
+                "include": [
+                  "*"
+                ]
+              }
+            },
+            "signerConfig": {
+              "policies": [
+                {
+                  "namespaces": [
+                    "*"
+                  ],
+                  "signers": [
+                    "SampleSigner"
+                  ]
+                },
+                {
+                  "scope": "Cluster",
+                  "signers": [
+                    "SampleSigner"
+                  ]
+                }
+              ],
+              "signers": [
+                {
+                  "keyConfig": "sample-signer-keyconfig",
+                  "name": "SampleSigner",
+                  "subjects": [
+                    {
+                      "email": "*"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Security
+    certified: "false"
+    containerImage: quay.io/open-cluster-management/integrity-shield-operator:0.1.6
+    createdAt: "2021-01-13T18:00:00Z"
+    description: K8s Integrity Shield is a tool for built-in preventive integrity control for regulated cloud workloads.
+    operators.operatorframework.io/builder: operator-sdk-v1.4.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://github.com/open-cluster-management/integrity-shield
+    support: Community
+  name: integrity-shield-operator.v0.1.6
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - description: IntegrityShield is the Schema for the integrityshields API
+        displayName: Integrity Shield
+        kind: IntegrityShield
+        name: integrityshields.apis.integrityshield.io
+        version: v1alpha1
+  description: |-
+    K8s Integrity Shield is a tool for built-in preventive integrity control for regulated cloud workloads. It includes signature based configuration drift prevention based on Admission Webhook on Kubernetes cluster.
+
+    K8s Integrity Shield's capabilities are
+
+    - Allow to deploy authorized application pakcages only
+    - Allow to use signed deployment params only
+    - Zero-drift in resource configuration unless whitelisted
+    - Perform all integrity verification on cluster (admission controller, not in client side)
+    - Handle variations in application packaging and deployment (Helm /Operator /YAML / OLM Channel) with no modification in app installer
+
+    ## Preparations before installation
+
+    Two preparations on cluster below must be completed before installation.
+
+    1. Create a namespace `integrity-shield-operator-system`.
+
+    2. Create secret to register signature verification key.
+
+
+    See the following example to register public verification key from your signing host. As default, export public verification key to file "pubring.gpg" and create secret "keyring-secret" on cluster by the following command. (You can define any other name in CR if you want. See [doc](README_SIGNER_CONFIG.md))
+
+    ```
+    # export key to file
+    $ gpg --export signer@enterprise.com > /tmp/pubring.gpg
+
+    # create a secret on cluster
+    $ oc create secret generic --save-config keyring-secret -n integrity-shield-operator-system --from-file=/tmp/pubring.gpg
+    ```
+
+    Default CR already includes signer configuration with filename "pubring.gpg" and secret name "keyring-secret", so all you need is to create a secret resource.
+
+
+    ## How to protect resources with signature
+
+    After installation, you can configure cluster to protect resources from creation and changes without signature.
+
+    For enabling protection, create a custom resource `ResourceSigningProfile` (RSP) that defines which resource(s) should be protected, in the same namespace as resources.
+
+    Here is an example of creating RSP for protecting resources in a namespace `secure-ns`.
+
+    ```
+    $ cat <<EOF | oc apply -n secure-ns -f -
+    apiVersion: apis.integrityshield.io/v1alpha1
+    kind: ResourceSigningProfile
+    metadata:
+      name: sample-rsp
+    spec:
+      protectRules:
+      - match:
+        - kind: ConfigMap
+        - kind: Deployment
+        - kind: Service
+    EOF
+
+    resourcesigningprofile.apis.integrityshield.io/sample-rsp created
+    ```
+
+    After creating the RSP above, any resources of kinds configmap, deployment, and service can not be created or modified without valid signature.
+
+    For example, let's see what happens when creating configmap below without signature.
+
+    ```
+    cat << EOF > /tmp/test-cm.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: test-cm
+    data:
+      key1: val1
+      key2: val2
+      key4: val4
+    EOF
+    ```
+
+    Creation of configmap is blocked, since no signature is attached to it.
+
+    ```
+    $ oc apply -f /tmp/test-cm.yaml -n secure-ns
+    Error from server: error when creating "/tmp/test-cm.yaml": admission webhook "ac-server.integrity-shield-operator-system.svc" denied the request: Signature verification is required for this request, but no signature is found. Please attach a valid signature to the annotation or by a ResourceSignature. (Request: {"kind":"ConfigMap","name":"test-cm","namespace":"secure-ns","operation":"CREATE","request.uid":"61f4aabd-df4b-4d12-90e7-11a46ee28cb0","scope":"Namespaced","userName":"IAM#cluser-user"})
+    ```
+
+    Event is reported.
+
+    ```
+    $ oc get event -n secure-ns --field-selector type=IntegrityShield
+    LAST SEEN   TYPE              REASON         OBJECT              MESSAGE
+    65s         IntegrityShield   no-signature   configmap/test-cm   [IntegrityShieldEvent] Result: deny, Reason: "Signature verification is required for this request, but no signature is found. Please attach a valid signature to the annotation or by a ResourceSignature.", Request: {"kind":"ConfigMap","name":"test-cm","namespace":"secure-ns","operation":"CREATE","request.uid":"46cf5fde-2b46-4819-b876-a2998043c8ef","scope":"Namespaced","userName":"IAM#cluser-user"}
+
+    ```
+
+    ### How to sign a resource
+
+    You can sign resources with the utility script, which is available from our repository. Two prerequisites for using the script on your host.
+
+    - [yq](https://github.com/mikefarah/yq) command is available.
+    - you can sign file with GPG signing key of the signer registered in preparations.
+
+    For example of singing a YAML file `/tmp/test-cm.yaml` as `signer@enterprise.com`, use the utility script as shown below. This script would modify the original input file (`/tmp/test-cm.yaml`) by adding signature, message annotations to it.
+
+    ```
+    $ curl -s https://raw.githubusercontent.com/open-cluster-management/integrity-shield/master/scripts/gpg-annotation-sign.sh | bash -s \
+      signer@enterprise.com \
+      /tmp/test-cm.yaml
+    ```
+
+    Below is the sample YAML file (`/tmp/test-cm.yaml`) with signature, message annotations.
+
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: test-cm
+      annotations:
+        integrityshield.io/message: YXBpVmVyc2lvbjogdjEKa2luZDogQ29uZmlnTW...
+        integrityshield.io/signature: LS0tLS1CRUdJTiBQR1AgU0lHTkFUVVJFLS0t...
+    data:
+      key1: val1
+      key2: val2
+      key4: val4
+    ```
+
+    Creating configmap with this YAML file should be successful because signature in annotation is valid.
+
+    ```
+    $ oc create -f /tmp/test-cm.yaml -n secure-ns
+    configmap/test-cm created
+    ```
+
+    ## Supported Platforms
+
+    K8s Integrity Shield works as Kubernetes Admission Controller using Mutating Admission Webhook, and it can run on any Kubernetes cluster by design.
+    We have verified the feasibility on the following platforms:
+
+    - [RedHat OpenShift 4.5 and 4.6](https://www.openshift.com/)
+    - [RedHat OpenShift 4.5 on IBM Cloud (ROKS)](https://www.openshift.com/products/openshift-ibm-cloud)
+    - [IBM Kuberenetes Service (IKS)](https://www.ibm.com/cloud/container-service/) 1.17.14
+    - [Minikube v1.19.1](https://kubernetes.io/docs/setup/learning-environment/minikube/)
+  displayName: K8s Integrity Shield Operator
+  icon:
+    - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTkuMzQgMTk1LjE2Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6IzI5NzdmZjt9LmNscy0ye2ZpbGw6I2ZmZjt9LmNscy0ze2ZpbGw6I2JhYzVmNzt9PC9zdHlsZT48L2RlZnM+PGcgaWQ9IkxheWVyXzIiIGRhdGEtbmFtZT0iTGF5ZXIgMiI+PGcgaWQ9IkxheWVyXzEtMiIgZGF0YS1uYW1lPSJMYXllciAxIj48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik05Mi41MywxLjYzLDI1LjgsMzMuNzdhMTYuNDUsMTYuNDUsMCwwLDAtOC45MSwxMS4xNkwuNDEsMTE3LjE0YTE2LjQ4LDE2LjQ4LDAsMCwwLDMuMTgsMTMuOTJMNDkuNzcsMTg5YTE2LjQ2LDE2LjQ2LDAsMCwwLDEyLjg2LDYuMTlIMTM2LjdBMTYuNDgsMTYuNDgsMCwwLDAsMTQ5LjU3LDE4OWw0Ni4xOC01Ny45MWExNi40NCwxNi40NCwwLDAsMCwzLjE3LTEzLjkyTDE4Mi40NCw0NC45M2ExNi40NCwxNi40NCwwLDAsMC04LjktMTEuMTZMMTA2LjgxLDEuNjNBMTYuNDgsMTYuNDgsMCwwLDAsOTIuNTMsMS42M1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xNTYuMDYsNjMuNTdhOC4xMiw4LjEyLDAsMCwwLTQuOTEtNi4zbC00OC4zOS0yMGE4LjEsOC4xLDAsMCwwLTYuMTksMGwtNDguMzksMjBhOC4xNiw4LjE2LDAsMCwwLTQuOTEsNi4zLDEwNy4yOSwxMDcuMjksMCwwLDAsMy4zOSw0NS4xNiw5NC44MSw5NC44MSwwLDAsMCwxNS44MiwzMC44LDEwOC4zNywxMDguMzcsMCwwLDAsMzMuMjUsMjgsOC4xLDguMSwwLDAsMCw3Ljg3LDBjMTMuNTQtNy41NiwyNC43My0xNywzMy4yNS0yOGE5NC45NCw5NC45NCwwLDAsMCwxNS44My0zMC44LDEwNy40MSwxMDcuNDEsMCwwLDAsMy4zOC00NS4xNloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik05OS42NywxNjguNTVhOCw4LDAsMCwwLDMuOTMtMWMxMy41NC03LjU2LDI0LjczLTE3LDMzLjI1LTI4YTk0Ljk0LDk0Ljk0LDAsMCwwLDE1LjgzLTMwLjgsMTA3LjQxLDEwNy40MSwwLDAsMCwzLjM4LTQ1LjE2aDBhOC4xMiw4LjEyLDAsMCwwLTQuOTEtNi4zbC00OC4zOS0yMCIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTExNS44MSw1OC4yMywxMDIsNTIuNTJhNi4xOCw2LjE4LDAsMCwwLTQuNzQsMEw2MC4yMyw2Ny44OGE2LjIyLDYuMjIsMCwwLDAtMy43Niw0LjgyLDgyLjM0LDgyLjM0LDAsMCwwLDIuNTksMzQuNTksNzIuODMsNzIuODMsMCwwLDAsMTIuMTIsMjMuNiw4Mi44OCw4Mi44OCwwLDAsMCwyNS40NywyMS40NCw2LjIyLDYuMjIsMCwwLDAsNiwwLDgyLjg4LDgyLjg4LDAsMCwwLDI1LjQ3LTIxLjQ0LDcyLjY0LDcyLjY0LDAsMCwwLDEyLjEyLTIzLjYsODIuMjIsODIuMjIsMCwwLDAsMi42LTM0LjU5aDBhNi4yMiw2LjIyLDAsMCwwLTMuNzYtNC44MmwtOS42LTQiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik05OS42NywxNTQuMTFhNy4yMSw3LjIxLDAsMCwxLTMuNS0uOUE4NCw4NCwwLDAsMSw3MC4zOSwxMzEuNWE3My42LDczLjYsMCwwLDEtMTIuMjgtMjMuOTIsODMuMjQsODMuMjQsMCwwLDEtMi42My0zNUE3LjIzLDcuMjMsMCwwLDEsNTkuODUsNjdMOTYuOTEsNTEuNmE3LjIxLDcuMjEsMCwwLDEsNS41MSwwbDEzLjc3LDUuNy0uNzcsMS44NS0xMy43Ni01LjdhNS4xOCw1LjE4LDAsMCwwLTQsMEw2MC42MSw2OC44YTUuMTksNS4xOSwwLDAsMC0zLjE1LDRBODEuMjQsODEuMjQsMCwwLDAsNjAsMTA3YTcxLjgzLDcxLjgzLDAsMCwwLDEyLDIzLjI3LDgxLjkyLDgxLjkyLDAsMCwwLDI1LjE2LDIxLjE4LDUuMzIsNS4zMiwwLDAsMCw1LDAsODEuODUsODEuODUsMCwwLDAsMjUuMTctMjEuMTksNzEuNjYsNzEuNjYsMCwwLDAsMTItMjMuMjYsODEuMjksODEuMjksMCwwLDAsMi41Ny0zNC4xNyw1LjIyLDUuMjIsMCwwLDAtMy4xNi00bC05LjU5LTQsLjc2LTEuODQsOS42LDRhNy4yNSw3LjI1LDAsMCwxLDQuMzcsNS42LDgzLjQxLDgzLjQxLDAsMCwxLTIuNjMsMzUsNzMuNjMsNzMuNjMsMCwwLDEtMTIuMjksMjMuOTIsODQsODQsMCwwLDEtMjUuNzcsMjEuNzFBNy4yMSw3LjIxLDAsMCwxLDk5LjY3LDE1NC4xMVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik05NS44LDEyMC4zNmE0LDQsMCwwLDEtMi42Ni0xTDgwLjc3LDEwOEE0LDQsMCwxLDEsODYsMTAxLjlsLjE0LjEyLDksOC40NCwxNy40LTIzLjg0YTQsNCwwLDEsMSw2Ljc4LDQuMjgsMy43NywzLjc3LDAsMCwxLS4zMS40MmwtMjAsMjcuNDZhNCw0LDAsMCwxLTIuODEsMS42M1oiLz48L2c+PC9nPjwvc3ZnPg==
+      mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - mutatingwebhookconfigurations
+              verbs:
+                - '*'
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+              verbs:
+                - '*'
+            - apiGroups:
+                - apis.integrityshield.io
+              resources:
+                - helmreleasemetadatas
+                - integrityshields
+                - integrityshields/finalizers
+                - resourcesignatures
+                - resourcesigningprofiles
+                - shieldconfigs
+                - signerconfigs
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+                - events
+                - secrets
+                - serviceaccounts
+                - services
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - policy
+              resources:
+                - podsecuritypolicies
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - clusterrolebindings
+                - clusterroles
+                - rolebindings
+                - roles
+              verbs:
+                - '*'
+          serviceAccountName: integrity-shield-operator-manager
+      deployments:
+        - name: integrity-shield-operator-controller-manager
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                control-plane: controller-manager
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  control-plane: controller-manager
+              spec:
+                containers:
+                  - args:
+                      - --enable-leader-election
+                    command:
+                      - /ishield-op-app/manager
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                    image: quay.io/open-cluster-management/integrity-shield-operator:0.1.6
+                    imagePullPolicy: Always
+                    lifecycle:
+                      postStart:
+                        exec:
+                          command:
+                            - bash
+                            - -c
+                            - /ishield-op-app/scripts/poststart.sh || true
+                      preStop:
+                        exec:
+                          command:
+                            - /ishield-op-app/scripts/prestop.sh
+                    livenessProbe:
+                      exec:
+                        command:
+                          - ls
+                    name: manager
+                    readinessProbe:
+                      exec:
+                        command:
+                          - ls
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 500Mi
+                      requests:
+                        cpu: 200m
+                        memory: 200Mi
+                imagePullSecrets:
+                  - name: mappregkey
+                serviceAccountName: integrity-shield-operator-manager
+                terminationGracePeriodSeconds: 10
+      permissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps/status
+              verbs:
+                - get
+                - update
+                - patch
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+          serviceAccountName: integrity-shield-operator-manager
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+  keywords:
+    - integrity
+  links:
+    - name: K8s Integrity Shield Operator
+      url: https://github.com/open-cluster-management/integrity-shield
+    - name: Operator Documentation
+      url: https://github.com/open-cluster-management/integrity-shield/tree/master/docs
+  maintainers:
+    - email: acm-contact@redhat.com
+      name: Community
+  maturity: alpha
+  provider:
+    name: Community
+  replaces: integrity-shield-operator.v0.1.5
+  version: 0.1.6
