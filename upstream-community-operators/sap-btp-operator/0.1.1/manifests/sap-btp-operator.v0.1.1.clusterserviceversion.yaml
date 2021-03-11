@@ -1,0 +1,501 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: sap-btp-operator.v0.1.1
+  namespace: placeholder
+  annotations:
+    alm-examples: >-
+      [{"apiVersion":"services.cloud.sap.com/v1alpha1","kind":"ServiceBinding","metadata":{"name":"sample-binding"},"spec":{"serviceInstanceName":"sample-instance"}},{"apiVersion":"services.cloud.sap.com/v1alpha1","kind":"ServiceInstance","metadata":{"name":"sample-instance"},"spec":{"serviceOfferingName":"mongo","servicePlanName":"small"}}]
+    categories: Cloud Provider
+    certified: 'false'
+    createdAt: ''
+    description: >-
+      The SAP Business Technology Platform Operator helps you provision SAP resources and
+      connect your applications to them from within Kubernetes.
+    containerImage: 'ghcr.io/sap/sap-btp-service-operator/controller:v0.1.1'
+    support: 'https://github.com/SAP/sap-btp-service-operator/issues'
+    capabilities: Basic Install
+    repository: 'https://github.com/SAP/sap-btp-service-operator'
+    displayName: SAP Business Technology Platform Operator
+spec:
+  displayName: SAP Business Technology Platform Operator
+  description: >
+    ## Overview
+
+    SAP BTP service operator enables developers to connect Kubernetes clusters to SAP BTP accounts and to consume SAP BTP services within the clusters by using Kubernetes native tools.
+
+
+    ## Prerequisites
+
+    1. SAP BTP [Global Account](https://help.sap.com/viewer/65de2977205c403bbc107264b8eccf4b/Cloud/en-US/d61c2819034b48e68145c45c36acba6e.html) and [Subaccount](https://help.sap.com/viewer/65de2977205c403bbc107264b8eccf4b/Cloud/en-US/55d0b6d8b96846b8ae93b85194df0944.html)
+
+    2. Service Management Control (SMCTL) Command Line Interface. See [Using the SMCTL](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/0107f3f8c1954a4e96802f556fc807e3.html).
+
+    3. [Kubernetes cluster](https://kubernetes.io/) running version 1.17 or higher
+
+    4. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.17 or higher
+
+    ## Setup
+
+    1. Obtain the access credentials for the SAP BTP service operator:
+
+       a. Using the SAP BTP cockpit or CLI, create an instance of the SAP Cloud Service Management service (technical name: `service-manager`) with the plan:
+              `service-operator-access`
+
+       For more information about creating service instances, see:
+
+        * [Creating Service Instances Using the SAP BTP Cockpit](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/bf71f6a7b7754dbd9dfc2569791ccc96.html)
+
+        * [Creating Service Instances using SMCTL](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/b327b66b711746b085ec5d2ea16e608e.html)
+
+        b. Create a binding to the created service instance.
+
+        For more information about creating service bindings, see:
+
+         * [Creating Service Bindings Using the SAP BTP Cockpit](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/55b31ea23c474f6ba2f64ee4848ab1b3.html)
+
+         * [Creating Service Bindings Using SMCTL](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/f53ff2634e0a46d6bfc72ec075418dcd.html).
+
+        c. Retrieve the generated access credentials from the created binding:
+
+          The example of the credentials in the binding object
+
+           ```json
+            {
+                "clientid": "xxxxxxx",
+                "clientsecret": "xxxxxxx",
+                "url": "https://mysubaccount.authentication.eu10.hana.ondemand.com",
+                "xsappname": "b15166|service-manager!b1234",
+                "sm_url": "https://service-manager.cfapps.eu10.hana.ondemand.com"
+            }
+           ```
+    2. Download installation [script](https://github.com/SAP/sap-btp-service-operator/blob/main/hack/setup_operator_env.sh)
+
+    3. Run `setup_operator_env <clientid> <clientsecret> <sm_url> <url>`
+
+    ## Using the SAP BTP Service Operator
+
+    #### Step 1: Create a service instance
+
+    1. To create an instance of a service offered by SAP BTP,  first create a `ServiceInstance` custom-resource file:
+        ```yaml
+            apiVersion: services.cloud.sap.com/v1alpha1
+            kind: ServiceInstance
+            metadata:
+                name: my-service-instance
+            spec:
+                serviceOfferingName: <offering>
+                servicePlanName: <plan>
+           ```
+
+        *   `<offering>` - The name of the SAP BTP service that you want to create.
+               To learn more about viewing and managing the available services for your subaccount in the SAP BTP cockpit, see [Service Marketplace](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/affcc245c332433ba71917ff715b9971.html).
+
+                Tip: Use the *Environment* filter to get all offerings that are relevant for Kubernetes.
+        *   `<plan>` - The plan of the selected service offering that you want to create.
+
+    2.  Apply the custom-resource file in your cluster to create the instance.
+
+          ```bash
+          kubectl apply -f path/to/my-service-instance.yaml
+          ```
+
+    3.  Check that the status of the service in your cluster is **Created**.
+
+        ```bash
+        kubectl get serviceinstances
+        NAME                  OFFERING          PLAN        STATUS    AGE
+        my-service-instance   <offering>        <plan>      Created   44s
+        ```
+
+    #### Step 2: Create a Service Binding
+
+    1. To get access credentials to your service instance and make it available in the cluster so that your applications can use it, create a `ServiceBinding` custom resource, and set the `serviceInstanceName` field to the name of the `ServiceInstance` resource you created.
+
+          ```yaml
+              apiVersion: services.cloud.sap.com/v1alpha1
+              kind: ServiceBinding
+              metadata:
+                  name: my-binding
+              spec:
+                  serviceInstanceName: my-service-instance
+          ```
+
+    2.  Apply the custom resource file in your cluster to create the binding.
+
+          ```bash
+          kubectl apply -f path/to/my-binding.yaml
+          ```
+
+    3.  Check that your binding status is **Created**.
+
+          ```bash
+          kubectl get servicebindings
+          NAME         INSTANCE              STATUS    AGE
+          my-binding   my-service-instance   Created   16s
+
+          ```
+
+    4.  Check that a secret with the same name as the name of your binding is created. The secret contains the service credentials that apps in your cluster can use to access the service.
+
+          ```bash
+          kubectl get secrets
+          NAME         TYPE     DATA   AGE
+          my-binding   Opaque   5      32s
+          ```
+
+      See [Using Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets) to learn about different options on how to use the credentials from your application running in the Kubernetes cluster,
+
+
+
+  maturity: stable
+  version: 0.1.1
+  skips: [ ]
+  minKubeVersion: ''
+  keywords:
+    - sap
+    - sapbtp
+  maintainers:
+    - name: SAP Support
+      email: DL_53578F29FD84A02032000069@global.corp.sap
+  provider:
+    name: SAP
+  labels: { }
+  selector:
+    matchLabels: { }
+  links:
+    - name: SAP Business Technology Platform Operator
+      url: 'https://github.com/SAP/sap-btp-service-operator'
+  icon:
+    - base64data: >-
+        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
+      mediatype: image/png
+  customresourcedefinitions:
+    owned:
+      - description: Schema to create a service instance in Service Manager.
+        displayName: ServiceInstance
+        group: services.cloud.sap.com
+        kind: ServiceInstance
+        name: serviceinstances.services.cloud.sap.com
+        version: v1alpha1
+        resources:
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: ConfigMap
+            name: ""
+            version: v1
+          - kind: ServiceBinding
+            name: ""
+            version: v1alpha1
+          - kind: ServiceInstance
+            name: ""
+            version: v1alpha1
+      - description: Schema to create a service binding in Service Manage
+        displayName: ServiceBinding
+        group: services.cloud.sap.com
+        kind: ServiceBinding
+        name: servicebindings.services.cloud.sap.com
+        version: v1alpha1
+        resources:
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: ConfigMap
+            name: ""
+            version: v1
+          - kind: ServiceBinding
+            name: ""
+            version: v1alpha1
+          - kind: ServiceInstance
+            name: ""
+            version: v1alpha1
+    required: [ ]
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+        - rules:
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+                - get
+                - list
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps/status
+              verbs:
+                - get
+                - update
+                - patch
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+          serviceAccountName: default
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - services.cloud.sap.com
+              resources:
+                - servicebindings
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - services.cloud.sap.com
+              resources:
+                - servicebindings/finalizers
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - services.cloud.sap.com
+              resources:
+                - servicebindings/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - services.cloud.sap.com
+              resources:
+                - serviceinstances
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - services.cloud.sap.com
+              resources:
+                - serviceinstances/finalizers
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - services.cloud.sap.com
+              resources:
+                - serviceinstances/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - authentication.k8s.io
+              resources:
+                - tokenreviews
+              verbs:
+                - create
+            - apiGroups:
+                - authorization.k8s.io
+              resources:
+                - subjectaccessreviews
+              verbs:
+                - create
+            - nonResourceURLs:
+                - /metrics
+              verbs:
+                - get
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+                - get
+                - list
+                - update
+          serviceAccountName: default
+      deployments:
+        - name: sap-btp-operator-controller-manager
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                control-plane: controller-manager
+            strategy: { }
+            template:
+              metadata:
+                creationTimestamp: null
+                labels:
+                  control-plane: controller-manager
+              spec:
+                containers:
+                  - args:
+                      - --metrics-addr=127.0.0.1:8080
+                      - --enable-leader-election
+                    command:
+                      - /manager
+                    env:
+                      - name: ENABLE_WEBHOOKS
+                        value: "true"
+                      - name: CLUSTER_ID
+                        valueFrom:
+                          configMapKeyRef:
+                            key: CLUSTER_ID
+                            name: sap-btp-operator-config
+                            optional: true
+                      - name: MANAGEMENT_NAMESPACE
+                        valueFrom:
+                          configMapKeyRef:
+                            key: MANAGEMENT_NAMESPACE
+                            name: sap-btp-operator-config
+                            optional: true
+                    image: ghcr.io/sap/sap-btp-service-operator/controller:v0.1.1
+                    name: manager
+                    ports:
+                    - containerPort: 9443
+                      name: webhook-server
+                      protocol: TCP
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 175Mi
+                      requests:
+                        cpu: 100m
+                        memory: 20Mi
+                  - args:
+                      - --secure-listen-address=0.0.0.0:8443
+                      - --upstream=http://127.0.0.1:8080/
+                      - --logtostderr=true
+                      - --v=10
+                    image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                    name: kube-rbac-proxy
+                    ports:
+                      - containerPort: 8443
+                        name: https
+                    resources: { }
+                terminationGracePeriodSeconds: 10
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: false
+    - type: MultiNamespace
+      supported: false
+    - type: AllNamespaces
+      supported: true
+  apiservicedefinitions: { }
+  webhookdefinitions:
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 443
+      deploymentName: sap-btp-operator-controller-manager
+      failurePolicy: Fail
+      generateName: vwebhook.kb.io
+      rules:
+        - apiGroups:
+            - services.cloud.sap.com
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - servicebindings
+      sideEffects: None
+      targetPort: 9443
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-services-cloud-sap-com-v1alpha1-servicebinding1
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 443
+      deploymentName: sap-btp-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mwebhook.kb.io
+      rules:
+        - apiGroups:
+            - services.cloud.sap.com
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - serviceinstances
+      sideEffects: None
+      targetPort: 9443
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-services-cloud-sap-com-v1alpha1-serviceinstance
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 443
+      deploymentName: sap-btp-operator-controller-manager
+      failurePolicy: Fail
+      generateName: mwebhookbinding.kb.io
+      rules:
+        - apiGroups:
+            - services.cloud.sap.com
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - servicebindings
+      sideEffects: None
+      targetPort: 9443
+      type: MutatingAdmissionWebhook
+      webhookPath: /mutate-services-cloud-sap-com-v1alpha1-servicebinding

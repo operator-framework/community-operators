@@ -3,7 +3,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 <!-- **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*-->
 
-- [Overview](#overview)
+<!-- - [Overview](#overview)
 - [Accepted Contribution formats](#accepted-contribution-formats)
   - [*packagemanifest* format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)](#packagemanifest-format-mandatory-for-all-olm-versions-prior-to-0140-and-earlier-supported-on-all-available-versions)
   - [*bundle* format (supported with 0.14.0 or newer)](#bundle-format-supported-with-0140-or-newer)
@@ -31,13 +31,13 @@
   - [3. Install your Operator from OperatorHub](#3-install-your-operator-from-operatorhub)
   - [4. Verify Operator health](#4-verify-operator-health)
 - [Testing with scorecard](#testing-with-scorecard)
-- [Additional Resources](#additional-resources)
+- [Additional Resources](#additional-resources) -->
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 ## Overview
-These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework, when packaged for the Operator Lifecycle Manager. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
+These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework, when packaged for the Operator Lifecycle Manager. Although your submission will always be tested as part of the [CI](./tests-in-pr.md) you can accelerate the process by testing locally.
 
-> The tests described in this document can also be executed automatically in a single step using a [Makefile](./using-scripts.md).
+> The tests described in this document can also be executed automatically in a single step using a [test suite](./operator-test-suite.md)
 
 > A previous version of this document required quay.io, `operator-courier` and `operator-marketplace` to conduct the tests. This is no longer required.
 
@@ -104,7 +104,7 @@ my-operator
 ...
 ```
 
-In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./contributing.md#package-your-operator). We will refer to both formats distinctively below where required.
+In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./packaging-operator.md#package-your-operator). We will refer to both formats distinctively below where required.
 
 > Mixing `packagemanifest` style and `bundle` format style Operator versions in a single Operator package **is not supported**. All versions all need to be in either one or the other format.
 
@@ -189,6 +189,9 @@ $ tree .
 ```
 Run the following validation command of the `operator-sdk` from within this directory.
 
+```console
+operator-sdk bundle validate /tmp/my-operator-2.0.0-bundle/ --select-optional name=operatorhub
+```
 
 ### Using operator-sdk to validate your Operator
 
@@ -216,7 +219,7 @@ INFO[0000] All validation tests have completed successfully
 
 If there are any errors or warnings they will be displayed there. The container-tool will be automatically determined given your environment. If you want to force to use `podman` instead of `docker`, supply the `-b` switch to the `operator-sdk bundle validate command`.
 
-Any warnings here might turn into failing pipeline tests here. Please correct all issues displayed. A list of fields that are scanned can also be reviewed with [this list](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md).
+Any warnings here might turn into failing pipeline tests here. Please correct all issues displayed. A list of fields that are scanned can also be reviewed with [this list](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md).
 
 ## Publishing your Operator metadata to a catalog for testing
 
@@ -264,8 +267,8 @@ COPY upstream-community-operators manifests
 RUN /bin/initializer -o ./bundles.db
 
 FROM scratch
-COPY ["nsswitch.conf", "/etc/nsswitch.conf"]
-COPY --from=builder /build/bundles.db /bundles.db
+COPY --from=builder /etc/nsswitch.conf /etc/nsswitch.conf
+COPY --from=builder /bundles.db /bundles.db
 COPY --from=builder /bin/registry-server /registry-server
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
 EXPOSE 50051
@@ -500,7 +503,7 @@ If it does not appear in this list return to the previous step and check the log
 kubectl get logs packageserver-78c99949df-lf26p -n olm
 ```
 
-In some occassions the Operator definition is in the catalog but cannot be understood due to some malformed package/bundle content. This case the `packageserver` should present a related error message. 
+In some occassions the Operator definition is in the catalog but cannot be understood due to some malformed package/bundle content. This case the `packageserver` should present a related error message.
 If there are errors in this log please raise them in the `operator-registry` [issue tracker](https://github.com/operator-framework/operator-registry) as any problems caused by malformed bundle/packagemanifest metadata should have been caught during catalog creation.
 
 ### 4. Create an OperatorGroup
@@ -531,7 +534,7 @@ kubectl apply -f operator-group.yaml
 
 ### 5. Create a Subscription
 
-The last steps is to ask OLM to install your Operator. A `Subscription` is created to represent the intent to install an Operator and keep it updated (automatically even) with newer version from the catalog. This requires you to tell OLM which Operator, in which version from which channel you want to install and where the catalog is, that contains the Operator. 
+The last steps is to ask OLM to install your Operator. A `Subscription` is created to represent the intent to install an Operator and keep it updated (automatically even) with newer version from the catalog. This requires you to tell OLM which Operator, in which version from which channel you want to install and where the catalog is, that contains the Operator.
 
 Save the following to a file named: `operator-subscription.yaml`:
 
@@ -570,9 +573,9 @@ Watch your Operator being deployed by OLM from the catalog with the following co
 ```console
 $ kubectl get clusterserviceversion -n default -w
 NAME                     DISPLAY          VERSION   REPLACES                PHASE
-my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0   
-my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0   
-my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0   
+my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0
+my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0
+my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0
 my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0      Pending
 my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0      InstallReady
 my-operator.v2.0.0       My Operator      2.0.0     my-operator.v1.0.0      Installing
@@ -592,7 +595,7 @@ kubectl get deployment -n default
 
 #### Troubleshooting
 
-If the `ClusterServiceVersion` is in a pending or failed state, problems occurred when trying to install the Operator. There are two common sources: the components that make up the Operator and the Operator binary itself. 
+If the `ClusterServiceVersion` is in a pending or failed state, problems occurred when trying to install the Operator. There are two common sources: the components that make up the Operator and the Operator binary itself.
 
 Problems with the Operator process itself will result in a `Deployment` that is unhealthy, either due to a crashing Operator pod or other image level problems. In this case debug the `Deployment` and Operator logs for any error message. Usually there are either bugs in the Operator or insufficient permissions in the RBAC part of the bundle/package metadata which may crash poorly written Operators.
 
@@ -619,7 +622,7 @@ Events:           <none>
 kubectl describe installplan install-2c8lf -n default
 ```
 
-This will likely be a lengthy output due to the content of every component of the Operator returned. However, in the `.status` block of this object the name and health of every component is displayed. Problems with `InstallPlan` components usually stem from malformed components, insufficient permissions, collisions with existing objects etc. It usually needs to be corrected at the Operator metadata level. 
+This will likely be a lengthy output due to the content of every component of the Operator returned. However, in the `.status` block of this object the name and health of every component is displayed. Problems with `InstallPlan` components usually stem from malformed components, insufficient permissions, collisions with existing objects etc. It usually needs to be corrected at the Operator metadata level.
 
 ## Testing Operator Deployment on OpenShift
 
@@ -627,14 +630,14 @@ The process to test on OpenShift Container Platform and OKD 4.3 or newer is exac
 
 ### 1. Create the CatalogSource
 
-Create a `CatalogSource` instance in the `openshuft-marketplace` namespace to reference the Operator catalog image that contains your Operator version to test:
+Create a `CatalogSource` instance in the `openshift-marketplace` namespace to reference the Operator catalog image that contains your Operator version to test:
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: my-test-catalog
-  namespace: olm
+  namespace: openshift-marketplace
 spec:
   sourceType: grpc
   image: quay.io/myaccount/my-test-catalog:latest

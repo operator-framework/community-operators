@@ -1,0 +1,521 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "app.kiegroup.org/v1beta1",
+          "kind": "KogitoBuild",
+          "metadata": {
+            "name": "example-quarkus"
+          },
+          "spec": {
+            "gitSource": {
+              "contextDir": "process-quarkus-example",
+              "uri": "https://github.com/kiegroup/kogito-examples"
+            },
+            "type": "RemoteSource"
+          }
+        },
+        {
+          "apiVersion": "app.kiegroup.org/v1beta1",
+          "kind": "KogitoInfra",
+          "metadata": {
+            "name": "kogito-infinispan-infra"
+          },
+          "spec": {
+            "resource": {
+              "apiVersion": "infinispan.org/v1",
+              "kind": "Infinispan"
+            }
+          }
+        },
+        {
+          "apiVersion": "app.kiegroup.org/v1beta1",
+          "kind": "KogitoRuntime",
+          "metadata": {
+            "name": "process-quarkus-example"
+          },
+          "spec": {
+            "image": "quay.io/kiegroup/process-quarkus-example",
+            "replicas": 1
+          }
+        },
+        {
+          "apiVersion": "app.kiegroup.org/v1beta1",
+          "kind": "KogitoSupportingService",
+          "metadata": {
+            "name": "kogito-jobs-service"
+          },
+          "spec": {
+            "replicas": 1,
+            "serviceType": "JobsService"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Integration & Delivery
+    certified: "false"
+    containerImage: quay.io/kiegroup/kogito-cloud-operator:1.2.0
+    createdAt: "2019-08-22T13:12:22Z"
+    description: Kogito Operator for deployment and management of Kogito services.
+    operators.operatorframework.io/builder: operator-sdk-v1.2.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://github.com/kiegroup/kogito-cloud-operator
+    support: Red Hat
+    tectonic-visibility: ocs
+  labels:
+    operator-kogitocloud: "true"
+  name: kogito-operator.v1.2.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: KogitoBuild handles how to build a custom Kogito service in a Kubernetes/OpenShift cluster.
+      displayName: Kogito Build
+      kind: KogitoBuild
+      name: kogitobuilds.app.kiegroup.org
+      version: v1beta1
+    - description: 'KogitoInfra is the resource to bind a Custom Resource (CR) not managed by Kogito Operator to a given deployed Kogito service. It holds the reference of a CR managed by another operator such as Strimzi. For example: one can create a Kafka CR via Strimzi and link this resource using KogitoInfra to a given Kogito service (custom or supporting, such as Data Index). Please refer to the Kogito Operator documentation (https://docs.jboss.org/kogito/release/latest/html_single/) for more information.'
+      displayName: Kogito Infra
+      kind: KogitoInfra
+      name: kogitoinfras.app.kiegroup.org
+      version: v1beta1
+    - description: KogitoRuntime is a custom Kogito service.
+      displayName: Kogito Runtime
+      kind: KogitoRuntime
+      name: kogitoruntimes.app.kiegroup.org
+      version: v1beta1
+    - description: KogitoSupportingService deploys the Supporting service in the given namespace.
+      displayName: Kogito Supporting Service
+      kind: KogitoSupportingService
+      name: kogitosupportingservices.app.kiegroup.org
+      version: v1beta1
+  description: |-
+    Kogito Operator is designed to deploy Kogito services from source (only on OpenShift) and every piece of infrastructure that the services might need:
+
+    * Creates two kinds of build configuration: Native or JVM. For more information refer to [Native build and deployment](https://docs.jboss.org/kogito/release/latest/html_single/#_native_build_and_deployment) section on our docs
+    * Builds a Kogito service from a remote git repository and creates a custom image for the given runtime: Quarkus or Springboot. [See more](https://docs.jboss.org/kogito/release/latest/html_single/#con-kogito-operator-deployment-options_kogito-deploying-on-openshift).
+    * Installs the [Kogito Data Index Service](https://docs.jboss.org/kogito/release/latest/html_single/#con-kogito-operator-with-data-index-service_kogito-deploying-on-openshift) to enable data index feature for Kogito services.
+    * Installs the [Kogito Jobs Service](https://docs.jboss.org/kogito/release/latest/html_single/#con-kogito-operator-with-jobs-service_kogito-deploying-on-openshift) to enable jobs scheduling.
+
+    For Kubernetes deployment of Kogito services, please refer to the section [Deploying Kogito services on Kubernetes](https://docs.jboss.org/kogito/release/latest/html_single/#proc-kogito-deploying-on-kubernetes_kogito-deploying-on-openshift) on our docs.
+
+    **IMPORTANT!** Kogito Operator might need Infinispan Operator and Strimzi to implement persistence and messaging use cases if you do not provide these services beforehand.
+    If you need these features to be automatically provisioned for you, bear in mind that those operators must be installed in the same namespace as the Kogito Operator.
+  displayName: Kogito
+  icon:
+  - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojMDg1ODcwO30uY2xzLTJ7ZmlsbDojZmZmO30uY2xzLTN7ZmlsbDojZjU4OTFmO30uY2xzLTR7ZmlsbDojOTdkNGU4O308L3N0eWxlPjwvZGVmcz48dGl0bGU+a29naXRvX2ljb25fcmdiX2NvbG9yX2RlZmF1bHQ8L3RpdGxlPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTkyOS4zNywzMC41QTcwLjMxLDcwLjMxLDAsMCwwLDg3Mi4xOSwxQzg2OC4wOSwxLDczOCwyMy42Nyw3MzgsMjMuNjdhNzAuMTUsNzAuMTUsMCwwLDAtNDguMSwzMy4yNUw2NjgsOTMuNzdjLTQ4LjQxLTQyLjQ2LTEwMS43NC02NC43LTE1Ni02NC43UzQwNC40Myw1MS4zMSwzNTYsOTMuNzdMMzM0LjExLDU2LjkyQTcwLjEzLDcwLjEzLDAsMCwwLDI4NiwyMy42N1MxNTUuOSwxLDE1MS44MSwxQTcwLjE5LDcwLjE5LDAsMCwwLDkwLjU0LDEwNS40MWw1MC4yNCw5MGExMTUuMTIsMTE1LjEyLDAsMCwwLDYwLjMsMTY5LjlMMTA4LjMsNzk0LjYsNTEyLDEwMjMsOTE1LjcsNzk0LjYsODIyLjkyLDM2NS4yN2ExMTUuMTIsMTE1LjEyLDAsMCwwLDYwLjMtMTY5LjlsNTAuMjQtOTBBNzAuNDksNzAuNDksMCwwLDAsOTI5LjM3LDMwLjVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNNDgwLjA5LDI3OC4zbDguNTctLjA5TDUxMiwzMDEuNGwyMy4xOS0yMy4xOSw4LjYuMDhjNjMuMjMuNjMsMTIzLjgyLDMuMTQsMTc2LjI4LDcuMjctNDUuOTQtOTkuNDktMTIyLTE4Ni4zLTIwOC0xODYuM1MzNDkuOSwxODYuMDcsMzA0LDI4NS41N0MzNTYuMzksMjgxLjQ0LDQxNi45NCwyNzguOTIsNDgwLjA5LDI3OC4zWiIvPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTQ0OC43LDY5Ni4xNmExMTYuMzYsMTE2LjM2LDAsMCwwLDEzMS4xNy41MSw1ODEuNDcsNTgxLjQ3LDAsMCwwLTEzMS4xNy0uNTFaIi8+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNNjkxLjU3LDY3OS43M2ExODUuNDQsMTg1LjQ0LDAsMCwwLTE3LjI3LTQxLjQ3Yy0xLjIxLTIuMTItMi41LTQuMTgtMy43OC02LjI0LS43My0xLjE5LTEuNDMtMi40MS0yLjE5LTMuNTgtMS4yLTEuODUtMi40OS0zLjYzLTMuNzUtNS40My0uOTQtMS4zNC0xLjg1LTIuNzEtMi44Mi00LTEuMTItMS41MS0yLjMyLTMtMy40OC00LjQzcy0yLjM4LTMuMDgtMy42NC00LjU3Yy0xLTEuMTgtMi0yLjI5LTMtMy40NEExODYuNjksMTg2LjY5LDAsMCwwLDU3MC43Myw1NTNjLTE3LjI1LDExLjU2LTM5LDIyLjY5LTU4LjczLDIyLjY5UzQ3MC41Miw1NjQuNTcsNDUzLjI3LDU1M2ExODYuNTksMTg2LjU5LDAsMCwwLTgwLjkxLDUzLjZjLTEsMS4xMy0yLDIuMjItMywzLjM3LTEuMjYsMS41LTIuNDQsMy4wNi0zLjY2LDQuNnMtMi4zNCwyLjkxLTMuNDYsNC40MWMtMSwxLjMyLTEuODgsMi42OS0yLjgzLDQtMS4yNiwxLjc5LTIuNTQsMy41Ni0zLjczLDUuNC0uNzcsMS4xOS0xLjQ4LDIuNDItMi4yMiwzLjYyLTEuMjcsMi4wNS0yLjU2LDQuMS0zLjc1LDYuMjFhMTg1LDE4NSwwLDAsMC0xNy4yOCw0MS40N2MxMi44NC00LjQsMjYuNDMtOC4yMyw0MC40Ni0xMS42NywwLDAtLjA1LS4wOS0uMDctLjE0LDEuNDUtLjM1LDIuOTUtLjY2LDQuNDEtMWwxNi45NS00Ny4yNnY0My41MWMxLS4yLDItLjM0LDMtLjU0cTkuNDQtMS44NSwxOS4xNC0zLjM5Yy43OS0uMTMsMS41Ny0uMjcsMi4zNi0uMzlxMTEuNzQtMS44MywyMy44Ni0zLjJsMTMuODctNTUuNTF2NTQuMDljOC41Ni0uNzcsMTcuMjYtMS4zMSwyNi0xLjcybDMuOTItLjE3YzMuMjctLjEzLDYuNTMtLjI3LDkuODMtLjM1LDUuMjMtLjE0LDEwLjUtLjIzLDE1LjgtLjIzLDUuNDksMCwxMC45My4xLDE2LjM0LjI1LDIuOS4wOCw1Ljc5LjE5LDguNjcuMzFsNS43NS4yNmM4LjM2LjQxLDE2LjY2Ljk0LDI0LjgyLDEuNjhWNjAwLjEzbDEzLjg4LDU1LjUzYy41NS4wNiwxLjA5LjE1LDEuNjUuMjIsNy4zLjg1LDE0LjU0LDEuNzksMjEuNjUsMi44OSwyLjczLjQxLDUuMzguOTIsOC4wOCwxLjM3LDMuOTUuNjgsNy45LDEuMzUsMTEuNzgsMi4xLDEuNzIuMzIsMy41LjU4LDUuMi45MlY2MTkuNjVsMTcsNDcuMjljMS4yMy4yOSwyLjQuNjQsMy42Mi45NCwxLjg0LjQ1LDMuNzIuODYsNS41NCwxLjMybC0uMDYuMUM2NjguMTksNjcyLjQ0LDY4MC4yMSw2NzUuODMsNjkxLjU3LDY3OS43M1oiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik03MzcuNTcsMzI4LjA3bC0xMC0uODRjLTUxLjU2LTQuMzgtMTEyLjEzLTcuMS0xNzUuNjctNy45TDUxMiwzNTkuMjRsLTQwLjA5LTM5LjkxYy02My40OC44MS0xMjQsMy41My0xNzUuNTQsNy45bC0xMCwuODVDMjY4LjI3LDM3Ny44MiwyNTgsNDI4LjExLDI1OCw0NzAuMjRjMCw2OS45NCwyOC4zMSwxMDQuMTYsNzQsMTIwLjkzQTIyOS40OCwyMjkuNDgsMCwwLDEsNDE4LjI4LDUyM2EyMC40MywyMC40MywwLDAsMSwzMi4xNi0yNC4xNmMxNi4xMiwxNC45LDQ1Ljg5LDM1LjkxLDYxLjU2LDM1LjkxczQ1Ljk0LTIxLjQzLDYxLjU1LTM1LjkxQTIwLjQzLDIwLjQzLDAsMCwxLDYwNS43Miw1MjMsMjI5LjY1LDIyOS42NSwwLDAsMSw2OTIsNTkxLjE3YzQ1Ljc0LTE2Ljc3LDc0LTUxLDc0LTEyMC45M0M3NjYsNDI4LjExLDc1NS43MywzNzcuODIsNzM3LjU3LDMyOC4wN1pNNDAzLjUsNDYyLjc3Yy0yOS4zMS42Ni01Ni0xNi4yLTc0LjgyLTQzLjUxLDE3LjUzLTI4LjEzLDQzLjQ3LTQ2LjE3LDcyLjc4LTQ2LjgzczU2LDE2LjE5LDc0LjgyLDQzLjUxQzQ1OC43NSw0NDQuMDcsNDMyLjgxLDQ2Mi4xMSw0MDMuNSw0NjIuNzdabTI5MS44Mi0xMy4xOC0zMiwzMi0zMi0zMi0zMiwzMi0zMi0zMiwzMi0zMi0zMi0zMiwzMi0zMiwzMiwzMiwzMi0zMiwzMiwzMi0zMiwzMloiLz48cGF0aCBjbGFzcz0iY2xzLTQiIGQ9Ik02MDguMjMsNzk3bDE5LjkxLDc5LjY3LDc2LjMyLTQzLjE4Vjc0NWwxOS4zOCw3Ny41MywxMTIuMzUtNjMuNTZMNzkxLjUyLDU1Mi4yN2MtMTQuOTQsMzMuOTItNDAuNjgsNTguNzctNzcuMiw3NC4xMkEyMjUuMTQsMjI1LjE0LDAsMCwxLDczMSw2NjguNzFhNDAuOTQsNDAuOTQsMCwwLDEtNTIuNzIsNDkuNzUsNDM4LjI3LDQzOC4yNywwLDAsMC00Ni43My0xMywxNTcuMDcsMTU3LjA3LDAsMCwxLTIzNC42LTEsNDQzLjg2LDQ0My44NiwwLDAsMC01MS4yMywxNEE0MC45NCw0MC45NCwwLDAsMSwyOTMsNjY4LjcxYTIyNC44NiwyMjQuODYsMCwwLDEsMTYuNjktNDIuMzNjLTM2LjUzLTE1LjM0LTYyLjI3LTQwLjItNzcuMjEtNzQuMTFMMTg3LjgxLDc1OC45NCwzMDAuMTYsODIyLjUsMzE5LjU0LDc0NXY4OC41bDc2LjMyLDQzLjE4TDQxNS43Nyw3OTd2OTAuOTNMNTEyLDk0Mi4zNmw5Ni4yMy01NC40NVoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yNTMuOTEsMjk4LjQzYTU4MC4wNiw1ODAuMDYsMCwwLDEsNDMuNTUtODcuNjRxMTEuOTMtMTkuNTEsMjQuNjktMzYuNjRMMjczLjc4LDkyLjc5bC0xMjItMjEuNiw3OC43NiwxNDEsLjA2LjA3YTQ0LjgxLDQ0LjgxLDAsMSwwLDIzLjI3LDg2LjEzWiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTc5My4zNSwyMTIuM2wuMDctLjA3LDc4Ljc2LTE0MS0xMjIsMjEuNi00OC4zNyw4MS4zNnExMi43MiwxNy4xNywyNC42OSwzNi42NGE1ODAuMDYsNTgwLjA2LDAsMCwxLDQzLjU1LDg3LjY0LDQ0LjgsNDQuOCwwLDEsMCwyMy4yNi04Ni4xM1oiLz48L3N2Zz4=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitobuilds
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitobuilds/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitobuilds/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitoinfras
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitoinfras/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitoinfras/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitoruntimes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitoruntimes/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitoruntimes/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitosupportingservices
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitosupportingservices/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - app.kiegroup.org
+          resources:
+          - kogitosupportingservices/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - replicasets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - build.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - eventing.knative.dev
+          resources:
+          - brokers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - eventing.knative.dev
+          resources:
+          - triggers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - infinispan.org
+          resources:
+          - infinispans
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - integreatly.org
+          resources:
+          - grafanadashboards
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - kafka.strimzi.io
+          resources:
+          - kafkas
+          - kafkatopics
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - keycloak.org
+          resources:
+          - keycloaks
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - mongodb.com
+          resources:
+          - mongodb
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - sources.knative.dev
+          resources:
+          - sinkbindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: default
+      deployments:
+      - name: kogito-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                command:
+                - /manager
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                image: quay.io/kiegroup/kogito-cloud-operator:1.2.0
+                name: manager
+                resources: {}
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: default
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - cloud
+  - kogito
+  - quarkus
+  - springboot
+  - operator
+  - native
+  - automation
+  labels:
+    alm-owner-kogito: kogito-operator
+    operated-by: kogito-operator.1.2.0
+  links:
+  - name: Product Page
+    url: https://kogito.kie.org/
+  - name: Documentation
+    url: https://github.com/kiegroup/kogito-cloud-operator/blob/master/README.md
+  - name: Source
+    url: https://github.com/kiegroup/kogito-cloud-operator/
+  maintainers:
+  - email: bsig-cloud@redhat.com
+    name: Red Hat
+  maturity: beta
+  provider:
+    name: Red Hat
+  replaces: kogito-operator.v1.1.0
+  version: 1.2.0

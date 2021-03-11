@@ -1,0 +1,129 @@
+#!/bin/bash
+set -e
+
+unset OP_PATH
+unset OP_VER
+export INPUT_ENV_SCRIPT="/tmp/vars-op-path"
+export COMMUNITY_SPECIAL=""
+export OP_CI_YAML_ONLY_CHANGED="false"
+
+function setName {
+      if [ $(echo $sf| awk -F'/' '{print NF}') -ge 3 ]; then OP_NAME="$(echo "$sf" | awk -F'/' '{ print $2 }')"; fi
+      if [ $(echo $sf| awk -F'/' '{print NF}') -ge 4 ]; then OP_VER="$(echo "$sf" | awk -F'/' '{ print $3 }')"; fi
+      if [ $(echo $sf| awk -F'/' '{print NF}') -ge 3 ]; then OP_PATH="$(echo "$sf" | awk -F'/' '{ print $1"/"$2 }')"; fi
+           }
+
+export MODE_CHANGE=0 # targeting ci.yaml
+export OP_VER_OVERWRITE=0
+export OP_RECREATE=0
+export OP_FORCE_DEPLOY_ON_K8S=0
+export OP_DEBUG=0
+# export OP_PR_NUMBER=${TRAVIS_PULL_REQUEST-false}
+
+# [[ "$OP_PR_NUMBER" == "false" ]] && export OP_PR_NUMBER=$(git --no-pager log --oneline | head -n 1 | cut -d '(' -f 2 | cut -d '#' -f 2 | cut -d ')' -f 1)
+# echo $OP_PR_NUMBER
+
+# if [[ -n "$OP_PR_NUMBER" ]]; then
+#   set +e
+#   OP_PR_LABELS=$(curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r)
+#   if [[ $? -eq 0 ]];then
+#     echo "$OP_PR_LABELS"
+#     for l in $(echo $OP_PR_LABELS);do
+#       echo "Checking label '$l' ..."
+#       [[ "$l" = "allow/operator-version-overwrite" ]] && export OP_VER_OVERWRITE=1
+#       [[ "$l" = "allow/operator-recreate" ]] && export OP_RECREATE=1
+#       [[ "$l" = "test/force-deploy-on-kubernetes" ]] && export OP_FORCE_DEPLOY_ON_K8S=1
+#       [[ "$l" = "verbosity/high" ]] && export OP_DEBUG=1
+#       [[ "$l" = "verbosity/debug" ]] && export OP_DEBUG=2
+#     done
+#   else
+#     echo "Failed to query labels from PR=$OP_PR_NUMBER !!!"
+#     echo "    Tried command 'curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR_NUMBER | jq '.labels[].name ' -r'"
+#   fi
+#   set -e
+# fi
+# echo "Label check done"
+
+# declare -A CHANGED_FILES
+
+
+# CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $OP_PR_COMMIT|awk 'NR > 6 { print }'|grep '/' 2>&1)
+# CHANGED_FILES=$(git --no-pager log -m -1 --name-only --oneline --first-parent $OP_PR_COMMIT | tail -n +2 2>&1)
+echo "CHANGED_FILES:"
+echo ${CHANGED_FILES}
+echo
+
+UPSTREAM_SET=0
+COMMUNITY_SET=0
+
+echo "processing files:"
+for sf in ${CHANGED_FILES}; do
+  echo $sf
+
+  if [[ $sf == "upstream"* ]]; then
+      if [ "$COMMUNITY_SET" -gt "0"  ]; then echo "You are allowed to edit only one stream - upstream-community-operators or community-operators"; exit 1; fi
+      export RUN_UPSTREAM=true
+      #for run-index-test
+      export STREAM_NAME=upstream-community-operators
+      UPSTREAM_SET=1
+      setName
+
+  elif [[ $sf == "community"* ]]; then
+      if [ "$UPSTREAM_SET" -gt "0"  ]; then echo "You are allowed to edit only one stream - upstream-community-operators or community-operators"; exit 1; fi
+      export STREAM_NAME=community-operators
+      export COMMUNITY_SPECIAL='-e use_cluster_filter=true'
+      COMMUNITY_SET=1
+      setName
+
+  else
+      echo "Edited files outside upstream-community-operators/community-operators !!! "
+  fi
+done
+echo
+echo
+if [[ $UPSTREAM_SET -eq 0 ]]; then
+   if [[ $COMMUNITY_SET -eq 0 ]]; then
+     echo "No operator modified, exiting, no need to test/release."; echo; echo;
+
+     cat <<EOF > $INPUT_ENV_SCRIPT
+export NO_OPERATOR=1
+export OP_PR_COMMIT=$OP_PR_COMMIT #for traffic light
+EOF
+     exit 0;
+   fi
+fi
+
+echo
+
+# [[ $OP_VER_OVERWRITE -eq 1 ]] && [[ $OP_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' cannot be set simultaneously !!!"; exit 1; }
+
+#only ci.yaml was changed:
+# CI_YML_CHECK=$(echo ${CHANGED_FILES[0]}|rev|awk -F'/' '{print $1}'|rev)
+# echo "CI_YML_CHECK=$CI_YML_CHECK"
+# [[ -z "$OP_VER" ]] && [[ -z ${CHANGED_FILES[1]} ]] && [[ "$CI_YML_CHECK" == "ci.yaml" ]] && { export OP_CI_YAML_ONLY_CHANGED="true"; }
+
+cat <<EOF > $INPUT_ENV_SCRIPT
+export OP_PATH=$OP_PATH
+export OP_NAME=$OP_NAME
+export OP_VER=$OP_VER
+export OP_PR_COMMIT=$OP_PR_COMMIT
+export STREAM_NAME=$STREAM_NAME
+export RUN_UPSTREAM=$RUN_UPSTREAM
+export OP_PR_NUMBER=$OP_PR_NUMBER
+export OP_VER_OVERWRITE=$OP_VER_OVERWRITE
+export OP_RECREATE=$OP_RECREATE
+export OP_FORCE_DEPLOY_ON_K8S=$OP_FORCE_DEPLOY_ON_K8S
+export OP_CI_YAML_ONLY_CHANGED=$OP_CI_YAML_ONLY_CHANGED
+export OP_DEBUG=$OP_DEBUG
+export COMMUNITY_SPECIAL="$COMMUNITY_SPECIAL"
+EOF
+
+if [ -f $INPUT_ENV_SCRIPT ]; then
+  echo "ENVIRONMENT INFO:"
+  cat $INPUT_ENV_SCRIPT
+  [ -n "$OP_PATH" ] || echo "Warning: OP_PATH is not set at all"
+else
+  echo "Error: Build system has problem to prepare environment from git information !!!"
+  echo "  The file '$INPUT_ENV_SCRIPT' does not exist."
+  exit 1
+fi

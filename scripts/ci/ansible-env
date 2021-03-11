@@ -4,7 +4,8 @@ set -e
 unset OP_PATH
 unset OP_VER
 export INPUT_ENV_SCRIPT="/tmp/vars-op-path"
-OP_CI_YAML_ONLY_CHANGED="false"
+export COMMUNITY_SPECIAL=''
+export OP_CI_YAML_ONLY_CHANGED="false"
 
 function setName {
       if [ $(echo $sf| awk -F'/' '{print NF}') -ge 3 ]; then OP_NAME="$(echo "$sf" | awk -F'/' '{ print $2 }')"; fi
@@ -89,6 +90,7 @@ for sf in ${CHANGED_FILES[@]}; do
   elif [[ $sf == "community"* ]]; then
       if [ "$UPSTREAM_SET" -gt "0"  ]; then echo "You are allowed to edit only one stream - upstream-community-operators or community-operators"; exit 1; fi
       export STREAM_NAME=community-operators
+      export COMMUNITY_SPECIAL='-e use_cluster_filter=true'
       COMMUNITY_SET=1
       setName
 
@@ -131,6 +133,7 @@ export OP_RECREATE=$OP_RECREATE
 export OP_FORCE_DEPLOY_ON_K8S=$OP_FORCE_DEPLOY_ON_K8S
 export OP_CI_YAML_ONLY_CHANGED=$OP_CI_YAML_ONLY_CHANGED
 export OP_DEBUG=$OP_DEBUG
+export COMMUNITY_SPECIAL="$COMMUNITY_SPECIAL"
 EOF
 
 if [ -f $INPUT_ENV_SCRIPT ]; then

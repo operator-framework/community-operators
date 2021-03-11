@@ -1,0 +1,115 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: backups.infinispan.org
+  labels:
+    name: infinispan-operator
+spec:
+  group: infinispan.org
+  names:
+    kind: Backup
+    listKind: BackupList
+    plural: backups
+    singular: backup
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Backup is the Schema for the backups API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: BackupSpec defines the desired state of Backup
+          properties:
+            cluster:
+              type: string
+            container:
+              description: InfinispanContainerSpec specify resource requirements per
+                container
+              properties:
+                cpu:
+                  type: string
+                extraJvmOpts:
+                  type: string
+                memory:
+                  type: string
+              type: object
+            resources:
+              properties:
+                cacheConfigs:
+                  description: Deprecated and to be removed on subsequent release.
+                    Use .Templates instead.
+                  items:
+                    type: string
+                  type: array
+                caches:
+                  items:
+                    type: string
+                  type: array
+                counters:
+                  items:
+                    type: string
+                  type: array
+                protoSchemas:
+                  items:
+                    type: string
+                  type: array
+                scripts:
+                  description: Deprecated and to be removed on subsequent release.
+                    Use .Tasks instead.
+                  items:
+                    type: string
+                  type: array
+                tasks:
+                  items:
+                    type: string
+                  type: array
+                templates:
+                  items:
+                    type: string
+                  type: array
+              type: object
+            volume:
+              properties:
+                storage:
+                  type: string
+                storageClassName:
+                  type: string
+              type: object
+          required:
+          - cluster
+          type: object
+        status:
+          description: BackupStatus defines the observed state of Backup
+          properties:
+            phase:
+              description: State indicates the current state of the backup operation
+              type: string
+            pvc:
+              description: The name of the created PersistentVolumeClaim used to store
+                the backup
+              type: string
+            reason:
+              description: Reason indicates the reason for any backup related failures.
+              type: string
+          required:
+          - phase
+          type: object
+      type: object
+  version: v2alpha1
+  versions:
+  - name: v2alpha1
+    served: true
+    storage: true
