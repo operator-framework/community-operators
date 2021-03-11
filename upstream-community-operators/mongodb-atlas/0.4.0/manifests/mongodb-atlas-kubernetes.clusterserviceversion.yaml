@@ -1,0 +1,310 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "atlas.mongodb.com/v1",
+          "kind": "AtlasCluster",
+          "metadata": {
+            "name": "my-atlas-cluster"
+          },
+          "spec": {
+            "name": "test-cluster",
+            "projectRef": {
+              "name": "my-project"
+            },
+            "providerSettings": {
+              "instanceSizeName": "M10",
+              "providerName": "AWS",
+              "regionName": "US_EAST_1"
+            }
+          }
+        },
+        {
+          "apiVersion": "atlas.mongodb.com/v1",
+          "kind": "AtlasDatabaseUser",
+          "metadata": {
+            "name": "my-database-user"
+          },
+          "spec": {
+            "databaseName": "admin",
+            "passwordSecretRef": {
+              "name": "my-database-user-password"
+            },
+            "projectRef": {
+              "name": "my-project"
+            },
+            "roles": [
+              {
+                "databaseName": "admin",
+                "roleName": "readWriteAnyDatabase"
+              }
+            ],
+            "username": "david"
+          }
+        },
+        {
+          "apiVersion": "atlas.mongodb.com/v1",
+          "kind": "AtlasProject",
+          "metadata": {
+            "name": "my-project"
+          },
+          "spec": {
+            "connectionSecretRef": {
+              "name": "my-atlas-key"
+            },
+            "name": "Test Atlas Operator Project",
+            "projectIpAccessList": [
+              {
+                "comment": "IP address for Application Server A",
+                "ipAddress": "192.0.2.15"
+              },
+              {
+                "comment": "CIDR block for Application Server B - D",
+                "ipAddress": "203.0.113.0/24"
+              },
+              {
+                "awsSecurityGroup": "sg-0026348ec11780bd1",
+                "comment": "Access Listed AWS Security Group"
+              }
+            ]
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.4.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: mongodb-atlas-kubernetes.v0.4.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: AtlasCluster is the Schema for the atlasclusters API
+      displayName: Atlas Cluster
+      kind: AtlasCluster
+      name: atlasclusters.atlas.mongodb.com
+      version: v1
+    - description: AtlasDatabaseUser is the Schema for the Atlas Database User API
+      displayName: Atlas Database User
+      kind: AtlasDatabaseUser
+      name: atlasdatabaseusers.atlas.mongodb.com
+      version: v1
+    - description: AtlasProject is the Schema for the atlasprojects API
+      displayName: Atlas Project
+      kind: AtlasProject
+      name: atlasprojects.atlas.mongodb.com
+      version: v1
+  description: Kubernetes Operator which manages MongoDB Atlas Clusters from Kubernetes.
+  displayName: MongoDB Atlas Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - atlas.mongodb.com
+          resources:
+          - atlasclusters
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - atlas.mongodb.com
+          resources:
+          - atlasclusters/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - atlas.mongodb.com
+          resources:
+          - atlasdatabaseusers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - atlas.mongodb.com
+          resources:
+          - atlasdatabaseusers/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - atlas.mongodb.com
+          resources:
+          - atlasprojects
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - atlas.mongodb.com
+          resources:
+          - atlasprojects/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: default
+      deployments:
+      - name: mongodb-atlas-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --atlas-domain=https://cloud.mongodb.com
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                env:
+                - name: OPERATOR_POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                image: mongodb/mongodb-atlas-kubernetes-operator-prerelease:main-64946ed
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 100Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 2000
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - coordination.k8s.io
+          resources:
+          - configmaps
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: default
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - MongoDB
+  - Atlas
+  - Database
+  - Replica Set
+  - Cluster
+  links:
+  - name: Mongodb Atlas Kubernetes
+    url: https://mongodb-atlas-kubernetes.domain
+  maturity: alpha
+  provider:
+    name: MongoDB, Inc
+    url: https://github.com/mongodb/mongodb-atlas-kubernetes
+  version: 0.4.0
