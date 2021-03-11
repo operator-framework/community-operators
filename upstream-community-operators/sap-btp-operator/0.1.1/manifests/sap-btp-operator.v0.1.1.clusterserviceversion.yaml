@@ -10,7 +10,7 @@ metadata:
     certified: 'false'
     createdAt: '2021-03-08 12:00:00'
     description: >-
-      SAP BTP service operator allows you to provision and manage SAP BTP resources so that your Kubernetes-native applications can access and use them from the cluster.
+      SAP BTP service operator allows you to provision and manage SAP BTP services from your cluster with CRD-based API.
     containerImage: 'ghcr.io/sap/sap-btp-service-operator/controller:v0.1.1'
     support: 'https://github.com/SAP/sap-btp-service-operator/issues'
     capabilities: Basic Install
@@ -21,7 +21,7 @@ spec:
   description: >
     ## Overview
 
-    With the SAP BTP (Business Technology Platform) service operator, you can consume [SAP BTP services](https://platformx-d8bd51250.dispatcher.us2.hana.ondemand.com/protected/index.html#/viewServices?) from your Kubernetes cluster using Kubernetes-native tools. 
+    With the SAP BTP (SAP Business Technology Platform) service operator, you can consume [SAP BTP services](https://platformx-d8bd51250.dispatcher.us2.hana.ondemand.com/protected/index.html#/viewServices?) from your Kubernetes cluster using Kubernetes-native tools. 
     SAP BTP service operator allows you to provision and manage service instances and service bindings of SAP BTP services so that your Kubernetes-native applications can access and use them from the cluster.
 
     ## Prerequisites
@@ -34,32 +34,32 @@ spec:
 
     4. [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.17 or higher
 
-    ## Setup Before Installation
+    ## Setup Before Instalation
 
-    1. Obtain the access credentials for the SAP BTP service operator:
+    1. **Obtain the access credentials for the SAP BTP service operator:**
 
-       a. Using the SAP BTP cockpit or SMCTL CLI, create an instance of the SAP Cloud Service Management service (technical name: `service-manager`) with the plan:
+         * Using the SAP BTP cockpit or SMCTL CLI, create an instance of the SAP Cloud Service Management service (technical name: `service-manager`) with the plan:
               `service-operator-access`
 
-       For more information about creating service instances, see:
+          For more information about creating service instances, see:
 
-        * [Creating Service Instances Using the SAP BTP Cockpit](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/bf71f6a7b7754dbd9dfc2569791ccc96.html)
+            * [Creating Service Instances Using the SAP BTP Cockpit](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/bf71f6a7b7754dbd9dfc2569791ccc96.html)
 
-        * [Creating Service Instances using SMCTL](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/b327b66b711746b085ec5d2ea16e608e.html)
+            * [Creating Service Instances using SMCTL](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/b327b66b711746b085ec5d2ea16e608e.html)
 
-        b. Create a binding to the created service instance.
+         * Using the SAP BTP cockpit or SMCTL CLI, create a binding to the created service instance.
 
-        For more information about creating service bindings, see:
+          For more information about creating service bindings, see:
 
-         * [Creating Service Bindings Using the SAP BTP Cockpit](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/55b31ea23c474f6ba2f64ee4848ab1b3.html)
+            * [Creating Service Bindings Using the SAP BTP Cockpit](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/55b31ea23c474f6ba2f64ee4848ab1b3.html)
 
-         * [Creating Service Bindings Using SMCTL](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/f53ff2634e0a46d6bfc72ec075418dcd.html).
+            * [Creating Service Bindings Using SMCTL](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/f53ff2634e0a46d6bfc72ec075418dcd.html).
 
-        c. Retrieve the generated access credentials from the created binding:
+         * Retrieve the generated access credentials from the created binding:<br/>
 
-          The example of the credentials in the binding object
 
-           ```
+          The example of the credentials in the binding object:
+           ```JSON
             {
                 "clientid": "xxxxxxx",
                 "clientsecret": "xxxxxxx",
@@ -68,18 +68,19 @@ spec:
                 "sm_url": "https://service-manager.cfapps.eu10.hana.ondemand.com"
             }
            ```
-    2. Run an installation script
-      ```bash
+    2. **Run the installation script:**
+    
+        ```bash
           curl -s https://raw.githubusercontent.com/SAP/sap-btp-service-operator/main/hack/setup_operator_env.sh | bash -s '<clientid>' '<clientsecret>' <sm_url> <url>
-       ```
+        ``` 
 
 
     ## Using the SAP BTP Service Operator
 
     #### Step 1: Create a service instance
 
-    1. To create an instance of a service offered by SAP BTP,  first create a `ServiceInstance` custom-resource file:
-        ```yaml
+    1. Create a `ServiceInstance` custom-resource file:
+           ```yaml
             apiVersion: services.cloud.sap.com/v1alpha1
             kind: ServiceInstance
             metadata:
@@ -87,23 +88,27 @@ spec:
             spec:
                 serviceOfferingName: <offering>
                 servicePlanName: <plan>
-           ```
+          ```
+       where:
+        * `<offering>`&ensp;is the name of the SAP BTP service for which you are creating an instance.  
+        
+           To learn more about viewing and managing the available services for your subaccount in the SAP BTP cockpit, see [Service Marketplace](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/affcc245c332433ba71917ff715b9971.html).
+          
 
-        *   `<offering>` - The name of the SAP BTP service that you want to create.
-               To learn more about viewing and managing the available services for your subaccount in the SAP BTP cockpit, see [Service Marketplace](https://help.sap.com/viewer/09cc82baadc542a688176dce601398de/Cloud/en-US/affcc245c332433ba71917ff715b9971.html).
-
-                ## Tip
-                Use the *Environment* filter to get all offerings that are relevant for Kubernetes.
+            * **Tip**:  
+            
+             Use the *Environment* filter to get all offerings that are relevant for Kubernetes.
+             
                 
-        *   `<plan>` - The plan of the selected service offering that you want to create.
+        * `<plan>`&ensp;is the plan to use for the SAP BTP service whose instance you are creating.
 
-    2.  Apply the custom-resource file in your cluster to create the instance.
+    2.  Apply the custom-resource file in your cluster to create the instance:
 
           ```bash
           kubectl apply -f path/to/my-service-instance.yaml
           ```
 
-    3.  Check that the status of the service in your cluster is **Created**.
+    3.  Check that the status of the service in your cluster is **Created**:
 
         ```bash
         kubectl get serviceinstances
@@ -113,7 +118,7 @@ spec:
 
     #### Step 2: Create a Service Binding
 
-    1. To get access credentials to your service instance and make it available in the cluster so that your applications can use it, create a `ServiceBinding` custom resource, and set the `serviceInstanceName` field to the name of the `ServiceInstance` resource you created.
+    1. To get access credentials to your service instance and make it available in the cluster so that your applications can use it, create a `ServiceBinding` custom resource, and set the `serviceInstanceName` field to the name of the `ServiceInstance` resource you created:
 
           ```yaml
               apiVersion: services.cloud.sap.com/v1alpha1
@@ -124,13 +129,13 @@ spec:
                   serviceInstanceName: my-service-instance
           ```
 
-    2.  Apply the custom-resource file in your cluster to create the binding.
+    2.  Apply the custom-resource file in your cluster to create the binding:
 
           ```bash
           kubectl apply -f path/to/my-binding.yaml
           ```
 
-    3.  Check that your binding status is **Created**.
+    3.  Check that your binding status is **Created**:
 
           ```bash
           kubectl get servicebindings
@@ -139,7 +144,7 @@ spec:
 
           ```
 
-    4.  Check that a secret with the same name as the name of your binding is created. The secret contains the service credentials that apps in your cluster can use to access the service.
+    4.  Check that a secret with the same name as the name of your binding is created. The secret contains the service credentials that apps in your cluster can use to access the service:
 
           ```bash
           kubectl get secrets
