@@ -46,32 +46,10 @@ spec:
             description: HyperConvergedSpec defines the desired state of HyperConverged
             properties:
               featureGates:
-                default:
-                  hypervStrictCheck: true
-                  withHostModelCPU: true
-                  withHostPassthroughCPU: false
                 description: featureGates is a map of feature gate flags. Setting
                   a flag to `true` will enable the feature. Setting `false` or removing
                   the feature gate, disables the feature.
                 properties:
-                  hotplugVolumes:
-                    description: Allow attaching a data volume to a running VMI
-                    type: boolean
-                  hypervStrictCheck:
-                    default: true
-                    description: Enable HyperV strict host checking for HyperV enlightenments
-                      Defaults to true, even when HyperConvergedFeatureGates is empty
-                    type: boolean
-                  sriovLiveMigration:
-                    description: Allow migrating a virtual machine with SRIOV interfaces.
-                      When enabled virt-launcher pods of virtual machines with SRIOV
-                      interfaces run with CAP_SYS_RESOURCE capability. This may degrade
-                      virt-launcher security.
-                    type: boolean
-                  withHostModelCPU:
-                    default: true
-                    description: Support migration for VMs with host-model CPU mode
-                    type: boolean
                   withHostPassthroughCPU:
                     default: false
                     description: Allow migrating a virtual machine with CPU host-passthrough
@@ -789,9 +767,84 @@ spec:
                         type: array
                     type: object
                 type: object
+              liveMigrationConfig:
+                description: Live migration limits and timeouts are applied so that
+                  migration processes do not overwhelm the cluster.
+                properties:
+                  bandwidthPerMigration:
+                    default: 64Mi
+                    description: Bandwidth limit of each migration, in MiB/s.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    type: string
+                  completionTimeoutPerGiB:
+                    default: 800
+                    description: The migration will be canceled if it has not completed
+                      in this time, in seconds per GiB of memory. For example, a virtual
+                      machine instance with 6GiB memory will timeout if it has not
+                      completed migration in 4800 seconds. If the Migration Method
+                      is BlockMigration, the size of the migrating disks is included
+                      in the calculation.
+                    format: int64
+                    type: integer
+                  parallelMigrationsPerCluster:
+                    default: 5
+                    description: Number of migrations running in parallel in the cluster.
+                    format: int32
+                    type: integer
+                  parallelOutboundMigrationsPerNode:
+                    default: 2
+                    description: Maximum number of outbound migrations per node.
+                    format: int32
+                    type: integer
+                  progressTimeout:
+                    default: 150
+                    description: The migration will be canceled if memory copy fails
+                      to make progress in this time, in seconds.
+                    format: int64
+                    type: integer
+                type: object
               localStorageClassName:
                 description: LocalStorageClassName the name of the local storage class.
                 type: string
+              permittedHostDevices:
+                description: PermittedHostDevices holds inforamtion about devices
+                  allowed for passthrough
+                properties:
+                  mediatedDevices:
+                    items:
+                      description: MediatedHostDevice represents a host mediated device
+                        allowed for passthrough
+                      properties:
+                        externalResourceProvider:
+                          type: boolean
+                        mdevNameSelector:
+                          type: string
+                        resourceName:
+                          type: string
+                      required:
+                      - mdevNameSelector
+                      - resourceName
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  pciHostDevices:
+                    items:
+                      description: PciHostDevice represents a host PCI device allowed
+                        for passthrough
+                      properties:
+                        externalResourceProvider:
+                          type: boolean
+                        pciVendorSelector:
+                          type: string
+                        resourceName:
+                          type: string
+                      required:
+                      - pciVendorSelector
+                      - resourceName
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                type: object
               version:
                 description: operator version
                 type: string
