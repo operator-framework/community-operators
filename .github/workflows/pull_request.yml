@@ -24,14 +24,24 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
         allow-repeats: true # This is the default
-    - uses: mshick/add-pr-comment@v1
-      with:
-        message: |
-          /draft
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-        allow-repeats: true # This is the default
+    - name: op-traffic-light
+      id: op-traffic-light
+      env:
+        OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+      run: |
+        echo "global labels $OP_TEST_LABELS"
+        echo "::set-output name=op_pr_ok::1"
+    - name: op-cosmetics-change
+      id: op-cosmetics-change
+      if: steps.op-traffic-light.outputs.op_pr_ok == '1'
+      env:
+        OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+      run: |
+        echo "global labels $OP_TEST_LABELS"
+        echo "::set-output name=op_cosmetics_ok::0"
+
     - uses: actions/github-script@v3
+      if: steps.op-traffic-light.outputs.op_cosmetics_ok == '1'
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
@@ -108,9 +118,5 @@ jobs:
             repo: context.repo.repo,
             labels: ['ok-to-test' ]
           })
-    # - name: Slash Command Dispatch
-    #   uses: peter-evans/slash-command-dispatch@v2
-    #   with:
-    #     token: ${{ secrets.GITHUB_TOKEN }}
-    #     commands: |
-    #       commands
+    outputs:
+          op_cosmetics-ok: "${{ steps.op-traffic-light.outputs.op_cosmetics-ok }}"
