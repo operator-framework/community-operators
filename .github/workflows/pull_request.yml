@@ -31,10 +31,14 @@ jobs:
         git remote add upstream https://github.com/operator-framework/community-operators
         git fetch upstream
         # git pull --rebase upstream support/action-01
-        git diff upstream/support/action-01 --name-only
+        COMMIT=$(git --no-pager log -n1 --pretty=format:%h | tail -n 1)
+        CHANGED_FILES=$(git --no-pager log -m -1 --name-only $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || { echo '******* No community operator (Openshift) modified, no reason to continue *******'; exit 0; }
 
-        echo ${{ github.event.pull_request.head.sha }}
-        echo ${{github.event.pull_request.head.repo.full_name}}
+        echo "$CHANGED_FILES"
+        #git diff upstream/support/action-01 --name-only
+
+        #echo ${{ github.event.pull_request.head.sha }}
+        #echo ${{github.event.pull_request.head.repo.full_name}}
 
     # - uses: mshick/add-pr-comment@v1
     #   with:
