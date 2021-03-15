@@ -24,33 +24,16 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         clean: false
         # fetch-depth: '0'
-    - name: xxx
-      id: xxx
+    - name: Get diff files
+      id: files
       run: |
         git log --oneline | head
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
-        # git remote add upstream https://github.com/operator-framework/community-operators
-        git fetch upstream
+        git remote add upstream https://github.com/operator-framework/community-operators
         git pull --rebase upstream support/action-01        
-        echo "Diff"
-        git diff upstream/support/action-01 --name-only
-
-        # BRANCH="$(git branch -a --contains ${{ github.event.pull_request.head.sha }} | cut -d '/' -f 2-)"
-        # git checkout $BRANCH
-        # git pull --rebase origin support/action-01
-        # # git pull --rebase upstream support/action-01
-        # echo "Diff"
-        # git diff $BRANCH --name-only
-        # git remote add upstream https://github.com/${{ github.event.pull_request.head.repo.full_name }}
-
-        # echo "Rebase"
-        # git pull --rebase upstream support/action-01        
-        # echo "Diff"
-        # git diff upstream/support/action-01 --name-only
-        # echo ${{ github.event.pull_request.head.sha }}
-        # echo ${{github.event.pull_request.head.repo.name}}
-        # echo ${{github.event.pull_request.head.repo.full_name}}
+        MODIFIED=$(git diff upstream/support/action-01 --name-only)
+        echo "::set-output name=added_modified::$(git diff upstream/support/action-01 --name-only)"
 
     # - uses: mshick/add-pr-comment@v1
     #   with:
@@ -69,6 +52,7 @@ jobs:
       run: |
         echo "global labels $OP_TEST_LABELS"
         scripts/ci/actions-env
+        echo "We have to use script from operator-framework/operator-test-playbooks "
         echo "::set-output name=op_pr_ok::1"
     - name: op-cosmetics-change
       id: op-cosmetics-change
@@ -77,6 +61,7 @@ jobs:
         OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
       run: |
         echo "global labels $OP_TEST_LABELS"
+        echo "We have to use script from operator-framework/operator-test-playbooks "
         echo "::set-output name=op_cosmetics_ok::0"
 
     - uses: actions/github-script@v3
