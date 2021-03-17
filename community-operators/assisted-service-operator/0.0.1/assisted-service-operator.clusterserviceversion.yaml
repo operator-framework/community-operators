@@ -1,0 +1,517 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    categories: OpenShift Optional
+    description: Assisted Service is used to orchestrate baremetal OpenShift installations.
+    operatorframework.io/suggested-namespace: assisted-installer
+    operators.operatorframework.io/builder: operator-sdk-v1.4.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+    repository: https://github.com/openshift/assisted-service
+    support: https://github.com/openshift/assisted-service/issues/new
+    createdAt: '2021-03-19T09:49:00Z'
+    containerImage: quay.io/ocpmetal/assisted-service@sha256:b1754c35708d9ae8ea9fae4760cb6cf9d24f3a937f536f7421261fefbffe9a08
+  name: assisted-service-operator.v0.0.1
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    required:
+    - kind: ClusterDeployment
+      name: clusterdeployments.hive.openshift.io
+      version: v1
+    owned:
+    - displayName: Agent
+      kind: Agent
+      name: agents.adi.io.my.domain
+      version: v1alpha1
+    - displayName: InstallEnv
+      kind: InstallEnv
+      name: installenvs.adi.io.my.domain
+      version: v1alpha1
+  description: |-
+    Assisted Service is used to orchestrate baremetal OpenShift installations.
+
+    # Prerequisites
+
+    The ClusterDeployment CRD from Hive is required. Install the Hive operator
+    if it hasn't already been installed.
+
+    A PersistentVolumeClaim named postgres-pv-claim is required.
+
+    ````
+    cat <<EOF | oc create -f -
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      labels: {app: postgres}
+      name: postgres-pv-claim
+      namespace: assisted-installer
+    spec:
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests: {storage: 10Gi}
+    EOF
+    ````
+
+    A PersistentVolumeClaim named bucket-pv-claim is required for the filesystem storage.
+
+    ````
+    cat <<EOF | oc create -f -
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      labels: {app: assisted-service}
+      name: bucket-pv-claim
+      namespace: assisted-installer
+    spec:
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests: {storage: 10Gi}
+    EOF
+    ````
+  displayName: Assisted Service Operator
+  icon:
+  - base64data: PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTQ1Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2UwMDt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPlJlZEhhdC1Mb2dvLUhhdC1Db2xvcjwvdGl0bGU+PHBhdGggZD0iTTE1Ny43Nyw2Mi42MWExNCwxNCwwLDAsMSwuMzEsMy40MmMwLDE0Ljg4LTE4LjEsMTcuNDYtMzAuNjEsMTcuNDZDNzguODMsODMuNDksNDIuNTMsNTMuMjYsNDIuNTMsNDRhNi40Myw2LjQzLDAsMCwxLC4yMi0xLjk0bC0zLjY2LDkuMDZhMTguNDUsMTguNDUsMCwwLDAtMS41MSw3LjMzYzAsMTguMTEsNDEsNDUuNDgsODcuNzQsNDUuNDgsMjAuNjksMCwzNi40My03Ljc2LDM2LjQzLTIxLjc3LDAtMS4wOCwwLTEuOTQtMS43My0xMC4xM1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMjcuNDcsODMuNDljMTIuNTEsMCwzMC42MS0yLjU4LDMwLjYxLTE3LjQ2YTE0LDE0LDAsMCwwLS4zMS0zLjQybC03LjQ1LTMyLjM2Yy0xLjcyLTcuMTItMy4yMy0xMC4zNS0xNS43My0xNi42QzEyNC44OSw4LjY5LDEwMy43Ni41LDk3LjUxLjUsOTEuNjkuNSw5MCw4LDgzLjA2LDhjLTYuNjgsMC0xMS42NC01LjYtMTcuODktNS42LTYsMC05LjkxLDQuMDktMTIuOTMsMTIuNSwwLDAtOC40MSwyMy43Mi05LjQ5LDI3LjE2QTYuNDMsNi40MywwLDAsMCw0Mi41Myw0NGMwLDkuMjIsMzYuMywzOS40NSw4NC45NCwzOS40NU0xNjAsNzIuMDdjMS43Myw4LjE5LDEuNzMsOS4wNSwxLjczLDEwLjEzLDAsMTQtMTUuNzQsMjEuNzctMzYuNDMsMjEuNzdDNzguNTQsMTA0LDM3LjU4LDc2LjYsMzcuNTgsNTguNDlhMTguNDUsMTguNDUsMCwwLDEsMS41MS03LjMzQzIyLjI3LDUyLC41LDU1LC41LDc0LjIyYzAsMzEuNDgsNzQuNTksNzAuMjgsMTMzLjY1LDcwLjI4LDQ1LjI4LDAsNTYuNy0yMC40OCw1Ni43LTM2LjY1LDAtMTIuNzItMTEtMjcuMTYtMzAuODMtMzUuNzgiLz48L3N2Zz4=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          - pods
+          - endpoints
+          - services
+          - secrets
+          verbs:
+          - get
+          - watch
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - watch
+          - list
+          - create
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - get
+          - watch
+          - list
+          - delete
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - clusterversions
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resourceNames:
+          - assisted-service-leader-election-helper
+          - assisted-service-migration-helper
+          - assisted-service-baseiso-helper
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - update
+          - delete
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - create
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - adi.io.my.domain
+          resources:
+          - agents
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - adi.io.my.domain
+          resources:
+          - agents/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - adi.io.my.domain
+          resources:
+          - installenvs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - adi.io.my.domain
+          resources:
+          - installenvs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterdeployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - hive.openshift.io
+          resources:
+          - clusterdeployments/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: default
+      deployments:
+      - name: assisted-service
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: assisted-service
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: assisted-service
+            spec:
+              containers:
+              - env:
+                - name: ISO_IMAGE_TYPE
+                  value: minimal-iso
+                - name: DB_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.host
+                      name: assisted-installer-rds
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.name
+                      name: assisted-installer-rds
+                - name: DB_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.password
+                      name: assisted-installer-rds
+                - name: DB_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.port
+                      name: assisted-installer-rds
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.user
+                      name: assisted-installer-rds
+                - name: OCM_SERVICE_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: ocm-service.clientId
+                      name: assisted-installer-sso
+                - name: OCM_SERVICE_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      key: ocm-service.clientSecret
+                      name: assisted-installer-sso
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: aws_secret_access_key
+                      name: assisted-installer-s3
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: aws_access_key_id
+                      name: assisted-installer-s3
+                - name: S3_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      key: aws_region
+                      name: assisted-installer-s3
+                - name: S3_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      key: bucket
+                      name: assisted-installer-s3
+                - name: S3_ENDPOINT_URL
+                  valueFrom:
+                    secretKeyRef:
+                      key: endpoint
+                      name: assisted-installer-s3
+                - name: AWS_SECRET_ACCESS_KEY_PUBLIC
+                  valueFrom:
+                    secretKeyRef:
+                      key: aws_secret_access_key
+                      name: assisted-installer-public-s3
+                - name: AWS_ACCESS_KEY_ID_PUBLIC
+                  valueFrom:
+                    secretKeyRef:
+                      key: aws_access_key_id
+                      name: assisted-installer-public-s3
+                - name: S3_REGION_PUBLIC
+                  valueFrom:
+                    secretKeyRef:
+                      key: aws_region
+                      name: assisted-installer-public-s3
+                - name: S3_BUCKET_PUBLIC
+                  valueFrom:
+                    secretKeyRef:
+                      key: bucket
+                      name: assisted-installer-public-s3
+                - name: S3_ENDPOINT_URL_PUBLIC
+                  valueFrom:
+                    secretKeyRef:
+                      key: endpoint
+                      name: assisted-installer-public-s3
+                - name: S3_USE_SSL
+                  value: "false"
+                - name: LOG_LEVEL
+                  value: info
+                - name: LOG_FORMAT
+                  value: text
+                - name: INSTALL_RH_CA
+                  value: "false"
+                - name: REGISTRY_CREDS
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: AWS_SHARED_CREDENTIALS_FILE
+                  value: /etc/.aws/credentials
+                - name: DEPLOY_TARGET
+                  value: ocp
+                - name: STORAGE
+                  value: filesystem
+                - name: ISO_WORKSPACE_BASE_DIR
+                  value: /data
+                - name: ISO_CACHE_DIR
+                  value: /data/cache
+                envFrom:
+                - configMapRef:
+                    name: assisted-service-config
+                image: quay.io/ocpmetal/assisted-service@sha256:b1754c35708d9ae8ea9fae4760cb6cf9d24f3a937f536f7421261fefbffe9a08
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /health
+                    port: 8090
+                  initialDelaySeconds: 30
+                name: assisted-service
+                ports:
+                - containerPort: 8090
+                readinessProbe:
+                  httpGet:
+                    path: /ready
+                    port: 8090
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 2000Mi
+                  requests:
+                    cpu: 300m
+                    memory: 400Mi
+                volumeMounts:
+                - mountPath: /data
+                  name: bucket-filesystem
+                - mountPath: /etc/.aws
+                  name: route53-creds
+                  readOnly: true
+              initContainers:
+              - command:
+                - sh
+                - -c
+                - until getent hosts assisted-service.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for assisted-service; sleep 2; done
+                image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+                name: init-wait-for-service
+                resources: {}
+              - command:
+                - sh
+                - -c
+                - 'export NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace) && export HAS_ROUTE=$(oc get routes -n $NAMESPACE assisted-service) && if [ "$HAS_ROUTE" == "" ] ; then oc expose service -n $NAMESPACE assisted-service ; fi && export ROUTE_URL=$(oc get routes -n $NAMESPACE assisted-service -o jsonpath={.spec.host}) && oc get configmap -n $NAMESPACE assisted-service-config -o yaml | sed -e "s|REPLACE_BASE_URL|http\:\/\/$ROUTE_URL|" | oc apply -f - '
+                image: quay.io/openshift/origin-cli@sha256:3a931dd86a2cbbec8c96740bfe3d5b8da78f50d66597579a1d6d2e4916adecad
+                name: init-add-route-and-update-config-map
+                resources: {}
+              volumes:
+              - name: bucket-filesystem
+                persistentVolumeClaim:
+                  claimName: bucket-pv-claim
+              - name: route53-creds
+                secret:
+                  optional: true
+                  secretName: route53-creds
+      - name: postgres
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: postgres
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: postgres
+            spec:
+              containers:
+              - env:
+                - name: POSTGRESQL_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.name
+                      name: assisted-installer-rds
+                - name: POSTGRESQL_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.user
+                      name: assisted-installer-rds
+                - name: POSTGRESQL_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: db.password
+                      name: assisted-installer-rds
+                image: quay.io/ocpmetal/postgresql-12-centos7@sha256:94727d70e0afbf4e167e078744f3a10ac9d82edc553d57b0ecbb5443264f07e1
+                imagePullPolicy: IfNotPresent
+                name: postgres
+                ports:
+                - containerPort: 5432
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 500Mi
+                  requests:
+                    cpu: 100m
+                    memory: 400Mi
+                volumeMounts:
+                - mountPath: /var/lib/pgsql/data
+                  name: postgredb
+              initContainers:
+              - command:
+                - sh
+                - -c
+                - export NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace) && export HAS_PG_SECRET=$(oc get secrets -n $NAMESPACE assisted-installer-rds) && if [ "$HAS_PG_SECRET" == "" ] ; then export PASSWORD=$(cat /dev/urandom | tr -dc "a-zA-Z0-9" | head -c 20) && oc create secret generic assisted-installer-rds --from-literal=db.host=postgres --from-literal=db.name=installer --from-literal=db.port=5432 --from-literal=db.user=admin --type=opaque --from-literal=db.password=$PASSWORD -n $NAMESPACE; fi
+                image: quay.io/openshift/origin-cli@sha256:3a931dd86a2cbbec8c96740bfe3d5b8da78f50d66597579a1d6d2e4916adecad
+                name: init-add-postgres-secret-if-missing
+                resources: {}
+              volumes:
+              - name: postgredb
+                persistentVolumeClaim:
+                  claimName: postgres-pv-claim
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: default
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - assisted-service
+  - assisted-installer
+  - OpenShift
+  links:
+  - name: Assisted Service
+    url: https://github.com/openshift/assisted-service
+  maintainers:
+  - email: support@redhat.com
+    name: Support
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.0.1
