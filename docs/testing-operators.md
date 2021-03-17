@@ -35,9 +35,9 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 ## Overview
-These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework, when packaged for the Operator Lifecycle Manager. Although your submission will always be tested as part of the [CI](./ci.md) you can accelerate the process by testing locally.
+These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework, when packaged for the Operator Lifecycle Manager. Although your submission will always be tested as part of the [CI](./tests-in-pr.md) you can accelerate the process by testing locally.
 
-> The tests described in this document can also be executed automatically in a single step using a [test suite](./using-current-test-suite.md)
+> The tests described in this document can also be executed automatically in a single step using a [test suite](./operator-test-suite.md)
 
 > A previous version of this document required quay.io, `operator-courier` and `operator-marketplace` to conduct the tests. This is no longer required.
 
@@ -104,7 +104,7 @@ my-operator
 ...
 ```
 
-In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./contributing.md#package-your-operator). We will refer to both formats distinctively below where required.
+In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./packaging-operator.md#package-your-operator). We will refer to both formats distinctively below where required.
 
 > Mixing `packagemanifest` style and `bundle` format style Operator versions in a single Operator package **is not supported**. All versions all need to be in either one or the other format.
 
@@ -189,6 +189,9 @@ $ tree .
 ```
 Run the following validation command of the `operator-sdk` from within this directory.
 
+```console
+operator-sdk bundle validate /tmp/my-operator-2.0.0-bundle/ --select-optional name=operatorhub
+```
 
 ### Using operator-sdk to validate your Operator
 
@@ -216,7 +219,7 @@ INFO[0000] All validation tests have completed successfully
 
 If there are any errors or warnings they will be displayed there. The container-tool will be automatically determined given your environment. If you want to force to use `podman` instead of `docker`, supply the `-b` switch to the `operator-sdk bundle validate command`.
 
-Any warnings here might turn into failing pipeline tests here. Please correct all issues displayed. A list of fields that are scanned can also be reviewed with [this list](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md).
+Any warnings here might turn into failing pipeline tests here. Please correct all issues displayed. A list of fields that are scanned can also be reviewed with [this list](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md).
 
 ## Publishing your Operator metadata to a catalog for testing
 
@@ -264,8 +267,8 @@ COPY upstream-community-operators manifests
 RUN /bin/initializer -o ./bundles.db
 
 FROM scratch
-COPY ["nsswitch.conf", "/etc/nsswitch.conf"]
-COPY --from=builder /build/bundles.db /bundles.db
+COPY --from=builder /etc/nsswitch.conf /etc/nsswitch.conf
+COPY --from=builder /bundles.db /bundles.db
 COPY --from=builder /bin/registry-server /registry-server
 COPY --from=builder /bin/grpc_health_probe /bin/grpc_health_probe
 EXPOSE 50051
@@ -627,14 +630,14 @@ The process to test on OpenShift Container Platform and OKD 4.3 or newer is exac
 
 ### 1. Create the CatalogSource
 
-Create a `CatalogSource` instance in the `openshuft-marketplace` namespace to reference the Operator catalog image that contains your Operator version to test:
+Create a `CatalogSource` instance in the `openshift-marketplace` namespace to reference the Operator catalog image that contains your Operator version to test:
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: my-test-catalog
-  namespace: olm
+  namespace: openshift-marketplace
 spec:
   sourceType: grpc
   image: quay.io/myaccount/my-test-catalog:latest

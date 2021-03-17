@@ -1,0 +1,210 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: couchbasebackups.couchbase.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.strategy
+    name: strategy
+    type: string
+  - JSONPath: .spec.size
+    name: volume size
+    type: string
+  - JSONPath: .status.capacityUsed
+    name: capacity used
+    type: string
+  - JSONPath: .status.lastRun
+    name: last run
+    type: string
+  - JSONPath: .status.lastSuccess
+    name: last success
+    type: string
+  - JSONPath: .status.running
+    name: running
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
+  group: couchbase.com
+  names:
+    kind: CouchbaseBackup
+    listKind: CouchbaseBackupList
+    plural: couchbasebackups
+    shortNames:
+    - cbbackup
+    singular: couchbasebackup
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            backoffLimit:
+              description: Number of times a backup job should try to execute. Once
+                it hits the BackoffLimit it will not run until the next scheduled
+                job
+              format: int32
+              type: integer
+            backupRetention:
+              description: Number of hours to hold backups for, everything older will
+                be deleted
+              type: string
+            failedJobsHistoryLimit:
+              description: Amount of failed jobs to keep
+              format: int32
+              minimum: 0
+              type: integer
+            full:
+              description: Full is the schedule on when to take full backups. Used
+                in Full/Incremental and FullOnly backup strategies
+              properties:
+                schedule:
+                  description: Schedule takes a cron schedule in string format
+                  type: string
+              required:
+              - schedule
+              type: object
+            incremental:
+              description: Incremental is the schedule on when to take incremental
+                backups. Used in Full/Incremental backup strategies
+              properties:
+                schedule:
+                  description: Schedule takes a cron schedule in string format
+                  type: string
+              required:
+              - schedule
+              type: object
+            logRetention:
+              description: Number of hours to hold script logs for, everything older
+                will be deleted
+              type: string
+            s3bucket:
+              description: Name of S3 bucket to backup to. If non-empty this overrides
+                local backup
+              type: string
+            size:
+              anyOf:
+              - type: integer
+              - type: string
+              description: Size in GB of the associated PVC
+              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+              x-kubernetes-int-or-string: true
+            storageClassName:
+              description: Name of StorageClass to use
+              type: string
+            strategy:
+              description: 'CB backup strategy - Full/Incremental, Full only. Default:
+                Full/Incremental'
+              enum:
+              - full_incremental
+              - full_only
+              type: string
+            successfulJobsHistoryLimit:
+              description: Amount of successful jobs to keep
+              format: int32
+              minimum: 0
+              type: integer
+          required:
+          - strategy
+          type: object
+        status:
+          properties:
+            archive:
+              description: Location of Backup Archive
+              type: string
+            backups:
+              description: Backups gives us a full list of all backups and their respective
+                repo locations
+              items:
+                properties:
+                  full:
+                    description: the full backup inside the repo
+                    type: string
+                  incrementals:
+                    description: incremental backups inside the repo
+                    items:
+                      type: string
+                    type: array
+                  name:
+                    description: name of the repo
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
+            capacityUsed:
+              anyOf:
+              - type: integer
+              - type: string
+              description: CapacityUsed tells us how much of the PVC we are using
+              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+              x-kubernetes-int-or-string: true
+            cronjob:
+              description: Cronjob tells us which Cronjob the job belongs to
+              type: string
+            duration:
+              description: Duration tells us how long the last backup took
+              type: string
+            failed:
+              description: Failed indicates whether the most recent backup has failed
+              type: boolean
+            job:
+              description: Job tells us which job is running/ran last
+              type: string
+            lastFailure:
+              description: LastFailure tells us the time the last failed backup failed
+              format: date-time
+              type: string
+            lastRun:
+              description: LastRun tells us the time the last backup job started
+              format: date-time
+              type: string
+            lastSuccess:
+              description: LastSuccess gives us the time the last successful backup
+                finished
+              format: date-time
+              type: string
+            output:
+              description: Output reports useful information from the backup_script
+              type: string
+            pod:
+              description: Pod tells us which pod is running/ran last
+              type: string
+            repo:
+              description: Repo is where we are currently performing operations
+              type: string
+            running:
+              description: Running indicates whether a backup is currently being performed
+              type: boolean
+          required:
+          - cronjob
+          - failed
+          - job
+          - pod
+          - running
+          type: object
+      required:
+      - spec
+      type: object
+  version: v2
+  versions:
+  - name: v2
+    served: true
+    storage: true
+  - name: v1
+    served: false
+    storage: false

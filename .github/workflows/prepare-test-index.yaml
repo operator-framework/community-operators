@@ -1,0 +1,25 @@
+name: prepare-test-index
+env:
+  GODEBUG: x509ignoreCN=0
+  
+on:
+  repository_dispatch:
+    types:
+      - manual-test-index
+      - index-for-openshift-test
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: check
+        run: |
+          echo ${{ github.event.client_payload.source_pr }} >> file
+          echo
+          echo
+          echo -n "Preparing temp index for PR: "
+          cat file
+          echo
+          echo
+          CONTAINER_TOOL=podman OP_DEBUG=0 OP_TOKEN=${{ github.event.client_payload.op_token }} bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/osr_run.sh) ${{ github.event.client_payload.source_pr }}

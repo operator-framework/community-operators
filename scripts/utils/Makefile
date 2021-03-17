@@ -45,7 +45,7 @@ dependencies.install.jq: ## Install jq
 	@echo "Installed"
 
 dependencies.install.operator-courier: ## Install operator-courier
-	@python3 -m pip install operator-courier==${COURIER_VER}
+	@python3 -m pip install --no-cache-dir operator-courier==${COURIER_VER}
 	@echo "Installed"
 
 dependencies.install.operator-sdk: ## Install operator-sdk

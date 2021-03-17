@@ -1,0 +1,175 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    categories: Storage,Monitoring
+    certified: "false"
+    containerImage: quay.io/redhat-cop/volume-expansion-operator:v0.1.0
+    createdAt: 10/14/2020
+    description: This operator provides automation expanding pod's volumes when they are about to run out of space.
+    operators.operatorframework.io/builder: operator-sdk-v1.1.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://github.com/redhat-cop/volume-expansion-operator
+    support: Best Effort
+  name: volume-expander-operator.v0.1.4
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: |
+    The purpose of the volume-expander-operator is to expand volumes when they are running out of space.
+    This is achieved by using the [volume expansion feature](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#expanding-persistent-volumes-claims).
+
+    The operator periodically checks the `kubelet_volume_stats_used_bytes` and `kubelet_volume_stats_capacity_bytes published` by the kubelets to decide when to expand a volume.
+    Notice that these metrics are generated only when a volume is mounted to a pod. Also the kubelet takes a minute or two to start generating accurate values for these metrics. The operator accounts for that.
+
+    This operator works based on the following annotations to PersistentVolumeClaim resources:
+
+    | Annotation | Default &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  | Description  |
+    | :--- | :--- | :--- |
+    | `volume-expander-operator.redhat-cop.io/autoexpand`  | N/A  | if set to "true" enables the volume-expander-operator to watch on this PVC  |
+    | `volume-expander-operator.redhat-cop.io/polling-frequency`  | `"30s"` | How frequently to poll the volume metrics. Express this value as a valid golang [Duration](https://golang.org/pkg/time/#ParseDuration)  |
+    | `volume-expander-operator.redhat-cop.io/expand-threshold-percent` | `"80"` | the percentage of used storage after which the volume will be expanded. This must be a positive integer. |
+    | `volume-expander-operator.redhat-cop.io/expand-by-percent` | `"25"` | the percentage by which the volume will be expanded, relative to the current size. This must be an integer between 0 and 100 |
+    | `volume-expander-operator.redhat-cop.io/expand-up-to` | MaxInt64 | the upper bound for this volume to be expanded to. The default value is the largest quantity representable and is intended to be interpreted as infinite. If the default is used it is recommend to ensure the namespace has a quota on the used storage class. |
+
+    Note that not all of the storage driver implementations support volume expansion. It is a responsibility of the user/platform administrator to ensure that storage class and the persistent volume claim meet all the requirements needed for the volume expansion feature to work properly.
+
+    This operator was tested with [OCS](https://www.redhat.com/en/technologies/cloud-computing/openshift-container-storage), but should work with any other storage driver that supports volume expansion.
+  displayName: Volume Expander Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims/status
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - delete
+          - get
+          - list
+          - watch
+        serviceAccountName: default
+      deployments:
+      - name: volume-expander-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                command:
+                - /manager
+                image: quay.io/redhat-cop/volume-expander-operator:v0.1.4
+                name: manager
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 30Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: default
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - volume
+  - storage
+  - csi
+  - expansion
+  links:
+  - name: Volume Expander Operator
+    url: https://github.com/redhat-cop/volume-expander-operator
+  maintainers:
+  - email: rspazzol@redhat.com
+    name: Raffaele Spazzoli
+  maturity: alpha
+  provider:
+    name: Red Hat Community of Practice
+  version: 0.1.4
