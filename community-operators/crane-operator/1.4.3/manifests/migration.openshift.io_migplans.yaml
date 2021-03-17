@@ -1,0 +1,476 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: migplans.migration.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: Ready
+    type: string
+  - JSONPath: .spec.srcMigClusterRef.name
+    name: Source
+    type: string
+  - JSONPath: .spec.destMigClusterRef.name
+    name: Target
+    type: string
+  - JSONPath: .spec.migStorageRef.name
+    name: Storage
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: migration.openshift.io
+  names:
+    kind: MigPlan
+    listKind: MigPlanList
+    plural: migplans
+    singular: migplan
+  scope: Namespaced
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: MigPlan is the Schema for the migplans API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MigPlanSpec defines the desired state of MigPlan
+          properties:
+            closed:
+              description: If the migration was successful for a migplan, this value
+                can be set True indicating that after one successful migration no
+                new migrations can be carried out for this migplan.
+              type: boolean
+            destMigClusterRef:
+              description: ObjectReference contains enough information to let you
+                inspect or modify the referred object.
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            hooks:
+              description: Holds a reference to a MigHook along with the desired phase
+                to run it in.
+              items:
+                description: MigPlanHook hold a reference to a MigHook along with
+                  the desired phase to run it in
+                properties:
+                  executionNamespace:
+                    description: Holds the name of the namespace where hooks should
+                      be implemented.
+                    type: string
+                  phase:
+                    description: 'Indicates the phase when the hooks will be executed.
+                      Acceptable values are: PreBackup, PostBackup, PreRestore, and
+                      PostRestore.'
+                    type: string
+                  reference:
+                    description: ObjectReference contains enough information to let
+                      you inspect or modify the referred object.
+                    properties:
+                      apiVersion:
+                        description: API version of the referent.
+                        type: string
+                      fieldPath:
+                        description: 'If referring to a piece of an object instead
+                          of an entire object, this string should contain a valid
+                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                          For example, if the object reference is to a container within
+                          a pod, this would take on a value like: "spec.containers{name}"
+                          (where "name" refers to the name of the container that triggered
+                          the event) or if no container name is specified "spec.containers[2]"
+                          (container with index 2 in this pod). This syntax is chosen
+                          only to have some well-defined way of referencing a part
+                          of an object. TODO: this design is not final and this field
+                          is subject to change in the future.'
+                        type: string
+                      kind:
+                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                      resourceVersion:
+                        description: 'Specific resourceVersion to which this reference
+                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                        type: string
+                      uid:
+                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                        type: string
+                    type: object
+                  serviceAccount:
+                    description: Holds the name of the service account to be used
+                      for running hooks.
+                    type: string
+                required:
+                - executionNamespace
+                - phase
+                - reference
+                - serviceAccount
+                type: object
+              type: array
+            indirectImageMigration:
+              description: If set True, disables direct image migrations.
+              type: boolean
+            indirectVolumeMigration:
+              description: If set True, disables direct volume migrations.
+              type: boolean
+            migStorageRef:
+              description: ObjectReference contains enough information to let you
+                inspect or modify the referred object.
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            namespaces:
+              description: Holds names of all the namespaces to be included in migration.
+              items:
+                type: string
+              type: array
+            persistentVolumes:
+              items:
+                description: Name - The PV name. Capacity - The PV storage capacity.
+                  StorageClass - The PV storage class name. Supported - Lists of what
+                  is supported. Selection - Choices made from supported. PVC - Associated
+                  PVC. NFS - NFS properties. staged - A PV has been explicitly added/updated.
+                properties:
+                  capacity:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  capacityConfirmed:
+                    type: boolean
+                  name:
+                    type: string
+                  proposedCapacity:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  pvc:
+                    description: PVC
+                    properties:
+                      accessModes:
+                        items:
+                          type: string
+                        type: array
+                      hasReference:
+                        type: boolean
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                  selection:
+                    description: Selection Action - The PV migration action (move|copy|skip)
+                      StorageClass - The PV storage class name to use in the destination
+                      cluster. AccessMode   - The PV access mode to use in the destination
+                      cluster, if different from src PVC AccessMode CopyMethod   -
+                      The PV copy method to use ('filesystem' for restic copy, or
+                      'snapshot' for velero snapshot plugin) Verify       - Whether
+                      or not to verify copied volume data if CopyMethod is 'filesystem'
+                    properties:
+                      accessMode:
+                        type: string
+                      action:
+                        type: string
+                      copyMethod:
+                        type: string
+                      storageClass:
+                        type: string
+                      verify:
+                        type: boolean
+                    type: object
+                  storageClass:
+                    type: string
+                  supported:
+                    description: Supported Actions     - The list of supported actions
+                      CopyMethods - The list of supported copy methods
+                    properties:
+                      actions:
+                        items:
+                          type: string
+                        type: array
+                      copyMethods:
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - actions
+                    - copyMethods
+                    type: object
+                required:
+                - selection
+                - supported
+                type: object
+              type: array
+            refresh:
+              description: If set True, the controller is forced to check if the migplan
+                is in Ready state or not.
+              type: boolean
+            srcMigClusterRef:
+              description: ObjectReference contains enough information to let you
+                inspect or modify the referred object.
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+          type: object
+        status:
+          description: MigPlanStatus defines the observed state of MigPlan
+          properties:
+            conditions:
+              items:
+                description: Condition Type - The condition type. Status - The condition
+                  status. Reason - The reason for the condition. Message - The human
+                  readable description of the condition. Durable - The condition is
+                  not un-staged. Items - A list of `items` associated with the condition
+                  used to replace [] in `Message`. staging - A condition has been
+                  explicitly set/updated.
+                properties:
+                  category:
+                    type: string
+                  durable:
+                    type: boolean
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - category
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+            destStorageClasses:
+              items:
+                description: StorageClass is an available storage class in the cluster
+                  Name - the storage class name Provisioner - the dynamic provisioner
+                  for the storage class Default - whether or not this storage class
+                  is the default AccessModes - access modes supported by the dynamic
+                  provisioner
+                properties:
+                  accessModes:
+                    items:
+                      type: string
+                    type: array
+                  default:
+                    type: boolean
+                  name:
+                    type: string
+                  provisioner:
+                    type: string
+                type: object
+              type: array
+            excludedResources:
+              items:
+                type: string
+              type: array
+            incompatibleNamespaces:
+              items:
+                description: IncompatibleNamespace - namespace, which is noticed to
+                  contain resources incompatible by the migration
+                properties:
+                  gvks:
+                    items:
+                      description: IncompatibleGVK - custom structure for printing
+                        GVKs lowercase
+                      properties:
+                        group:
+                          type: string
+                        kind:
+                          type: string
+                        version:
+                          type: string
+                      required:
+                      - group
+                      - kind
+                      - version
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                required:
+                - gvks
+                - name
+                type: object
+              type: array
+            namespaces:
+              items:
+                description: UnhealthyNamespace is a store for unhealthy resources
+                  in a namespace
+                properties:
+                  name:
+                    type: string
+                  workloads:
+                    items:
+                      description: Workload is a store for unhealthy resource and
+                        it's dependents
+                      properties:
+                        name:
+                          type: string
+                        resources:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - name
+                      type: object
+                    type: array
+                required:
+                - name
+                - workloads
+                type: object
+              type: array
+            observedDigest:
+              type: string
+            srcStorageClasses:
+              items:
+                description: StorageClass is an available storage class in the cluster
+                  Name - the storage class name Provisioner - the dynamic provisioner
+                  for the storage class Default - whether or not this storage class
+                  is the default AccessModes - access modes supported by the dynamic
+                  provisioner
+                properties:
+                  accessModes:
+                    items:
+                      type: string
+                    type: array
+                  default:
+                    type: boolean
+                  name:
+                    type: string
+                  provisioner:
+                    type: string
+                type: object
+              type: array
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
