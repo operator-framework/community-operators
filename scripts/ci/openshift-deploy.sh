@@ -3,6 +3,8 @@
 
 set -e #fail in case of non zero return
 
+MAX_LIMIT_FOR_INDEX_WAIT=20
+
 OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
@@ -70,40 +72,33 @@ echo "OP_VER=$OP_VER"
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
 cd aqua
-#export
-#echo
-#export|grep 2502
+
 echo "**** Temp tests: ***"
-OP_TOKEN=$(cat /var/run/cred/jtkn)
+OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
 curl -u J0zi:$(cat /var/run/cred/jtkn) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/J0zi/test/dispatches --data "{\"event_type\": \"test-from-robot\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
+https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"|true
 
-#echo
-#echo "podman version:"
-#podman --version
-#echo
-#echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman:"
-#/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b podman|true
-#echo
-#echo "/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah:"
-#/tmp/operator-test/bin/opm alpha bundle build --directory 1.0.2 --package aqua -t test/aqua -b buildah|true
-#echo
-#echo "podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-#podman build -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-#echo
-#echo "buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-#buildah bud -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-#echo
-#echo "buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0:"
-#buildah bud --storage-driver overlay  -f ../jenkins-operator/0.6.0/Dockerfile ../jenkins-operator/0.6.0|true
-#echo
-#echo "podman pull centos:8:"
-#podman pull centos:8|true
-#echo
-#echo
+CHECK_TEMP_INDEX=1
+while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
+  echo "Checking index $QUAY_HASH presence ... $CHECK_TEMP_INDEX minutes."
+  if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then
+   echo "Temp index $QUAY_HASH found."
+   break
+  elif [ "$CHECK_TEMP_INDEX" -eq "$MAX_LIMIT_FOR_INDEX_WAIT" ]; then
+    echo
+    echo
+    echo 'Temp index not found. Are your commits squashed? If so, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
+    echo
+    echo
+    exit 1
+  fi
+  sleep 60s
+  CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
+done
+
 
 #export OP_STREAM=community-operators
 #export OP_VERSION=$OP_VER
@@ -116,7 +111,10 @@ https://api.github.com/repos/J0zi/test/dispatches --data "{\"event_type\": \"tes
 #deploy start
 mkdir -p /tmp/playbooks2
 cd /tmp/playbooks2
-ansible-pull -d /tmp/.ansible-pulled -U https://github.com/J0zi/operator-test-playbooks -C upstream-community -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG
+git clone https://github.com/operator-framework/operator-test-playbooks.git
+cd operator-test-playbooks/upstream
+export ANSIBLE_CONFIG=/tmp/playbooks2/operator-test-playbooks/upstream/ansible.cfg
+ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG -vv
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"

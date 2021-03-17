@@ -1,0 +1,331 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "infinispan.org/v1",
+          "kind": "Infinispan",
+          "metadata": {
+            "name": "example-infinispan"
+          },
+          "spec": {
+            "replicas": 1
+          }
+        },
+        {
+          "apiVersion": "infinispan.org/v2alpha1",
+          "kind": "Backup",
+          "metadata": {
+            "name": "example-backup"
+          },
+          "spec": {
+            "cluster": "example-infinispan",
+            "container": {
+              "cpu": "1000m",
+              "extraJvmOpts": "-Djava.property=me",
+              "memory": "1Gi"
+            },
+            "path": "asdasd"
+          }
+        },
+        {
+          "apiVersion": "infinispan.org/v2alpha1",
+          "kind": "Cache",
+          "metadata": {
+            "name": "example-cache"
+          },
+          "spec": {
+            "adminAuth": {
+              "secretName": "basic-auth"
+            },
+            "clusterName": "example-infinispan",
+            "name": "mycache"
+          }
+        },
+        {
+          "apiVersion": "infinispan.org/v2alpha1",
+          "kind": "Restore",
+          "metadata": {
+            "name": "example-restore"
+          },
+          "spec": {
+            "cluster": "example-infinispan",
+            "container": {
+              "cpu": "1000m",
+              "extraJvmOpts": "-Djava.property=me",
+              "memory": "1Gi"
+            },
+            "path": "asdasd"
+          }
+        }
+      ]
+    capabilities: Full Lifecycle
+    categories: Database
+    repository: https://github.com/infinispan/infinispan-operator
+    description: Create and manage Infinispan clusters.
+    containerImage: quay.io/infinispan/operator:2.1.1.Final
+    createdAt: 2021-01-26T09:00:00Z
+    support: Infinispan
+    certified: "false"
+  name: infinispan-operator.v2.1.2
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - description: Backup is the Schema for the backups API
+        kind: Backup
+        name: backups.infinispan.org
+        version: v2alpha1
+        displayName: Backup
+      - description: Cache is the Schema for the caches API
+        kind: Cache
+        name: caches.infinispan.org
+        version: v2alpha1
+        displayName: Cache
+      - description: Infinispan is the Schema for the infinispans API
+        kind: Infinispan
+        name: infinispans.infinispan.org
+        version: v1
+        displayName: Infinispan Cluster
+        specDescriptors:
+          - description: The desired number of nodes for the Infinispan cluster.
+            displayName: Replicas
+            path: replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+        statusDescriptors:
+          - description: The current pods
+            displayName: Pods Status
+            path: podStatus
+            x-descriptors:
+              - "urn:alm:descriptor:com.tectonic.ui:podStatuses"
+      - description: Restore is the Schema for the restores API
+        kind: Restore
+        name: restores.infinispan.org
+        version: v2alpha1
+        displayName: Restore
+  description: |
+      Infinispan is a distributed, in-memory data store that increases application performance and delivers open-source capabilities to handle demanding use cases.
+      
+      ### Core Capabilities
+      * **Schemaless data structure:** Store different objects as key-value pairs.
+      * **Grid-based data storage:** Distribute and replicate data across clusters.
+      * **Elastic scaling:** Dynamically adjust the number of nodes to meet demand without service disruption.
+      * **Data interoperability:** Store, retrieve, and query data in the grid from different endpoints.
+      * **High availability:** Always have access to your data.
+
+      ### Infinispan Operator Features
+      * Operational intelligence that simplifies Infinispan cluster deployment.
+      * REST and Hot Rod endpoints available at port `11222`.
+      * Cache service for a high-performance, ephemeral data store.
+      * Data Grid service for a fully configurable Infinispan cluster.
+      * Default application user: `developer`. Infinispan Operator generates credentials in an authentication secret at startup.
+      * Infinispan pods request `0.25` (limit `0.50`) CPUs, 512MiB of memory and 1Gi of ReadWriteOnce persistent storage. Infinispan Operator lets you adjust resource allocation to suit your requirements.
+  displayName: Infinispan Operator
+  install:
+    spec:
+      deployments:
+        - name: infinispan-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: infinispan-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: infinispan-operator
+              spec:
+                containers:
+                  - command:
+                      - infinispan-operator
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: infinispan-operator
+                      - name: RELATED_IMAGE_OPENJDK
+                        value: quay.io/infinispan/server:12.0.1.Final
+                    image: quay.io/infinispan/operator:2.1.1.Final
+                    imagePullPolicy: Always
+                    name: infinispan-operator
+                    ports:
+                      - containerPort: 60000
+                        name: metrics
+                    resources: {}
+                serviceAccountName: infinispan-operator
+      permissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+                - services
+                - services/finalizers
+                - endpoints
+                - configmaps
+                - pods
+                - secrets
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - pods/exec
+              verbs:
+                - create
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+                - deployments
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - statefulsets
+                - deployments/finalizers
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - route.openshift.io
+              resources:
+                - routes
+                - routes/custom-host
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+            - apiGroups:
+                - networking.k8s.io
+              resources:
+                - ingresses
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - infinispan.org
+              resources:
+                - infinispans
+                - infinispans/status
+                - infinispans/finalizers
+                - caches
+                - caches/status
+                - caches/finalizers
+                - backups
+                - backups/status
+                - backups/finalizers
+                - restores
+                - restores/status
+                - restores/finalizers
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+          serviceAccountName: infinispan-operator
+      clusterPermissions:
+        - serviceAccountName: infinispan-operator
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - nodes
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+                - customresourcedefinitions/status
+              verbs:
+                - get
+                - list
+            - apiGroups:
+                - storage.k8s.io
+              resources:
+                - storageclasses
+              verbs:
+                - get
+                - watch
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: true
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  maturity: alpha
+  provider: {name: Infinispan}
+  replaces: infinispan-operator.v2.1.1
+  version: 2.1.2
+  keywords:
+    - infinispan
+    - key value
+    - database
+    - datagrid
+    - open source
+  minKubeVersion: 1.11.0
+  maintainers:
+    - name: Infinispan Community
+      email: infinispan-dev@lists.jboss.org
+  relatedImages:
+    - name: infinispan-server
+      image: quay.io/infinispan/server:12.0.1.Final
+  labels:
+    operated-by: infinispan-operator
+  selector:
+    matchLabels:
+      operated-by: infinispan-operator
+  links:
+    - name: Blog
+      url: https://blog.infinispan.org/
+    - name: Documentation
+      url: https://infinispan.org/
+    - name: Chat
+      url: https://infinispan.zulipchat.com/#narrow/stream/185835-infinispan-cloud
+    - name: Quickstart
+      url: https://github.com/infinispan/infinispan-simple-tutorials/tree/master/operator
+    - name: Operator Source Code
+      url: https://github.com/infinispan/infinispan-operator
+  icon:
+    - base64data: iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAACxAAAAsQHGLUmNAAAEOklEQVR4nO1bTUhUURQ+ZSioGAyNTFAmNBCjUEHSShRaTRs3tWlR61q3KciVC1e1rV3QOjduciUo0iIUpqARYQI1QVGZSHRASYrv8e7wmnz33vfmnjPPZj54zCjv3nfvd8/fO+fMmQdvP/6mJsbZZt480CIgAWtoKFoEJGANDYU1AVdSXTSQ6aHO9nOJ3QzWhjVirbaw3s2j2/2Uy/RU/97dP6S18gEVt/a8C98loQ5EbfhCd0f16ctbezQx89VqNbGPEw/EdasvVSVkrrRD86Vt2tk/ZKEi3d1BI9leGs2m/9pwPXAmz1jQvZuXvGu+tENThe/OiEh7c1+mkWzayXxBsCg0FoprqrBBH4qbVDn6FWse6PTdgYseqVxgtWhYOMT15exKZBsBvX5655ozUQ8DuxvEBibHrkcSX9yLMdybB8TigMfDWc+TmIB7cK8UYr0NKteDT+UFbAED+WahFEpSVEO3tF6uumF8RkUsG6B8PwwcDBX0HMbKRmSxQSwWY2v/b7t5uFyMh9uNa2AVnOYD4KpARGd7m/HeV7MrtLhe9r5Dkl7kB41jKkfH3sbhYl3BqQ3Awp5Pf7ay+BB3FVaDOBMwJ+Z2uXnAuRFE8DMxU/R0XQdIyZPhq94dpk1hLszJEWGyeAHoJQydiQQYUIg/7MlyiAFTRrNeXQ8DqxvEwsM2pqBc3klSgLFhHsMV2OMARIEwXmGA5xjqS/0jBRiDsdxgJ0Cpgw7wHMBcabt6F6fYByESCcLd6VQBeQa88S2u//BOHvcqF8kNsVDYZOmhBjjx5a2fzl2dDmIEmLJGQ35I/b6wESukjQvRpKjOLap0m3RqTZQAk15HSWa6gigBiOR0LrHL4h3CNcTrAjoRz2XOi64FECeAK2McFy0CErCGhiJRBKQFkqC1aBEg/UCdF/jv4wAyGEFkiaSlIFESQIF3AimIEqBEXPdqzFEA1UGMAOT+7vtFTt07gSq4SEGMAKS+VahreimySZO7gggB0Ouc117T5ok4DKEpQyRlC9gJQPEjWOwczfZ6n7WlsVoECyecYCcANf5gqSzn9/VADXYNLhFjTzUBOMXcCQZN6bgpW4yx3KVyFgKU2Ie5NCUFyP0tGQwi5uBUB+cEIJIbzw8Y/bmSgtcL37RZIvJJwJwcUaJTArCpybEbVjG9Sn3bFE7Ijw8wt2sXWXd/QNQGCfJ1vzZDjPEPLVpoKAkNEk3ZIjOeHzzRokfBTHGT3n1aDR2h6oF5v1ZoAxxA7SFEaZUVC4WxOd3mFXAPd0k8CPZQC/oatVESarJWrog0SrISUE+rLAh7Nv3ldLbKumqWBnGYBx3oiW+W5myXx3ywCyAjMe3yjfjBBIgACbh0P5iIAus4AA9B8XK1XBFpXYkDBGX9qU46ODq2PhBrCZCu28cBDiZqMNQqjSVgDQ1Fi4AErKGhaG4CiOgPK6Ej+g5fAyMAAAAASUVORK5CYII=
+      mediatype: image/png

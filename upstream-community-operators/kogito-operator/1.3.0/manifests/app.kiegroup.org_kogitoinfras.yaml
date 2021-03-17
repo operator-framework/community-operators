@@ -1,0 +1,321 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: kogitoinfras.app.kiegroup.org
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.resource.name
+    description: Third Party Infrastructure Resource
+    name: Resource Name
+    type: string
+  - JSONPath: .spec.resource.kind
+    description: Kubernetes CR Kind
+    name: Kind
+    type: string
+  - JSONPath: .spec.resource.apiVersion
+    description: Kubernetes CR API Version
+    name: API Version
+    type: string
+  - JSONPath: .status.condition.status
+    description: General Status of this resource bind
+    name: Status
+    type: string
+  - JSONPath: .status.condition.reason
+    description: Status reason
+    name: Reason
+    type: string
+  group: app.kiegroup.org
+  names:
+    kind: KogitoInfra
+    listKind: KogitoInfraList
+    plural: kogitoinfras
+    singular: kogitoinfra
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: 'KogitoInfra is the resource to bind a Custom Resource (CR) not managed by Kogito Operator to a given deployed Kogito service. It holds the reference of a CR managed by another operator such as Strimzi. For example: one can create a Kafka CR via Strimzi and link this resource using KogitoInfra to a given Kogito service (custom or supporting, such as Data Index). Please refer to the Kogito Operator documentation (https://docs.jboss.org/kogito/release/latest/html_single/) for more information.'
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: KogitoInfraSpec defines the desired state of KogitoInfra.
+          properties:
+            infraProperties:
+              additionalProperties:
+                type: string
+              description: Optional properties which would be needed to setup correct runtime/service configuration, based on the resource type. For example, MongoDB will require `username` and `database` as properties for a correct setup, else it will fail
+              type: object
+              x-kubernetes-map-type: atomic
+            resource:
+              description: 'Resource for the service. Example: Infinispan/Kafka/Keycloak.'
+              properties:
+                apiVersion:
+                  description: APIVersion describes the API Version of referred Kubernetes resource for example, infinispan.org/v1
+                  type: string
+                kind:
+                  description: Kind describes the kind of referred Kubernetes resource for example, Infinispan
+                  type: string
+                name:
+                  description: Name of referred resource.
+                  type: string
+                namespace:
+                  description: Namespace where referred resource exists.
+                  type: string
+              required:
+              - apiVersion
+              - kind
+              type: object
+          type: object
+        status:
+          description: KogitoInfraStatus defines the observed state of KogitoInfra.
+          properties:
+            condition:
+              description: KogitoInfraCondition ...
+              properties:
+                lastTransitionTime:
+                  description: LastTransitionTime ...
+                  format: date-time
+                  type: string
+                message:
+                  description: Message ...
+                  type: string
+                reason:
+                  description: Reason ...
+                  type: string
+                status:
+                  description: Status ...
+                  type: string
+                type:
+                  description: Type ...
+                  type: string
+              required:
+              - status
+              - type
+              type: object
+            runtimeProperties:
+              additionalProperties:
+                description: RuntimeProperties defines the variables that will be extracted from the linked resource and added to the deployed Kogito service.
+                properties:
+                  appProps:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  env:
+                    items:
+                      description: EnvVar represents an environment variable present in a Container.
+                      properties:
+                        name:
+                          description: Name of the environment variable. Must be a C_IDENTIFIER.
+                          type: string
+                        value:
+                          description: 'Variable references $(VAR_NAME) are expanded using the previous defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".'
+                          type: string
+                        valueFrom:
+                          description: Source for the environment variable's value. Cannot be used if value is not empty.
+                          properties:
+                            configMapKeyRef:
+                              description: Selects a key of a ConfigMap.
+                              properties:
+                                key:
+                                  description: The key to select.
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                  type: string
+                                optional:
+                                  description: Specify whether the ConfigMap or its key must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                            fieldRef:
+                              description: 'Selects a field of the pod: supports metadata.name, metadata.namespace, metadata.labels, metadata.annotations, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.'
+                              properties:
+                                apiVersion:
+                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
+                                  type: string
+                                fieldPath:
+                                  description: Path of the field to select in the specified API version.
+                                  type: string
+                              required:
+                              - fieldPath
+                              type: object
+                            resourceFieldRef:
+                              description: 'Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.'
+                              properties:
+                                containerName:
+                                  description: 'Container name: required for volumes, optional for env vars'
+                                  type: string
+                                divisor:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  description: Specifies the output format of the exposed resources, defaults to "1"
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                resource:
+                                  description: 'Required: resource to select'
+                                  type: string
+                              required:
+                              - resource
+                              type: object
+                            secretKeyRef:
+                              description: Selects a key of a secret in the pod's namespace
+                              properties:
+                                key:
+                                  description: The key of the secret to select from.  Must be a valid secret key.
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                          type: object
+                      required:
+                      - name
+                      type: object
+                    type: array
+                type: object
+              description: Runtime variables extracted from the linked resource that will be added to the deployed Kogito service.
+              type: object
+            volumes:
+              description: List of volumes that should be added to the services bound to this infra instance
+              items:
+                description: KogitoInfraVolume describes the data structure for volumes that should be mounted in the given service provided by this infra instance
+                properties:
+                  mount:
+                    description: Mount is the Kubernetes VolumeMount referenced by this instance
+                    properties:
+                      mountPath:
+                        description: Path within the container at which the volume should be mounted.  Must not contain ':'.
+                        type: string
+                      mountPropagation:
+                        description: mountPropagation determines how mounts are propagated from the host to container and the other way around. When not set, MountPropagationNone is used. This field is beta in 1.10.
+                        type: string
+                      name:
+                        description: This must match the Name of a Volume.
+                        type: string
+                      readOnly:
+                        description: Mounted read-only if true, read-write otherwise (false or unspecified). Defaults to false.
+                        type: boolean
+                      subPath:
+                        description: Path within the volume from which the container's volume should be mounted. Defaults to "" (volume's root).
+                        type: string
+                      subPathExpr:
+                        description: Expanded path within the volume from which the container's volume should be mounted. Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment. Defaults to "" (volume's root). SubPathExpr and SubPath are mutually exclusive.
+                        type: string
+                    required:
+                    - mountPath
+                    - name
+                    type: object
+                  volume:
+                    description: NamedVolume describes the pod Volume reference
+                    properties:
+                      configMap:
+                        description: ConfigMap represents a configMap that should populate this volume
+                        properties:
+                          defaultMode:
+                            description: 'Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.'
+                            format: int32
+                            type: integer
+                          items:
+                            description: If unspecified, each key-value pair in the Data field of the referenced ConfigMap will be projected into the volume as a file whose name is the key and content is the value. If specified, the listed keys will be projected into the specified paths, and unlisted keys will not be present. If a key is specified which is not present in the ConfigMap, the volume setup will error unless it is marked optional. Paths must be relative and may not contain the '..' path or start with '..'.
+                            items:
+                              description: Maps a string key to a path within a volume.
+                              properties:
+                                key:
+                                  description: The key to project.
+                                  type: string
+                                mode:
+                                  description: 'Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.'
+                                  format: int32
+                                  type: integer
+                                path:
+                                  description: The relative path of the file to map the key to. May not be an absolute path. May not contain the path element '..'. May not start with the string '..'.
+                                  type: string
+                              required:
+                              - key
+                              - path
+                              type: object
+                            type: array
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the ConfigMap or its keys must be defined
+                            type: boolean
+                        type: object
+                      name:
+                        description: 'Volume''s name. Must be a DNS_LABEL and unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      secret:
+                        description: 'Secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret'
+                        properties:
+                          defaultMode:
+                            description: 'Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.'
+                            format: int32
+                            type: integer
+                          items:
+                            description: If unspecified, each key-value pair in the Data field of the referenced Secret will be projected into the volume as a file whose name is the key and content is the value. If specified, the listed keys will be projected into the specified paths, and unlisted keys will not be present. If a key is specified which is not present in the Secret, the volume setup will error unless it is marked optional. Paths must be relative and may not contain the '..' path or start with '..'.
+                            items:
+                              description: Maps a string key to a path within a volume.
+                              properties:
+                                key:
+                                  description: The key to project.
+                                  type: string
+                                mode:
+                                  description: 'Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.'
+                                  format: int32
+                                  type: integer
+                                path:
+                                  description: The relative path of the file to map the key to. May not be an absolute path. May not contain the path element '..'. May not start with the string '..'.
+                                  type: string
+                              required:
+                              - key
+                              - path
+                              type: object
+                            type: array
+                          optional:
+                            description: Specify whether the Secret or its keys must be defined
+                            type: boolean
+                          secretName:
+                            description: 'Name of the secret in the pod''s namespace to use. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret'
+                            type: string
+                        type: object
+                    required:
+                    - name
+                    type: object
+                required:
+                - mount
+                - volume
+                type: object
+              type: array
+              x-kubernetes-list-type: atomic
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

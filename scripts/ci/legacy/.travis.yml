@@ -1,0 +1,84 @@
+dist: bionic
+language: python
+os: linux
+if: branch = master
+
+python:
+- "3.8"
+
+env:
+- DISTRO_TYPE=upstream
+
+services:
+  - docker
+
+addons:
+  snaps:
+    - yq
+
+install:
+# check-pr needs to be sourced so it can pass release early.
+- source scripts/ci/check-release $DISTRO_TYPE
+
+before_script:
+  - pip install ansible==2.9.13 jmespath
+
+jobs:
+  include:
+
+  - stage: Traffic light for all tests - Go/Stop
+    if: type = pull_request
+    name: Run tests only on operator modification, otherwise red and stop all tests.
+    script:
+    - scripts/ci/PR-traffic-light
+    before_script: skip
+    install: skip
+    before_install: skip
+
+  - stage: Bundle Test Pipeline
+    if: type = pull_request
+    name: '[kiwi] Bundle Test Pipeline'
+    script:
+    - scripts/ci/run-ansible-tests
+    install: skip
+    before_install: skip
+
+  - name: '[lemon] Test if release by bundle pipeline is possible from scratch'
+    if: type = pull_request
+    script:
+    - scripts/ci/run-index-test -t
+    install: skip
+    before_install: skip
+
+  - name: '[orange] Test if release by bundle pipeline is possible from production registry'
+    if: type = pull_request
+    script:
+    - scripts/ci/run-index-test -t prod
+    install: skip
+    before_install: skip
+
+  # - stage: operatorhubio prod deploy
+  #   if: type = push
+  #   name: Trigger PROD deploy of operatorhub.io
+  #   script: scripts/ci/trigger-operatorhubio-ci.sh
+  #   before_install: skip
+  #   before_script: skip
+
+  # - stage: Release pipeline
+  #   if: type = push
+  #   name: Trigger release on community-operator-catalog
+  #   script: scripts/ci/trigger-community-op-catalog-ci-release.sh
+  #   before_script: skip
+  #   before_install: skip
+
+  # - stage: Release pipeline Push to Quay
+  #   if: type = push
+  #   name: Push to Quay
+  #   script: scripts/ci/push-to-quay
+  #   before_install: skip
+
+
+#
+# More info about travis configuration:
+# https://github.com/redhat-operator-ecosystem/operator-test-playbooks/tree/upstream-community/doc/upstream#community-operators
+#

@@ -1,0 +1,257 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: clusterdeprovisions.hive.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.infraID
+    name: InfraID
+    type: string
+  - JSONPath: .spec.clusterID
+    name: ClusterID
+    type: string
+  - JSONPath: .status.completed
+    name: Completed
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: hive.openshift.io
+  names:
+    kind: ClusterDeprovision
+    listKind: ClusterDeprovisionList
+    plural: clusterdeprovisions
+    shortNames:
+    - cdr
+    singular: clusterdeprovision
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: ClusterDeprovision is the Schema for the clusterdeprovisions API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ClusterDeprovisionSpec defines the desired state of ClusterDeprovision
+          properties:
+            clusterID:
+              description: ClusterID is a globally unique identifier for the cluster
+                to deprovision. It will be used if specified.
+              type: string
+            infraID:
+              description: InfraID is the identifier generated during installation
+                for a cluster. It is used for tagging/naming resources in cloud providers.
+              type: string
+            platform:
+              description: Platform contains platform-specific configuration for a
+                ClusterDeprovision
+              properties:
+                aws:
+                  description: AWS contains AWS-specific deprovision settings
+                  properties:
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the AWS account credentials
+                        to use for deprovisioning the cluster
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                    region:
+                      description: Region is the AWS region for this deprovisioning
+                      type: string
+                  required:
+                  - region
+                  type: object
+                azure:
+                  description: Azure contains Azure-specific deprovision settings
+                  properties:
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the Azure account credentials
+                        to use for deprovisioning the cluster
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                  type: object
+                gcp:
+                  description: GCP contains GCP-specific deprovision settings
+                  properties:
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the GCP account credentials
+                        to use for deprovisioning the cluster
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                    region:
+                      description: Region is the GCP region for this deprovision
+                      type: string
+                  required:
+                  - region
+                  type: object
+                openstack:
+                  description: OpenStack contains OpenStack-specific deprovision settings
+                  properties:
+                    certificatesSecretRef:
+                      description: CertificatesSecretRef refers to a secret that contains
+                        CA certificates necessary for communicating with the OpenStack.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                    cloud:
+                      description: Cloud is the secion in the clouds.yaml secret below
+                        to use for auth/connectivity.
+                      type: string
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the OpenStack account credentials
+                        to use for deprovisioning the cluster
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                  required:
+                  - cloud
+                  type: object
+                ovirt:
+                  description: Ovirt contains oVirt-specific deprovision settings
+                  properties:
+                    certificatesSecretRef:
+                      description: CertificatesSecretRef refers to a secret that contains
+                        the oVirt CA certificates necessary for communicating with
+                        the oVirt.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                    clusterID:
+                      description: The oVirt cluster ID
+                      type: string
+                    credentialsSecretRef:
+                      description: 'CredentialsSecretRef is the oVirt account credentials
+                        to use for deprovisioning the cluster secret fields: ovirt_url,
+                        ovirt_username, ovirt_password, ovirt_ca_bundle'
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                  required:
+                  - certificatesSecretRef
+                  - clusterID
+                  - credentialsSecretRef
+                  type: object
+                vsphere:
+                  description: VSphere contains VMWare vSphere-specific deprovision
+                    settings
+                  properties:
+                    certificatesSecretRef:
+                      description: CertificatesSecretRef refers to a secret that contains
+                        the vSphere CA certificates necessary for communicating with
+                        the VCenter.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                    credentialsSecretRef:
+                      description: CredentialsSecretRef is the vSphere account credentials
+                        to use for deprovisioning the cluster
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                    vCenter:
+                      description: VCenter is the vSphere vCenter hostname.
+                      type: string
+                  required:
+                  - certificatesSecretRef
+                  - credentialsSecretRef
+                  - vCenter
+                  type: object
+              type: object
+          required:
+          - infraID
+          type: object
+        status:
+          description: ClusterDeprovisionStatus defines the observed state of ClusterDeprovision
+          properties:
+            completed:
+              description: Completed is true when the uninstall has completed successfully
+              type: boolean
+            conditions:
+              description: Conditions includes more detailed status for the cluster
+                deprovision
+              items:
+                description: ClusterDeprovisionCondition contains details for the
+                  current condition of a ClusterDeprovision
+                properties:
+                  lastProbeTime:
+                    description: LastProbeTime is the last time we probed the condition.
+                    format: date-time
+                    type: string
+                  lastTransitionTime:
+                    description: LastTransitionTime is the last time the condition
+                      transitioned from one status to another.
+                    format: date-time
+                    type: string
+                  message:
+                    description: Message is a human-readable message indicating details
+                      about last transition.
+                    type: string
+                  reason:
+                    description: Reason is a unique, one-word, CamelCase reason for
+                      the condition's last transition.
+                    type: string
+                  status:
+                    description: Status is the status of the condition.
+                    type: string
+                  type:
+                    description: Type is the type of the condition.
+                    type: string
+                required:
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
