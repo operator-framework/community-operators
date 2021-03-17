@@ -26,16 +26,12 @@ jobs:
         fetch-depth: '0'
     - name: Get diff files
       id: files
+      env:
+        OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}" 
+        OPRT_SHA: "${{ github.event.pull_request.head.sha }}" 
+        OPRT_SRC_BRANCH: "support/action-01"
       run: |
-        git log --oneline | head
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
-        git remote add upstream https://github.com/operator-framework/community-operators -f
-        # git checkout $(git branch -a --contains ${{ github.event.pull_request.head.sha }} | cut -d '/' -f 2-) 
-        git pull --rebase upstream support/action-01        
-        MODIFIED=$(git diff upstream/support/action-01 --name-only | tr '\r\n' ' ')
-        echo "MODIFIED=$MODIFIED"
-        echo "::set-output name=added_modified::$MODIFIED"
+        bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/support/script_pull_target2/upstream/test/oprt_diff.sh)
 
     # - uses: mshick/add-pr-comment@v1
     #   with:
@@ -66,83 +62,83 @@ jobs:
         echo "We have to use script from operator-framework/operator-test-playbooks "
         echo "::set-output name=op_cosmetics_ok::0"
 
-    - uses: actions/github-script@v3
-      # if: steps.op-traffic-light.outputs.op_cosmetics_ok == '1'
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.issues.update({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: '[WIP] pr in development',
-          })
+    # - uses: actions/github-script@v3
+    #   # if: steps.op-traffic-light.outputs.op_cosmetics_ok == '1'
+    #   with:
+    #     github-token: ${{secrets.GITHUB_TOKEN}}
+    #     script: |
+    #       github.issues.update({
+    #         issue_number: context.issue.number,
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         title: '[WIP] pr in development',
+    #       })
 
-    - uses: actions/github-script@v3
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.issues.addLabels({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            labels: ['do-not-merge/work-in-progress', 'needs-ok-to-test' ]
-          })
-    - uses: actions/github-script@v3
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          // Get a list of all issues created by the PR opener
-          // See: https://octokit.github.io/rest.js/#pagination
-          const creator = context.payload.sender.login
-          const opts = github.issues.listForRepo.endpoint.merge({
-            ...context.issue,
-            creator,
-            state: 'all'
-          })
-          const issues = await github.paginate(opts)
+    # - uses: actions/github-script@v3
+    #   with:
+    #     github-token: ${{secrets.GITHUB_TOKEN}}
+    #     script: |
+    #       github.issues.addLabels({
+    #         issue_number: context.issue.number,
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         labels: ['do-not-merge/work-in-progress', 'needs-ok-to-test' ]
+    #       })
+    # - uses: actions/github-script@v3
+    #   with:
+    #     github-token: ${{secrets.GITHUB_TOKEN}}
+    #     script: |
+    #       // Get a list of all issues created by the PR opener
+    #       // See: https://octokit.github.io/rest.js/#pagination
+    #       const creator = context.payload.sender.login
+    #       const opts = github.issues.listForRepo.endpoint.merge({
+    #         ...context.issue,
+    #         creator,
+    #         state: 'all'
+    #       })
+    #       const issues = await github.paginate(opts)
 
-          for (const issue of issues) {
-            if (issue.number === context.issue.number) {
-              continue
-            }
-            if (issue.pull_request) {
-              return // Creator is already a contributor.
-            }
-          }
+    #       for (const issue of issues) {
+    #         if (issue.number === context.issue.number) {
+    #           continue
+    #         }
+    #         if (issue.pull_request) {
+    #           return // Creator is already a contributor.
+    #         }
+    #       }
 
-          await github.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: 'Welcome, new contributor!'
-          })
-    - name: View context attributes
-      uses: actions/github-script@v3
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: console.log(github.issues)
+    #       await github.issues.createComment({
+    #         issue_number: context.issue.number,
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         body: 'Welcome, new contributor!'
+    #       })
+    # - name: View context attributes
+    #   uses: actions/github-script@v3
+    #   with:
+    #     github-token: ${{secrets.GITHUB_TOKEN}}
+    #     script: console.log(github.issues)
 
-    - uses: actions/github-script@v3
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.issues.removeLabel({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            name: 'needs-ok-to-test'
-          })
+    # - uses: actions/github-script@v3
+    #   with:
+    #     github-token: ${{secrets.GITHUB_TOKEN}}
+    #     script: |
+    #       github.issues.removeLabel({
+    #         issue_number: context.issue.number,
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         name: 'needs-ok-to-test'
+    #       })
 
-    - uses: actions/github-script@v3
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.issues.addLabels({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            labels: ['ok-to-test' ]
-          })
-    outputs:
-          op_cosmetics-ok: "${{ steps.op-traffic-light.outputs.op_cosmetics-ok }}"
+    # - uses: actions/github-script@v3
+    #   with:
+    #     github-token: ${{secrets.GITHUB_TOKEN}}
+    #     script: |
+    #       github.issues.addLabels({
+    #         issue_number: context.issue.number,
+    #         owner: context.repo.owner,
+    #         repo: context.repo.repo,
+    #         labels: ['ok-to-test' ]
+    #       })
+    # outputs:
+    #       op_cosmetics-ok: "${{ steps.op-traffic-light.outputs.op_cosmetics-ok }}"
