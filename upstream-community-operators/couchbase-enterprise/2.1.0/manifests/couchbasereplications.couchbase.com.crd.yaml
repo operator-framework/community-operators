@@ -1,0 +1,81 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: couchbasereplications.couchbase.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.bucket
+    name: bucket
+    type: string
+  - JSONPath: .spec.remoteBucket
+    name: remote bucket
+    type: string
+  - JSONPath: .spec.paused
+    name: paused
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
+  group: couchbase.com
+  names:
+    kind: CouchbaseReplication
+    listKind: CouchbaseReplicationList
+    plural: couchbasereplications
+    singular: couchbasereplication
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            bucket:
+              description: Bucket is the source bucket to replicate from.  This must
+                be defined and selected by the cluster.
+              maxLength: 100
+              pattern: ^[a-zA-Z0-9-_%\.]+$
+              type: string
+            compressionType:
+              description: CompressionType is the type of compression to apply to
+                the replication.
+              enum:
+              - None
+              - Auto
+              type: string
+            filterExpression:
+              description: FilterExpression allows certain documents to be filtered
+                out of the replication.
+              type: string
+            paused:
+              description: Paused allows a replication to be stopped and restarted.
+              type: boolean
+            remoteBucket:
+              description: RemoteBucket is the remote bucket name to synchronize to.
+              maxLength: 100
+              pattern: ^[a-zA-Z0-9-_%\.]+$
+              type: string
+          type: object
+      required:
+      - spec
+      type: object
+  version: v2
+  versions:
+  - name: v2
+    served: true
+    storage: true
+  - name: v1
+    served: false
+    storage: false

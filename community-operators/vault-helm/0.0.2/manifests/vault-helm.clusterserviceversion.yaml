@@ -1,0 +1,434 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "vault.sdbrett.com/v1alpha1",
+          "kind": "Vault",
+          "metadata": {
+            "name": "vault-sample"
+          },
+          "spec": {
+            "global": {
+              "enabled": true,
+              "imagePullSecrets": [],
+              "openshift": false,
+              "psp": {
+                "annotations": "seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default\napparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default\nseccomp.security.alpha.kubernetes.io/defaultProfileName:  runtime/default\napparmor.security.beta.kubernetes.io/defaultProfileName:  runtime/default\n",
+                "enable": false
+              },
+              "tlsDisable": true
+            },
+            "injector": {
+              "affinity": null,
+              "agentImage": {
+                "repository": "vault",
+                "tag": "1.5.4"
+              },
+              "annotations": {},
+              "authPath": "auth/kubernetes",
+              "certs": {
+                "caBundle": "",
+                "certName": "tls.crt",
+                "keyName": "tls.key",
+                "secretName": null
+              },
+              "enabled": true,
+              "externalVaultAddr": "",
+              "extraEnvironmentVars": {},
+              "image": {
+                "pullPolicy": "IfNotPresent",
+                "repository": "hashicorp/vault-k8s",
+                "tag": "0.6.0"
+              },
+              "logFormat": "standard",
+              "logLevel": "info",
+              "metrics": {
+                "enabled": false
+              },
+              "namespaceSelector": {},
+              "nodeSelector": null,
+              "priorityClassName": "",
+              "resources": {},
+              "revokeOnShutdown": false,
+              "tolerations": null
+            },
+            "server": {
+              "affinity": "podAntiAffinity:\n  requiredDuringSchedulingIgnoredDuringExecution:\n    - labelSelector:\n        matchLabels:\n          app.kubernetes.io/name: {{ template \"vault.name\" . }}\n          app.kubernetes.io/instance: \"{{ .Release.Name }}\"\n          component: server\n      topologyKey: kubernetes.io/hostname\n",
+              "annotations": {},
+              "auditStorage": {
+                "accessMode": "ReadWriteOnce",
+                "annotations": {},
+                "enabled": false,
+                "mountPath": "/vault/audit",
+                "size": "10Gi",
+                "storageClass": null
+              },
+              "authDelegator": {
+                "enabled": true
+              },
+              "dataStorage": {
+                "accessMode": "ReadWriteOnce",
+                "annotations": {},
+                "enabled": true,
+                "mountPath": "/vault/data",
+                "size": "10Gi",
+                "storageClass": null
+              },
+              "dev": {
+                "enabled": false
+              },
+              "extraArgs": "",
+              "extraContainers": null,
+              "extraEnvironmentVars": {},
+              "extraInitContainers": null,
+              "extraLabels": {},
+              "extraSecretEnvironmentVars": [],
+              "extraVolumes": [],
+              "ha": {
+                "apiAddr": null,
+                "config": "ui = true\n\nlistener \"tcp\" {\n  tls_disable = 1\n  address = \"[::]:8200\"\n  cluster_address = \"[::]:8201\"\n}\nstorage \"consul\" {\n  path = \"vault\"\n  address = \"HOST_IP:8500\"\n}\n\nservice_registration \"kubernetes\" {}\n\n# Example configuration for using auto-unseal, using Google Cloud KMS. The\n# GKMS keys must already exist, and the cluster must have a service account\n# that is authorized to access GCP KMS.\n#seal \"gcpckms\" {\n#   project     = \"vault-helm-dev-246514\"\n#   region      = \"global\"\n#   key_ring    = \"vault-helm-unseal-kr\"\n#   crypto_key  = \"vault-helm-unseal-key\"\n#}\n",
+                "disruptionBudget": {
+                  "enabled": true,
+                  "maxUnavailable": null
+                },
+                "enabled": false,
+                "raft": {
+                  "config": "ui = true\n\nlistener \"tcp\" {\n  tls_disable = 1\n  address = \"[::]:8200\"\n  cluster_address = \"[::]:8201\"\n}\n\nstorage \"raft\" {\n  path = \"/vault/data\"\n}\n\nservice_registration \"kubernetes\" {}\n",
+                  "enabled": false,
+                  "setNodeId": false
+                },
+                "replicas": 3
+              },
+              "image": {
+                "pullPolicy": "IfNotPresent",
+                "repository": "vault",
+                "tag": "1.5.4"
+              },
+              "ingress": {
+                "annotations": {},
+                "enabled": false,
+                "hosts": [
+                  {
+                    "host": "chart-example.local",
+                    "paths": []
+                  }
+                ],
+                "labels": {},
+                "tls": []
+              },
+              "livenessProbe": {
+                "enabled": false,
+                "failureThreshold": 2,
+                "initialDelaySeconds": 60,
+                "path": "/v1/sys/health?standbyok=true",
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 3
+              },
+              "networkPolicy": {
+                "enabled": false
+              },
+              "nodeSelector": null,
+              "postStart": [],
+              "preStopSleepSeconds": 5,
+              "priorityClassName": "",
+              "readinessProbe": {
+                "enabled": true,
+                "failureThreshold": 2,
+                "initialDelaySeconds": 5,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 3
+              },
+              "resources": {},
+              "route": {
+                "annotations": {},
+                "enabled": false,
+                "host": "chart-example.local",
+                "labels": {}
+              },
+              "service": {
+                "annotations": {},
+                "enabled": true,
+                "port": 8200,
+                "targetPort": 8200
+              },
+              "serviceAccount": {
+                "annotations": {},
+                "create": true,
+                "name": ""
+              },
+              "shareProcessNamespace": false,
+              "standalone": {
+                "config": "ui = true\n\nlistener \"tcp\" {\n  tls_disable = 1\n  address = \"[::]:8200\"\n  cluster_address = \"[::]:8201\"\n}\nstorage \"file\" {\n  path = \"/vault/data\"\n}\n\n# Example configuration for using auto-unseal, using Google Cloud KMS. The\n# GKMS keys must already exist, and the cluster must have a service account\n# that is authorized to access GCP KMS.\n#seal \"gcpckms\" {\n#   project     = \"vault-helm-dev\"\n#   region      = \"global\"\n#   key_ring    = \"vault-helm-unseal-kr\"\n#   crypto_key  = \"vault-helm-unseal-key\"\n#}\n",
+                "enabled": "-"
+              },
+              "statefulSet": {
+                "annotations": {}
+              },
+              "tolerations": null,
+              "updateStrategyType": "OnDelete",
+              "volumeMounts": null,
+              "volumes": null
+            },
+            "ui": {
+              "activeVaultPodOnly": false,
+              "annotations": {},
+              "enabled": false,
+              "externalPort": 8200,
+              "publishNotReadyAddresses": true,
+              "serviceNodePort": null,
+              "serviceType": "ClusterIP"
+            }
+          }
+        }
+      ]
+    createdAt: 2021-01-27 09:00:00
+    categories: Security
+    capabilities: Basic Install
+    containerImage: quay.io/brejohns/vault-helm:0.0.2
+    description: Use Helm to Deploy and manage Hashicorp Vault
+    operators.operatorframework.io/builder: operator-sdk-v1.2.0
+    operators.operatorframework.io/project_layout: helm.sdk.operatorframework.io/v1
+    repository: https://github.com/SDBrett/vault-helm
+  name: vault-helm.v0.0.2
+  namespace: placeholder
+spec:
+  replaces: vault-helm.v0.0.1
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: Vault
+      name: vaults.vault.sdbrett.com
+      version: v1alpha1
+      displayName: Vault Helm
+      description: Provides Vault-Helm operators with values for the Vault Helm chart
+  description: Operator for deployment and management of Hashicorp Vault instances based on the Helm chart
+  displayName: Vault Helm
+  icon:
+  - base64data: PHN2ZyBpZD0iTE9HT1MiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE4MCAyNTgiPjxwYXRoIGQ9Ik02Mi4xNSwxOTQuNTZoNi43Nkw1OC42NCwyMjguOTRINDlMMzguNzYsMTk0LjU2aDYuNzZsOC4zMiwyOC42NVoiLz48cGF0aCBkPSJNODcuNywyMjguOTRIODIuNTRsLS40Ni0xLjdhMTMuNzYsMTMuNzYsMCwwLDEtNy40OSwyLjIyQzcwLDIyOS40Niw2OCwyMjYuMzEsNjgsMjIyYzAtNS4xMSwyLjIyLTcuMDcsNy4zMy03LjA3aDZ2LTIuNjNjMC0yLjc5LS43Ny0zLjc3LTQuOC0zLjc3YTM1LjUxLDM1LjUxLDAsMCwwLTcsLjc3bC0uNzctNC44YTMyLjg3LDMyLjg3LDAsMCwxLDguNjItMS4xOWM3LjksMCwxMC4yMiwyLjc5LDEwLjIyLDkuMDlabS02LjMtOS41SDc2Ljc2Yy0yLjA3LDAtMi42My41Ny0yLjYzLDIuNDhzLjU2LDIuNTMsMi41MywyLjUzYTkuODksOS44OSwwLDAsMCw0Ljc0LTEuMjlaIi8+PHBhdGggZD0iTTk3LjYyLDIwMy44djE3LjU1YzAsMS4zNS41NiwyLDIsMmExNy4zOSwxNy4zOSwwLDAsMCw2LjU2LTIuMTJWMjAzLjhoNi4yOXYyNS4xNGgtNC44bC0uNjItMi4xMUEyNS4xNCwyNS4xNCwwLDAsMSw5NywyMjkuNDZjLTQuMTksMC01LjY4LTIuOTQtNS42OC03LjQ0VjIwMy44WiIvPjxwYXRoIGQ9Ik0xMTUuODQsMjI4Ljk0VjE5My41M2w2LjMtLjg4djM2LjI5WiIvPjxwYXRoIGQ9Ik0xNDAuOTMsMjI4LjQ4YTE3LjM5LDE3LjM5LDAsMCwxLTUuNTMsMWMtNC41OSwwLTYuOTEtMi4xNy02LjkxLTYuNjZ2LTE0aC0zLjc3di01aDMuNzd2LTYuMjVsNi4zLS44N3Y3LjEyaDYuNDVsLS40MSw1aC02VjIyMmEyLDIsMCwwLDAsMi4yNywyLjIyLDEyLjEzLDEyLjEzLDAsMCwwLDMuMTUtLjUxWiIvPjxwYXRoIGQ9Ik00NS40NiwxODYuMTNWMTgxLjNINDEuMDV2NC44M0gzOC43OXYtMTEuNmgyLjI2djQuODZoNC40MXYtNC44NmgyLjI2djExLjZabTEwLjUyLDBINTQuMTlsLS4xNi0uNTdhNC44NSw0Ljg1LDAsMCwxLTIuNTkuNzRjLTEuNTksMC0yLjI3LTEuMDUtMi4yNy0yLjQ5LDAtMS43Ljc3LTIuMzYsMi41NC0yLjM2SDUzLjh2LS44N2MwLS45My0uMjctMS4yNi0xLjY2LTEuMjZhMTMuMDgsMTMuMDgsMCwwLDAtMi40Mi4yNmwtLjI3LTEuNmExMS45NCwxMS45NCwwLDAsMSwzLS4zOWMyLjc0LDAsMy41NC45MywzLjU0LDNaTTUzLjgsMTgzSDUyLjE5Yy0uNzEsMC0uOTEuMTktLjkxLjgycy4yLjg0Ljg3Ljg0YTMuNDYsMy40NiwwLDAsMCwxLjY1LS40M1ptNi43NSwzLjMzYTEwLjc2LDEwLjc2LDAsMCwxLTMtLjQ4bC4zLTEuNmExMCwxMCwwLDAsMCwyLjYuMzZjMSwwLDEuMTEtLjIxLDEuMTEtLjg0cy0uMTEtLjc3LTEuNTItMS4xYy0yLjEzLS41LTIuMzgtMS0yLjM4LTIuNjNzLjc3LTIuNDIsMy4yNS0yLjQyYTExLjgsMTEuOCwwLDAsMSwyLjYxLjI5bC0uMjEsMS42N2ExNiwxNiwwLDAsMC0yLjQtLjI0Yy0uOTUsMC0xLjExLjItMS4xMS43MnMuMDYuNzIsMS4yNCwxYzIuNDMuNjIsMi42Ni45MywyLjY2LDIuNjVTNjMuMTgsMTg2LjMsNjAuNTUsMTg2LjNabTEwLS4xN3YtNS44NGMwLS40NS0uMi0uNjctLjctLjY3YTYuMjEsNi4yMSwwLDAsMC0yLjI3Ljd2NS44MUg2NS4zOVYxNzQuMzdsMi4xOS4zMnYzLjcxYTcuOTIsNy45MiwwLDAsMSwzLjE4LS44MWMxLjQ1LDAsMiwxLDIsMi40N3Y2LjA3Wm00LTkuNTV2LTIuMDVoMi4xOHYyLjA1Wm0wLDkuNTV2LTguMzdoMi4xOHY4LjM3Wm0zLjkzLTguM2MwLTIuMSwxLjI3LTMuMzEsNC4yNC0zLjMxYTE0LDE0LDAsMCwxLDMuMjMuMzdsLS4yNSwxLjg4YTE3LjMyLDE3LjMyLDAsMCwwLTIuOTEtLjNjLTEuNTYsMC0yLjA2LjUyLTIuMDYsMS43NHY0LjRjMCwxLjIxLjUsMS43MywyLjA2LDEuNzNhMTguMzYsMTguMzYsMCwwLDAsMi45MS0uMjlsLjI1LDEuODdhMTQsMTQsMCwwLDEtMy4yMy4zOGMtMywwLTQuMjQtMS4yMi00LjI0LTMuMzJabTEyLjMsOC40N2MtMywwLTMuOC0xLjU4LTMuOC0zLjN2LTIuMTFjMC0xLjcyLjgxLTMuMywzLjgtMy4zczMuNzksMS41OCwzLjc5LDMuM1YxODNDOTQuNTgsMTg0LjcyLDkzLjc3LDE4Ni4zLDkwLjc5LDE4Ni4zWm0wLTYuOTJjLTEuMTcsMC0xLjYxLjQ5LTEuNjEsMS40NHYyLjI1YzAsLjk0LjQ0LDEuNDQsMS42MSwxLjQ0czEuNjEtLjUsMS42MS0xLjQ0di0yLjI1QzkyLjQsMTc5Ljg3LDkyLDE3OS4zOCw5MC43OSwxNzkuMzhabTkuOTMuMTNhMTYuODcsMTYuODcsMCwwLDAtMi4zLDEuMjJ2NS40SDk2LjIzdi04LjM3aDEuODVsLjE0LjkzYTEwLDEwLDAsMCwxLDIuMjktMS4xWm04LjczLDMuODNjMCwxLjg2LS44NiwzLTIuODgsM2ExMi4zNCwxMi4zNCwwLDAsMS0yLjMzLS4yNHYzLjQybC0yLjE4LjMydi0xMmgxLjc0bC4yMS43MWE0LjY1LDQuNjUsMCwwLDEsMi43NS0uODhjMS43NiwwLDIuNjksMSwyLjY5LDIuOVptLTUuMjEuOTVhMTAuMDksMTAuMDksMCwwLDAsMS45My4yMmMuNzksMCwxLjEtLjM2LDEuMS0xLjExdi0zYzAtLjY5LS4yNy0xLjA2LTEuMDgtMS4wNmEzLjE5LDMuMTksMCwwLDAtMiwuNzVaIi8+PHBhdGggZD0iTTI1LjcxLDI4LjU0LDg5Ljc3LDE1Ny4xMSwxNTQuMjksMjguNTRabTcxLjY4LDI1LjhoNy40NVY2MS44SDk3LjM5Wk04Mi41NSw4NC4xNkg3NS4wOVY3Ni43aDcuNDZabTAtMTEuMThINzUuMDlWNjUuNTJoNy40NlptMC0xMS4xOEg3NS4wOVY1NC4zNGg3LjQ2Wk05My43Myw5NS4zNEg4Ni4yN1Y4Ny44OGg3LjQ2Wm0wLTExLjE4SDg2LjI3Vjc2LjdoNy40NlptMC0xMS4xOEg4Ni4yN1Y2NS41Mmg3LjQ2Wm0wLTExLjE4SDg2LjI3VjU0LjM0aDcuNDZabTMuNjYsMy43Mmg3LjQ1VjczSDk3LjM5Wm0uMDYsMTguNjRWNzYuN2g3LjQ2djcuNDZaIi8+PC9zdmc+
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          - pods
+          - pods/exec
+          - pods/log
+          - persistentVolumeClaim
+          - persistentVolumes
+          - services
+          - serviceaccounts
+          - configmaps
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          - clusterrolebindings
+          - roles
+          - rolebindings
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - vault.sdbrett.com
+          resources:
+          - vaults
+          - vaults/status
+          - vaults/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - serviceaccounts
+          - services
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - create
+          - update
+          - patch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - create
+          - update
+          - patch
+        serviceAccountName: vault-helm
+      deployments:
+      - name: vault-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                - --leader-election-id=vault
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                image: quay.io/brejohns/vault-helm:0.0.2
+                name: manager
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 250Mi
+                  requests:
+                    cpu: 100m
+                    memory: 60Mi
+              serviceAccountName: vault-helm
+              terminationGracePeriodSeconds: 10
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - Helm
+  - Vault
+  - Hashicorp
+  maintainers:
+  - email: brett@sdbrett.com
+    name: Brett Johnson
+  maturity: alpha
+  provider:
+    name: SDBrett
+    url: sdbrett.com
+  version: 0.0.2

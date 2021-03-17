@@ -1,0 +1,102 @@
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.0
+  creationTimestamp: null
+  name: servicemeshmembers.maistra.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.annotations.controlPlaneRef
+    description: The ServiceMeshControlPlane this namespace belongs to
+    name: Control Plane
+    type: string
+  - JSONPath: .status.conditions[?(@.type=="Ready")].status
+    description: Whether or not namespace is configured as a member of the mesh.
+    name: Ready
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    description: The age of the object
+    name: Age
+    type: date
+  group: maistra.io
+  names:
+    categories:
+    - maistra-io
+    kind: ServiceMeshMember
+    listKind: ServiceMeshMemberList
+    plural: servicemeshmembers
+    shortNames:
+    - smm
+    singular: servicemeshmember
+  preserveUnknownFields: false
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            controlPlaneRef:
+              properties:
+                name:
+                  type: string
+                namespace:
+                  type: string
+              required:
+              - name
+              - namespace
+              type: object
+          required:
+          - controlPlaneRef
+          type: object
+        status:
+          properties:
+            annotations:
+              additionalProperties:
+                type: string
+              type: object
+            conditions:
+              items:
+                properties:
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                type: object
+              type: array
+            observedGeneration:
+              format: int64
+              type: integer
+          required:
+          - conditions
+          - observedGeneration
+          type: object
+      required:
+      - spec
+      type: object
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

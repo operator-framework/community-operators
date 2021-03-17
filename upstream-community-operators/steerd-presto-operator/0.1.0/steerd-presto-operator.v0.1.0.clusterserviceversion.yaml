@@ -1,0 +1,299 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: steerd-presto-operator.v0.1.0
+  namespace: placeholder
+  annotations:
+    capabilities: Seamless Upgrades
+    categories: Database
+    description: SteerD Presto Operator is a Kubernetes Operator for Presto to manage Presto clusters which are deployed as custom resources .
+    certified: 'false'
+    repository: https://github.com/falarica/steerd-presto-operator
+    tectonic-visibility: ocs
+    containerImage: falarica/steerd-presto-operator:0.1.0
+    createdAt: '2021-01-14'
+    support: 'Falarica Analytics'
+    alm-examples: |-
+      [  
+        {
+          "apiVersion": "falarica.io/v1alpha1",
+          "kind": "Presto",
+          "metadata": {
+            "name": "mycluster",
+            "namespace": "presto"
+          },
+          "spec": {
+            "service": {
+              "type": "NodePort",
+              "port": 8100,
+              "nodePort": 30002
+            },
+            "catalogs": {
+              "catalogSpec": [
+                {
+                  "name": "newtpch",
+                  "content": {
+                    "connector.name": "tpch"
+                  }
+                },
+                {
+                  "name": "newtpcds",
+                  "content": {
+                    "connector.name": "tpcds"
+                  }
+                }
+              ]
+            },
+            "volumes": [
+              {
+                "name": "spillvol",
+                "emptyDir": {},
+                "mountPath": "/prestospill"
+              }
+            ],
+            "coordinator": {
+              "memoryLimit": "1Gi",
+              "cpuLimit": "0.5",
+              "httpsEnabled": false,
+              "httpsKeyPairSecretName": "prestokeystore",
+              "httpsKeyPairSecretKey": "prestoserverkeystore.jks",
+              "httpsKeyPairPassword": "hemant"
+            },
+            "worker": {
+              "memoryLimit": "1Gi",
+              "cpuLimit": "0.5",
+              "count": 1,
+              "autoscaling": {
+                "enabled": false,
+                "minReplicas": 2,
+                "maxReplicas": 3,
+                "targetCPUUtilizationPercentage": 20
+              },
+              "additionalProps": {
+                "shutdown.grace-period": "10s",
+                "spill-enabled": "true",
+                "spiller-spill-path": "/prestospill"
+              }
+            },
+            "imageDetails": {
+              "bootstrapCommandPath": "/usr/lib/presto/bin/run-presto",
+              "name": "prestosql/presto:333"
+            },
+            "additionalPrestoPropFiles": {
+              "access-control.properties": "access-control.name=read-only"
+            }
+            
+          }
+        }
+      ]
+    
+
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - kind: Presto
+        name: prestos.falarica.io
+        version: v1alpha1
+        description: SteerD Presto Operator is a Kubernetes Operator for Presto to manage Presto clusters which are deployed as custom resources .
+        displayName: Presto Cluster
+  description: 
+    "SteerD Presto Operator is a Kubernetes Operator for Presto to manage Presto clusters which are deployed as custom resources. In short, the task of configuring, creating, managing, automatically scaling up and scaling-in of Presto cluster(s) in a Kubernetes environment has been made simple, easy and quick.SteerD Presto Operator supports both PrestoDB and PrestoSQL forks.
+    "
+  displayName: Steerd Presto Operator
+  icon: 
+     - base64data: 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
+       mediatype: image/png
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  install:
+    spec:
+      deployments:
+        - name: steerd-presto-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: steerd-presto-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  name: steerd-presto-operator
+              spec:
+                containers:
+                - env:
+                  - name: OPERATOR_NAME
+                    value: steerd-presto-operator
+                  image: falarica/steerd-presto-operator:0.1.0
+                  imagePullPolicy: Always
+                  name: steerd-presto-operator
+                  resources: {}
+                serviceAccountName: steerd-presto-operator
+      permissions:
+        - serviceAccountName: steerd-presto-operator
+          rules:
+          - apiGroups:
+              - ''
+            resources:
+              - pods
+              - services
+              - endpoints
+              - persistentvolumeclaims
+              - events
+              - configmaps
+              - secrets
+              - serviceaccounts
+            verbs:
+              - '*'
+          - apiGroups:
+              - rbac.authorization.k8s.io
+            resources:
+              - roles
+              - rolebindings
+            verbs:
+              - '*'
+          - apiGroups:
+              - ''
+            resources:
+              - namespaces
+            verbs:
+              - get
+          - apiGroups:
+              - apps
+            resources:
+              - deployments
+              - daemonsets
+              - replicasets
+              - statefulsets
+            verbs:
+              - '*'
+          - apiGroups:
+              - monitoring.coreos.com
+            resources:
+              - servicemonitors
+            verbs:
+              - get
+              - create
+          - apiGroups:
+              - apps
+            resourceNames:
+              - steerd-presto-operator
+            resources:
+              - deployments/finalizers
+            verbs:
+              - update
+          - apiGroups:
+              - falarica.io
+            resources:
+              - '*'
+            verbs:
+              - '*'
+          - apiGroups:
+              - "autoscaling"
+            resources:
+              - "*"
+            verbs:
+              - "*"
+          - apiGroups:
+              - "metrics.k8s.io"
+            resources:
+              - "*"
+            verbs:
+              - "*"
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - services
+                - endpoints
+                - persistentvolumeclaims
+                - events
+                - configmaps
+                - secrets
+                - serviceaccounts
+              verbs:
+                - "*"
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - "*"
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces
+              verbs:
+                - get
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+                - daemonsets
+                - replicasets
+                - statefulsets
+              verbs:
+                - "*"
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - get
+                - create
+            - apiGroups:
+                - apps
+              resourceNames:
+                - steerd-presto-operator
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - falarica.io
+              resources:
+                - "*"
+              verbs:
+                - "*"
+            - apiGroups:
+                - "autoscaling"
+              resources:
+                - "*"
+              verbs:
+                - "*"
+            - apiGroups:
+              - "metrics.k8s.io"
+              resources:
+                - "*"
+              verbs:
+                - "*"
+          
+          serviceAccountName: steerd-presto-operator
+    strategy: deployment
+  maturity: stable
+  minKubeVersion: 1.11.0
+  provider:
+    name: 'Falarica Analytics Private Limited'
+  keywords: ["presto", "steerd-presto", "falarica"]
+  maintainers:
+    - name: 'Falarica Analytics Private Limited'
+      email: contact@falarica.io
+  links:
+    - name: Intro to Steerd Presto Operator
+      url: https://github.com/falarica/steerd-presto-operator
+    - name: Creating Steerd presto cluster
+      url: https://github.com/falarica/steerd-presto-operator/blob/master/docs/prestoresource.md
+    - name: Managing Steerd presto cluster
+      url: https://github.com/falarica/steerd-presto-operator/blob/master/docs/status.md
+  version: 0.1.0

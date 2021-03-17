@@ -1,0 +1,219 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: hawtios.hawt.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.creationTimestamp
+    description: Creation phase
+    name: Age
+    type: date
+  - JSONPath: .status.image
+    description: Console image
+    name: Image
+    type: string
+  - JSONPath: .status.phase
+    description: Console phase
+    name: Phase
+    type: string
+  - JSONPath: .status.URL
+    description: Console URL
+    name: URL
+    type: string
+  group: hawt.io
+  names:
+    categories:
+    - hawtio
+    kind: Hawtio
+    listKind: HawtioList
+    plural: hawtios
+    singular: hawtio
+  scope: Namespaced
+  subresources:
+    scale:
+      labelSelectorPath: .status.selector
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Hawtio Console
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: Defines the desired state of Hawtio
+          properties:
+            auth:
+              description: The authentication configuration
+              properties:
+                clientCertCommonName:
+                  description: The generated client certificate CN
+                  type: string
+                clientCertExpirationDate:
+                  description: The generated client certificate expiration date
+                  format: date-time
+                  type: string
+              type: object
+            config:
+              description: The Hawtio console configuration
+              properties:
+                about:
+                  description: The information to be displayed in the About page
+                  properties:
+                    additionalInfo:
+                      description: The text for the description section
+                      type: string
+                    copyright:
+                      description: The text for the copyright section
+                      type: string
+                    imgSrc:
+                      description: The image displayed in the page. It can be a path, relative to the Hawtio status URL, or an absolute URL.
+                      type: string
+                    productInfo:
+                      description: List of product information
+                      items:
+                        description: The product information displayed in the About page
+                        properties:
+                          name:
+                            description: The name of the product information
+                            type: string
+                          value:
+                            description: The value of the product information
+                            type: string
+                        required:
+                        - name
+                        - value
+                        type: object
+                      type: array
+                    title:
+                      description: The title of the page
+                      type: string
+                  type: object
+                branding:
+                  description: The UI branding
+                  properties:
+                    appLogoUrl:
+                      description: The URL of the logo, that displays in the navigation bar. It can be a path, relative to the Hawtio status URL, or an absolute URL.
+                      type: string
+                    appName:
+                      description: The application title, that usually displays in the Web browser tab.
+                      type: string
+                    css:
+                      description: The URL of an external CSS stylesheet, that can be used to style the application. It can be a path, relative to the Hawtio status URL, or an absolute URL.
+                      type: string
+                    favicon:
+                      description: The URL of the favicon, that usually displays in the Web browser tab. It can be a path, relative to the Hawtio status URL, or an absolute URL.
+                      type: string
+                  type: object
+                disabledRoutes:
+                  description: Disables UI components with matching routes
+                  items:
+                    type: string
+                  type: array
+                online:
+                  description: The OpenShift related configuration
+                  properties:
+                    consoleLink:
+                      description: The configuration for the OpenShift Web console link. A link is added to the application menu when the Hawtio deployment is equal to 'cluster'. Otherwise, a link is added to the Hawtio project dashboard.
+                      properties:
+                        imageRelativePath:
+                          description: The path, relative to the Hawtio status URL, for the icon used in front of the link in the application menu. It is only applicable when the Hawtio deployment type is equal to 'cluster'. The image should be square and will be shown at 24x24 pixels.
+                          type: string
+                        section:
+                          description: The section of the application menu in which the link should appear. It is only applicable when the Hawtio deployment type is equal to 'cluster'.
+                          type: string
+                        text:
+                          description: The text display for the link
+                          type: string
+                      type: object
+                    projectSelector:
+                      description: The selector used to watch for projects. It is only applicable when the Hawtio deployment type is equal to 'cluster'. By default, all the projects the logged in user has access to are watched. The string representation of the selector must be provided, as mandated by the `--selector`, or `-l`, options from the `kubectl get` command. See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+                      type: string
+                  type: object
+              type: object
+            rbac:
+              description: The RBAC configuration
+              properties:
+                configMap:
+                  description: The name of the ConfigMap that contains the ACL definition.
+                  type: string
+                enabled:
+                  description: Whether RBAC is enabled. Defaults to true.
+                  type: boolean
+              type: object
+            replicas:
+              description: Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1.
+              format: int32
+              type: integer
+            resources:
+              description: The Hawtio console compute resources
+              properties:
+                limits:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
+            routeHostName:
+              description: 'The edge host name of the route that exposes the Hawtio service externally. If not specified, it is automatically generated and is of the form: <name>[-<namespace>].<suffix> where <suffix> is the default routing sub-domain as configured for the cluster. Note that the operator will recreate the route if the field is emptied, so that the host is re-generated.'
+              type: string
+            type:
+              description: 'The deployment type. Defaults to cluster. cluster: Hawtio is capable of discovering and managing applications across all namespaces the authenticated user has access to. namespace: Hawtio is capable of discovering and managing applications within the deployment namespace.'
+              enum:
+              - Cluster
+              - Namespace
+              type: string
+            version:
+              description: The Hawtio console container image version. Defaults to 'latest'.
+              type: string
+          type: object
+        status:
+          description: Reports the observed state of Hawtio
+          properties:
+            URL:
+              description: The Hawtio console route URL
+              type: string
+            image:
+              description: The Hawtio console container image
+              type: string
+            phase:
+              description: The Hawtio deployment phase
+              enum:
+              - Initialized
+              - Deployed
+              - Failed
+              type: string
+            replicas:
+              description: The actual number of pods
+              format: int32
+              type: integer
+            selector:
+              description: The label selector for the Hawtio pods
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

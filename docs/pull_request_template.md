@@ -1,7 +1,4 @@
 Thanks submitting your Operator. Please check below list before you create your Pull Request.
-*************************************************
-**Flat operator directory structure is obsolete from 23-rd of October 2019, only nested directory structure will be accepted.**
-*************************************************
 
 ### New Submissions
 
@@ -13,6 +10,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 * [ ] Have you tested your Operator in all supported [installation modes](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md#operator-metadata)?
 * [ ] Have you considered whether you want use [semantic versioning order](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#updating-your-existing-operator)?
 * [ ] Is your submission [signed](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#sign-your-work)?
+* [ ] Is operator [icon](https://github.com/operator-framework/community-operators/blob/master/docs/contributing.md#operator-icon) set?
 
 ### Updates to existing Operators
 
@@ -40,7 +38,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 ### Operator Metadata should contain
 
 * [ ] Human readable name and 1-liner description about your Operator
-* [ ] Valid [category name](https://github.com/operator-framework/community-operators/blob/master/docs/required-fields.md#categories)<sup>1</sup>
+* [ ] Valid [category name](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#categories)<sup>1</sup>
 * [ ] One of the pre-defined [capability levels](https://github.com/operator-framework/operator-courier/blob/4d1a25d2c8d52f7de6297ec18d8afd6521236aa2/operatorcourier/validate.py#L556)<sup>2</sup>
 * [ ] Links to the maintainer, source code and documentation
 * [ ] Example templates for all Custom Resource Definitions intended to be used

@@ -1,0 +1,1587 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: kokumetricsconfigs.koku-metrics-cfg.openshift.io
+spec:
+  group: koku-metrics-cfg.openshift.io
+  names:
+    kind: KokuMetricsConfig
+    listKind: KokuMetricsConfigList
+    plural: kokumetricsconfigs
+    singular: kokumetricsconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: KokuMetricsConfig is the Schema for the kokumetricsconfig API
+          (Deprecated)
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KokuMetricsConfigSpec defines the desired state of KokuMetricsConfig.
+            properties:
+              api_url:
+                default: https://cloud.redhat.com
+                description: FOR DEVELOPMENT ONLY. APIURL is a field of KokuMetricsConfig
+                  to represent the url of the API endpoint for service interaction.
+                  The default is `https://cloud.redhat.com`.
+                type: string
+              authentication:
+                description: Authentication is a field of KokuMetricsConfig to represent
+                  the authentication object.
+                properties:
+                  secret_name:
+                    description: AuthenticationSecretName is a field of KokuMetricsConfig
+                      to represent the secret with the user and password used for
+                      uploads.
+                    type: string
+                  type:
+                    default: token
+                    description: 'AuthType is a field of KokuMetricsConfig to represent
+                      the authentication type to be used basic or token. Valid values
+                      are: - "basic" : Enables authentication using user and password
+                      from authentication secret. - "token" (default): Uses cluster
+                      token for authentication.'
+                    enum:
+                    - token
+                    - basic
+                    type: string
+                required:
+                - type
+                type: object
+              clusterID:
+                description: ClusterID is a field of KokuMetricsConfig to represent
+                  the cluster UUID. Normally this value should not be specified. Only
+                  set this value if the clusterID cannot be obtained from the ClusterVersion.
+                type: string
+              packaging:
+                description: Packaging is a field of KokuMetricsConfig to represent
+                  the packaging object.
+                properties:
+                  max_reports_to_store:
+                    default: 30
+                    description: MaxReports is a field of KokuMetricsConfig to represent
+                      the maximum number of reports to store. The default is 30 reports
+                      which corresponds to approximately 7 days worth of data given
+                      the other default values.
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  max_size_MB:
+                    default: 100
+                    description: MaxSize is a field of KokuMetricsConfig to represent
+                      the max file size in megabytes that will be compressed for upload
+                      to Ingress. The default is 100.
+                    format: int64
+                    maximum: 100
+                    minimum: 1
+                    type: integer
+                required:
+                - max_reports_to_store
+                - max_size_MB
+                type: object
+              prometheus_config:
+                description: PrometheusConfig is a field of KokuMetricsConfig to represent
+                  the configuration of Prometheus connection.
+                properties:
+                  service_address:
+                    default: https://thanos-querier.openshift-monitoring.svc:9091
+                    description: FOR DEVELOPMENT ONLY. SvcAddress is a field of KokuMetricsConfig
+                      to represent the thanos-querier address. The default is `https://thanos-querier.openshift-monitoring.svc:9091`.
+                    type: string
+                  skip_tls_verification:
+                    default: false
+                    description: FOR DEVELOPMENT ONLY. SkipTLSVerification is a field
+                      of KokuMetricsConfig to represent if the thanos-querier endpoint
+                      must be certificate validated. The default is false.
+                    type: boolean
+                required:
+                - service_address
+                - skip_tls_verification
+                type: object
+              source:
+                description: Source is a field of KokuMetricsConfig to represent the
+                  desired source on cloud.redhat.com.
+                properties:
+                  check_cycle:
+                    default: 1440
+                    description: CheckCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each source check schedule The
+                      default is 1440 min (24 hours).
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  create_source:
+                    default: false
+                    description: CreateSource is a field of KokuMetricsConfigSpec
+                      to represent if the source should be created if not found. A
+                      source will not be created if upload_toggle is `false`.
+                    type: boolean
+                  name:
+                    description: SourceName is a field of KokuMetricsConfigSpec to
+                      represent the source name on cloud.redhat.com.
+                    type: string
+                  sources_path:
+                    default: /api/sources/v1.0/
+                    description: FOR DEVELOPMENT ONLY. SourcesAPIPath is a field of
+                      KokuMetricsConfig to represent the path of the Sources API service.
+                      The default is `/api/sources/v1.0/`.
+                    type: string
+                required:
+                - check_cycle
+                - create_source
+                - sources_path
+                type: object
+              upload:
+                description: Upload is a field of KokuMetricsConfig to represent the
+                  upload object.
+                properties:
+                  ingress_path:
+                    default: /api/ingress/v1/upload
+                    description: FOR DEVELOPMENT ONLY. IngressAPIPath is a field of
+                      KokuMetricsConfig to represent the path of the Ingress API service.
+                      The default is `/api/ingress/v1/upload`.
+                    type: string
+                  upload_cycle:
+                    default: 360
+                    description: UploadCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each upload schedule. The default
+                      is 360 min (6 hours).
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  upload_toggle:
+                    default: true
+                    description: UploadToggle is a field of KokuMetricsConfig to represent
+                      if the operator is installed in a restricted-network. If `false`,
+                      the operator will not upload to cloud.redhat.com or check/create
+                      sources. The default is true.
+                    type: boolean
+                  upload_wait:
+                    description: UploadWait is a field of KokuMetricsConfig to represent
+                      the time to wait before sending an upload.
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  validate_cert:
+                    default: true
+                    description: ValidateCert is a field of KokuMetricsConfig to represent
+                      if the Ingress endpoint must be certificate validated.
+                    type: boolean
+                required:
+                - ingress_path
+                - upload_cycle
+                - upload_toggle
+                - validate_cert
+                type: object
+              volume_claim_template:
+                description: VolumeClaimTemplate is a field of KokuMetricsConfig to
+                  represent a PVC template.
+                properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  metadata:
+                    description: EmbeddedMetadata contains metadata relevant to an
+                      EmbeddedResource.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Annotations is an unstructured key value map
+                          stored with a resource that may be set by external tools
+                          to store and retrieve arbitrary metadata. They are not queryable
+                          and should be preserved when modifying objects. More info:
+                          http://kubernetes.io/docs/user-guide/annotations'
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: 'Map of string keys and values that can be used
+                          to organize and categorize (scope and select) objects. May
+                          match selectors of replication controllers and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels'
+                        type: object
+                      name:
+                        description: 'Name must be unique within a namespace. Is required
+                          when creating resources, although some resources may allow
+                          a client to request the generation of an appropriate name
+                          automatically. Name is primarily intended for creation idempotence
+                          and configuration definition. Cannot be updated. More info:
+                          http://kubernetes.io/docs/user-guide/identifiers#names'
+                        type: string
+                    type: object
+                  spec:
+                    description: 'Spec defines the desired characteristics of a volume
+                      requested by a pod author. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          type: string
+                        type: array
+                      dataSource:
+                        description: 'This field can be used to specify either: *
+                          An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot
+                          - Beta) * An existing PVC (PersistentVolumeClaim) * An existing
+                          custom resource/object that implements data population (Alpha)
+                          In order to use VolumeSnapshot object types, the appropriate
+                          feature gate must be enabled (VolumeSnapshotDataSource or
+                          AnyVolumeDataSource) If the provisioner or an external controller
+                          can support the specified data source, it will create a
+                          new volume based on the contents of the specified data source.
+                          If the specified data source is not supported, the volume
+                          will not be created and the failure will be reported as
+                          an event. In the future, we plan to support more data source
+                          types and the behavior of the provisioner may change.'
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                type: object
+            required:
+            - authentication
+            - packaging
+            - prometheus_config
+            - source
+            - upload
+            type: object
+          status:
+            description: KokuMetricsConfigStatus defines the observed state of KokuMetricsConfig.
+            properties:
+              api_url:
+                description: APIURL is a field of KokuMetricsConfig to represent the
+                  url of the API endpoint for service interaction.
+                type: string
+              authentication:
+                description: Authentication is a field of KokuMetricsConfig to represent
+                  the authentication status.
+                properties:
+                  credentials_found:
+                    description: AuthenticationCredentialsFound is a field of KokuMetricsConfig
+                      to represent if used for uploads were found.
+                    type: boolean
+                  error:
+                    description: AuthErrorMessage is a field of KokuMetricsConfig
+                      to represent an `invalid credentials` error message.
+                    type: string
+                  last_credential_verification_time:
+                    description: LastVerificationTime is a field of KokuMetricsConfig
+                      to represent the last time credentials were verified.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  secret_name:
+                    description: AuthenticationSecretName is a field of KokuMetricsConfig
+                      to represent the secret with the user and password used for
+                      uploads.
+                    type: string
+                  type:
+                    description: AuthType is a field of KokuMetricsConfig to represent
+                      the authentication type to be used basic or token.
+                    enum:
+                    - token
+                    - basic
+                    type: string
+                  valid_basic_auth:
+                    description: ValidBasicAuth is a field of KokuMetricsConfig to
+                      represent if the given basic auth credentials are valid.
+                    type: boolean
+                type: object
+              clusterID:
+                description: ClusterID is a field of KokuMetricsConfig to represent
+                  the cluster UUID.
+                type: string
+              operator_commit:
+                description: OperatorCommit is a field of KokuMetricsConfig that shows
+                  the commit hash of the operator.
+                type: string
+              packaging:
+                description: Packaging is a field of KokuMetricsConfig to represent
+                  the packaging status
+                properties:
+                  error:
+                    description: PackagingError is a field of KokuMetricsConfig to
+                      represent the error encountered packaging the reports.
+                    type: string
+                  last_successful_packaging_time:
+                    description: LastSuccessfulPackagingTime is a field of KokuMetricsConfig
+                      that shows the time of the last successful file packaging.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  max_reports_to_store:
+                    description: MaxReports is a field of KokuMetricsConfig to represent
+                      the maximum number of reports to store.
+                    format: int64
+                    type: integer
+                  max_size_MB:
+                    description: MaxSize is a field of KokuMetricsConfig to represent
+                      the max file size in megabytes that will be compressed for upload
+                      to Ingress.
+                    format: int64
+                    type: integer
+                  number_reports_stored:
+                    description: ReportCount is a field of KokuMetricsConfig to represent
+                      the number of reports in storage.
+                    format: int64
+                    type: integer
+                  packaged_files:
+                    description: PackagedFiles is a field of KokuMetricsConfig to
+                      represent the list of file packages in storage.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              persistent_volume_claim:
+                description: PersistentVolumeClaim is a field of KokuMetricsConfig
+                  to represent a PVC.
+                properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  metadata:
+                    description: EmbeddedMetadata contains metadata relevant to an
+                      EmbeddedResource.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Annotations is an unstructured key value map
+                          stored with a resource that may be set by external tools
+                          to store and retrieve arbitrary metadata. They are not queryable
+                          and should be preserved when modifying objects. More info:
+                          http://kubernetes.io/docs/user-guide/annotations'
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: 'Map of string keys and values that can be used
+                          to organize and categorize (scope and select) objects. May
+                          match selectors of replication controllers and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels'
+                        type: object
+                      name:
+                        description: 'Name must be unique within a namespace. Is required
+                          when creating resources, although some resources may allow
+                          a client to request the generation of an appropriate name
+                          automatically. Name is primarily intended for creation idempotence
+                          and configuration definition. Cannot be updated. More info:
+                          http://kubernetes.io/docs/user-guide/identifiers#names'
+                        type: string
+                    type: object
+                  spec:
+                    description: 'Spec defines the desired characteristics of a volume
+                      requested by a pod author. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          type: string
+                        type: array
+                      dataSource:
+                        description: 'This field can be used to specify either: *
+                          An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot
+                          - Beta) * An existing PVC (PersistentVolumeClaim) * An existing
+                          custom resource/object that implements data population (Alpha)
+                          In order to use VolumeSnapshot object types, the appropriate
+                          feature gate must be enabled (VolumeSnapshotDataSource or
+                          AnyVolumeDataSource) If the provisioner or an external controller
+                          can support the specified data source, it will create a
+                          new volume based on the contents of the specified data source.
+                          If the specified data source is not supported, the volume
+                          will not be created and the failure will be reported as
+                          an event. In the future, we plan to support more data source
+                          types and the behavior of the provisioner may change.'
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                type: object
+              prometheus:
+                description: Prometheus represents the status of premetheus queries.
+                properties:
+                  configuration_error:
+                    description: ConfigError is a field of KokuMetricsConfigStatus
+                      to represent errors during prometheus configuration.
+                    type: string
+                  last_query_start_time:
+                    description: LastQueryStartTime is a field of KokuMetricsConfigStatus
+                      to represent the last time queries were started.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  last_query_success_time:
+                    description: LastQuerySuccessTime is a field of KokuMetricsConfigStatus
+                      to represent the last time queries were successful.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  prometheus_configured:
+                    description: PrometheusConfigured is a field of KokuMetricsConfigStatus
+                      to represent if the operator is configured to connect to prometheus.
+                    type: boolean
+                  prometheus_connected:
+                    description: PrometheusConnected is a field of KokuMetricsConfigStatus
+                      to represent if prometheus can be queried.
+                    type: boolean
+                  prometheus_connection_error:
+                    description: ConnectionError is a field of KokuMetricsConfigStatus
+                      to represent errors during prometheus test query.
+                    type: string
+                  service_address:
+                    description: SvcAddress is the internal thanos-querier address.
+                    type: string
+                  skip_tls_verification:
+                    description: SkipTLSVerification is a field of KokuMetricsConfigStatus
+                      to represent if the thanos-querier endpoint must be certificate
+                      validated.
+                    type: boolean
+                required:
+                - prometheus_configured
+                - prometheus_connected
+                type: object
+              reports:
+                description: Reports represents the status of report generation.
+                properties:
+                  data_collected:
+                    description: DataCollected is a field of KokuMetricsConfigStatus
+                      to represent whether or not data was collected for the last
+                      query.
+                    type: boolean
+                  data_collection_message:
+                    description: DataCollectionMessage is a field of KokuMetricsConfigStatus
+                      to represent a message associated with the data_collected status.
+                    type: string
+                  last_hour_queried:
+                    description: LastHourQueried is a field of KokuMetricsConfigStatus
+                      to represent the time range for which metrics were last queried.
+                    type: string
+                  report_month:
+                    description: ReportMonth is a field of KokuMetricsConfigStatus
+                      to represent the month for which reports are being generated.
+                    type: string
+                type: object
+              source:
+                description: Source is a field of KokuMetricsConfig to represent the
+                  observed state of the source on cloud.redhat.com.
+                properties:
+                  check_cycle:
+                    description: CheckCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each source check schedule. The
+                      default is 1440 min (24 hours).
+                    format: int64
+                    type: integer
+                  create_source:
+                    description: CreateSource is a field of KokuMetricsConfigStatus
+                      to represent if the source should be created if not found.
+                    type: boolean
+                  error:
+                    description: SourceError is a field of KokuMetricsConfigStatus
+                      to represent the error encountered creating the source.
+                    type: string
+                  last_check_time:
+                    description: LastSourceCheckTime is a field of KokuMetricsConfig
+                      that shows the time that the last check was attempted.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  name:
+                    description: SourceName is a field of KokuMetricsConfigStatus
+                      to represent the source name on cloud.redhat.com.
+                    type: string
+                  source_defined:
+                    description: SourceDefined is a field of KokuMetricsConfigStatus
+                      to represent if the source exists as defined on cloud.redhat.com.
+                    type: boolean
+                  sources_path:
+                    description: SourcesAPIPath is a field of KokuMetricsConfig to
+                      represent the path of the Sources API service.
+                    type: string
+                type: object
+              storage:
+                description: Storage is a field
+                properties:
+                  volume_mounted:
+                    description: VolumeMounted is a bool to indicate if storage volume
+                      was mounted.
+                    type: boolean
+                  volume_type:
+                    description: VolumeType is the string representation of the volume
+                      type.
+                    type: string
+                type: object
+              upload:
+                description: Upload is a field of KokuMetricsConfig to represent the
+                  upload object.
+                properties:
+                  error:
+                    description: UploadError is a field of KokuMetricsConfigStatus
+                      to represent the error encountered uploading reports.
+                    type: string
+                  ingress_path:
+                    description: IngressAPIPath is a field of KokuMetricsConfig to
+                      represent the path of the Ingress API service.
+                    type: string
+                  last_successful_upload_time:
+                    description: LastSuccessfulUploadTime is a field of KokuMetricsConfig
+                      that shows the time of the last successful upload.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  last_upload_status:
+                    description: LastUploadStatus is a field of KokuMetricsConfig
+                      that shows the http status of the last upload.
+                    type: string
+                  upload:
+                    description: UploadToggle is a field of KokuMetricsConfig to represent
+                      if the operator should upload to cloud.redhat.com. The default
+                      is true
+                    type: boolean
+                  upload_cycle:
+                    description: UploadCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each upload schedule. The default
+                      is 360 min (6 hours).
+                    format: int64
+                    type: integer
+                  upload_wait:
+                    description: UploadWait is a field of KokuMetricsConfig to represent
+                      the time to wait before sending an upload.
+                    format: int64
+                    type: integer
+                  validate_cert:
+                    description: ValidateCert is a field of KokuMetricsConfig to represent
+                      if the Ingress endpoint must be certificate validated.
+                    type: boolean
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: false
+    storage: false
+    subresources:
+      status: {}
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: KokuMetricsConfig is the Schema for the kokumetricsconfig API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KokuMetricsConfigSpec defines the desired state of KokuMetricsConfig.
+            properties:
+              api_url:
+                default: https://cloud.redhat.com
+                description: FOR DEVELOPMENT ONLY. APIURL is a field of KokuMetricsConfig
+                  to represent the url of the API endpoint for service interaction.
+                  The default is `https://cloud.redhat.com`.
+                type: string
+              authentication:
+                description: Authentication is a field of KokuMetricsConfig to represent
+                  the authentication object.
+                properties:
+                  secret_name:
+                    description: AuthenticationSecretName is a field of KokuMetricsConfig
+                      to represent the secret with the user and password used for
+                      uploads.
+                    type: string
+                  type:
+                    default: token
+                    description: 'AuthType is a field of KokuMetricsConfig to represent
+                      the authentication type to be used basic or token. Valid values
+                      are: - "basic" : Enables authentication using user and password
+                      from authentication secret. - "token" (default): Uses cluster
+                      token for authentication.'
+                    enum:
+                    - token
+                    - basic
+                    type: string
+                required:
+                - type
+                type: object
+              clusterID:
+                description: ClusterID is a field of KokuMetricsConfig to represent
+                  the cluster UUID. Normally this value should not be specified. Only
+                  set this value if the clusterID cannot be obtained from the ClusterVersion.
+                type: string
+              packaging:
+                description: Packaging is a field of KokuMetricsConfig to represent
+                  the packaging object.
+                properties:
+                  max_reports_to_store:
+                    default: 30
+                    description: MaxReports is a field of KokuMetricsConfig to represent
+                      the maximum number of reports to store. The default is 30 reports
+                      which corresponds to approximately 7 days worth of data given
+                      the other default values.
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  max_size_MB:
+                    default: 100
+                    description: MaxSize is a field of KokuMetricsConfig to represent
+                      the max file size in megabytes that will be compressed for upload
+                      to Ingress. The default is 100.
+                    format: int64
+                    maximum: 100
+                    minimum: 1
+                    type: integer
+                required:
+                - max_reports_to_store
+                - max_size_MB
+                type: object
+              prometheus_config:
+                description: PrometheusConfig is a field of KokuMetricsConfig to represent
+                  the configuration of Prometheus connection.
+                properties:
+                  service_address:
+                    default: https://thanos-querier.openshift-monitoring.svc:9091
+                    description: FOR DEVELOPMENT ONLY. SvcAddress is a field of KokuMetricsConfig
+                      to represent the thanos-querier address. The default is `https://thanos-querier.openshift-monitoring.svc:9091`.
+                    type: string
+                  skip_tls_verification:
+                    default: false
+                    description: FOR DEVELOPMENT ONLY. SkipTLSVerification is a field
+                      of KokuMetricsConfig to represent if the thanos-querier endpoint
+                      must be certificate validated. The default is false.
+                    type: boolean
+                required:
+                - service_address
+                - skip_tls_verification
+                type: object
+              source:
+                description: Source is a field of KokuMetricsConfig to represent the
+                  desired source on cloud.redhat.com.
+                properties:
+                  check_cycle:
+                    default: 1440
+                    description: CheckCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each source check schedule The
+                      default is 1440 min (24 hours).
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  create_source:
+                    default: false
+                    description: CreateSource is a field of KokuMetricsConfigSpec
+                      to represent if the source should be created if not found.
+                    type: boolean
+                  name:
+                    description: SourceName is a field of KokuMetricsConfigSpec to
+                      represent the source name on cloud.redhat.com.
+                    type: string
+                  sources_path:
+                    default: /api/sources/v1.0/
+                    description: FOR DEVELOPMENT ONLY. SourcesAPIPath is a field of
+                      KokuMetricsConfig to represent the path of the Sources API service.
+                      The default is `/api/sources/v1.0/`.
+                    type: string
+                required:
+                - check_cycle
+                - create_source
+                - sources_path
+                type: object
+              upload:
+                description: Upload is a field of KokuMetricsConfig to represent the
+                  upload object.
+                properties:
+                  ingress_path:
+                    default: /api/ingress/v1/upload
+                    description: FOR DEVELOPMENT ONLY. IngressAPIPath is a field of
+                      KokuMetricsConfig to represent the path of the Ingress API service.
+                      The default is `/api/ingress/v1/upload`.
+                    type: string
+                  upload_cycle:
+                    default: 360
+                    description: UploadCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each upload schedule. The default
+                      is 360 min (6 hours).
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  upload_toggle:
+                    default: true
+                    description: UploadToggle is a field of KokuMetricsConfig to represent
+                      if the operator is installed in a restricted-network. If `false`,
+                      the operator will not upload to cloud.redhat.com or check/create
+                      sources. The default is true.
+                    type: boolean
+                  upload_wait:
+                    description: UploadWait is a field of KokuMetricsConfig to represent
+                      the time to wait before sending an upload.
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  validate_cert:
+                    default: true
+                    description: ValidateCert is a field of KokuMetricsConfig to represent
+                      if the Ingress endpoint must be certificate validated.
+                    type: boolean
+                required:
+                - ingress_path
+                - upload_cycle
+                - upload_toggle
+                - validate_cert
+                type: object
+              volume_claim_template:
+                description: VolumeClaimTemplate is a field of KokuMetricsConfig to
+                  represent a PVC template.
+                properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  metadata:
+                    description: EmbeddedMetadata contains metadata relevant to an
+                      EmbeddedResource.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Annotations is an unstructured key value map
+                          stored with a resource that may be set by external tools
+                          to store and retrieve arbitrary metadata. They are not queryable
+                          and should be preserved when modifying objects. More info:
+                          http://kubernetes.io/docs/user-guide/annotations'
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: 'Map of string keys and values that can be used
+                          to organize and categorize (scope and select) objects. May
+                          match selectors of replication controllers and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels'
+                        type: object
+                      name:
+                        description: 'Name must be unique within a namespace. Is required
+                          when creating resources, although some resources may allow
+                          a client to request the generation of an appropriate name
+                          automatically. Name is primarily intended for creation idempotence
+                          and configuration definition. Cannot be updated. More info:
+                          http://kubernetes.io/docs/user-guide/identifiers#names'
+                        type: string
+                    type: object
+                  spec:
+                    description: 'Spec defines the desired characteristics of a volume
+                      requested by a pod author. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          type: string
+                        type: array
+                      dataSource:
+                        description: 'This field can be used to specify either: *
+                          An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot
+                          - Beta) * An existing PVC (PersistentVolumeClaim) * An existing
+                          custom resource/object that implements data population (Alpha)
+                          In order to use VolumeSnapshot object types, the appropriate
+                          feature gate must be enabled (VolumeSnapshotDataSource or
+                          AnyVolumeDataSource) If the provisioner or an external controller
+                          can support the specified data source, it will create a
+                          new volume based on the contents of the specified data source.
+                          If the specified data source is not supported, the volume
+                          will not be created and the failure will be reported as
+                          an event. In the future, we plan to support more data source
+                          types and the behavior of the provisioner may change.'
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                type: object
+            required:
+            - authentication
+            - packaging
+            - prometheus_config
+            - source
+            - upload
+            type: object
+          status:
+            description: KokuMetricsConfigStatus defines the observed state of KokuMetricsConfig.
+            properties:
+              api_url:
+                description: APIURL is a field of KokuMetricsConfig to represent the
+                  url of the API endpoint for service interaction.
+                type: string
+              authentication:
+                description: Authentication is a field of KokuMetricsConfig to represent
+                  the authentication status.
+                properties:
+                  credentials_found:
+                    description: AuthenticationCredentialsFound is a field of KokuMetricsConfig
+                      to represent if used for uploads were found.
+                    type: boolean
+                  error:
+                    description: AuthErrorMessage is a field of KokuMetricsConfig
+                      to represent an `invalid credentials` error message.
+                    type: string
+                  last_credential_verification_time:
+                    description: LastVerificationTime is a field of KokuMetricsConfig
+                      to represent the last time credentials were verified.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  secret_name:
+                    description: AuthenticationSecretName is a field of KokuMetricsConfig
+                      to represent the secret with the user and password used for
+                      uploads.
+                    type: string
+                  type:
+                    description: AuthType is a field of KokuMetricsConfig to represent
+                      the authentication type to be used basic or token.
+                    enum:
+                    - token
+                    - basic
+                    type: string
+                  valid_basic_auth:
+                    description: ValidBasicAuth is a field of KokuMetricsConfig to
+                      represent if the given basic auth credentials are valid.
+                    type: boolean
+                type: object
+              clusterID:
+                description: ClusterID is a field of KokuMetricsConfig to represent
+                  the cluster UUID.
+                type: string
+              operator_commit:
+                description: OperatorCommit is a field of KokuMetricsConfig that shows
+                  the commit hash of the operator.
+                type: string
+              packaging:
+                description: Packaging is a field of KokuMetricsConfig to represent
+                  the packaging status
+                properties:
+                  error:
+                    description: PackagingError is a field of KokuMetricsConfig to
+                      represent the error encountered packaging the reports.
+                    type: string
+                  last_successful_packaging_time:
+                    description: LastSuccessfulPackagingTime is a field of KokuMetricsConfig
+                      that shows the time of the last successful file packaging.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  max_reports_to_store:
+                    description: MaxReports is a field of KokuMetricsConfig to represent
+                      the maximum number of reports to store.
+                    format: int64
+                    type: integer
+                  max_size_MB:
+                    description: MaxSize is a field of KokuMetricsConfig to represent
+                      the max file size in megabytes that will be compressed for upload
+                      to Ingress.
+                    format: int64
+                    type: integer
+                  number_reports_stored:
+                    description: ReportCount is a field of KokuMetricsConfig to represent
+                      the number of reports in storage.
+                    format: int64
+                    type: integer
+                  packaged_files:
+                    description: PackagedFiles is a field of KokuMetricsConfig to
+                      represent the list of file packages in storage.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              persistent_volume_claim:
+                description: PersistentVolumeClaim is a field of KokuMetricsConfig
+                  to represent a PVC.
+                properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  metadata:
+                    description: EmbeddedMetadata contains metadata relevant to an
+                      EmbeddedResource.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Annotations is an unstructured key value map
+                          stored with a resource that may be set by external tools
+                          to store and retrieve arbitrary metadata. They are not queryable
+                          and should be preserved when modifying objects. More info:
+                          http://kubernetes.io/docs/user-guide/annotations'
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: 'Map of string keys and values that can be used
+                          to organize and categorize (scope and select) objects. May
+                          match selectors of replication controllers and services.
+                          More info: http://kubernetes.io/docs/user-guide/labels'
+                        type: object
+                      name:
+                        description: 'Name must be unique within a namespace. Is required
+                          when creating resources, although some resources may allow
+                          a client to request the generation of an appropriate name
+                          automatically. Name is primarily intended for creation idempotence
+                          and configuration definition. Cannot be updated. More info:
+                          http://kubernetes.io/docs/user-guide/identifiers#names'
+                        type: string
+                    type: object
+                  spec:
+                    description: 'Spec defines the desired characteristics of a volume
+                      requested by a pod author. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          type: string
+                        type: array
+                      dataSource:
+                        description: 'This field can be used to specify either: *
+                          An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot
+                          - Beta) * An existing PVC (PersistentVolumeClaim) * An existing
+                          custom resource/object that implements data population (Alpha)
+                          In order to use VolumeSnapshot object types, the appropriate
+                          feature gate must be enabled (VolumeSnapshotDataSource or
+                          AnyVolumeDataSource) If the provisioner or an external controller
+                          can support the specified data source, it will create a
+                          new volume based on the contents of the specified data source.
+                          If the specified data source is not supported, the volume
+                          will not be created and the failure will be reported as
+                          an event. In the future, we plan to support more data source
+                          types and the behavior of the provisioner may change.'
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                type: object
+              prometheus:
+                description: Prometheus represents the status of premetheus queries.
+                properties:
+                  configuration_error:
+                    description: ConfigError is a field of KokuMetricsConfigStatus
+                      to represent errors during prometheus configuration.
+                    type: string
+                  last_query_start_time:
+                    description: LastQueryStartTime is a field of KokuMetricsConfigStatus
+                      to represent the last time queries were started.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  last_query_success_time:
+                    description: LastQuerySuccessTime is a field of KokuMetricsConfigStatus
+                      to represent the last time queries were successful.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  prometheus_configured:
+                    description: PrometheusConfigured is a field of KokuMetricsConfigStatus
+                      to represent if the operator is configured to connect to prometheus.
+                    type: boolean
+                  prometheus_connected:
+                    description: PrometheusConnected is a field of KokuMetricsConfigStatus
+                      to represent if prometheus can be queried.
+                    type: boolean
+                  prometheus_connection_error:
+                    description: ConnectionError is a field of KokuMetricsConfigStatus
+                      to represent errors during prometheus test query.
+                    type: string
+                  service_address:
+                    description: SvcAddress is the internal thanos-querier address.
+                    type: string
+                  skip_tls_verification:
+                    description: SkipTLSVerification is a field of KokuMetricsConfigStatus
+                      to represent if the thanos-querier endpoint must be certificate
+                      validated.
+                    type: boolean
+                required:
+                - prometheus_configured
+                - prometheus_connected
+                type: object
+              reports:
+                description: Reports represents the status of report generation.
+                properties:
+                  data_collected:
+                    description: DataCollected is a field of KokuMetricsConfigStatus
+                      to represent whether or not data was collected for the last
+                      query.
+                    type: boolean
+                  data_collection_message:
+                    description: DataCollectionMessage is a field of KokuMetricsConfigStatus
+                      to represent a message associated with the data_collected status.
+                    type: string
+                  last_hour_queried:
+                    description: LastHourQueried is a field of KokuMetricsConfigStatus
+                      to represent the time range for which metrics were last queried.
+                    type: string
+                  report_month:
+                    description: ReportMonth is a field of KokuMetricsConfigStatus
+                      to represent the month for which reports are being generated.
+                    type: string
+                type: object
+              source:
+                description: Source is a field of KokuMetricsConfig to represent the
+                  observed state of the source on cloud.redhat.com.
+                properties:
+                  check_cycle:
+                    description: CheckCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each source check schedule. The
+                      default is 1440 min (24 hours).
+                    format: int64
+                    type: integer
+                  create_source:
+                    description: CreateSource is a field of KokuMetricsConfigStatus
+                      to represent if the source should be created if not found. A
+                      source will not be created if upload_toggle is `false`.
+                    type: boolean
+                  error:
+                    description: SourceError is a field of KokuMetricsConfigStatus
+                      to represent the error encountered creating the source.
+                    type: string
+                  last_check_time:
+                    description: LastSourceCheckTime is a field of KokuMetricsConfig
+                      that shows the time that the last check was attempted.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  name:
+                    description: SourceName is a field of KokuMetricsConfigStatus
+                      to represent the source name on cloud.redhat.com.
+                    type: string
+                  source_defined:
+                    description: SourceDefined is a field of KokuMetricsConfigStatus
+                      to represent if the source exists as defined on cloud.redhat.com.
+                    type: boolean
+                  sources_path:
+                    description: SourcesAPIPath is a field of KokuMetricsConfig to
+                      represent the path of the Sources API service.
+                    type: string
+                type: object
+              storage:
+                description: Storage is a field
+                properties:
+                  volume_mounted:
+                    description: VolumeMounted is a bool to indicate if storage volume
+                      was mounted.
+                    type: boolean
+                  volume_type:
+                    description: VolumeType is the string representation of the volume
+                      type.
+                    type: string
+                type: object
+              upload:
+                description: Upload is a field of KokuMetricsConfig to represent the
+                  upload object.
+                properties:
+                  error:
+                    description: UploadError is a field of KokuMetricsConfigStatus
+                      to represent the error encountered uploading reports.
+                    type: string
+                  ingress_path:
+                    description: IngressAPIPath is a field of KokuMetricsConfig to
+                      represent the path of the Ingress API service.
+                    type: string
+                  last_successful_upload_time:
+                    description: LastSuccessfulUploadTime is a field of KokuMetricsConfig
+                      that shows the time of the last successful upload.
+                    format: date-time
+                    nullable: true
+                    type: string
+                  last_upload_status:
+                    description: LastUploadStatus is a field of KokuMetricsConfig
+                      that shows the http status of the last upload.
+                    type: string
+                  upload:
+                    description: UploadToggle is a field of KokuMetricsConfig to represent
+                      if the operator should upload to cloud.redhat.com. The default
+                      is true
+                    type: boolean
+                  upload_cycle:
+                    description: UploadCycle is a field of KokuMetricsConfig to represent
+                      the number of minutes between each upload schedule. The default
+                      is 360 min (6 hours).
+                    format: int64
+                    type: integer
+                  upload_wait:
+                    description: UploadWait is a field of KokuMetricsConfig to represent
+                      the time to wait before sending an upload.
+                    format: int64
+                    type: integer
+                  validate_cert:
+                    description: ValidateCert is a field of KokuMetricsConfig to represent
+                      if the Ingress endpoint must be certificate validated.
+                    type: boolean
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
