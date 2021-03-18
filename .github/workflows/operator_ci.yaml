@@ -97,6 +97,7 @@ jobs:
         with:
           message: |
             /hold
+            Setting `hold` and coresponding labels, since there are some modifications to existing operator. Please confirm by removing `do-not-merge/hold ` label.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
           allow-repeats: true # This is the default
@@ -108,17 +109,9 @@ jobs:
     needs: operator-ci
     runs-on: ubuntu-latest
     steps:
-
-      - name: Info
-        id: info
-        env:
-          OP_STREAM: "${{ needs.operator-ci.outputs.op_test_stream }}"
-        run: |
-          echo "${{ needs.operator-ci.outputs.op_test_stream }}"
-
       - name: "Remove needs-ok-to-test"
         uses: actions/github-script@v3
-        if: needs.operator-ci.outputs.op_test_stream == 'upstream-community-operators'
+        if: contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
