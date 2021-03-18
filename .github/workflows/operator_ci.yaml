@@ -1,0 +1,116 @@
+name: Operator CI
+on:
+ pull_request_target:
+   types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  operator-ci:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/labeler@v2
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+    - name: Operator traffic light
+      id: op-traffic-light
+      env:
+        OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+        OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}"
+        OPRT_SHA: "${{ github.event.pull_request.head.sha }}"
+        #OPRT_SRC_BRANCH: "support/action-01"
+      run: |
+        bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/support/script_pull_target2/upstream/test/oprt.sh)
+    - name: Verify
+      id: op-verify-modifications
+      env:
+        OP_TEST_ALLOW_SERIOUS_CHANGES: "${{ steps.op-traffic-light.outputs.op_test_allow_serious_changes }}"
+        OP_TEST_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
+        OP_TEST_MODIFIED_CSVS_OTHERS: "${{ steps.op-traffic-light.outputs.op_test_modified_others }}"
+      run: |
+        echo "::set-output name=op_check_cosmetics::0"
+        [[ $OP_TEST_ALLOW_SERIOUS_CHANGES -eq 1 ]] && { echo "Allowing serious changes. Exiting with '0' ..."; exit 0; } || true
+        [ -n "$OP_TEST_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetics::1" || true
+        [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetics changes are allowed !!!\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; exit 20; } || true
+
+    - name: Operator cosmetics change check
+      id: op-cosmetics-change-check
+      if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1'
+      env:
+        OP_TEST_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
+      run: |
+        echo "OP_TEST_MODIFIED_CSVS=$OP_TEST_MODIFIED_CSVS"
+        echo "op_check_cosmetics: ${{ steps.op-verify-modifications.outputs.op_check_cosmetics }}"
+        echo "op_test_set_label_operator_version_overwrite: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite }}"
+        echo "op_test_set_label_operator_recreate: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_recreate }}"
+        echo "DONE"
+    - name: "Removing Operator recreate label when exists"
+      uses: actions/github-script@v3
+      if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite == '1' && contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.removeLabel({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: 'allow/operator-recreate'
+          })
+    - name: "Setting Operator version overwrite label"
+      uses: actions/github-script@v3
+      if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite == '1'
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: [ 'allow/operator-version-overwrite' ]
+          })
+    - name: "Removing Operator version overwrite label when existsss"
+      uses: actions/github-script@v3
+      if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_recreate == '1' && contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite')
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.removeLabel({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: 'allow/operator-version-overwrite'
+          })
+    - name: "Setting Operator recreate label"
+      uses: actions/github-script@v3
+      if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_recreate == '1'
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: [ 'allow/operator-recreate' ]
+          })
+
+    - name: "Remove needs-ok-to-test"
+      uses: actions/github-script@v3
+      if: steps.op-traffic-light.outputs.op_test_stream == 'upstream-community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.removeLabel({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: 'needs-ok-to-test'
+          })
+
+    - name: "Run ok-to-test in case of community operators"
+      if:  steps.op-traffic-light.outputs.op_test_stream == 'community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
+      uses: mshick/add-pr-comment@v1
+      with:
+        message: |
+          /ok-to-test
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+        allow-repeats: true # This is the default
+
