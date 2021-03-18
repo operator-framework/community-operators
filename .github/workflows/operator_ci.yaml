@@ -99,33 +99,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Info
-      id: info
-      env:
-        OP_STREAM: "${{ needs.operator-ci.outputs.op_test_stream }}"
-      run: |
-        echo "${{ needs.operator-ci.outputs.op_test_stream }}"
+      - name: Info
+        id: info
+        env:
+          OP_STREAM: "${{ needs.operator-ci.outputs.op_test_stream }}"
+        run: |
+          echo "${{ needs.operator-ci.outputs.op_test_stream }}"
 
-    - name: "Remove needs-ok-to-test"
-      uses: actions/github-script@v3
-      if: needs.operator-ci.outputs.op_test_stream == 'upstream-community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.issues.removeLabel({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            name: 'needs-ok-to-test'
-          })
-
-    - name: "Run ok-to-test in case of community operators"
-      if:  needs.operator-ci.outputs.op_test_stream == 'community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
-      uses: mshick/add-pr-comment@v1
-      with:
-        message: |
-          /ok-to-test
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-        allow-repeats: true # This is the default
+      - name: "Remove needs-ok-to-test"
+        uses: actions/github-script@v3
+        if: needs.operator-ci.outputs.op_test_stream == 'upstream-community-operators'
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'needs-ok-to-test'
+            })
+      - name: "Setting ok-to-test label"
+        uses: actions/github-script@v3
+        if: needs.operator-ci.outputs.op_test_stream == 'community-operators'
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'ok-to-test' ]
+            })
+      # - name: "Run ok-to-test in case of community operators"
+      #   if:  needs.operator-ci.outputs.op_test_stream == 'community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
+      #   uses: mshick/add-pr-comment@v1
+      #   with:
+      #     message: |
+      #       /ok-to-test
+      #     repo-token: ${{ secrets.GITHUB_TOKEN }}
+      #     repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+      #     allow-repeats: true # This is the default
 
