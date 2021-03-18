@@ -91,6 +91,16 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'allow/operator-recreate' ]
             })
+      - name: "Set hold when "
+        if:  steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite') && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            /hold
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: true # This is the default
+
     outputs:
       op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
 
