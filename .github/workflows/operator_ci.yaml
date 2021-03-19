@@ -63,7 +63,7 @@ jobs:
           echo "op_check_cosmetics: ${{ steps.op-verify-modifications.outputs.op_check_cosmetics }}"
           echo "op_test_set_label_operator_version_overwrite: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite }}"
           echo "op_test_set_label_operator_recreate: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_recreate }}"
-          scripts/ci/op-test-cosmetics
+          bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt_cosmetics.sh) || true
           echo "DONE"
       - name: "Removing Operator recreate label when exists"
         uses: actions/github-script@v3
@@ -119,7 +119,12 @@ jobs:
         with:
           message: |
             /hold
-            Setting `hold` and coresponding labels, since there are some modifications to existing operator. Please confirm by removing `do-not-merge/hold ` label.
+                      
+            Found modifications in already published version(s) of the operator. 
+            Please confirm by posting `/unhold` command or removing `do-not-merge/hold ` label.
+            <details>
+            One or multiple versions were modified with cosmetics changes.
+            </details>
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
           allow-repeats: true # This is the default
