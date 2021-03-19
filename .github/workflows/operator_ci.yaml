@@ -46,14 +46,14 @@ jobs:
           OP_TEST_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
           OP_TEST_MODIFIED_CSVS_OTHERS: "${{ steps.op-traffic-light.outputs.op_test_modified_others }}"
         run: |
-          echo "::set-output name=op_check_cosmetics::0"
+          echo "::set-output name=op_check_cosmetic::0"
           [[ $OP_TEST_ALLOW_SERIOUS_CHANGES -eq 1 ]] && { echo "Allowing serious changes. Exiting with '0' ..."; exit 0; } || true
-          [ -n "$OP_TEST_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetics::1" || true
-          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetics changes are allowed !!!\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; exit 20; } || true
+          [ -n "$OP_TEST_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetic::1" || true
+          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!!\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; exit 20; } || true
 
-      - name: Operator cosmetics change check
-        id: op-cosmetics-change-check
-        if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1'
+      - name: Operator cosmetic change check
+        id: op-cosmetic-change-check
+        if: steps.op-verify-modifications.outputs.op_check_cosmetic == '1'
         env:
           OP_TEST_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
           OP_TEST_MODIFIED_REPO_BRANCH: "${{ steps.op-traffic-light.outputs.op_test_repo_branch }}"
@@ -61,14 +61,31 @@ jobs:
           OP_TEST_ANSIBLE_PULL_BRANCH: "master"
         run: |
           echo "OP_TEST_MODIFIED_CSVS=$OP_TEST_MODIFIED_CSVS"
-          echo "op_check_cosmetics: ${{ steps.op-verify-modifications.outputs.op_check_cosmetics }}"
+          echo "op_check_cosmetic: ${{ steps.op-verify-modifications.outputs.op_check_cosmetic }}"
           echo "op_test_set_label_operator_version_overwrite: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite }}"
           echo "op_test_set_label_operator_recreate: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_recreate }}"
-          bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt_cosmetics.sh)
+          bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt_cosmetic.sh)
           echo "DONE"
+
+      - name: "Adding comment when changes failed"
+        if: ${{ failure() }}
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            /hold
+                     
+            Only minor (cosmetic) changes to already published operator version(s) are allowed. 
+            Consider bumping your operator version. In exceptional cases, it could be overridden by setting 'allow/serious-changes-to-existing' label
+            <details>
+            More info about allowed changes can be found in [documetnation](https://operator-framework.github.io/community-operators/troubleshooting/#minor-changes).
+            </details>
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: true # This is the default
+
       - name: "Removing Operator recreate label when exists"
         uses: actions/github-script@v3
-        if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite == '1' && contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
+        if: steps.op-verify-modifications.outputs.op_check_cosmetic == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite == '1' && contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -80,7 +97,7 @@ jobs:
             })
       - name: "Setting Operator version overwrite label"
         uses: actions/github-script@v3
-        if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite == '1'
+        if: steps.op-verify-modifications.outputs.op_check_cosmetic == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite == '1'
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -92,7 +109,7 @@ jobs:
             })
       - name: "Removing Operator version overwrite label when existsss"
         uses: actions/github-script@v3
-        if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_recreate == '1' && contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite')
+        if: steps.op-verify-modifications.outputs.op_check_cosmetic == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_recreate == '1' && contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite')
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -104,7 +121,7 @@ jobs:
             })
       - name: "Setting Operator recreate label"
         uses: actions/github-script@v3
-        if: steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_recreate == '1'
+        if: steps.op-verify-modifications.outputs.op_check_cosmetic == '1' && steps.op-traffic-light.outputs.op_test_set_label_operator_recreate == '1'
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -114,17 +131,17 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'allow/operator-recreate' ]
             })
-      - name: "Set hold when "
-        if:  steps.op-verify-modifications.outputs.op_check_cosmetics == '1' && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite') && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
+      - name: "Setting msg when minor changes are allowed"
+        if:  steps.op-verify-modifications.outputs.op_check_cosmetic == '1' && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite') && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
         uses: mshick/add-pr-comment@v1
         with:
           message: |
             /hold
-                      
-            Found modifications in already published version(s) of the operator. 
+            
+            Minor (cosmetic) changes to already published operator version(s) were detected. 
             Please confirm by posting `/unhold` command or removing `do-not-merge/hold ` label.
             <details>
-            One or multiple versions were modified with cosmetics changes.
+            One or multiple versions were modified with minor (cosmetic) changes.
             </details>
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
