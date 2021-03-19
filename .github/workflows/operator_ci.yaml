@@ -10,6 +10,24 @@ jobs:
       - uses: actions/labeler@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Assign pull requests to Community Operator Submissions project
+        uses: srggrs/assign-one-project-github-action@1.2.1
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        continue-on-error: true
+        with:
+          project: 'https://github.com/operator-framework/community-operators/projects/1'
+      - name: "Request reviewer test"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: [ "mvalarh" ]
+            });
       - name: Operator traffic light
         id: op-traffic-light
         env:
