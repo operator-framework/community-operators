@@ -1,0 +1,178 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: oneagentapms.dynatrace.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.apiUrl
+    name: ApiUrl
+    type: string
+  - JSONPath: .status.tokens
+    name: Tokens
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: dynatrace.com
+  names:
+    categories:
+    - dynatrace
+    kind: OneAgentAPM
+    listKind: OneAgentAPMList
+    plural: oneagentapms
+    singular: oneagentapm
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: For application-only monitoring used in lieu of full-stack OneAgent if node access is limited.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: OneAgentAPMSpec defines the desired state of OneAgentAPM
+          properties:
+            agentVersion:
+              description: 'Optional: The version of the oneagent to be used Default (if nothing set): latest'
+              type: string
+            apiUrl:
+              description: Location of the Dynatrace API to connect to, including your specific environment ID
+              type: string
+            enableIstio:
+              description: If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
+              type: boolean
+            flavor:
+              description: 'Optional: defines the C standard library used Can be set to "musl" to use musl instead of glibc If set to anything else but "musl", glibc is used If a pod is annotated with the "oneagent.dynatrace.com/flavor" annotation, the value from the annotation will be used'
+              type: string
+            image:
+              description: 'Optional: Custom code modules OneAgent docker image In case you have the docker image for the oneagent in a custom docker registry you need to provide it here'
+              type: string
+            networkZone:
+              description: 'Optional: Adds the OneAgent to the given NetworkZone'
+              type: string
+            proxy:
+              description: 'Optional: Set custom proxy settings either directly or from a secret with the field ''proxy'''
+              properties:
+                value:
+                  type: string
+                valueFrom:
+                  type: string
+              type: object
+            resources:
+              description: 'Optional: define resources requests and limits for the initContainer'
+              properties:
+                limits:
+                  additionalProperties: {}
+                  description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties: {}
+                  description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
+            skipCertCheck:
+              description: Disable certificate validation checks for installer download and API communication
+              type: boolean
+            tokens:
+              description: Credentials for the OneAgent to connect back to Dynatrace.
+              type: string
+            trustedCAs:
+              description: 'Optional: Adds custom RootCAs from a configmap'
+              type: string
+            useImmutableImage:
+              description: Defines if you want to use the immutable image or the installer
+              type: boolean
+          required:
+          - apiUrl
+          type: object
+        status:
+          description: OneAgentAPMStatus defines the observed state of OneAgentAPM
+          properties:
+            conditions:
+              description: Conditions includes status about the current state of the instance
+              items:
+                description: "Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, type FooStatus struct{     // Represents the observations of a foo's current state.     // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type     // +patchStrategy=merge     // +listType=map     // +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"` \n     // other fields }"
+                properties:
+                  lastTransitionTime:
+                    description: lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: message is a human readable message indicating details about the transition. This may be an empty string.
+                    maxLength: 32768
+                    type: string
+                  observedGeneration:
+                    description: observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.
+                    format: int64
+                    minimum: 0
+                    type: integer
+                  reason:
+                    description: reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.
+                    maxLength: 1024
+                    minLength: 1
+                    type: string
+                  status:
+                    description: status of the condition, one of True, False, Unknown.
+                    enum:
+                    - "True"
+                    - "False"
+                    - Unknown
+                    type: string
+                  type:
+                    description: type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                    maxLength: 316
+                    type: string
+                required:
+                - lastTransitionTime
+                - message
+                - reason
+                - status
+                - type
+                type: object
+              type: array
+            environmentID:
+              description: EnvironmentID contains the environment ID corresponding to the API URL
+              type: string
+            lastAPITokenProbeTimestamp:
+              description: LastAPITokenProbeTimestamp tracks when the last request for the API token validity was sent
+              format: date-time
+              type: string
+            lastPaaSTokenProbeTimestamp:
+              description: LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
+              format: date-time
+              type: string
+            tokens:
+              description: Credentials used for the OneAgent to connect back to Dynatrace.
+              type: string
+            updatedTimestamp:
+              description: UpdatedTimestamp indicates when the instance was last updated
+              format: date-time
+              type: string
+            useImmutableImage:
+              description: UseImmutableImage is set when an immutable image is currently in use
+              type: boolean
+          type: object
+      required:
+      - spec
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
