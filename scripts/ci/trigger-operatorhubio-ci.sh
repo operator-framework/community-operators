@@ -12,7 +12,7 @@ EOF
 
 curl -s -X POST \
   --url https://api.github.com/repos/operator-framework/operatorhub.io/actions/workflows/4934257/dispatches \
-  --header "Authorization: token $REPO_GHA_PAT" \
+  --header "Authorization: token $CI_OHIO_TRIGGER_TOKEN" \
   --header 'Content-Type: application/json' \
   --data "$(payload)"
 
