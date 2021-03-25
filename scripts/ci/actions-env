@@ -16,6 +16,7 @@ OP_TEST_CHANGES_STREAM_UPSTREAM=0
 OP_TEST_CHANGES_CI_YAML=0
 OP_TEST_CI_YAML_ONLY=0
 OP_TEST_ALLOW_SERIOUS_CHANGES=0
+OP_TEST_IS_NEW_OPERATOR=0
 
 OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
 OP_TEST_RECREATE=${OP_TEST_RECREATE-0}
@@ -229,9 +230,16 @@ fi
 
 
 OP_TEST_OPERATOR_VERSIONS_COUNT=0
+
 [ -z $OP_TEST_OPERATOR_VERSIONS ] || OP_TEST_OPERATOR_VERSIONS_COUNT=$(echo $OP_TEST_OPERATOR_VERSIONS | tr ' ' '\n' | wc -l)
 
+OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=0
+[ -z $OP_TEST_OPERATOR_VERSIONS_ALL ] || OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=$(echo $OP_TEST_OPERATOR_VERSIONS_ALL | tr ' ' '\n' | wc -l)
+
 [ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && [ "$OP_TEST_OPERATOR_VERSIONS_REMOVED" != "$OP_TEST_OPERATOR_VERSIONS_ALL_LATEST" ] && { echo "Error: Old versions [$OP_TEST_OPERATOR_VERSIONS_REMOVED] were removed and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; exit 1;  }
+
+
+OP_TEST_IS_NEW_OPERATOR=1
 
 
 # echo "::set-output name=op_test_set_label_operator_version_overwrite::0"
@@ -241,6 +249,8 @@ OP_TEST_OPERATOR_VERSIONS_COUNT=0
 
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -eq 1 ]] && [[ $OP_TEST_IS_MODIFIED -eq 1 ]] && OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=1
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && OP_TEST_SET_LABEL_OPERATOR_RECREATE=1
+[[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_ALL_COUNT -eq 1 ]] && OP_TEST_IS_NEW_OPERATOR=1
+
 
 echo "Latest : $LATEST"
 echo "OP_TEST_OPERATOR_VERSION: $OP_TEST_OPERATOR_VERSION"
@@ -260,6 +270,9 @@ echo "op_release_ready=${OP_RELEASE_READY}"
 echo "op_test_stream=${OP_TEST_STREAM_NAME}"
 echo "op_test_name=${OP_TEST_OPERATOR_NAME}"
 echo "op_test_version=${OP_TEST_OPERATOR_VERSION}"
+echo "op_test_versions=${OP_TEST_OPERATOR_VERSIONS}"
+echo "op_test_is_new_operatror=${OP_TEST_IS_NEW_OPERATOR}"
+
 echo "op_test_ci_yaml_only=$OP_TEST_CI_YAML_ONLY"
 echo "op_test_op_delete=$OP_TEST_OP_DELETE"
 echo "op_test_ver_overwrite=$OP_TEST_VER_OVERWRITE"

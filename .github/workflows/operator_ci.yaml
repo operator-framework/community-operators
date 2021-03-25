@@ -65,6 +65,38 @@ jobs:
           #OPRT_SRC_BRANCH: "support/action-01"
         run: |
           bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt.sh)
+
+      - name: Update title
+        uses: actions/github-script@v3
+        if: needs.operator-ci.outputs.op_test_stream != '' && needs.operator-ci.outputs.op_test_name != ''
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.update({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "[${{ needs.operator-ci.outputs.op_test_stream }}] ${{ needs.operator-ci.outputs.op_test_name }} (${{ needs.operator-ci.outputs.op_test_versions }})"
+            })
+
+      - name: Handle new operator
+        uses: actions/github-script@v3
+        if: needs.operator-ci.outputs.op_test_is_new_operatror == '1'
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |        
+            # await github.issues.createComment({
+            #   issue_number: context.issue.number,
+            #   owner: context.repo.owner,
+            #   repo: context.repo.repo,
+            #   body: 'Welcome, new operarator!'
+            # })
+            await github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'good first issue' ]
+            })
       - name: Verify operator modifications
         id: op-verify-modifications
         env:
