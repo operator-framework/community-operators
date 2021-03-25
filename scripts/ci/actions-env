@@ -18,6 +18,7 @@ OP_TEST_CI_YAML_ONLY=0
 OP_TEST_ALLOW_SERIOUS_CHANGES=0
 OP_TEST_IS_OPERATOR=0
 OP_TEST_IS_NEW_OPERATOR=0
+OP_TEST_PR_TITLE=
 
 OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
 OP_TEST_RECREATE=${OP_TEST_RECREATE-0}
@@ -232,7 +233,6 @@ if [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
   fi
 fi
 
-
 OP_TEST_OPERATOR_VERSIONS_COUNT=0
 
 [ -z $OP_TEST_OPERATOR_VERSIONS ] || OP_TEST_OPERATOR_VERSIONS_COUNT=$(echo $OP_TEST_OPERATOR_VERSIONS | tr ' ' '\n' | wc -l)
@@ -255,6 +255,11 @@ OP_TEST_IS_NEW_OPERATOR=1
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && OP_TEST_SET_LABEL_OPERATOR_RECREATE=1
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_ALL_COUNT -eq 1 ]] && OP_TEST_IS_NEW_OPERATOR=1
 
+
+OP_TEST_PR_TITLE="[$OP_TEST_STREAM_NAME"
+[[ $OPRT -eq 1 ]] && [[ $OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE O"
+[[ $OPRT -eq 1 ]] && [[ $OP_TEST_SET_LABEL_OPERATOR_RECREATE -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE R"
+OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE] $OP_TEST_OPERATOR_NAME ($OP_TEST_OPERATOR_VERSIONS)"
 
 echo "Latest : $LATEST"
 echo "OP_TEST_OPERATOR_VERSION: $OP_TEST_OPERATOR_VERSION"
@@ -289,6 +294,8 @@ echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
 echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
 echo "::set-output name=op_test_versions::${OP_TEST_OPERATOR_VERSIONS}"
 echo "::set-output name=op_test_is_new_operatror::${OP_TEST_IS_NEW_OPERATOR}"
+echo "::set-output name=op_test_pr_title::${OP_TEST_PR_TITLE}"
+
 
 echo "::set-output name=op_test_ci_yaml_only::${OP_TEST_CI_YAML_ONLY}"
 echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
