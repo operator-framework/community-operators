@@ -73,7 +73,11 @@ echo "OP_VER=$OP_VER"
 
 cd aqua
 
-echo "**** Temp tests: ***"
+
+FAKE_TOKEN=$(cat /var/run/cred/framautom)
+echo " Fake token: $FAKE_TOKEN"
+
+
 OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
 curl -f -u J0zi:$(cat /var/run/cred/jtkn) \
