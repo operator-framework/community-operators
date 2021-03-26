@@ -73,14 +73,10 @@ echo "OP_VER=$OP_VER"
 
 cd aqua
 
-
-FAKE_TOKEN=$(cat /var/run/cred/framautom)
-echo " Fake token: $FAKE_TOKEN"
-
-
 OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
-curl -f -u J0zi:$(cat /var/run/cred/jtkn) \
+#curl -f -u J0zi:$(cat /var/run/cred/jtkn) \
+curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
 https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"op_token\": \"$OP_TOKEN\", \"source_pr\": \"$PULL_NUMBER\"}}"
