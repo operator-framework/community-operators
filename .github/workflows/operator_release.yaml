@@ -11,11 +11,11 @@ env:
   OP_TEST_PROD: 1
   OP_TEST_MIRROR_LATEST_TAG: "v4.6"
   # OP_TEST_LABELS: "allow/ci-changes allow/operator-version-overwrite"
-  # OP_TEST_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
-  # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml upstream-community-operators/aqua/1.0.2/csv1.yaml"
-  # OP_TEST_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
+  # OP_TEST_ADDED_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
+  # OP_TEST_ADDED_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml upstream-community-operators/aqua/1.0.2/csv1.yaml"
+  # OP_TEST_ADDED_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_REMOVED_FILES: ""
-  
+  GODEBUG: x509ignoreCN=0
   CI_OHIO_TRIGGER_TOKEN: ${{ secrets.CI_OHIO_TRIGGER_TOKEN }}
   OHIO_REGISTRY_TOKEN: ${{ secrets.OHIO_REGISTRY_TOKEN }}
   QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
@@ -53,7 +53,8 @@ jobs:
       - name: Operator test
         id: op-traffic-light
         env:
-          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          OP_TEST_ADDED_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.modified }}"
           OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
           OP_TEST_LABELS: "${{ steps.prinfo.outputs.labels }}"
         run: |
@@ -71,6 +72,7 @@ jobs:
       op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
       op_test_ver_overwrite: "${{ steps.op-traffic-light.outputs.op_test_ver_overwrite }}"
       op_test_op_delete: "${{ steps.op-traffic-light.outputs.op_test_op_delete }}"
+      op_release_delete_appreg: "${{ steps.op-traffic-light.outputs.op_release_delete_appreg }}"
 
   release-k8s_latest:
     name: "Release / k8s latest"
@@ -168,6 +170,7 @@ jobs:
         if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
         env:
           OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OP_TEST_IIB_INSTALL: 1
         run: |
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange_v4.6 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
@@ -212,6 +215,7 @@ jobs:
         if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
         env:
           OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OP_TEST_IIB_INSTALL: 1
         run: |
           echo "OP_TEST_LABELS=$OP_TEST_LABELS"
           echo "orange_v4.7 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
@@ -255,8 +259,11 @@ jobs:
   push-to-quay-o7t:
     name: "Release / o7t push to quay"
     needs: pr-check
-    if: needs.pr-check.outputs.op_test_ready == '1'
+    if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
     runs-on: ubuntu-latest
+    env:
+      DELETE_APPREG: "${{ needs.pr-check.outputs.op_release_delete_appreg }}"
+      OP_TEST_VERSION: "${{ needs.pr-check.outputs.op_test_version }}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -271,7 +278,7 @@ jobs:
     # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
     runs-on: ubuntu-latest
     env:
-      CI_OHIO_BRANCH: "master"
+      CI_OHIO_BRANCH: "latest"
       REPO_GHA_PAT: ${{ secrets.REPO_GHA_PAT }}
     steps:
       - name: Checkout code
@@ -287,7 +294,7 @@ jobs:
     # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
     runs-on: ubuntu-latest
     env:
-      CI_OHIO_BRANCH: "dev"
+      CI_OHIO_BRANCH: "master"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

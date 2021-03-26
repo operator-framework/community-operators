@@ -1,0 +1,382 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "redhatcop.redhat.io/v1alpha1",
+          "kind": "EgressIPAM",
+          "metadata": {
+            "name": "egressipam-aws"
+          },
+          "spec": {
+            "cidrAssignments": [
+              {
+                "CIDR": "10.0.128.0/19",
+                "labelValue": "us-west-2a"
+              },
+              {
+                "CIDR": "10.0.160.0/19",
+                "labelValue": "us-west-2b",
+                "reservedIPs": [
+                  "10.0.160.126"
+                ]
+              },
+              {
+                "CIDR": "10.0.192.0/19",
+                "labelValue": "us-west-2c"
+              }
+            ],
+            "nodeSelector": {
+              "matchLabels": {
+                "node-role.kubernetes.io/worker": ""
+              }
+            },
+            "topologyLabel": "failure-domain.beta.kubernetes.io/zone"
+          }
+        },
+        {
+          "apiVersion": "redhatcop.redhat.io/v1alpha1",
+          "kind": "EgressIPAM",
+          "metadata": {
+            "name": "egressipam-baremetal"
+          },
+          "spec": {
+            "cidrAssignments": [
+              {
+                "CIDR": "192.169.0.0/24",
+                "labelValue": "true"
+              }
+            ],
+            "nodeSelector": {
+              "matchLabels": {
+                "node-role.kubernetes.io/worker": ""
+              }
+            },
+            "topologyLabel": "egressGateway"
+          }
+        }
+      ]
+    capabilities: Deep Insights
+    categories: Networking, Cloud Provider, Security
+    certified: "false"
+    containerImage: quay.io/redhat-cop/egressip-ipam-operator
+    createdAt: 03/13/2020
+    description: This operator provides automation around manageing egressIPs.
+    operators.operatorframework.io/builder: operator-sdk-v1.3.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+    repository: https://github.com/redhat-cop/egressip-ipam-operator
+    support: Best Effort
+  name: egressip-ipam-operator.v1.0.2
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: EgressIPAM is the Schema for the egressipams API
+      displayName: Egress IPAM
+      kind: EgressIPAM
+      name: egressipams.redhatcop.redhat.io
+      version: v1alpha1
+  description: |
+    This operator automates the assignment of egressIPs to namespaces.
+    Namespaces can opt in to receiving one or more egressIPs with the following annotation `egressip-ipam-operator.redhat-cop.io/egressipam:<egressIPAM>`, where `egressIPAM` is the CRD that controls how egressIPs are assigned.
+    IPs assigned to the namespace can be looked up in the following annotation: `egressip-ipam-operator.redhat-cop.io/egressips`.
+
+    EgressIP assignments is managed by the EgressIPAM CRD. Here is an example of it:
+
+    ```yaml
+    apiVersion: redhatcop.redhat.io/v1alpha1
+    kind: EgressIPAM
+    metadata:
+      name: example-egressipam
+    spec:
+      cidrAssignments:
+        - labelValue: "true"
+          CIDR: 192.169.0.0/24
+          reservedIPs:
+          - "192.159.0.5"
+      topologyLabel: egressGateway
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+    ```
+
+    This EgressIPAM specifies that all nodes that comply with the specified node selector and that also have labels `egressGateway: "true"` will be assigned egressIP from the specified CIDR.
+
+    Note that the `cidrAssigments` field is an array and therefore, multiple groups of nodes can be identified with the labelValue and different CIDRs can be assigned to them. This is usually not necessary on a bare metal deployment.
+
+    In the bare metal scenario, when this egressCRD is created, all the `hostsubnet` relative to the nodes selected by this EgressIPAM will be update to have the EgressCIDRs field equal to the specified CIDR (see below for cloud provider scenarios).
+
+    When a namespace is created with the opt-in annotation: `egressip-ipam-operator.redhat-cop.io/egressipam=<egressIPAM>`, an available egressIP is selected from the CIDR and assigned to the namespace.The `netnamespace` associated with this namespace is updated to use that egressIP.
+
+    It is possible to specify a set of reserved IPs. These IPs must belong to the CIDR and will never be assigned.
+
+    ## Passing EgressIPs as input
+
+    The normal mode of operation of this operator is to pick a random IP from the configured CIDR. However, it also supports a scenario where egressIPs are picked by an external process and passed as input.
+
+    In this case IPs must me passed as an annotation to the namespace, like this: `egressip-ipam-operator.redhat-cop.io/egressips=IP1,IP2...`. The value of the annotation is a comma separated array of ip with no spaces.
+
+    There must be exactly one IP per CIDR defined in the referenced egressIPAM. Moreover, each IP must belong to the corresponding CIDR. Because this situation can lead to inconsistencies, failing to have correspondence between IPs in the namespace annotation and CIDRs in the egressIPAM CR will cause the operator to error out and stop processing all the namespaces associated with the given EgressIPAM CR.
+
+    It also also a responsibility of the progress picking the IPs to ensure that those IPs are actually available.
+
+    ## Assumptions
+
+    The following assumptions apply when using this operator:
+
+    1. If multiple EgressIPAMs are defined, their selected nodes MUST NOT overlap.
+    2. When using a cloud provider the topology label MUST be `failure-domain.beta.kubernetes.io/zone`.
+
+    ## Support for AWS
+
+    In AWS as well as other cloud providers, one cannot freely assign IPs to machines. Additional steps need to be performed in this case. Considering this EgressIPAM
+
+    ```yaml
+    apiVersion: redhatcop.redhat.io/v1alpha1
+    kind: EgressIPAM
+    metadata:
+      name: egressipam-aws
+    spec:
+      cidrAssignments:
+        - labelValue: "eu-central-1a"
+          CIDR: 10.0.128.0/20
+        - labelValue: "eu-central-1b"
+          CIDR: 10.0.144.0/20
+        - labelValue: "eu-central-1c"
+          CIDR: 10.0.160.0/20
+      topologyLabel: failure-domain.beta.kubernetes.io/zone
+      nodeSelector:
+        matchLabels:
+          node-role.kubernetes.io/worker: ""
+    ```
+
+    When a namespace with the opt-in annotation is created, the following happens:
+
+    1. for each of the CIDRs, an available IP is selected and assigned to the namespace
+    2. the relative `netnamespace` is update to reflect the assignment (multiple IPs will be assigned in this case).
+    3. one node per zone is selected to carry the egressIP
+    4. the relative aws machines are assigned the additional IP on the main interface (support for secondary interfaces in not available)
+    5. the relative `hostsubnets` are updated to reflect the assigned IP, the `egressIP` field is updated.
+  displayName: Egressip Ipam Operator
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - cloudcredential.openshift.io
+          resources:
+          - credentialsrequests
+          verbs:
+          - create
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - machine.openshift.io
+          resources:
+          - machines
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - machine.openshift.io
+          resources:
+          - machinesets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - network.openshift.io
+          resources:
+          - hostsubnets
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - network.openshift.io
+          resources:
+          - netnamespaces
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - redhatcop.redhat.io
+          resources:
+          - egressipams
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - redhatcop.redhat.io
+          resources:
+          - egressipams/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - redhatcop.redhat.io
+          resources:
+          - egressipams/status
+          verbs:
+          - get
+          - patch
+          - update
+        serviceAccountName: default
+      deployments:
+      - name: egressip-ipam-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --leader-elect
+                command:
+                - /manager
+                image: quay.io/redhat-cop/egressip-ipam-operator:v1.0.2
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 30Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - coordination.k8s.io
+          resources:
+          - configmaps
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: default
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - egressIPs
+  - high availability
+  - firewall support
+  - traffic management
+  - ipam
+  links:
+  - name: Egressip Ipam Operator
+    url: https://github.com/redhat-cop/egressip-ipam-operator
+  - name: Container Image
+    url: https://quay.io/redhat-cop/egressip-ipam-operator:v0.1.2
+  maintainers:
+  - email: rspazzol@redhat.com
+    name: Raffaele Spazzoli
+  maturity: alpha
+  provider:
+    name: Red Hat Community of Practice
+  version: 1.0.2
