@@ -226,6 +226,12 @@ jobs:
 
     outputs:
       op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
+      op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
+      op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
+      op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
+      op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
+      op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
+      op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
 
   operator-ci-ok-to-test:
     needs: operator-ci
@@ -260,6 +266,27 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'ok-to-test' ]
             })
+
+  test-summary:
+    name: "Test summary"
+    needs: [ operator-ci, operator-ci-ok-to-test ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Summary
+        if: needs.operator-ci.outputs.op_test_ready == '1'
+        continue-on-error: true
+        run: |
+          echo "This is summary"
+          echo "addReviewers: true" >> ${{ needs.operator-ci.outputs.op_test_stream }}/${{ needs.operator-ci.outputs.op_test_name }}/ci.yaml
+          cat ${{ needs.operator-ci.outputs.op_test_stream }}/${{ needs.operator-ci.outputs.op_test_name }}/ci.yaml
+      - uses: kentaro-m/auto-assign-action@v1.1.2
+        continue-on-error: true
+        with:
+          configuration-path: "${{ needs.operator-ci.outputs.op_test_stream }}/${{ needs.operator-ci.outputs.op_test_name }}/ci.yaml"
+
       # - name: "Run ok-to-test in case of community operators"
       #   if:  needs.operator-ci.outputs.op_test_stream == 'community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
       #   uses: mshick/add-pr-comment@v1
