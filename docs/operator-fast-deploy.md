@@ -7,7 +7,7 @@ Deployment of a operator is done by merging PR in to the main branch [community-
 
 Operator will be merged automatically (currently done by maintainers), when number of criteria will be fullfill:
 
-- All tests are be green
+- All tests are green
 - PR is reviewed by all reviewers
 
 # How do I merge faster?

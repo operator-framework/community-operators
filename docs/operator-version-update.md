@@ -5,7 +5,7 @@
 !!! note
     It is strongly recommended to bump operator version if possible.
 
-Operator version update can be done by creating new directory with `version` name in operator dir without '`v`'. For example updating aqua operator from `5.3.0` to `6.0.0`
+Operator version update can be done by creating new directory with `version` name in operator dir without '`v`'. For example updating aqua operator from `1.0.0` to `1.0.1`
 
 ```
 $ tree community-operators/aqua/ -d
@@ -14,9 +14,6 @@ community-operators/aqua/
 ├── 0.0.2
 ├── 1.0.0
 ├── 1.0.1
-├── 1.0.2
-├── 5.3.0
-└── 6.0.0
 ```
 
 
