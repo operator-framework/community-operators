@@ -9,6 +9,9 @@ To submit an operator one has to do these steps
 1. Place the operator in the target directory. [More info](./contributing-where-to.md)
     - community-operators (Openshift operator)
     - upstream-community-operators (Kubernetes operator)
+1. Conigure `ci.yaml` file. [More info](./operator-ci-yaml.md)
+    - Setup reviewers
+    - Operator versioning strategy
 1. Verify tests and fix problems, if possible
 1. Ask for help in the PR in case of problems
 
