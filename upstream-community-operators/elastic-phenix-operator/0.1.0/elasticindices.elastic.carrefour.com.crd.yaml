@@ -1,0 +1,142 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: elastic-phenix-operator-system/elastic-phenix-operator-serving-cert
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: elasticindices.elastic.carrefour.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.indexName
+    name: INDEX_NAME
+    type: string
+  - JSONPath: .spec.numberOfShards
+    name: SHARDS
+    type: integer
+  - JSONPath: .spec.numberOfReplicas
+    name: REPLICAS
+    type: integer
+  - JSONPath: .status.status
+    name: STATUS
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: AGE
+    type: date
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: elastic-phenix-operator-webhook-service
+        namespace: elastic-phenix-operator-system
+        path: /convert
+        port: 443
+  group: elastic.carrefour.com
+  names:
+    kind: ElasticIndex
+    listKind: ElasticIndexList
+    plural: elasticindices
+    shortNames:
+    - ei
+    singular: elasticindex
+  preserveUnknownFields: false
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: ElasticIndex is the Schema for the elasticindices API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ElasticIndexSpec defines the desired state of ElasticIndex
+          properties:
+            elasticURI:
+              description: Elasticsearch URI with this format <scheme>://<user>:<password>@<hostname>:<port>
+                from a key of a secret in the local namespace
+              properties:
+                secretKeyRef:
+                  description: SecretKeySelector selects a key of a Secret.
+                  properties:
+                    key:
+                      description: The key of the secret to select from.  Must be
+                        a valid secret key.
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                    optional:
+                      description: Specify whether the Secret or its key must be defined
+                      type: boolean
+                  required:
+                  - key
+                  type: object
+              required:
+              - secretKeyRef
+              type: object
+            indexName:
+              description: Index name in elasticsearch server
+              pattern: ^[a-z0-9-_\.]+$
+              type: string
+            model:
+              description: Index mappings, settings and aliases
+              type: string
+            numberOfReplicas:
+              description: Number of elasticsearch replicas
+              format: int32
+              maximum: 3
+              minimum: 1
+              type: integer
+            numberOfShards:
+              description: Number of elasticsearch shards
+              format: int32
+              maximum: 500
+              minimum: 1
+              type: integer
+          required:
+          - elasticURI
+          - indexName
+          - model
+          - numberOfReplicas
+          - numberOfShards
+          type: object
+        status:
+          description: ElasticIndexStatus defines the observed state of ElasticIndex
+          properties:
+            httpCodeStatus:
+              description: The http code status returned by elasticsearch
+              type: string
+            message:
+              description: The message returned by elasticsearch. Useful when Status
+                is Error or Retry
+              type: string
+            status:
+              description: 'Status indicates whether index was created successfully
+                in elasticsearch server. Possible values: Created, Error, Retry'
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
