@@ -223,6 +223,20 @@ jobs:
       #     repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
       #     allow-repeats: true # This is the default
 
+      - name: Summary
+        if: steps.op-traffic-light.outputs.op_test_ready == '1'
+        continue-on-error: true
+        run: |
+          echo "This is summary"
+          ls -al
+          ls -al ${{ steps.op-traffic-light.outputs.op_test_stream }}/
+          ls -al ${{ steps.op-traffic-light.outputs.op_test_stream }}/${{ steps.op-traffic-light.outputs.op_test_name }}
+          echo "addReviewers: true" >> ${{ steps.op-traffic-light.outputs.op_test_stream }}/${{ steps.op-traffic-light.outputs.op_test_name }}/ci.yaml
+          cat ${{ steps.op-traffic-light.outputs.op_test_stream }}/${{ steps.op-traffic-light.outputs.op_test_name }}/ci.yaml
+      - uses: kentaro-m/auto-assign-action@v1.1.2
+        continue-on-error: true
+        with:
+          configuration-path: "${{ steps.op-traffic-light.outputs.op_test_stream }}/${{ steps.op-traffic-light.outputs.op_test_name }}/ci.yaml"
 
     outputs:
       op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
@@ -236,6 +250,10 @@ jobs:
     needs: operator-ci
     runs-on: ubuntu-latest
     steps:
+      - name: Sleep for 10 seconds
+        run: |
+          sleep 10
+
       - name: "Remove needs-ok-to-test"
         uses: actions/github-script@v3
         # if: contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
@@ -249,10 +267,6 @@ jobs:
               repo: context.repo.repo,
               name: 'needs-ok-to-test'
             })
-      - name: Sleep for 10 seconds
-        uses: jakejarvis/wait-action@master
-        with:
-          time: '10s'
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
         if: needs.operator-ci.outputs.op_test_stream == 'community-operators'
@@ -265,28 +279,6 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'ok-to-test' ]
             })
-
-  test-summary:
-    name: "Test summary"
-    needs: [ operator-ci, operator-ci-ok-to-test ]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Summary
-        if: needs.operator-ci.outputs.op_test_ready == '1'
-        continue-on-error: true
-        run: |
-          echo "This is summary"
-          ls -al
-          ls -al community-operators/
-          echo "addReviewers: true" >> community-operators/${{ needs.operator-ci.outputs.op_test_stream }}/${{ needs.operator-ci.outputs.op_test_name }}/ci.yaml
-          cat community-operators/${{ needs.operator-ci.outputs.op_test_stream }}/${{ needs.operator-ci.outputs.op_test_name }}/ci.yaml
-      - uses: kentaro-m/auto-assign-action@v1.1.2
-        continue-on-error: true
-        with:
-          configuration-path: "community-operators/${{ needs.operator-ci.outputs.op_test_stream }}/${{ needs.operator-ci.outputs.op_test_name }}/ci.yaml"
 
       # - name: "Run ok-to-test in case of community operators"
       #   if:  needs.operator-ci.outputs.op_test_stream == 'community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
