@@ -1,0 +1,418 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "apps.gitlab.com/v1beta2",
+          "kind": "Runner",
+          "metadata": {
+            "name": "example"
+          },
+          "spec": {
+            "gitlabUrl": "https://gitlab.com",
+            "imagePullPolicy": "Always",
+            "tags": "openshift, test",
+            "token": "gitlab-dev-runner-secret"
+          }
+        }
+      ]
+    capabilities: Deep Insights
+    categories: Integration & Delivery, Developer Tools
+    certified: "false"
+    containerImage: registry.gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator/gitlab-runner-operator@sha256:28ce756b3ff444fdf7b34624993ccc46765448c2a27db211f6506776a276cdcc
+    createdAt: "2020-12-07T14:37:00Z"
+    description: GitLab Runner operator manages lifecycle of GitLab Runner instances
+    operators.operatorframework.io/builder: operator-sdk-v1.4.0+git
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator
+    support: GitLab, Inc.
+  name: gitlab-runner-operator.v13.10.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - description: Runner is the open source project used to run your jobs and send the results back to GitLab
+        displayName: GitLab Runner
+        kind: Runner
+        name: runners.apps.gitlab.com
+        resources:
+          - kind: ConfigMap
+            name: ""
+            version: v1
+          - kind: Deployment
+            name: ""
+            version: v1
+          - kind: PersistentVolumeClaim
+            name: ""
+            version: v1
+          - kind: Pod
+            name: ""
+            version: v1
+          - kind: Secret
+            name: ""
+            version: v1
+          - kind: Service
+            name: ""
+            version: v1
+        specDescriptors:
+          - description: Option to limit the number of jobs globally that can run concurrently. The operator sets this to 10, if not specified
+            displayName: Concurrent
+            path: concurrent
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - description: The fully qualified domain name for the GitLab instance. For example, https://gitlab.example.com
+            displayName: GitLab URL
+            path: gitlabUrl
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - description: Option to define the number of seconds between checks for new jobs. This is set to a default of 30s by operator if not set
+            displayName: Check Interval
+            path: interval
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - description: 'List of comma separated tags to be applied to the runner More info: https://docs.gitlab.com/ee/ci/runners/#use-tags-to-limit-the-number-of-jobs-using-the-runner'
+            displayName: Tags
+            path: tags
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - description: Name of secret containing the 'runner-registration-token' key used to register the runner
+            displayName: Registration Token
+            path: token
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret
+        statusDescriptors:
+          - description: Reports status of the GitLab Runner instance
+            displayName: Phase
+            path: phase
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+          - description: Reports status of GitLab Runner registration
+            displayName: Registration
+            path: registration
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:text
+        version: v1beta2
+  description: |
+    GitLab Runner is the lightweight, highly-scalable agent that runs your build jobs and sends the results back to a GitLab instance. GitLab Runner works in conjunction with GitLab CI/CD, the open-source continuous integration service included with GitLab.
+
+    The GitLab Runner operator manages the lifecycle of GitLab Runner in Kubernetes or Openshift clusters. The operator aims to automate the tasks needed to run your CI/CD jobs in your container orchestration platform.
+
+    ## Usage
+
+     To link a GitLab Runner instance to a self-hosted GitLab instance or the hosted [GitLab](https://gitlab.com), you first need to:
+
+     1. create a secret containing the `runner-registration-token` from your GitLab project.
+
+       ```
+      cat > gitlab-runner-secret.yml << EOF
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: gitlab-runner-secret
+      type: Opaque
+      stringData:
+        runner-registration-token: REPLACE_ME # your project runner secret
+      EOF
+      ```
+
+      ```
+      oc apply -f gitlab-runner-secret.yml
+      ```
+
+     2. Create the Custom Resource Definition (CRD) file and include the following information. The tags value must be openshift for the job to run.
+
+       ```
+       cat > gitlab-runner.yml << EOF
+       apiVersion: apps.gitlab.com/v1beta2
+       kind: Runner
+       metadata:
+         name: gitlab-runner
+       spec:
+         gitlabUrl: https://gitlab.example.com
+         buildImage: alpine
+         token: gitlab-runner-secret
+         tags: openshift
+       EOF
+       ```
+
+      ```
+      oc apply -f gitlab-runner.yml
+      ```
+
+    ## Full documentation
+
+    Visit [Install GitLab Runner on Red Hat OpenShift](https://docs.gitlab.com/runner/install/openshift.html)
+  displayName: GitLab Runner
+  icon:
+    - base64data: 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
+      mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - authentication.k8s.io
+              resources:
+                - tokenreviews
+              verbs:
+                - create
+            - apiGroups:
+                - authorization.k8s.io
+              resources:
+                - subjectaccessreviews
+              verbs:
+                - create
+          serviceAccountName: default
+      deployments:
+        - name: gitlab-runner-controller-manager
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                control-plane: controller-manager
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  control-plane: controller-manager
+              spec:
+                containers:
+                  - args:
+                      - --metrics-addr=127.0.0.1:8080
+                      - --enable-leader-election
+                    command:
+                      - /manager
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                    image: registry.gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator/gitlab-runner-operator@sha256:28ce756b3ff444fdf7b34624993ccc46765448c2a27db211f6506776a276cdcc
+                    name: manager
+                    ports:
+                      - containerPort: 9443
+                        name: webhook-server
+                        protocol: TCP
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 30Mi
+                      requests:
+                        cpu: 100m
+                        memory: 20Mi
+                  - args:
+                      - --secure-listen-address=0.0.0.0:8443
+                      - --upstream=http://127.0.0.1:8080/
+                      - --logtostderr=true
+                      - --v=10
+                    image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                    name: kube-rbac-proxy
+                    ports:
+                      - containerPort: 8443
+                        name: https
+                    resources: {}
+                terminationGracePeriodSeconds: 10
+      permissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps/status
+              verbs:
+                - get
+                - update
+                - patch
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+            - apiGroups:
+                - apps
+              resources:
+                - deployments
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apps.gitlab.com
+              resources:
+                - runners
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apps.gitlab.com
+              resources:
+                - runners/finalizers
+              verbs:
+                - delete
+                - patch
+                - update
+            - apiGroups:
+                - apps.gitlab.com
+              resources:
+                - runners/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - pods/log
+              verbs:
+                - get
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - serviceaccounts
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - services
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+          serviceAccountName: default
+    strategy: deployment
+  installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+  keywords:
+    - GitLab
+    - CI/CD
+    - DevOps
+    - SAST
+    - DAST
+  links:
+    - name: Gitlab Runner Operator
+      url: https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator
+    - name: GitLab Docs
+      url: https://docs.gitlab.com
+    - name: GitLab Runner
+      url: https://docs.gitlab.com/runner/
+    - name: GitLab CI/CD
+      url: https://docs.gitlab.com/ee/ci/quick_start/
+  maintainers:
+    - email: support@gitlab.com
+      name: Georgi N. Georgiev
+  maturity: stable
+  provider:
+    name: GitLab, Inc.
+  version: 13.10.0
+  webhookdefinitions:
+    - admissionReviewVersions:
+        - v1beta1
+      containerPort: 443
+      deploymentName: gitlab-runner-controller-manager
+      failurePolicy: Fail
+      generateName: vrunner.kb.io
+      rules:
+        - apiGroups:
+            - apps.gitlab.com
+          apiVersions:
+            - v1beta2
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - runners
+      sideEffects: None
+      targetPort: 9443
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-apps-gitlab-com-v1beta2-runner

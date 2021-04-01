@@ -1,0 +1,162 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: runners.apps.gitlab.com
+spec:
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: gitlab-runner-webhook-service
+        namespace: gitlab-runner-system
+        path: /convert
+        port: 443
+  group: apps.gitlab.com
+  names:
+    kind: Runner
+    listKind: RunnerList
+    plural: runners
+    singular: runner
+  preserveUnknownFields: false
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Runner is the open source project used to run your jobs and send the results back to GitLab
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: Specification of the desired behavior of a GitLab Runner instance
+          properties:
+            azure:
+              description: options used to setup Azure blob storage as GitLab Runner Cache
+              properties:
+                container:
+                  description: Name of the Azure container in which the cache will be stored
+                  type: string
+                credentials:
+                  description: Credentials secret contains 'accountName' and 'privateKey' used to authenticate against Azure blob storage
+                  type: string
+                storageDomain:
+                  description: The domain name of the Azure blob storage e.g. blob.core.windows.net
+                  type: string
+              type: object
+            buildImage:
+              description: The name of the default image to use to run build jobs, when none is specified
+              type: string
+            ca:
+              description: Name of tls secret containing the custom certificate authority (CA) certificates
+              type: string
+            cachePath:
+              description: Path defines the Runner Cache path
+              type: string
+            cacheShared:
+              description: Enable sharing of cache between Runners
+              type: boolean
+            cacheType:
+              description: 'Type of cache used for Runner artifacts Options are: gcs, s3, azure'
+              type: string
+            cloneURL:
+              description: If specified, overrides the default URL used to clone or fetch the Git ref
+              type: string
+            concurrent:
+              description: Option to limit the number of jobs globally that can run concurrently. The operator sets this to 10, if not specified
+              format: int32
+              type: integer
+            config:
+              description: allow user to provide configmap name containing the user provided config.toml
+              type: string
+            env:
+              description: Accepts configmap name. Provides user mechanism to inject environment variables in the GitLab Runner pod via the key value pairs in the ConfigMap
+              type: string
+            gcs:
+              description: options used to setup GCS (Google Container Storage) as GitLab Runner Cache
+              properties:
+                bucket:
+                  description: Name of the bucket in which the cache will be stored
+                  type: string
+                credentials:
+                  description: contains the GCS 'access-id' and 'private-key'
+                  type: string
+                credentialsFile:
+                  description: Takes GCS credentials file, 'keys.json'
+                  type: string
+              type: object
+            gitlabUrl:
+              description: The fully qualified domain name for the GitLab instance. For example, https://gitlab.example.com
+              type: string
+            helperImage:
+              description: If specified, overrides the default GitLab Runner helper image
+              type: string
+            imagePullPolicy:
+              description: 'ImagePullPolicy sets the Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images'
+              type: string
+            interval:
+              description: Option to define the number of seconds between checks for new jobs. This is set to a default of 30s by operator if not set
+              format: int32
+              type: integer
+            s3:
+              description: options used to setup S3 object store as GitLab Runner Cache
+              properties:
+                bucket:
+                  description: Name of the bucket in which the cache will be stored
+                  type: string
+                credentials:
+                  description: Name of the secret containing the 'accesskey' and 'secretkey' used to access the object storage
+                  type: string
+                insecure:
+                  description: Use insecure connections or HTTP
+                  type: boolean
+                location:
+                  description: Name of the S3 region in use
+                  type: string
+                server:
+                  type: string
+              type: object
+            serviceaccount:
+              description: allow user to override service account used by GitLab Runner
+              type: string
+            tags:
+              description: 'List of comma separated tags to be applied to the runner More info: https://docs.gitlab.com/ee/ci/runners/#use-tags-to-limit-the-number-of-jobs-using-the-runner'
+              type: string
+            token:
+              description: Name of secret containing the 'runner-registration-token' key used to register the runner
+              type: string
+          required:
+          - gitlabUrl
+          - token
+          type: object
+        status:
+          description: Most recently observed status of the GitLab Runner. It is read-only to the user
+          properties:
+            phase:
+              description: Reports status of the GitLab Runner instance
+              type: string
+            registration:
+              description: Reports status of GitLab Runner registration
+              type: string
+          type: object
+      type: object
+  version: v1beta2
+  versions:
+  - name: v1beta2
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
