@@ -18,8 +18,8 @@ $ cat <path-to-operator>/ci.yaml
 ---
 addReviewers: true
 reviewers:
-  - J0zi 
-  - mvalarh
+  - user1 
+  - user2
 ```
 More advanced setup can be done via documentation [here](https://github.com/kentaro-m/auto-assign-action#single-reviewers-list)
 
