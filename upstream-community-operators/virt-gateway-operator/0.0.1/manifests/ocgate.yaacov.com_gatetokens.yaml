@@ -30,9 +30,16 @@ spec:
           spec:
             description: GateTokenSpec defines the desired state of GateToken
             properties:
-              duration-sec:
+              APIGroups:
+                default:
+                - subresources.kubevirt.io
+                description: APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is [subresources.kubevirt.io].
+                items:
+                  type: string
+                type: array
+              durationSec:
                 default: 3600
-                description: duration-sec is the duration in sec the token will be validated since it's invocation. Defalut value is 3600s (1h).
+                description: durationSec is the duration in sec the token will be validated since it's invocation. Defalut value is 3600s (1h).
                 format: int64
                 minimum: 0
                 type: integer
@@ -40,24 +47,39 @@ spec:
                 description: from is time of token invocation, the token will not validate before this time, the token duration will start from this time. Defalut to token object creation time.
                 format: date-time
                 type: string
-              match-method:
-                default: GET,OPTIONS
-                description: match-path is a comma separated list of allowed http methods, only API requests matching one of the allowed methods will be validated. Defalut value is "GET,OPTIONS".
-                maxLength: 1024
-                pattern: ^(GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE)+(,(GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE)+)*$
+              generateServiceAccount:
+                default: false
+                description: generateServiceAccount determain if the operator will create a service account and delever the actual service account token instead of a JWT access key. the service account will be generated not before the token is valid and will be deleted when the token expires. Defalut value is false.
+                type: boolean
+              namespace:
+                default: '*'
+                description: namespace of the rule. "*" represents all namespaces. Defalut value is "*".
                 type: string
-              match-path:
-                description: match-path is a regular expresion used to validate API request path, API requests matching this pattern will be validated by the token. This field may not be empty.
-                maxLength: 1024
-                pattern: ^[/^][^:@]+$
-                type: string
-              user-id:
-                description: user-id is the user id of the user requesting this token.
-                maxLength: 226
-                type: string
-            required:
-            - match-path
-            - user-id
+              nonResourceURLs:
+                description: nonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path If an action is not a resource API request, then the URL is split on '/' and is checked against the NonResourceURLs to look for a match. Since non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding. Rules can either apply to API resources (such as "pods" or "secrets") or non-resource URL paths (such as "/api"),  but not both. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is [].
+                items:
+                  type: string
+                type: array
+              resourceNames:
+                description: resourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is [].
+                items:
+                  type: string
+                type: array
+              resources:
+                default:
+                - virtualmachineinstances
+                - virtualmachineinstances/vnc
+                description: resources is a list of resources this rule applies to.  '*' represents all resources in the specified apiGroups. '*/foo' represents the subresource 'foo' for all resources in the specified apiGroups. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is ["virtualmachineinstances","virtualmachineinstances/vnc"].
+                items:
+                  type: string
+                type: array
+              verbs:
+                default:
+                - get
+                description: verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule.  VerbAll represents all kinds. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is ["get"].
+                items:
+                  type: string
+                type: array
             type: object
           status:
             description: GateTokenStatus defines the observed state of GateToken
@@ -109,6 +131,10 @@ spec:
               data:
                 description: Cached data, once created, user can not change this valuse
                 properties:
+                  APIGroups:
+                    items:
+                      type: string
+                    type: array
                   alg:
                     type: string
                   duration-sec:
@@ -119,27 +145,42 @@ spec:
                     type: integer
                   from:
                     type: string
-                  matchMethod:
-                    type: string
-                  matchPath:
+                  namespace:
                     type: string
                   nbf:
                     format: int64
                     type: integer
+                  nonResourceURLs:
+                    items:
+                      type: string
+                    type: array
+                  resourceNames:
+                    items:
+                      type: string
+                    type: array
+                  resources:
+                    items:
+                      type: string
+                    type: array
                   until:
                     type: string
+                  verbs:
+                    items:
+                      type: string
+                    type: array
                 required:
                 - alg
                 - duration-sec
                 - exp
                 - from
-                - matchMethod
-                - matchPath
                 - nbf
                 - until
                 type: object
               phase:
-                description: Token generation phase (ready|error)
+                description: Token generation phase (pending|ready|expired|error)
+                type: string
+              service-account-name:
+                description: The generated service account name
                 type: string
               token:
                 description: The generated token
@@ -148,6 +189,7 @@ spec:
             - conditions
             - data
             - phase
+            - service-account-name
             - token
             type: object
         type: object
