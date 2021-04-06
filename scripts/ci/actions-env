@@ -13,8 +13,9 @@ OP_TEST_CHANGES_CI=0
 OP_TEST_CHANGES_DOCS=0
 OP_TEST_CHANGES_STREAM_COMMUNITY=0
 OP_TEST_CHANGES_STREAM_UPSTREAM=0
-OP_TEST_CHANGES_CI_YAML=0
+OP_TEST_CI_YAML_CHANGED=0
 OP_TEST_CI_YAML_ONLY=0
+OP_TEST_CI_YAML_MODIFIED=0
 OP_TEST_ALLOW_SERIOUS_CHANGES=0
 OP_TEST_IS_OPERATOR=0
 OP_TEST_IS_NEW_OPERATOR=0
@@ -27,6 +28,7 @@ OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=0
 OP_TEST_SET_LABEL_OPERATOR_RECREATE=0
 OP_TEST_IS_MODIFIED=0
 OP_TEST_MODIFIED_CSVS=
+OP_TEST_UPDATEGRAPH=1
 
 echo "OP_TEST_ADDED_MODIFIED_FILES=$OP_TEST_ADDED_MODIFIED_FILES"
 echo "OP_TEST_MODIFIED_FILES=$OP_TEST_MODIFIED_FILES"
@@ -55,8 +57,9 @@ echo "::set-output name=op_test_set_label_operator_recreate::$OP_TEST_SET_LABEL_
 echo "::set-output name=op_test_is_modified::$OP_TEST_IS_MODIFIED"
 echo "::set-output name=op_test_modified_csvs::$OP_TEST_MODIFIED_CSVS"
 echo "::set-output name=op_test_allow_serious_changes::$OP_TEST_ALLOW_SERIOUS_CHANGES"
-echo "op_test_is_new_operatror=${OP_TEST_IS_NEW_OPERATOR}"
+echo "::set-output name=op_test_is_new_operatror::${OP_TEST_IS_NEW_OPERATOR}"
 echo "::set-output name=op_test_pr_title::${OP_TEST_PR_TITLE}"
+echo "::set-output name=op_test_update_graph::${OP_TEST_UPDATEGRAPH}"
 
 # Handle removed files
 if [ -n "$OP_TEST_REMOVED_FILES" ];then
@@ -73,7 +76,7 @@ if [ -n "$OP_TEST_REMOVED_FILES" ];then
     [[ $sf == community-operators* ]] && OP_TEST_CHANGES_STREAM_COMMUNITY=1
     [[ $sf == upstream-community-operators* ]] && OP_TEST_CHANGES_STREAM_UPSTREAM=1
     [[ $sf == *package.yaml ]] && continue
-    [[ $sf == *ci.yaml ]] && { OP_TEST_CHANGES_CI_YAML=1; continue; }
+    [[ $sf == *ci.yaml ]] && { OP_TEST_CI_YAML_CHANGED=1; continue; }
     [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_RELEASE_READY=0; }
     FILES="$FILES $(echo $sf | cut -d '/' -f 1-3)"
     # Check if outdside of "community-operators" and "upstream-community-operators"
@@ -104,8 +107,9 @@ if [ -n "$OP_TEST_REMOVED_FILES" ];then
     echo "::set-output name=op_test_stream::${OP_TEST_STREAM_NAME}"
     echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
     echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
-    echo "::set-output name=op_test_changed_ci_yaml::${OP_TEST_CHANGES_CI_YAML}"
+    echo "::set-output name=op_test_changed_ci_yaml::${OP_TEST_CI_YAML_CHANGED}"
     echo "::set-output name=op_test_ver_overwrite::${OP_TEST_VER_OVERWRITE}"
+    echo "::set-output name=op_test_update_graph::${OP_TEST_UPDATEGRAPH}"
     
     echo "Files removed only."
     if [ ! -d ${OP_TEST_STREAM_NAME}/${OP_TEST_OPERATOR_NAME} ];then
@@ -152,7 +156,7 @@ for sf in ${OP_TEST_ADDED_MODIFIED_FILES}; do
   [[ $sf == upstream-community-operators* ]] && OP_TEST_CHANGES_STREAM_UPSTREAM=1
 
   [[ $sf == *package.yaml ]] && continue
-  [[ $sf == *ci.yaml ]] && OP_TEST_CHANGES_CI_YAML=1 && continue
+  [[ $sf == *ci.yaml ]] && OP_TEST_CI_YAML_CHANGED=1 && continue
   [[ $sf == *mkdocs.yml ]] && continue
 
   [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' Skipping test ..."; OP_TEST_READY=0; }
@@ -168,7 +172,7 @@ for sf in ${OP_TEST_MODIFIED_FILES}; do
   echo "modified only: $sf"
   
   [[ $sf == *package.yaml ]] && continue
-  [[ $sf == *ci.yaml ]] && continue
+  [[ $sf == *ci.yaml ]] && OP_TEST_CI_YAML_MODIFIED=1 && continue
 
   if [[ $sf == *.clusterserviceversion.yaml ]];then
     OP_TEST_MODIFIED_CSVS="$sf $OP_TEST_MODIFIED_CSVS"
@@ -180,7 +184,7 @@ done
 echo "OP_TEST_MODIFIED_CSVS=$OP_TEST_MODIFIED_CSVS"
 echo "OP_TEST_MODIFIED_OTHERS=$OP_TEST_MODIFIED_OTHERS"
 
-[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OP_TEST_CHANGES_CI_YAML -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Skipping test ..."; OP_TEST_READY=0; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OP_TEST_CI_YAML_CHANGED -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Skipping test ..."; OP_TEST_READY=0; }
 
 [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
 
@@ -194,7 +198,7 @@ echo "OP_TEST_MODIFIED_OTHERS=$OP_TEST_MODIFIED_OTHERS"
 [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && OP_TEST_STREAM_NAME="upstream-community-operators"
 
 if [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] || [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]];then
-  [[ $OP_TEST_CHANGES_CI_YAML -eq 1 ]] && [ ! -n "$FILES" ] && OP_TEST_CI_YAML_ONLY=1 && FILES=${OP_TEST_ADDED_MODIFIED_FILES}
+  [[ $OP_TEST_CI_YAML_CHANGED -eq 1 ]] && [ ! -n "$FILES" ] && OP_TEST_CI_YAML_ONLY=1 && FILES=${OP_TEST_ADDED_MODIFIED_FILES}
 fi
 
 echo "FILES: $FILES"
@@ -255,6 +259,21 @@ OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=0
 
 [[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; exit 1; }
 
+[[ $OP_TEST_CI_YAML_MODIFIED -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; exit 1; }
+
+if [[ $OP_TEST_READY -eq 1 ]];then
+  [ ! -f $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml ] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"; exit 1; }
+  yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
+  TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers')
+  [[ $OP_TEST_READY -eq 1 ]] && [ $TEST_REVIEWERS == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' field !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; }
+  TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.addReviewers')
+  [[ $OP_TEST_READY -eq 1 ]] && [ $TEST_REVIEWERS == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; }
+
+  TEST_UPDATE_GRAPH=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
+  [ $TEST_UPDATE_GRAPH == "null" ] && OP_TEST_UPDATEGRAPH=0
+  echo "OP_TEST_UPDATEGRAPH=$OP_TEST_UPDATEGRAPH"
+fi
+
 OP_TEST_PR_TITLE="$OP_TEST_STREAM_NAME"
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE [O]"
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE [R]"
@@ -300,13 +319,13 @@ echo "::set-output name=op_test_pr_title::${OP_TEST_PR_TITLE}"
 echo "::set-output name=op_test_ci_yaml_only::${OP_TEST_CI_YAML_ONLY}"
 echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
 echo "::set-output name=op_test_ver_overwrite::${OP_TEST_VER_OVERWRITE}"
+echo "::set-output name=op_test_update_graph::${OP_TEST_UPDATEGRAPH}"
 
 echo "::set-output name=op_test_set_label_operator_version_overwrite::$OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE"
 echo "::set-output name=op_test_set_label_operator_recreate::$OP_TEST_SET_LABEL_OPERATOR_RECREATE"
 echo "::set-output name=op_test_is_modified::$OP_TEST_IS_MODIFIED"
 echo "::set-output name=op_test_modified_csvs::$OP_TEST_MODIFIED_CSVS"
 echo "::set-output name=op_test_modified_others::$OP_TEST_MODIFIED_OTHERS"
-
 
 echo "All done"
 exit 0

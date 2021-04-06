@@ -56,6 +56,14 @@ jobs:
       #         pull_number: context.issue.number,
       #         reviewers: [ "mvalahtv" ]
       #       });
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip yq
+
       - name: Operator traffic light
         id: op-traffic-light
         env:
@@ -188,6 +196,17 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'allow/operator-recreate' ]
             })
+      - name: "Inform user that UpdateGraph is not present (semver mode)"
+        uses: mshick/add-pr-comment@v1
+        continue-on-error: true
+        if: steps.op-traffic-light.outputs.op_test_update_graph == '0' 
+        with:
+          message: |
+            Warning: Operator is going to run in `semver-mode` since 'updateGraph' is not present in 'ci.yaml' file.
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: true # This is the default
+
       # - name: "Setting msg when minor changes are allowed"
       #   if:  steps.op-verify-modifications.outputs.op_check_cosmetic == '1' && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite') && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
       #   uses: mshick/add-pr-comment@v1
@@ -205,12 +224,21 @@ jobs:
       #     allow-repeats: true # This is the default
 
     outputs:
+      op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
+      op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
       op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
+      op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
+      op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
+      op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
 
   operator-ci-ok-to-test:
     needs: operator-ci
     runs-on: ubuntu-latest
     steps:
+      - name: Sleep for 10 seconds
+        run: |
+          sleep 10
+
       - name: "Remove needs-ok-to-test"
         uses: actions/github-script@v3
         # if: contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
@@ -224,10 +252,6 @@ jobs:
               repo: context.repo.repo,
               name: 'needs-ok-to-test'
             })
-      - name: Sleep for 10 seconds
-        uses: jakejarvis/wait-action@master
-        with:
-          time: '10s'
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
         if: needs.operator-ci.outputs.op_test_stream == 'community-operators'
@@ -240,6 +264,7 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'ok-to-test' ]
             })
+
       # - name: "Run ok-to-test in case of community operators"
       #   if:  needs.operator-ci.outputs.op_test_stream == 'community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
       #   uses: mshick/add-pr-comment@v1

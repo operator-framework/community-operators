@@ -35,6 +35,12 @@ jobs:
       - id: files
         uses: jitterbit/get-changed-files@v1
         continue-on-error: true
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip yq
       - name: Operator test
         id: op-traffic-light
         env:
@@ -158,3 +164,22 @@ jobs:
         run: |
           echo "orange_v4.7 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
           scripts/ci/op-test orange_v4.7 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+
+  test-summary:
+    name: "Test summary"
+    needs: [ pr-check, test-kiwi, test-lemon, test-lemon-openshift_4_6, test-lemon-openshift_4_7, test-orange-latest, test-orange-openshift_4_6, test-orange-openshift_4_7 ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Summary
+        if: needs.pr-check.outputs.op_test_ready == '1'
+        continue-on-error: true
+        run: |
+          echo "This is summary"
+      - name: Setup reviewers
+        uses: kentaro-m/auto-assign-action@v1.1.2
+        continue-on-error: true
+        with:
+          configuration-path: "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/ci.yaml"

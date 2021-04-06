@@ -44,11 +44,11 @@ You can preview how your Operator would be rendered there by using the [preview 
 ## Submitting your PR
 
 Review this [checklist](./pull_request_template.md) upon creating a PR and after you acknowledged the contribution guidelines.
-Do not forget to add [ci.yaml](./operator-versioning.md) to the top level of your operator. Otherwise only `semver` mode will be supported.
+Do not forget to add [ci.yaml](./operator-ci-yaml.md#operator-versioning) to the top level of your operator. Otherwise only `semver` mode will be supported.
 
 ## Update your Operator
 
-Similarly, to update your operator you need to submit a PR with any changes to your Operator resources. Refer to our [contribution guide](./operator-versioning.md) for more details.
+Similarly, to update your operator you need to submit a PR with any changes to your Operator resources. Refer to our [contribution guide](./operator-ci-yaml.md#operator-versioning) for more details.
 
 ## CI Tests your Operator
 
