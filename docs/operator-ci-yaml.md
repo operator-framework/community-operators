@@ -20,8 +20,24 @@ addReviewers: true
 reviewers:
   - user1 
   - user2
+
 ```
-More advanced setup can be done via documentation [here](https://github.com/kentaro-m/auto-assign-action#single-reviewers-list)
+More advanced setup can be done via documentation [here](https://github.com/kentaro-m/auto-assign-action#single-reviewers-list), but please note limitations shown bellow
+
+!!! warning 
+    Supported fields/values:
+
+    - `addReviewers: true`
+    - `reviewers`
+
+    Not support fields/values:
+
+    - `addReviewers: false`
+    - `addAssignees`
+    - `numberOfReviewers`
+    - `useAssigneeGroups`
+    - `assigneeGroups`
+    - `skipKeywords`
 
 
 ## Operator versioning
