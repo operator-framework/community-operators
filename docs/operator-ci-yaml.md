@@ -25,12 +25,16 @@ reviewers:
 More advanced setup can be done via documentation [here](https://github.com/kentaro-m/auto-assign-action#single-reviewers-list), but please note limitations shown bellow
 
 !!! warning 
-    Supported fields/values:
+    Mandatory fields/values:
 
     - `addReviewers: true`
     - `reviewers`
 
-    Not support fields/values:
+    Optional fields/values:
+
+    - `numberOfReviewers`
+
+    Not supported fields/values:
 
     - `addReviewers: false`
     - `addAssignees`
