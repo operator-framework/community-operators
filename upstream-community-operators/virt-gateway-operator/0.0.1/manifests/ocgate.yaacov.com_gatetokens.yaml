@@ -1,0 +1,205 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: gatetokens.ocgate.yaacov.com
+spec:
+  group: ocgate.yaacov.com
+  names:
+    kind: GateToken
+    listKind: GateTokenList
+    plural: gatetokens
+    singular: gatetoken
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: GateToken is the Schema for the gatetokens API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: GateTokenSpec defines the desired state of GateToken
+            properties:
+              APIGroups:
+                default:
+                - subresources.kubevirt.io
+                description: APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is [subresources.kubevirt.io].
+                items:
+                  type: string
+                type: array
+              durationSec:
+                default: 3600
+                description: durationSec is the duration in sec the token will be validated since it's invocation. Defalut value is 3600s (1h).
+                format: int64
+                minimum: 0
+                type: integer
+              from:
+                description: from is time of token invocation, the token will not validate before this time, the token duration will start from this time. Defalut to token object creation time.
+                format: date-time
+                type: string
+              generateServiceAccount:
+                default: false
+                description: generateServiceAccount determain if the operator will create a service account and delever the actual service account token instead of a JWT access key. the service account will be generated not before the token is valid and will be deleted when the token expires. Defalut value is false.
+                type: boolean
+              namespace:
+                default: '*'
+                description: namespace of the rule. "*" represents all namespaces. Defalut value is "*".
+                type: string
+              nonResourceURLs:
+                description: nonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path If an action is not a resource API request, then the URL is split on '/' and is checked against the NonResourceURLs to look for a match. Since non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding. Rules can either apply to API resources (such as "pods" or "secrets") or non-resource URL paths (such as "/api"),  but not both. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is [].
+                items:
+                  type: string
+                type: array
+              resourceNames:
+                description: resourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is [].
+                items:
+                  type: string
+                type: array
+              resources:
+                default:
+                - virtualmachineinstances
+                - virtualmachineinstances/vnc
+                description: resources is a list of resources this rule applies to.  '*' represents all resources in the specified apiGroups. '*/foo' represents the subresource 'foo' for all resources in the specified apiGroups. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is ["virtualmachineinstances","virtualmachineinstances/vnc"].
+                items:
+                  type: string
+                type: array
+              verbs:
+                default:
+                - get
+                description: verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule.  VerbAll represents all kinds. APIGroups is the name of the APIGroup that contains the resources. If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. Defalut value is ["get"].
+                items:
+                  type: string
+                type: array
+            type: object
+          status:
+            description: GateTokenStatus defines the observed state of GateToken
+            properties:
+              conditions:
+                description: Conditions represent the latest available observations of an object's state
+                items:
+                  description: "Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, type FooStatus struct{     // Represents the observations of a foo's current state.     // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type     // +patchStrategy=merge     // +listType=map     // +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"` \n     // other fields }"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              data:
+                description: Cached data, once created, user can not change this valuse
+                properties:
+                  APIGroups:
+                    items:
+                      type: string
+                    type: array
+                  alg:
+                    type: string
+                  duration-sec:
+                    format: int64
+                    type: integer
+                  exp:
+                    format: int64
+                    type: integer
+                  from:
+                    type: string
+                  namespace:
+                    type: string
+                  nbf:
+                    format: int64
+                    type: integer
+                  nonResourceURLs:
+                    items:
+                      type: string
+                    type: array
+                  resourceNames:
+                    items:
+                      type: string
+                    type: array
+                  resources:
+                    items:
+                      type: string
+                    type: array
+                  until:
+                    type: string
+                  verbs:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - alg
+                - duration-sec
+                - exp
+                - from
+                - nbf
+                - until
+                type: object
+              phase:
+                description: Token generation phase (pending|ready|expired|error)
+                type: string
+              service-account-name:
+                description: The generated service account name
+                type: string
+              token:
+                description: The generated token
+                type: string
+            required:
+            - conditions
+            - data
+            - phase
+            - service-account-name
+            - token
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
