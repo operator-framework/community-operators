@@ -26,10 +26,9 @@ OP_TEST_PR_TITLE=
 #   [2] both streams set
 #   [3] non opearator files changed in directories : .github, docs, ...
 #   [4] ci.yaml
-#   [5] operator overwrite
-#   [6] multiple operator changed
-#   [7] Old version were changed and recreate label is not set
-#   [8] Single file modification for ci.yaml allowed only
+#   [5] multiple operator changed
+#   [6] Old version were changed and recreate label is not set
+#   [7] Single file modification for ci.yaml allowed only
 OP_TEST_ERROR_CODE=0
 
 OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
@@ -230,7 +229,7 @@ OP_TEST_OPERATOR_VERSIONS=
 for v in $VERSIONS;do
   TMP_OP_NAME=$(echo $v | cut -d '/' -f 2)
   OP_TEST_OPERATOR_VERSIONS="$(echo $v| cut -d '/' -f 3) $OP_TEST_OPERATOR_VERSIONS"
-  [ "$OP_TEST_OPERATOR_NAME" = "$TMP_OP_NAME" ] || { echo "Error: Multiple operators are changed !!! Detected:'$OP_TEST_OPERATOR_NAME' and '$TMP_OP_NAME' !!! Exiting ..."; OP_TEST_READY=0; echo "::set-output name=op_test_error_code::6";  exit 1;  }
+  [ "$OP_TEST_OPERATOR_NAME" = "$TMP_OP_NAME" ] || { echo "Error: Multiple operators are changed !!! Detected:'$OP_TEST_OPERATOR_NAME' and '$TMP_OP_NAME' !!! Exiting ..."; OP_TEST_READY=0; echo "::set-output name=op_test_error_code::5";  exit 1;  }
 done
 # remove trailing space
 OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
@@ -261,12 +260,12 @@ OP_TEST_OPERATOR_VERSIONS_COUNT=0
 OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=0
 [ -n "$OP_TEST_OPERATOR_VERSIONS_ALL" ] && OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=$(echo $OP_TEST_OPERATOR_VERSIONS_ALL | tr ' ' '\n' | wc -l)
 
-[ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && [ "$OP_TEST_OPERATOR_VERSIONS_REMOVED" != "$OP_TEST_OPERATOR_VERSIONS_ALL_LATEST" ] && { echo "Error: Old versions [$OP_TEST_OPERATOR_VERSIONS_REMOVED] were removed and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::7"; exit 1;  }
+[ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && [ "$OP_TEST_OPERATOR_VERSIONS_REMOVED" != "$OP_TEST_OPERATOR_VERSIONS_ALL_LATEST" ] && { echo "Error: Old versions [$OP_TEST_OPERATOR_VERSIONS_REMOVED] were removed and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::6"; exit 1;  }
 
 # echo "::set-output name=op_test_set_label_operator_version_overwrite::0"
 # echo "::set-output name=op_test_set_label_operator_recreate::0"
 
-[[ $OPRT -eq 0 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && { echo "Error: Multiple versions [$OP_TEST_OPERATOR_VERSIONS] were modified and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::6"; exit 1;  }
+[[ $OPRT -eq 0 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && { echo "Error: Multiple versions [$OP_TEST_OPERATOR_VERSIONS] were modified and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::5"; exit 1;  }
 
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -eq 1 ]] && [[ $OP_TEST_IS_MODIFIED -eq 1 ]] && OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=1
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && OP_TEST_SET_LABEL_OPERATOR_RECREATE=1 && OP_TEST_VER_OVERWRITE=1 && OP_TEST_RECREATE=0
@@ -274,7 +273,7 @@ OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=0
 
 [[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; echo "::set-output name=op_test_error_code::1"; exit 1; }
 
-[[ $OP_TEST_CI_YAML_MODIFIED -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; echo "::set-output name=op_test_error_code::8"; exit 1; }
+[[ $OP_TEST_CI_YAML_MODIFIED -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; echo "::set-output name=op_test_error_code::7"; exit 1; }
 
 if [[ $OP_TEST_READY -eq 1 ]] || [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
   [ ! -f $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml ] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
