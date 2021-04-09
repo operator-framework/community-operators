@@ -21,6 +21,16 @@ OP_TEST_IS_OPERATOR=0
 OP_TEST_IS_NEW_OPERATOR=0
 OP_TEST_PR_TITLE=
 
+# Error codes:
+#   [1] overwrite and recreate labels set at same time
+#   [2] both streams set
+#   [3] non opearator files changed in directories : .github, docs, ...
+#   [4] ci.yaml
+#   [5] multiple operator changed
+#   [6] Old version were changed and recreate label is not set
+#   [7] Single file modification for ci.yaml allowed only
+OP_TEST_ERROR_CODE=0
+
 OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
 OP_TEST_RECREATE=${OP_TEST_RECREATE-0}
 
@@ -37,6 +47,9 @@ echo "OP_TEST_RENAMED_FILES=$OP_TEST_RENAMED_FILES"
 echo "OP_TEST_REMOVED_FILES=$OP_TEST_REMOVED_FILES"
 echo "OP_TEST_LABELS=$OP_TEST_LABELS"
 
+echo "::set-output name=op_test_error_code::$OP_TEST_ERROR_CODE"
+
+
 for l in $(echo $OP_TEST_LABELS);do
   echo "Checking label '$l' ..."
   [[ "$l" = "allow/ci-changes" ]] && export OP_TEST_ALLOW_CI_CHANGES=1
@@ -46,7 +59,7 @@ for l in $(echo $OP_TEST_LABELS);do
   
 done
 
-[[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; exit 1; }
+[[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..." ; echo "::set-output name=op_test_error_code::1"; exit 1; }
 
 OP_TEST_CHANGES_OPERATOR=
 OP_TEST_CHANGES_OPERATOR_VERSIONS_MODIFIED=
@@ -101,7 +114,7 @@ if [ -n "$OP_TEST_REMOVED_FILES" ];then
 
     OP_TEST_READY=0
 
-    [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
+    [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; echo "::set-output name=op_test_error_code::2"; exit 1; }
 
     echo "::set-output name=op_test_ready::${OP_TEST_READY}"
     echo "::set-output name=op_release_ready::${OP_RELEASE_READY}"
@@ -187,12 +200,12 @@ echo "OP_TEST_MODIFIED_OTHERS=$OP_TEST_MODIFIED_OTHERS"
 
 [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OP_TEST_CI_YAML_CHANGED -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Skipping test ..."; OP_TEST_READY=0; }
 
-[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; exit 1; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; echo "::set-output name=op_test_error_code::1"; exit 1; }
 
-[[ $OP_TEST_CHANGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' label is not set !!!"; OP_TEST_READY=0; exit 1; }
-[[ $OP_TEST_CHANGES_CI -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' label is not set !!!"; OP_TEST_READY=0; exit 1; }
-[[ $OP_TEST_CHANGES_DOCS -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' label is not set !!!"; OP_TEST_READY=0; exit 1; }
-[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 || $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Error: Operator changes detected with ci changes and 'allow/ci-changes' is not set !!! Exiting ..."; exit 1; }
+[[ $OP_TEST_CHANGES_GITHUB -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' label is not set !!!"; echo "::set-output name=op_test_error_code::3"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHANGES_CI -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' label is not set !!!"; echo "::set-output name=op_test_error_code::3"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHANGES_DOCS -eq 1 ]] && [[ $OP_TEST_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' label is not set !!!"; echo "::set-output name=op_test_error_code::3"; OP_TEST_READY=0; exit 1; }
+[[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 || $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Error: Operator changes detected with ci changes and 'allow/ci-changes' is not set !!! Exiting ..."; echo "::set-output name=op_test_error_code::3";  exit 1; }
 [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 && $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OP_TEST_READY -eq 0 ]] && { echo "Nothing to test"; exit 0; }
 
 [[ $OP_TEST_CHANGES_STREAM_COMMUNITY -eq 1 ]] && OP_TEST_STREAM_NAME="community-operators"
@@ -216,7 +229,7 @@ OP_TEST_OPERATOR_VERSIONS=
 for v in $VERSIONS;do
   TMP_OP_NAME=$(echo $v | cut -d '/' -f 2)
   OP_TEST_OPERATOR_VERSIONS="$(echo $v| cut -d '/' -f 3) $OP_TEST_OPERATOR_VERSIONS"
-  [ "$OP_TEST_OPERATOR_NAME" = "$TMP_OP_NAME" ] || { echo "Error: Multiple operators are changed !!! Detected:'$OP_TEST_OPERATOR_NAME' and '$TMP_OP_NAME' !!! Exiting ..."; OP_TEST_READY=0; exit 1;  }
+  [ "$OP_TEST_OPERATOR_NAME" = "$TMP_OP_NAME" ] || { echo "Error: Multiple operators are changed !!! Detected:'$OP_TEST_OPERATOR_NAME' and '$TMP_OP_NAME' !!! Exiting ..."; OP_TEST_READY=0; echo "::set-output name=op_test_error_code::5";  exit 1;  }
 done
 # remove trailing space
 OP_TEST_OPERATOR_VERSIONS=$(echo $OP_TEST_OPERATOR_VERSIONS | sed 's/ *$//g')
@@ -247,39 +260,39 @@ OP_TEST_OPERATOR_VERSIONS_COUNT=0
 OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=0
 [ -n "$OP_TEST_OPERATOR_VERSIONS_ALL" ] && OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=$(echo $OP_TEST_OPERATOR_VERSIONS_ALL | tr ' ' '\n' | wc -l)
 
-[ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && [ "$OP_TEST_OPERATOR_VERSIONS_REMOVED" != "$OP_TEST_OPERATOR_VERSIONS_ALL_LATEST" ] && { echo "Error: Old versions [$OP_TEST_OPERATOR_VERSIONS_REMOVED] were removed and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; exit 1;  }
+[ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && [ "$OP_TEST_OPERATOR_VERSIONS_REMOVED" != "$OP_TEST_OPERATOR_VERSIONS_ALL_LATEST" ] && { echo "Error: Old versions [$OP_TEST_OPERATOR_VERSIONS_REMOVED] were removed and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::6"; exit 1;  }
 
 # echo "::set-output name=op_test_set_label_operator_version_overwrite::0"
 # echo "::set-output name=op_test_set_label_operator_recreate::0"
 
-[[ $OPRT -eq 0 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && { echo "Error: Multiple versions [$OP_TEST_OPERATOR_VERSIONS] were modified and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; exit 1;  }
+[[ $OPRT -eq 0 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && { echo "Error: Multiple versions [$OP_TEST_OPERATOR_VERSIONS] were modified and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::5"; exit 1;  }
 
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -eq 1 ]] && [[ $OP_TEST_IS_MODIFIED -eq 1 ]] && OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=1
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && OP_TEST_SET_LABEL_OPERATOR_RECREATE=1 && OP_TEST_VER_OVERWRITE=1 && OP_TEST_RECREATE=0
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_ALL_COUNT -eq 1 ]] && OP_TEST_IS_NEW_OPERATOR=1 && OP_TEST_RECREATE=1 && OP_TEST_VER_OVERWRITE=0
 
-[[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; exit 1; }
+[[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; echo "::set-output name=op_test_error_code::1"; exit 1; }
 
-[[ $OP_TEST_CI_YAML_MODIFIED -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; exit 1; }
+[[ $OP_TEST_CI_YAML_MODIFIED -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; echo "::set-output name=op_test_error_code::7"; exit 1; }
 
 if [[ $OP_TEST_READY -eq 1 ]] || [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
-  [ ! -f $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml ] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"; exit 1; }
+  [ ! -f $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml ] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
   yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
   TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers')
-  [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; exit 1; }
+  [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
   
   TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
-  [[ $TEST_REVIEWERS -eq 0 ]] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; exit 1; }
+  [[ $TEST_REVIEWERS -eq 0 ]] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
     
   TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.addReviewers')
-  [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; exit 1; }
-  [ "$TEST_REVIEWERS" == "false" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' has 'addReviewers: true' set !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; exit 1; }
+  [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+  [ "$TEST_REVIEWERS" == "false" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' has 'addReviewers: true' set !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
 
 
   for f in $OP_TEST_CI_YAML_UNSUPPORTED_FIELDS;do
     echo "Checking existance of unsupported field '$f' in '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' ..."
     TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq ".$f")
-    [ $TEST_REVIEWERS != "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' must NOT contain '$f' field !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; exit 1; }
+    [ $TEST_REVIEWERS != "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' must NOT contain '$f' field !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
   done
 
   TEST_UPDATE_GRAPH=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
@@ -341,6 +354,9 @@ echo "::set-output name=op_test_set_label_operator_recreate::$OP_TEST_SET_LABEL_
 echo "::set-output name=op_test_is_modified::$OP_TEST_IS_MODIFIED"
 echo "::set-output name=op_test_modified_csvs::$OP_TEST_MODIFIED_CSVS"
 echo "::set-output name=op_test_modified_others::$OP_TEST_MODIFIED_OTHERS"
+
+echo "::set-output name=op_test_error_code::$OP_TEST_ERROR_CODE"
+
 
 echo "All done"
 exit 0
