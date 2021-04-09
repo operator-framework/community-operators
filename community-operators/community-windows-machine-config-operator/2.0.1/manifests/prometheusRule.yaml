@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: windows-prometheus-k8s-rules
+spec:
+  groups:
+    - name: windows.rules
+      rules:
+        - expr: |
+            avg without (core, mode)(rate(windows_cpu_time_total{mode="idle"}[1m]))
+          record: instance:node_cpu_utilisation:rate1m
+        - expr: |
+            sum(rate(windows_cpu_time_total{mode="idle",mode!="iowait"}[3m])) BY (instance)
+          record: instance:node_cpu:rate:sum
+        - expr: |
+            windows_logical_disk_size_bytes
+          record: node_filesystem_size_bytes
+        - expr: |
+            windows_logical_disk_free_bytes
+          record: node_filesystem_avail_bytes
+        - expr: |
+            rate(windows_net_bytes_received_total[1m])
+          record: node_network_receive_bytes_total
+        - expr: |
+            rate(windows_net_bytes_sent_total[1m])
+          record: node_network_transmit_bytes_total
+        - expr: |
+            windows_logical_disk_free_bytes
+          record: node_filesystem_free_bytes
+        - expr: |
+            windows_memory_available_bytes
+          record: node_memory_MemAvailable_bytes
+        - expr: |
+            windows_cs_physical_memory_bytes
+          record: node_memory_MemTotal_bytes
