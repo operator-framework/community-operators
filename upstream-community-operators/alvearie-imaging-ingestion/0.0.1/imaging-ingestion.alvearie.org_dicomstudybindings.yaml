@@ -1,0 +1,115 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: dicomstudybindings.imaging-ingestion.alvearie.org
+spec:
+  group: imaging-ingestion.alvearie.org
+  names:
+    kind: DicomStudyBinding
+    listKind: DicomStudyBindingList
+    plural: dicomstudybindings
+    singular: dicomstudybinding
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .status.ready
+      name: Ready
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Fan-out notification of DICOM studies (FHIRv4 ImagingStudy)
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DicomStudyBindingSpec defines the desired state of DicomStudyBinding
+            properties:
+              bindingConfigName:
+                description: Binding Config Name
+                type: string
+              bindingSecretName:
+                description: Binding Secret Name
+                type: string
+              dicomEventDrivenIngestionName:
+                description: DICOM Event Driven Ingestion Name
+                type: string
+              imagePullSecrets:
+                description: Image Pull Secrets
+                items:
+                  description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                type: array
+              studyBinding:
+                description: Study Binding Spec
+                properties:
+                  concurrency:
+                    description: Container Concurrency
+                    format: int64
+                    type: integer
+                  image:
+                    description: Image
+                    type: string
+                  maxReplicas:
+                    description: Max Replicas
+                    format: int32
+                    type: integer
+                  minReplicas:
+                    description: Min Replicas
+                    format: int32
+                    type: integer
+                type: object
+            required:
+            - dicomEventDrivenIngestionName
+            type: object
+          status:
+            description: DicomStudyBindingStatus defines the observed state of DicomStudyBinding
+            properties:
+              message:
+                description: Human-readable message indicating details about current operator phase or error
+                type: string
+              phase:
+                description: Current phase of the operator
+                type: string
+              ready:
+                description: True if all resources are in a ready state and all work is done
+                type: boolean
+              secondaryResources:
+                additionalProperties:
+                  items:
+                    type: string
+                  type: array
+                description: 'A map of all the secondary resources types and names created for this CR. e.g "Deployment": [ "DeploymentName1", "DeploymentName2" ]'
+                type: object
+            required:
+            - message
+            - phase
+            - ready
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
