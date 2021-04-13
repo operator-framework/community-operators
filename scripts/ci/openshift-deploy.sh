@@ -34,15 +34,15 @@ TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community
 #TARGET_PATH='/tmp/oper-for-me-test/community-operators/community-operators'
 
 #detection start
-
-curl -L -s "https://github.com/stedolan/jq/releases/download/jq-$JQ_VERSION/jq-linux64" --output "/tmp/oc-$OC_DIR_CORE/bin/jq"
-chmod +x "/tmp/oc-$OC_DIR_CORE/bin/jq"
+mkdir -p /tmp/jq-$OC_DIR_CORE/bin/
+curl -L "https://github.com/stedolan/jq/releases/download/jq-$JQ_VERSION/jq-linux64" --output "/tmp/jq-$OC_DIR_CORE/bin/jq" #&& echo "jq $JQ_VERSION downloaded"
+chmod +x "/tmp/jq-$OC_DIR_CORE/bin/jq" && echo "rights adjusted"
 
 #detect allow/longer-deployment label
 curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 -X GET \
 -H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/operator-framework/community-operators/issues/2502|"/tmp/oc-$OC_DIR_CORE/bin/jq" '.labels[].name'|grep 'allow/longer-deployment' \
+"https://api.github.com/repos/operator-framework/community-operators/issues/$PULL_NUMBER"|"/tmp/jq-$OC_DIR_CORE/bin/jq" '.labels[].name'|grep 'allow/longer-deployment' \
 && echo "Longer deployment detected" && EXTRA_ARGS='-e pod_start_retries=300'
 
 cd "$TARGET_PATH"
