@@ -3,6 +3,7 @@
 
 set -e #fail in case of non zero return
 
+JQ_VERSION='1.6'
 MAX_LIMIT_FOR_INDEX_WAIT=20
 EXTRA_ARGS=''
 
@@ -34,10 +35,14 @@ TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community
 
 #detection start
 
+curl -L -s "https://github.com/stedolan/jq/releases/download/jq-$JQ_VERSION/jq-linux64" --output "/tmp/oc-$OC_DIR_CORE/bin/jq"
+chmod +x "/tmp/oc-$OC_DIR_CORE/bin/jq"
+
+#detect allow/longer-deployment label
 curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 -X GET \
 -H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/operator-framework/community-operators/issues/2502|jq '.labels[].name'|grep 'allow/longer-deployment' \
+https://api.github.com/repos/operator-framework/community-operators/issues/2502|"/tmp/oc-$OC_DIR_CORE/bin/jq" '.labels[].name'|grep 'allow/longer-deployment' \
 && echo "Longer deployment detected" && EXTRA_ARGS='-e pod_start_retries=300'
 
 cd "$TARGET_PATH"
