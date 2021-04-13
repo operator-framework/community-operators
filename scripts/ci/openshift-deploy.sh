@@ -4,6 +4,7 @@
 set -e #fail in case of non zero return
 
 MAX_LIMIT_FOR_INDEX_WAIT=20
+EXTRA_ARGS=''
 
 OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
@@ -32,6 +33,12 @@ TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community
 #TARGET_PATH='/tmp/oper-for-me-test/community-operators/community-operators'
 
 #detection start
+
+curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+-X GET \
+-H "Accept: application/vnd.github.v3+json" \
+https://api.github.com/repos/operator-framework/community-operators/issues/2502|jq '.labels[].name'|grep 'allow/longer-deployment' \
+&& echo "Longer deployment detected" && EXTRA_ARGS='-e pod_start_retries=300'
 
 cd "$TARGET_PATH"
 pwd
@@ -75,7 +82,6 @@ cd aqua
 
 OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
-#curl -f -u J0zi:$(cat /var/run/cred/jtkn) \
 curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
@@ -114,7 +120,7 @@ cd /tmp/playbooks2
 git clone https://github.com/operator-framework/operator-test-playbooks.git
 cd operator-test-playbooks/upstream
 export ANSIBLE_CONFIG=/tmp/playbooks2/operator-test-playbooks/upstream/ansible.cfg
-ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG -vv
+ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG $EXTRA_ARGS -vv
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
