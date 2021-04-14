@@ -8,21 +8,16 @@ jobs:
     if: github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'allow/test-in-draft-mode')
     runs-on: ubuntu-latest
     steps:
+      - name: Webhook Action test 4
+        uses: distributhor/workflow-webhook@v1
+        env:
+          webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
+          webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+          data: '{"index_image": "quay.io/redhat/redhat----community-operator-index:v4.6", "index_image_resolved": "quay.io/redhat/redhat----community-operator-index@sha256:4e2a8d856f7d7ca47e4d51dbe4b2fbd74abdddd8b3d4eca2c89c18d37b3fb7a5"}'
+        continue-on-error: true
       - uses: actions/labeler@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-
-      # - name: "Setting needs-ok-to-test label"
-      #   uses: actions/github-script@v3
-      #   with:
-      #     github-token: ${{secrets.GITHUB_TOKEN}}
-      #     script: |
-      #       github.issues.addLabels({
-      #         issue_number: context.issue.number,
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         labels: [ 'needs-ok-to-test' ]
-      #       })
       - name: "Remove needs-ok-to-test"
         uses: actions/github-script@v3
         if: always()
@@ -349,23 +344,6 @@ jobs:
     needs: operator-ci
     runs-on: ubuntu-latest
     steps:
-      - name: Sleep for 10 seconds
-        run: |
-          sleep 10
-
-      # - name: "Remove needs-ok-to-test"
-      #   uses: actions/github-script@v3
-      #   # if: contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
-      #   continue-on-error: true
-      #   with:
-      #     github-token: ${{secrets.GITHUB_TOKEN}}
-      #     script: |
-      #       github.issues.removeLabel({
-      #         issue_number: context.issue.number,
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         name: 'needs-ok-to-test'
-      #       })
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
         if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only == '0' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
@@ -378,13 +356,3 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'ok-to-test' ]
             })
-
-      # - name: "Run ok-to-test in case of community operators"
-      #   if:  needs.operator-ci.outputs.op_test_stream == 'community-operators' && contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
-      #   uses: mshick/add-pr-comment@v1
-      #   with:
-      #     message: |
-      #       /ok-to-test
-      #     repo-token: ${{ secrets.GITHUB_TOKEN }}
-      #     repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-      #     allow-repeats: true # This is the default
