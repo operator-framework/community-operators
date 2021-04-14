@@ -1,0 +1,169 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  creationTimestamp: null
+  name: nodehealthchecks.remediation.medik8s.io
+spec:
+  group: remediation.medik8s.io
+  names:
+    kind: NodeHealthCheck
+    listKind: NodeHealthCheckList
+    plural: nodehealthchecks
+    singular: nodehealthcheck
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NodeHealthCheck is the Schema for the nodehealthchecks API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NodeHealthCheckSpec defines the desired state of NodeHealthCheck
+            properties:
+              backoff:
+                description: TODO document this
+                properties:
+                  duration:
+                    description: Expects a string of decimal numbers each with optional fraction and a unit suffix, eg "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+                    pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$
+                    type: string
+                  type:
+                    description: todo rename to strategy instead of type? not sure we need to support more backoff types
+                    type: string
+                required:
+                - duration
+                - type
+                type: object
+              externalRemediationTemplate:
+                description: "ExternalRemediationTemplate is a reference to a remediation template provided by an infrastructure provider. \n If a node needs remediation the controller will create an object from this template and then it should be picked up by a remediation provider."
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
+                    type: string
+                  kind:
+                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  namespace:
+                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    type: string
+                  resourceVersion:
+                    description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                    type: string
+                  uid:
+                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                    type: string
+                type: object
+              maxUnhealthy:
+                anyOf:
+                - type: integer
+                - type: string
+                default: 49%
+                description: Any farther remediation is only allowed if at most "MaxUnhealthy" nodes selected by "selector" are not healthy. Expects either a positive integer value or a percentage value. Percentage values must be positive whole numbers and are capped at 100%. Both 0 and 0% are valid and will block all remediation.
+                pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
+                type: string
+                x-kubernetes-int-or-string: true
+              selector:
+                description: 'Label selector to match nodes whose health will be exercised. Note: An empty selector will match all nodes.'
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+              unhealthyConditions:
+                default:
+                - duration: 300s
+                  status: "False"
+                  type: Ready
+                description: UnhealthyConditions contains a list of the conditions that determine whether a node is considered unhealthy.  The conditions are combined in a logical OR, i.e. if any of the conditions is met, the node is unhealthy.
+                items:
+                  description: UnhealthyCondition represents a Node condition type and value with a specified duration. When the named condition has been in the given status for at least the duration value a node is considered unhealthy.
+                  properties:
+                    duration:
+                      description: Duration of the condition specified where a node is considered unhealthy. Expects a string of decimal numbers each with optional fraction and a unit suffix, eg "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+                      pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$
+                      type: string
+                    status:
+                      minLength: 1
+                      type: string
+                    type:
+                      minLength: 1
+                      type: string
+                  required:
+                  - duration
+                  - status
+                  - type
+                  type: object
+                type: array
+            required:
+            - externalRemediationTemplate
+            type: object
+          status:
+            description: NodeHealthCheckStatus defines the observed state of NodeHealthCheck
+            properties:
+              healthyNodes:
+                description: HealthyNodes specified the number of healthy nodes observed
+                type: integer
+              inFlightRemediations:
+                additionalProperties:
+                  format: date-time
+                  type: string
+                description: InFlightRemediations records the timestamp when remediation triggered per node
+                type: object
+              observedNodes:
+                description: ObservedNodes specified the number of nodes observed by using the NHC spec.selecor
+                type: integer
+            required:
+            - healthyNodes
+            - inFlightRemediations
+            - observedNodes
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
