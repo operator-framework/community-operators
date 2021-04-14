@@ -12,16 +12,29 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: "Setting needs-ok-to-test label"
+      # - name: "Setting needs-ok-to-test label"
+      #   uses: actions/github-script@v3
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       github.issues.addLabels({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         labels: [ 'needs-ok-to-test' ]
+      #       })
+      - name: "Remove needs-ok-to-test"
         uses: actions/github-script@v3
+        if: calways()
+        continue-on-error: true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            github.issues.addLabels({
+            github.issues.removeLabel({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: [ 'needs-ok-to-test' ]
+              name: 'needs-ok-to-test'
             })
       - name: "Add Assignees"
         uses: actions/github-script@v3
@@ -340,19 +353,19 @@ jobs:
         run: |
           sleep 10
 
-      - name: "Remove needs-ok-to-test"
-        uses: actions/github-script@v3
-        # if: contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
-        continue-on-error: true
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.issues.removeLabel({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'needs-ok-to-test'
-            })
+      # - name: "Remove needs-ok-to-test"
+      #   uses: actions/github-script@v3
+      #   # if: contains(github.event.pull_request.labels.*.name, 'needs-ok-to-test')
+      #   continue-on-error: true
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       github.issues.removeLabel({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         name: 'needs-ok-to-test'
+      #       })
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
         if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only == '0' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
