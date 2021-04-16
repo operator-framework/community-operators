@@ -22,7 +22,6 @@ OP_TEST_IS_NEW_OPERATOR=0
 OP_TEST_PR_TITLE=
 
 # Error codes:
-#   [-1] Inform users about possibility to add reviewers
 #   [1] overwrite and recreate labels set at same time
 #   [2] both streams set
 #   [3] non opearator files changed in directories : .github, docs, ...
@@ -30,6 +29,7 @@ OP_TEST_PR_TITLE=
 #   [5] multiple operator changed
 #   [6] Old version were changed and recreate label is not set
 #   [7] Single file modification for ci.yaml allowed only
+#   [10] Inform users about possibility to add reviewers
 OP_TEST_ERROR_CODE=0
 
 OP_TEST_VER_OVERWRITE=${OP_TEST_VER_OVERWRITE-0}
@@ -293,10 +293,10 @@ if [[ $OP_TEST_READY -eq 1 ]] || [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
     
     if [ "$TEST_REVIEWERS" != "null" ];then
       TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
-      [[ $TEST_REVIEWERS -eq 0 ]] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+      [[ $TEST_REVIEWERS -eq 0 ]] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
     else
       echo "File '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
-      echo "::set-output name=op_test_error_code::-1" 
+    OP_TEST_ERROR_CODE=10
     fi
     # TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.addReviewers')
     # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
@@ -316,7 +316,7 @@ if [[ $OP_TEST_READY -eq 1 ]] || [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
 
   else
     echo "File '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
-    echo "::set-output name=op_test_error_code::-1" 
+    OP_TEST_ERROR_CODE=10
   fi
 fi
 
@@ -352,6 +352,8 @@ echo "op_test_pr_title=${OP_TEST_PR_TITLE}"
 echo "op_test_ci_yaml_only=$OP_TEST_CI_YAML_ONLY"
 echo "op_test_op_delete=$OP_TEST_OP_DELETE"
 echo "op_test_ver_overwrite=$OP_TEST_VER_OVERWRITE"
+echo "op_test_error_code=$OP_TEST_ERROR_CODE"
+
 
 echo "::set-output name=op_test_ready::${OP_TEST_READY}"
 echo "::set-output name=op_release_ready::${OP_RELEASE_READY}"
@@ -374,6 +376,7 @@ echo "::set-output name=op_test_set_label_operator_recreate::$OP_TEST_SET_LABEL_
 echo "::set-output name=op_test_is_modified::$OP_TEST_IS_MODIFIED"
 echo "::set-output name=op_test_modified_csvs::$OP_TEST_MODIFIED_CSVS"
 echo "::set-output name=op_test_modified_others::$OP_TEST_MODIFIED_OTHERS"
+echo "::set-output name=op_test_error_code::$OP_TEST_ERROR_CODE"
 
 echo "All done"
 exit 0
