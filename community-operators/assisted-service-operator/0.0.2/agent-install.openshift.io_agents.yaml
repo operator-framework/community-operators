@@ -1,0 +1,395 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.0
+  creationTimestamp: null
+  name: agents.agent-install.openshift.io
+spec:
+  group: agent-install.openshift.io
+  names:
+    kind: Agent
+    listKind: AgentList
+    plural: agents
+    singular: agent
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: The name of the cluster the Agent registered to.
+      jsonPath: .spec.clusterDeploymentName.name
+      name: Cluster
+      type: string
+    - description: The `Approve` state of the Agent.
+      jsonPath: .spec.approved
+      name: Approved
+      type: boolean
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Agent is the Schema for the hosts API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AgentSpec defines the desired state of Agent
+            properties:
+              approved:
+                type: boolean
+              clusterDeploymentName:
+                description: ClusterReference represents a Cluster Reference. It has enough information to retrieve cluster in any namespace
+                properties:
+                  name:
+                    description: Name is unique within a namespace to reference a cluster resource.
+                    type: string
+                  namespace:
+                    description: Namespace defines the space within which the cluster name must be unique.
+                    type: string
+                type: object
+              hostname:
+                type: string
+              installation_disk_id:
+                description: InstallationDiskID defines the installation destination disk (must be equal to the inventory disk id).
+                type: string
+              installerArgs:
+                description: Json formatted string containing the user overrides for the host's coreos installer args
+                type: string
+              machineConfigPool:
+                type: string
+              role:
+                description: "HostRole host role \n swagger:model host-role"
+                type: string
+            required:
+            - approved
+            - clusterDeploymentName
+            - role
+            type: object
+          status:
+            description: AgentStatus defines the observed state of Agent
+            properties:
+              apiVIPConnectivity:
+                type: boolean
+              bootstrap:
+                type: boolean
+              checkedInTime:
+                description: 'Name in REST API: checked_in_at'
+                format: date-time
+                type: string
+              conditions:
+                items:
+                  description: Condition represents the state of the operator's reconciliation functionality.
+                  properties:
+                    lastHeartbeatTime:
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      description: ConditionType is the state of the operator's reconciliation functionality.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              connectivity:
+                items:
+                  properties:
+                    hostDeploymentName:
+                      description: AgentReference represents a Agent Reference. It has enough information to retrieve an agent in any namespace
+                      properties:
+                        name:
+                          description: Name is unique within a namespace to reference an agent resource.
+                          type: string
+                        namespace:
+                          description: Namespace defines the space within which the agent name must be unique.
+                          type: string
+                      type: object
+                    l2Connectivity:
+                      properties:
+                        outgoingIPAddress:
+                          type: string
+                        outgoingNIC:
+                          type: string
+                        remoteIPAddress:
+                          type: string
+                        remoteMAC:
+                          type: string
+                        successful:
+                          type: boolean
+                      type: object
+                    l3Connectivity:
+                      properties:
+                        outgoingNIC:
+                          type: string
+                        remoteIPAddress:
+                          type: string
+                        successful:
+                          type: boolean
+                      type: object
+                  required:
+                  - hostDeploymentName
+                  type: object
+                type: array
+              discoveryAgentVersion:
+                type: string
+              hostValidationInfo:
+                properties:
+                  hardware:
+                    properties:
+                      hasCPUCoresForRole:
+                        type: string
+                      hasInventory:
+                        type: string
+                      hasMemoryForRole:
+                        type: string
+                      hasMinCPUCores:
+                        type: string
+                      hasMinMemory:
+                        type: string
+                      hasMinValidDisks:
+                        type: string
+                      isHostnameUnique:
+                        type: string
+                      isHostnameValid:
+                        type: string
+                      isPlatformValid:
+                        type: string
+                    type: object
+                  network:
+                    properties:
+                      apiVIPConnected:
+                        type: string
+                      belongsToMachineCIDR:
+                        type: string
+                      belongsToMajorityGroup:
+                        type: string
+                      connected:
+                        type: string
+                      machineCIDRDefined:
+                        type: string
+                      ntpSynced:
+                        type: string
+                    type: object
+                type: object
+              hostname:
+                type: string
+              installerVersion:
+                type: string
+              inventory:
+                properties:
+                  bmcAddress:
+                    type: string
+                  bmcV6Address:
+                    type: string
+                  boot:
+                    properties:
+                      currentBootMode:
+                        type: string
+                      pxeInterface:
+                        type: string
+                    type: object
+                  cpu:
+                    properties:
+                      architecture:
+                        type: string
+                      clockMegahertz:
+                        description: 'Name in REST API: frequency'
+                        format: int64
+                        type: integer
+                      count:
+                        format: int64
+                        type: integer
+                      flags:
+                        items:
+                          type: string
+                        type: array
+                      modelName:
+                        type: string
+                    type: object
+                  disks:
+                    items:
+                      properties:
+                        bootable:
+                          type: boolean
+                        byID:
+                          type: string
+                        byPath:
+                          type: string
+                        driveType:
+                          type: string
+                        hctl:
+                          type: string
+                        id:
+                          type: string
+                        installationEligibility:
+                          properties:
+                            eligible:
+                              type: boolean
+                            notEligibleReasons:
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - notEligibleReasons
+                          type: object
+                        ioPerf:
+                          properties:
+                            syncDurationMilliseconds:
+                              description: 99th percentile of fsync duration in milliseconds
+                              format: int64
+                              type: integer
+                          type: object
+                        model:
+                          type: string
+                        name:
+                          type: string
+                        path:
+                          type: string
+                        serial:
+                          type: string
+                        sizeBytes:
+                          format: int64
+                          type: integer
+                        smart:
+                          type: string
+                        vendor:
+                          type: string
+                        wwn:
+                          type: string
+                      required:
+                      - id
+                      type: object
+                    type: array
+                  hostname:
+                    type: string
+                  interfaces:
+                    items:
+                      properties:
+                        biosDevName:
+                          type: string
+                        clientID:
+                          type: string
+                        flags:
+                          items:
+                            type: string
+                          type: array
+                        hasCarrier:
+                          type: boolean
+                        ipV4Addresses:
+                          items:
+                            type: string
+                          type: array
+                        ipV6Addresses:
+                          items:
+                            type: string
+                          type: array
+                        macAddress:
+                          type: string
+                        mtu:
+                          format: int64
+                          type: integer
+                        name:
+                          type: string
+                        product:
+                          type: string
+                        speedMbps:
+                          format: int64
+                          type: integer
+                        vendor:
+                          type: string
+                      required:
+                      - flags
+                      - ipV4Addresses
+                      - ipV6Addresses
+                      type: object
+                    type: array
+                  memory:
+                    properties:
+                      physicalBytes:
+                        format: int64
+                        type: integer
+                      usableBytes:
+                        format: int64
+                        type: integer
+                    type: object
+                  reportTime:
+                    description: 'Name in REST API: timestamp'
+                    format: date-time
+                    type: string
+                  systemVendor:
+                    properties:
+                      manufacturer:
+                        type: string
+                      productName:
+                        type: string
+                      serialNumber:
+                        type: string
+                      virtual:
+                        type: boolean
+                    type: object
+                type: object
+              logsCollectedTime:
+                description: 'Name in REST API: logs_collected_at'
+                format: date-time
+                type: string
+              ntpSources:
+                items:
+                  properties:
+                    sourceName:
+                      type: string
+                    sourceState:
+                      description: "SourceState source state \n swagger:model source_state"
+                      type: string
+                  type: object
+                type: array
+              progress:
+                properties:
+                  currentStage:
+                    description: "HostStage host stage \n swagger:model host-stage"
+                    type: string
+                  progressInfo:
+                    type: string
+                  stageStartTime:
+                    description: 'Name in REST API: stage_started_at'
+                    type: string
+                  stageUpdateTime:
+                    description: 'Name in REST API: stage_updated_at'
+                    type: string
+                type: object
+              state:
+                type: string
+              stateInfo:
+                type: string
+              stateUpdatedTime:
+                description: 'Name in REST API: status_updated_at'
+                format: date-time
+                type: string
+              updateTime:
+                description: 'Name in REST API: updated_at'
+                format: date-time
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
