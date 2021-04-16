@@ -22,6 +22,7 @@ OP_TEST_IS_NEW_OPERATOR=0
 OP_TEST_PR_TITLE=
 
 # Error codes:
+#   [-1] Inform users about possibility to add reviewers
 #   [1] overwrite and recreate labels set at same time
 #   [2] both streams set
 #   [3] non opearator files changed in directories : .github, docs, ...
@@ -284,28 +285,39 @@ echo "::set-output name=op_test_stream::${OP_TEST_STREAM_NAME}"
 echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
 
 if [[ $OP_TEST_READY -eq 1 ]] || [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
-  [ ! -f $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml ] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
-  yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
-  TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers')
-  [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+  if [ -f $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml ];then 
   
-  TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
-  [[ $TEST_REVIEWERS -eq 0 ]] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+    yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
+    TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers')
+    # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
     
-  TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.addReviewers')
-  [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
-  [ "$TEST_REVIEWERS" == "false" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' has 'addReviewers: true' set !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+    if [ "$TEST_REVIEWERS" != "null" ];then
+      TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
+      [[ $TEST_REVIEWERS -eq 0 ]] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+    else
+      echo "File '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
+      echo "::set-output name=op_test_error_code::-1" 
+    fi
+    # TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.addReviewers')
+    # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+    # [ "$TEST_REVIEWERS" == "false" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' has 'addReviewers: true' set !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
 
 
-  for f in $OP_TEST_CI_YAML_UNSUPPORTED_FIELDS;do
-    echo "Checking existance of unsupported field '$f' in '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' ..."
-    TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq ".$f")
-    [ $TEST_REVIEWERS != "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' must NOT contain '$f' field !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
-  done
+    # for f in $OP_TEST_CI_YAML_UNSUPPORTED_FIELDS;do
+    #   echo "Checking existance of unsupported field '$f' in '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' ..."
+    #   TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq ".$f")
+    #   [ $TEST_REVIEWERS != "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' must NOT contain '$f' field !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+    # done
 
-  TEST_UPDATE_GRAPH=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
-  [ $TEST_UPDATE_GRAPH == "null" ] && OP_TEST_UPDATEGRAPH=0
-  echo "OP_TEST_UPDATEGRAPH=$OP_TEST_UPDATEGRAPH"
+    TEST_UPDATE_GRAPH=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
+    [ $TEST_UPDATE_GRAPH == "null" ] && OP_TEST_UPDATEGRAPH=0
+    echo "OP_TEST_UPDATEGRAPH=$OP_TEST_UPDATEGRAPH"
+
+
+  else
+    echo "File '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
+    echo "::set-output name=op_test_error_code::-1" 
+  fi
 fi
 
 OP_TEST_PR_TITLE="$OP_TEST_STREAM_NAME"

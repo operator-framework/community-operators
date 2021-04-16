@@ -1,6 +1,6 @@
 # Operator ci.yaml
 
-Each operator should have `ci.yaml` configuration file to be present in operator directory (for example `community-operators/aqua/ci.yaml`). This configuration file is used by [community-operators](https://github.com/operator-framework/community-operators) pipeline to setup various feature like `reviewers` or `operator versioning`.
+Each operator might have `ci.yaml` configuration file to be present in operator directory (for example `community-operators/aqua/ci.yaml`). This configuration file is used by [community-operators](https://github.com/operator-framework/community-operators) pipeline to setup various feature like `reviewers` or `operator versioning`.
 
 !!! note
     One can create `ci.yaml` file with new operator version when file is not already present. This operation can be done in the same PR with other operator changes. 
@@ -10,39 +10,17 @@ Each operator should have `ci.yaml` configuration file to be present in operator
 
 ## Reviewers
 
-It is required to setup reviewers in `ci.yaml` file. It can be done by adding `reviewers` tag with list of github usernames. For example
+If you want to accelerate publishing your changes, consider adding yourself and others you trust to the reviewers list. If the author of PR will be in that list, chnages she/he made will be taken as authorized changes (label `authorized-changes` will be set). This will be the indicator for our pipeline that the PR is ready to merged automatically. For this to work, it is required to setup reviewers in `ci.yaml` file. It can be done by adding `reviewers` tag with list of github usernames. For example
 
 ### Example
 ```
 $ cat <path-to-operator>/ci.yaml
 ---
-addReviewers: true
 reviewers:
   - user1 
   - user2
 
 ```
-More advanced setup can be done via documentation [here](https://github.com/kentaro-m/auto-assign-action#single-reviewers-list), but please note limitations shown bellow
-
-!!! warning 
-    Mandatory fields/values:
-
-    - `addReviewers: true`
-    - `reviewers`
-
-    Optional fields/values:
-
-    - `numberOfReviewers`
-
-    Not supported fields/values:
-
-    - `addReviewers: false`
-    - `addAssignees`
-    - `numberOfReviewers`
-    - `useAssigneeGroups`
-    - `assigneeGroups`
-    - `skipKeywords`
-
 
 ## Operator versioning
 Operators have multiple versions. When a new version is released, OLM can update operator automatically. There are 2 update strategies possible, which are defined in `ci.yaml` at the operator top level.
