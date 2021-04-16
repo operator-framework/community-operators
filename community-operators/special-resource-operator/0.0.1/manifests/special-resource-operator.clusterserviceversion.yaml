@@ -5,50 +5,51 @@ metadata:
     alm-examples: |-
       [
         {
-            "apiVersion": "sro.openshift.io/v1beta1",
-            "kind": "SpecialResource",
-            "metadata": {
-               "name": "simple-kmod"
-            },
-            "spec": {
-                "configuration": [
-                    {
-                        "name": "KMOD_NAMES",
-                        "value": [
-                            "simple-kmod",
-                            "simple-procfs-kmod"
-                        ]
-                    }
-                ],
-                "dependsOn": [
-                    {
-                        "imageReference": "true",
-                        "name": "driver-container-base"
-                    }
-                ],
-                "driverContainer": {
-                    "buildArgs": [
-                        {
-                            "name": "KVER",
-                            "value": "{{.KernelVersion}}"
-                        },
-                        {
-                            "name": "KMODVER",
-                            "value": "SRO"
-                        }
-                    ],
-                    "source": {
-                        "git": {
-                            "ref": "master",
-                            "uri": "https://github.com/openshift-psap/kvc-simple-kmod.git"
-                        }
-                    }
+          "apiVersion": "sro.openshift.io/v1beta1",
+          "kind": "SpecialResource",
+          "metadata": {
+            "name": "simple-kmod"
+          },
+          "spec": {
+            "configuration": [
+              {
+                "name": "KMOD_NAMES",
+                "value": [
+                  "simple-kmod",
+                  "simple-procfs-kmod"
+                ]
+              }
+            ],
+            "dependsOn": [
+              {
+                "imageReference": "true",
+                "name": "driver-container-base"
+              }
+            ],
+            "driverContainer": {
+              "buildArgs": [
+                {
+                  "name": "KVER",
+                  "value": "{{.KernelFullVersion}}"
                 },
-                "namespace": "simple-kmod"
-            }
+                {
+                  "name": "KMODVER",
+                  "value": "SRO"
+                }
+              ],
+              "source": {
+                "git": {
+                  "ref": "master",
+                  "uri": "https://github.com/openshift-psap/kvc-simple-kmod.git"
+                }
+              }
+            },
+            "namespace": "simple-kmod"
+          }
         }
       ]
     capabilities: Basic Install
+    categories: 'AI/Machine Learning, Drivers and plugins, Networking, Storage'
     description: The special resource operator is an orchestrator for resources in a cluster required to deploy special hardware and software. Examples include hardware accelerators or software defined storage, where extra management or kernel modules are needed.
     operators.operatorframework.io/builder: operator-sdk-v1.2.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -68,7 +69,7 @@ spec:
       displayName: Node Feature Discovery
       kind: NodeFeatureDiscovery
       name: nodefeaturediscoveries.nfd.openshift.io
-      version: v1alpha1
+      version: v1
   description: "## About the managed application \nThe SRO will deploy the complete stack for enabling the accelerator in a cluster. \nIt manages the drivers, device-plugin, node-exporter, grafana and feature discovery.\n## About this Operator\n README: [https://github.com/openshift-psap/special-resource-operator](https://github.com/openshift-psap/special-resource-operator)\n\n## Prerequisites for enabling this Operator\nThe SRO has a dependency on NFD (Node Feature Discovery)\n"
   displayName: Special Resource Operator
   icon:
@@ -118,6 +119,30 @@ spec:
           - build.openshift.io
           resources:
           - builds
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cert-manager.io
+          resources:
+          - certificates
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - cert-manager.io
+          resources:
+          - issuers
           verbs:
           - create
           - delete
@@ -532,7 +557,15 @@ spec:
                 ports:
                 - containerPort: 8443
                   name: https
-                resources: {}
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 250m
+                    memory: 64Mi
+                securityContext:
+                  readOnlyRootFilesystem: true
                 volumeMounts:
                 - mountPath: /etc/secrets
                   name: special-resource-operator-tls
