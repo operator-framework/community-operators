@@ -378,7 +378,9 @@ The following steps assume you already have a running Kubernetes cluster that is
 kind create cluster
 ```
 
-Install the Operator Lifecycle Manager using `operator-sdk`:
+You can install the Operator Lifecycle Manager using either `operator-sdk` or `kubectl`.
+
+Option 1: Install the Operator Lifecycle Manager using `operator-sdk`:
 
 ```console
 operator-sdk olm install
@@ -415,6 +417,30 @@ packageserver                                   olm          ClusterServiceVersi
 olm-operator-serviceaccount                     olm          ServiceAccount              Installed
 catalogsources.operators.coreos.com                          CustomResourceDefinition    Installed
 system:controller:operator-lifecycle-manager                 ClusterRole                 Installed
+```
+
+Option 2: Install the Operator Lifecycle Manager using `kubectl`:
+
+```console
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.17.0/crds.yaml
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.17.0/olm.yaml
+```
+
+You can check if Operator Lifecycle Manager status via following command:
+
+```console
+kubectl get pods -n olm
+```
+
+This should output something like the following:
+
+```
+NAME                                READY   STATUS    RESTARTS   AGE
+catalog-operator-7b4788ffb5-9jggk   1/1     Running   0          23h
+olm-operator-678d76b95c-r492j       1/1     Running   0          23h
+operatorhubio-catalog-lqw72         1/1     Running   0          23h
+packageserver-7cfd786c67-pwpnn      1/1     Running   0          23h
+packageserver-7cfd786c67-tkwbm      1/1     Running   0          23h
 ```
 
 #### Troubleshooting
