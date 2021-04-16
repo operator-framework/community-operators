@@ -1,4 +1,4 @@
-# Operator ci.yaml
+# Operator Publishing / Review settings
 
 Each operator might have `ci.yaml` configuration file to be present in operator directory (for example `community-operators/aqua/ci.yaml`). This configuration file is used by [community-operators](https://github.com/operator-framework/community-operators) pipeline to setup various feature like `reviewers` or `operator versioning`.
 
