@@ -1,45 +1,23 @@
 name: Operator action
 on:
   push:
-    # branches:
-    #   - action/stable
-    tags:
-      - v*
+     branches:
+       - action/sign-index
+#    tags:
+#      - v*
 
 jobs:
-  kiwi-test-example:
+  test-webhook:
     runs-on: ubuntu-latest
-    name: kiwi operator test example
+    name: Test procedure
     steps:
-    - id: Test
-      uses:  operator-framework/community-operators@v1
-      with:
-        test-type: 'kiwi'
-        stream: 'upstream-community-operators'
-        name: 'aqua'
-        version: '5.3.0'
-        # pr-labels: 'allow/operator-version-overwrite bug'
-  lemon-test-example:
-    runs-on: ubuntu-latest
-    name: lemon operator test example
-    steps:
-    - id: Test
-      uses:  operator-framework/community-operators@v1
-      with:
-        test-type: 'lemon'
-        stream: 'upstream-community-operators'
-        name: 'aqua'
-        version: '5.3.0'
-        # pr-labels: 'allow/operator-version-overwrite bug'
-  orange-test-example:
-    runs-on: ubuntu-latest
-    name: orange operator test example
-    steps:
-    - id: Test
-      uses:  operator-framework/community-operators@v1
-      with:
-        test-type: 'orange'
-        stream: 'upstream-community-operators'
-        name: 'aqua'
-        version: '5.3.0'
-        pr-labels: 'allow/operator-version-overwrite bug'
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - id: test-webhook
+        uses:  ./
+        env:
+          webhook_type: 'json-extended'
+          webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
+          webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+          data: '{"index_image": "quay.io/redhat/redhat----community-operator-index:v4.6", "index_image_resolved": "quay.io/redhat/redhat----community-operator-index@sha256:041b99c56f7c61a0e0e0708482ff43719e96169b5502297d62d01cb39176592c"}'
+#          continue-on-error: true
