@@ -1,138 +1,196 @@
-# Community operator action V1
+# Workflow Webhook Action
 
-This action runs community operator tests.
+[![GitHub Release][ico-release]][link-github-release]
+[![License][ico-license]](LICENSE)
 
-# What's new
+A Github workflow action to call a remote webhook endpoint with a JSON or form-urlencoded
+payload, and support for BASIC authentication. A hash signature is passed with each request, 
+derived from the payload and a configurable secret token. The hash signature is 
+identical to that which a regular Github webhook would generate, and sent in a header 
+field named `X-Hub-Signature`. Therefore any existing Github webhook signature 
+validation will continue to work. For more information on how to valiate the signature, 
+see <https://docs.github.com/webhooks/securing/>.
 
-- Supported tests (kiwi, lemon, orange)
-- Own [community-operators](https://github.com/operator-framework/community-operators.git) fork and branch supported
-- Run test from own repository. Doesn't have to be [community-operators](https://github.com/operator-framework/community-operators.git). More info in [op-action-examples](https://github.com/mvalarh/op-action-examples)
+By default, the values of the following GitHub workflow environment variables are sent in the 
+payload: `GITHUB_REPOSITORY`, `GITHUB_REF`, `GITHUB_HEAD_REF`, `GITHUB_SHA`, `GITHUB_EVENT_NAME` 
+and `GITHUB_WORKFLOW`. For more information on what is contained in these variables, see 
+<https://help.github.com/en/actions/automating-your-workflow-with-github-actions/using-environment-variables>. 
 
+These values map to the payload as follows:
 
-# Usage
-
-<!-- start usage -->
-```yaml
-
-- uses: operator-framework/community-operators@v1
-  with:
-    # Test type (kiwi,lemon or orange)
-    test-type: 'kiwi'
-    
-    # Operator stream name (community-operators or upstream-community-operators)
-    stream: 'community-operators'
-    
-    # Operator name (exmaple 'aqua')
-    name: ''
-    
-    # Operator version (exmaple '5.3.0')
-    version: ''
-    
-    # Community operators repo
-    # Default: 'https://github.com/operator-framework/community-operators.git'
-    repo: ''
-
-    # Community operators branch
-    # Default: 'master'
-    branch: ''
-
-    # Repo directory when if not community-operators
-    # Default: 'community-operators'
-    repo-dir: ''
-
-    # Space separated list of labels in PR
-    # Default: ''
-    pr-labels: ''
-
-    # Path to operator version content (for example local/path/to/operator/version).
-    # Default: ''
-    operator-version-path: ''
-
-    # Path to package file (for example local/path/to/my-operator.package.yaml).
-    # Default: ''
-    package-path: ''
-
-    # Path to ci.yaml file (for example local/path/to/ci.yaml).
-    # Default: ''
-    ci-path: ''
-```
-<!-- end usage -->
-
-## Test 'kiwi' aqua operator version 5.3.0 for in community-operators
-
-```yaml
-
-- uses:  operator-framework/community-operators@v1
-  with:
-    test-type: 'kiwi'
-    stream: 'upstream-community-operators'
-    name: 'aqua'
-    version: '5.3.0'
+```json
+{
+    "event": "GITHUB_EVENT_NAME",
+    "repository": "GITHUB_REPOSITORY",
+    "commit": "GITHUB_SHA",
+    "ref": "GITHUB_REF",
+    "head": "GITHUB_HEAD_REF",
+    "workflow": "GITHUB_WORKFLOW"
+}
 ```
 
-## Test 'kiwi' aqua operator version 5.3.0 for in upstream-community-operators
+If you are interested in receiving more comprehensive data about the GitHub event than just the 
+above fields, then the action can be configured to send the whole JSON payload of the GitHub event, 
+as per the `GITHUB_EVENT_PATH` variable in the environment variable documentation referenced above. 
+The official documentation and reference for the payload itself can be found here: 
+<https://developer.github.com/webhooks/event-payloads/>, and the details on how to configure it, 
+is further down in the **Usage** section of this README.
 
-```yaml
+Additional (custom) data can also be added/merged to the payload (see further down).
 
-- uses:  operator-framework/community-operators@v1
-  with:
-    test-type: 'kiwi'
-    stream: 'upstream-community-operators'
-    name: 'aqua'
-    version: '5.3.0'
+
+## Usage
+
+The following are example snippets for a Github yaml workflow configuration. <br/>
+
+Send the JSON (default) payload to a webhook:
+
+```yml
+    - name: Invoke deployment hook
+      uses: distributhor/workflow-webhook@v1
+      env:
+        webhook_url: ${{ secrets.WEBHOOK_URL }}
+        webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
 ```
 
-## Test 'lemon' aqua operator version 5.3.0 for in upstream-community-operators
+Will deliver a payload with the following properties:
 
-```yaml
+```json
+{
+    "event": "push",
+    "repository": "owner/project",
+    "commit": "a636b6f0861bbee98039bf3df66ee13d8fbc9c74",
+    "ref": "refs/heads/master",
+    "head": "",
+    "workflow": "Build and deploy"
+}
+```
+<br/>
 
-- uses:  operator-framework/community-operators@v1
-  with:
-    test-type: 'lemon'
-    stream: 'upstream-community-operators'
-    name: 'aqua'
-    version: '5.3.0'
+Add additional data to the payload:
+
+```yml
+    - name: Invoke deployment hook
+      uses: distributhor/workflow-webhook@v1
+      env:
+        webhook_url: ${{ secrets.WEBHOOK_URL }}
+        webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
+        data: '{ "weapon": "hammer", "drink" : "beer" }'
 ```
 
-## Test 'orange' (catalog v4.6) for aqua operator version 5.3.0 for in community-operators
+The additional information will become available on a `data` property,
+and now look like:
 
-```yaml
+```json
+{
+    "event": "push",
+    "repository": "owner/project",
+    "commit": "a636b6f0861bbee98039bf3df66ee13d8fbc9c74",
+    "ref": "refs/heads/master",
+    "head": "",
+    "workflow": "Build and deploy",
+    "data": {
+        "weapon": "hammer",
+        "drink": "beer"
+    }
+}
+```
 
-- uses:  operator-framework/community-operators@v1
-  with:
-    test-type: 'oragne_v4.6'
-    stream: 'community-operators'
-    name: 'aqua'
-    version: '5.3.0'
+Send a form-urlencoded payload instead:
+
+```yml
+    - name: Invoke deployment hook
+      uses: distributhor/workflow-webhook@v1
+      env:
+        webhook_type: 'form-urlencoded'
+        webhook_url: ${{ secrets.WEBHOOK_URL }}
+        webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
+        data: 'weapon=hammer&drink=beer'
+```
+
+Will set the `Content-Type` header to `application/x-www-form-urlencoded` and deliver:
+
+```csv
+"event=push&repository=owner/project&commit=a636b6f0....&weapon=hammer&drink=beer"
+```
+
+Finally, if you prefer to receive the whole original GitHub payload as JSON (as opposed 
+to the default JSON snippet above), then configure the webhook with a `webhook_type` of
+`json-extended`:
+
+```yml
+    - name: Invoke deployment hook
+      uses: distributhor/workflow-webhook@v1
+      env:
+        webhook_type: 'json-extended'
+        webhook_url: ${{ secrets.WEBHOOK_URL }}
+        webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
+        data: '{ "weapon": "hammer", "drink" : "beer" }'
+```
+
+You can still add custom JSON data, which will be available on a `data` property, included 
+on the GitHub payload. Importantly, the sending of the whole GitHub payload
+is only supported as JSON, and not currently available as urlencoded form parameters.
+
+## Arguments
+
+```yml 
+  webhook_url: "https://your.webhook"
+```
+
+*Required*. The HTTP URI of the webhook endpoint to invoke. The endpoint must accept 
+an HTTP POST request. <br/><br/>
+
+
+```yml 
+  webhook_secret: "Y0uR5ecr3t"
+```
+
+*Required*. The secret with which to generate the signature hash. <br/><br/>
+
+```yml 
+  webhook_auth: "username:password"
+```
+
+Credentials to be used for BASIC authentication against the endpoint. If not configured,
+authentication is assumed not to be required. If configured, it must follow the format
+`username:password`, which will be used as the BASIC auth credential.<br/><br/>
+
+```yml 
+  webhook_type: "json | form-urlencoded | json-extended"
+```
+
+The default endpoint type is JSON. The argument is only required if you wish to send urlencoded form data. 
+Otherwise it's optional. <br/><br/>
+
+
+```yml 
+  silent: true
+```
+
+To hide the output from curl set the argument `silent` to `true`. The default value is `false`.<br/><br/>
+
+
+```yml 
+  data: "Additional JSON or URL encoded data"
 ```
 
 
-## Test 'kiwi' aqua operator version 5.3.0 for in upstream-community-operators in own project
-Test single version of operator from custom project. Follwoing will happen:
+Additional data to include in the payload. It is optional. This data will attempted to be 
+merged 'as-is' with the existing payload, and is expected to already be sanitized and valid.
 
-- Action will clone `https://github.com/operator-framework/community-operators.git` in to master branch (controlled by `repo:` and `branch:`)
-- Enters directory `community-operators` (controlled by `repo-dir:`)
-- Removes directory `upstream-community-operators/aqua/5.3.0`
-- Creates directory `upstream-community-operators/aqua/5.3.0`
-- Copy content `my/op/manifest` to `upstream-community-operators/aqua/5.3.0` (controlled by `operator-version-path:`)
-- Copy/overwrite `my/op/aqua-operator.package.yaml` to `upstream-community-operators/aqua/` (controlled by `package-path:`)
-- Copy/overwrite `my/op/ci.yaml` to `upstream-community-operators/aqua/` (controlled by `ci-path:`)
-- Runs `kiwi` test (controlled by `test-type:`)
-
-```yaml
-- uses:  operator-framework/community-operators@v1
-  with:
-    test-type: 'kiwi'
-    stream: 'upstream-community-operators'
-    name: 'aqua'
-    version: '5.3.0'
-    operator-version-path: my/op/manifest
-    package-path: my/op/aqua-operator.package.yaml
-    ci-path: my/op/ci.yaml
-```
-
-# License
-
-The scripts and documentation in this project are released under the [MIT License](LICENSE)
+In the case of JSON, the custom data will be available on a property named `data`, and it will be 
+run through a JSON validator. Invalid JSON will cause the action to break and exit. For example, using 
+single quotes for JSON properties and values instead of double quotes, will show the 
+following (somewhat confusing) message in your workflow output: `Invalid numeric literal`. 
+Such messages are the direct output from the validation library <https://stedolan.github.io/jq/>. 
+The supplied JSON must pass the validation run through `jq`.
 
 
+## License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
+
+[ico-release]: https://img.shields.io/github/tag/distributhor/workflow-webhook.svg
+[ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg
+[link-github-release]: https://github.com/distributhor/workflow-webhook/releases
