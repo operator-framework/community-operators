@@ -5,6 +5,7 @@ OP_TEST_ALLOW_CI_CHANGES=${OP_TEST_ALLOW_CI_CHANGES-0}
 OP_TEST_READY=${OP_TEST_READY-1}
 OP_RELEASE_READY=${OP_RELEASE_READY-0}
 OP_TEST_OP_DELETE=${OP_TEST_OP_DELETE-0}
+OP_TEST_PR_AUTHOR=${OP_TEST_PR_AUTHOR-""}
 DELETE_APPREG=${DELETE_APPREG-0}
 OPRT=${OPRT-0}
 
@@ -20,6 +21,7 @@ OP_TEST_ALLOW_SERIOUS_CHANGES=0
 OP_TEST_IS_OPERATOR=0
 OP_TEST_IS_NEW_OPERATOR=0
 OP_TEST_PR_TITLE=
+OP_TEST_AUTHORIZED_CHANGES=0
 
 # Error codes:
 #   [1] overwrite and recreate labels set at same time
@@ -75,6 +77,7 @@ echo "::set-output name=op_test_allow_serious_changes::$OP_TEST_ALLOW_SERIOUS_CH
 echo "::set-output name=op_test_is_new_operatror::${OP_TEST_IS_NEW_OPERATOR}"
 echo "::set-output name=op_test_pr_title::${OP_TEST_PR_TITLE}"
 echo "::set-output name=op_test_update_graph::${OP_TEST_UPDATEGRAPH}"
+echo "::set-output name=op_test_authorized_changes::${OP_TEST_AUTHORIZED_CHANGES}"
 
 # Handle removed files
 if [ -n "$OP_TEST_REMOVED_FILES" ];then
@@ -294,9 +297,19 @@ if [[ $OP_TEST_READY -eq 1 ]] || [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
     if [ "$TEST_REVIEWERS" != "null" ];then
       TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
       [[ $TEST_REVIEWERS -eq 0 ]] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
+
+
+      if [ -n "$OP_TEST_PR_AUTHOR" ];then
+        TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers')
+        for row in $(echo "${TEST_REVIEWERS}" | yq -r '.[]'); do
+          echo "checking if reviewer '$row' is pr author '$OP_TEST_PR_AUTHOR' ..."
+          [ "$OP_TEST_PR_AUTHOR" == "$row" ] && echo "[AUTHORIZED_CHANGES=1] : Author '$OP_TEST_PR_AUTHOR' is in reviewer list" && OP_TEST_AUTHORIZED_CHANGES=1 && break
+        done
+      fi
+
     else
       echo "File '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
-    OP_TEST_ERROR_CODE=10
+      OP_TEST_ERROR_CODE=10
     fi
     # TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.addReviewers')
     # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
@@ -377,6 +390,7 @@ echo "::set-output name=op_test_is_modified::$OP_TEST_IS_MODIFIED"
 echo "::set-output name=op_test_modified_csvs::$OP_TEST_MODIFIED_CSVS"
 echo "::set-output name=op_test_modified_others::$OP_TEST_MODIFIED_OTHERS"
 echo "::set-output name=op_test_error_code::$OP_TEST_ERROR_CODE"
+echo "::set-output name=op_test_authorized_changes::${OP_TEST_AUTHORIZED_CHANGES}"
 
 echo "All done"
 exit 0

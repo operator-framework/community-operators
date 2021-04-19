@@ -69,6 +69,7 @@ jobs:
         id: op-traffic-light
         env:
           OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          OP_TEST_PR_AUTHOR: "${{ github.event.issue.user.login }}"
           OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}"
           OPRT_SHA: "${{ github.event.pull_request.head.sha }}"
           #OPRT_SRC_BRANCH: "support/action-01"
@@ -95,7 +96,6 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
           allow-repeats: true # This is the default
-
 
       - name: "Comment operator test error code [2]"
         if: failure() && steps.op-traffic-light.outputs.op_test_error_code == '2'
@@ -314,11 +314,24 @@ jobs:
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
           allow-repeats: true # This is the default
 
-      - name: Setup reviewers
-        uses: kentaro-m/auto-assign-action@v1.1.2
-        continue-on-error: true
+      # - name: Setup reviewers
+      #   uses: kentaro-m/auto-assign-action@v1.1.2
+      #   continue-on-error: true
+      #   with:
+      #     configuration-path: "${{steps.op-traffic-light.outputs.op_test_stream }}/${{ steps.op-traffic-light.outputs.op_test_name }}/ci.yaml"
+
+      - name: "Setting authorized-changes label"
+        uses: actions/github-script@v3
+        if: needs.operator-ci.outputs.op_test_authorized_changes == '1'
         with:
-          configuration-path: "${{steps.op-traffic-light.outputs.op_test_stream }}/${{ steps.op-traffic-light.outputs.op_test_name }}/ci.yaml"
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'authorized-changes' ]
+            })
 
       # - name: "Setting msg when minor changes are allowed"
       #   if:  steps.op-verify-modifications.outputs.op_check_cosmetic == '1' && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-version-overwrite') && ! contains(github.event.pull_request.labels.*.name, 'allow/operator-recreate')
