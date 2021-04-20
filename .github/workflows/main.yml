@@ -13,6 +13,23 @@ jobs:
     steps:
 #      - name: Checkout code
 #        uses: actions/checkout@v2
+      - name: Prepare prereqs for signature job
+        id: sig-prereq
+        become: yes
+          run: |
+            sudo apt-get -y update
+            sudo apt-get -y install skopeo
+      - name: Prepare variables
+        id: openshift-vars
+        needs: sig-prereq
+        run: |
+            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
+            OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
+            OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
+            echo OPERATOR_INDEX_RESOLVED
+        env:
+              QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
+              OPERATOR_INDEX_TAG: latest
 #      - id: test-webhook
 #        uses:  ./
 #        env:
@@ -23,12 +40,15 @@ jobs:
 ##          continue-on-error: true
       - name: Webhook Action test 5
         uses: distributhor/workflow-webhook@v1
+        needs: openshift-vars
         env:
+           INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
            webhook_type: 'json-extended'
            webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
 #           webhook_url: 'https://access.redhat.com/hydra/umb-bridge/v1/publish'
 #           webhook_url: 'https://access.redhat.com/hydra/proxy/umb-bridge-qa/v1/publish'
            webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
 #           webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK_QA }}
-           data: '{"index_image": "quay.io/redhat/redhat----community-operator-index:latest", "index_image_resolved": "quay.io/redhat/redhat----community-operator-index@sha256:041b99c56f7c61a0e0e0708482ff43719e96169b5502297d62d01cb39176592c"}'
+#           data: '{"index_image": "quay.io/redhat/redhat----community-operator-index:latest", "index_image_resolved": "quay.io/redhat/redhat----community-operator-index@sha256:041b99c56f7c61a0e0e0708482ff43719e96169b5502297d62d01cb39176592c"}'
+           data: '{"index_image": needs.openshift-vars.outputs.OPERATOR_INDEX, "index_image_resolved": needs.openshift-vars.outputs.OPERATOR_INDEX_RESOLVED}'
 #        continue-on-error: true
