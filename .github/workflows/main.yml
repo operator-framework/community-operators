@@ -5,17 +5,20 @@ on:
        - action/sign-index
 
 jobs:
-  test-webhook:
+  webhook-to-sign-indexes:
     runs-on: ubuntu-latest
-    name: Test procedure
+    name: Sign indexes
+    strategy:
+      matrix:
+        index-tag: [ v4.6, v4.7, v4.8, latest ]
     steps:
 #      - name: Checkout code
 #        uses: actions/checkout@v2
-      - name: Prepare prereqs for signature job
-        id: sig-prereq
-        run: |
-            sudo apt-get -y update
-            sudo apt-get -y install skopeo
+#      - name: Prepare prereqs for signature job
+#        id: sig-prereq
+#        run: |
+#            sudo apt-get -y update
+#            sudo apt-get -y install skopeo
       - name: Prepare variables
         id: openshift-vars
         run: |
@@ -27,7 +30,7 @@ jobs:
             echo $OPERATOR_INDEX
         env:
               QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
-              OPERATOR_INDEX_TAG: latest
+              OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
               QUAY: ${{ secrets.QUAY_J }}
 #      - id: test-webhook
 #        uses:  ./
