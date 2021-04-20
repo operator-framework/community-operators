@@ -3,8 +3,6 @@ on:
   push:
      branches:
        - action/sign-index
-#    tags:
-#      - v*
 
 jobs:
   test-webhook:
@@ -15,13 +13,11 @@ jobs:
 #        uses: actions/checkout@v2
       - name: Prepare prereqs for signature job
         id: sig-prereq
-#        become: yes
         run: |
             sudo apt-get -y update
             sudo apt-get -y install skopeo
       - name: Prepare variables
         id: openshift-vars
-#        needs: sig-prereq
         run: |
             docker login quay.io -u j0zi -p $QUAY
             OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
@@ -43,12 +39,10 @@ jobs:
 ##          continue-on-error: true
       - name: Webhook Action test 5
         uses: distributhor/workflow-webhook@v1
-#        needs: openshift-vars
         env:
            INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
            webhook_type: 'json-extended'
            webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
-#           webhook_url: 'https://access.redhat.com/hydra/umb-bridge/v1/publish'
 #           webhook_url: 'https://access.redhat.com/hydra/proxy/umb-bridge-qa/v1/publish'
            webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
 #           webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK_QA }}
