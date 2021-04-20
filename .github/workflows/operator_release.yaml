@@ -280,6 +280,27 @@ jobs:
             echo "OP_TEST_LABELS=$OP_TEST_LABELS"
             echo "orange_v4.8 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
             scripts/ci/op-test orange_v4.8 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+        - name: Prepare variables for the sign process
+          id: openshift-vars
+          run: |
+            docker login quay.io -u j0zi -p $QUAY
+            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
+            OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
+            OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
+            echo $OPERATOR_INDEX_RESOLVED
+            echo $OPERATOR_INDEX
+          env:
+            QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
+            OPERATOR_INDEX_TAG: "v4.8"
+            QUAY: ${{ secrets.QUAY_J }}
+        - name: Initialize sign process
+          uses: distributhor/workflow-webhook@v1
+          env:
+            INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
+            webhook_type: 'json-extended'
+            webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
+            webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+            data: '{"index_image": "steps.openshift-vars.outputs.OPERATOR_INDEX", "index_image_resolved": "steps.openshift-vars.outputs.OPERATOR_INDEX_RESOLVED"}'
 
   ohio-image-k8s:
     name: "Release / k8s ohio image"
@@ -361,3 +382,38 @@ jobs:
         run: |
           echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
           scripts/ci/trigger-operatorhubio-ci.sh
+
+
+
+
+
+  webhook-to-sign-indexes:
+    runs-on: ubuntu-latest
+    name: Sign indexes
+    needs: [ release-openshift_4_6, release-openshift_4_7, release-openshift_4_8 ]
+    strategy:
+      matrix:
+        index-tag: [ v4.6, v4.7, v4.8, latest ]
+    steps:
+      - name: Prepare variables
+        id: openshift-vars
+        run: |
+            docker login quay.io -u j0zi -p $QUAY
+            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
+            OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
+            OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
+            echo $OPERATOR_INDEX_RESOLVED
+            echo $OPERATOR_INDEX
+        env:
+              QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
+              OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+              QUAY: ${{ secrets.QUAY_J }}
+
+      - name: Initialize sign process
+        uses: distributhor/workflow-webhook@v1
+        env:
+           INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
+           webhook_type: 'json-extended'
+           webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
+           webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+           data: '{"index_image": "steps.openshift-vars.outputs.OPERATOR_INDEX", "index_image_resolved": "steps.openshift-vars.outputs.OPERATOR_INDEX_RESOLVED"}'
