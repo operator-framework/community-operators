@@ -8,12 +8,12 @@ jobs:
   webhook-to-sign-indexes:
     runs-on: ubuntu-latest
     name: Sign indexes
-    strategy:
-      matrix:
-        index-tag: [ v4.6, v4.7, v4.8, latest ]
+#    strategy:
+#      matrix:
+#        index-tag: [ v4.6, v4.7, v4.8, latest ]
     steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 #      - name: Prepare prereqs for signature job
 #        id: sig-prereq
 #        run: |
@@ -22,7 +22,7 @@ jobs:
       - name: Prepare variables
         id: openshift-vars
         run: |
-            docker login quay.io -u j0zi -p $QUAY
+            docker login quay.io -u $QUAY_USER -p $QUAY_PW
             OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
             OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
             OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
@@ -32,7 +32,8 @@ jobs:
             echo "::set-output name=operator_index::${OPERATOR_INDEX}"
         env:
               QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
-              OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+#              OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+              OPERATOR_INDEX_TAG: "latest"
               QUAY: ${{ secrets.QUAY_J }}
       - id: test-webhook
         uses:  ./
