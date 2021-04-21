@@ -201,6 +201,8 @@ jobs:
             OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
             echo $OPERATOR_INDEX_RESOLVED
             echo $OPERATOR_INDEX
+            echo "::set-output name=operator_index_resolved::${OPERATOR_INDEX_RESOLVED}"
+            echo "::set-output name=operator_index::${OPERATOR_INDEX}"
           env:
             QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
@@ -213,7 +215,7 @@ jobs:
             webhook_type: 'json-extended'
             webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
             webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
-            data: '{"index_image": "steps.openshift-vars.outputs.OPERATOR_INDEX", "index_image_resolved": "steps.openshift-vars.outputs.OPERATOR_INDEX_RESOLVED"}'
+            data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}
 
   ohio-image-k8s:
     name: "Release / k8s ohio image"
@@ -242,7 +244,7 @@ jobs:
       OHIO_REGISTRY_IMAGE: "quay.io/operator-framework/upstream-community-operators:dev"
     steps:
       - name: Prepare variables for the sign process
-        id: openshift-vars
+        id: openshift-vars-latest
         run: |
           docker login quay.io -u $QUAY_USER -p $QUAY_PW
           OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
@@ -250,6 +252,8 @@ jobs:
           OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
           echo $OPERATOR_INDEX_RESOLVED
           echo $OPERATOR_INDEX
+          echo "::set-output name=operator_index_resolved_latest::${OPERATOR_INDEX_RESOLVED}"
+          echo "::set-output name=operator_index_latest::${OPERATOR_INDEX}"
         env:
           QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
           OPERATOR_INDEX_TAG: "latest"
@@ -262,7 +266,7 @@ jobs:
           webhook_type: 'json-extended'
           webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
           webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
-          data: '{"index_image": "steps.openshift-vars.outputs.OPERATOR_INDEX", "index_image_resolved": "steps.openshift-vars.outputs.OPERATOR_INDEX_RESOLVED"}'
+          data: "{\"index_image\": \"${{ steps.openshift-vars-latest.outputs.operator_index_latest }}\", \"index_image_resolved\": \"${{ steps.openshift-vars-latest.outputs.operator_index_resolved_latest }}\"}"
 
       - name: Checkout code
         uses: actions/checkout@v2
