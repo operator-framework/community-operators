@@ -1,0 +1,37 @@
+on: 
+  workflow_dispatch:
+    inputs:
+      kubernetes:
+        description: 'Sync index sha for kuberentes'     
+        required: true
+        default: '0'
+      openshift:
+        description: 'Sync index sha for openshift'     
+        required: true
+        default: '0'
+env:
+  OP_TEST_CONTAINER_OPT: "-t"
+  SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/test.sh"
+  QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
+  QUAY_API_TOKEN_OPERATORHUBIO: ${{ secrets.QUAY_API_TOKEN_OPERATORHUBIO }}
+  
+jobs:
+  k8s-index-sha:
+    if: github.event.inputs.kubernetes == '1'
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        echo "kubernetes: ${{ github.event.inputs.kubernetes }} latest"
+        bash <(curl -sL $SCRIPT_URL) kubernetes latest
+
+  o7t-index-sha:
+    if: github.event.inputs.openshift == '1'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        index-tag: [ v4.6, v4.7, v4.8 ]
+      fail-fast: false
+    steps:
+    - run: |
+        echo "openshift: ${{ github.event.inputs.openshift }} ${{ matrix.index-tag }}"
+        bash <(curl -sL $SCRIPT_URL) openshift ${{ matrix.index-tag }}
