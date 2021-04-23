@@ -185,7 +185,7 @@ $ tree .
 │   └── my-operator.v2.0.0.clusterserviceversion.yaml
 ├── metadata
 │   └── annotations.yaml
-└── bundle.Dockerfile
+└── Dockerfile
 ```
 Run the following validation command of the `operator-sdk` from within this directory.
 

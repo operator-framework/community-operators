@@ -138,7 +138,7 @@ $ tree .
 │   └── my-operator.v2.0.0.clusterserviceversion.yaml
 ├── metadata
 │   └── annotations.yaml
-└── bundle.Dockerfile
+└── Dockerfile
 ```
 
 You can verify the generated bundle metadata for semantic correctness with the the `operator-sdk` on this directory.
