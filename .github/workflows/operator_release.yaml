@@ -212,7 +212,7 @@ jobs:
             QUAY_PW: ${{ secrets.QUAY_J }}
             QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
         - name: Initialize sign process
-          uses: distributhor/workflow-webhook@v1
+          uses: scripts/actions/webhook
           env:
             INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
             webhook_type: 'json-extended'
@@ -246,6 +246,8 @@ jobs:
       OHIO_INPUT_CATALOG_IMAGE: "quay.io/openshift-community-operators/catalog:v4.8"
       OHIO_REGISTRY_IMAGE: "quay.io/operator-framework/upstream-community-operators:dev"
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Prepare variables for the sign process
         id: openshift-vars-latest
         run: |
@@ -263,16 +265,13 @@ jobs:
           QUAY_PW: ${{ secrets.QUAY_J }}
           QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
       - name: Initialize sign process
-        uses: distributhor/workflow-webhook@v1
+        uses: scripts/actions/webhook
         env:
           INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
           webhook_type: 'json-extended'
           webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
           webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
           data: "{\"index_image\": \"${{ steps.openshift-vars-latest.outputs.operator_index_latest }}\", \"index_image_resolved\": \"${{ steps.openshift-vars-latest.outputs.operator_index_resolved_latest }}\"}"
-
-      - name: Checkout code
-        uses: actions/checkout@v2
       - name: Ohio image
         run: |
           echo "ohio_image ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
