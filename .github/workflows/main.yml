@@ -13,8 +13,8 @@ jobs:
 #        index-tag: [ v4.6, v4.7, v4.8, latest ]
     steps:
 #
-#      - name: Checkout code
-#        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Prepare variables
         id: openshift-vars
         run: |
@@ -32,25 +32,25 @@ jobs:
               OPERATOR_INDEX_TAG: "latest"
               QUAY_PW: ${{ secrets.QUAY_J }}
               QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
-      - name: Webhook
-        uses: navied/secure-actions-webhook@0.2.0
-        with:
-          url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
-          data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}"
-          hmacSecret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
-#      - id: test-webhook
-#        uses:  ./
-#        env:
-#          webhook_type: 'json-extended'
-#          webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
-#          webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+#      - name: Webhook
+#        uses: navied/secure-actions-webhook@0.2.0
+#        with:
+#          url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
 #          data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}"
-#          continue-on-error: true
-#      - name: Report Hydra API failure
-#        if: failure()
-#        run: |
-#            echo "Please check Hydra service here https://api.enterprise.redhat.com/hydra/umb-bridge/health"
-#            exit 1
+#          hmacSecret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+      - id: test-webhook
+        uses:  ./
+        env:
+          webhook_type: 'json-extended'
+          webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
+          webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+          data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}"
+          continue-on-error: true
+      - name: Report Hydra API failure
+        if: failure()
+        run: |
+            echo "Please check Hydra service here https://api.enterprise.redhat.com/hydra/umb-bridge/health"
+            exit 1
 #
 ###      - name: Webhook Action test 5
 ###        uses: distributhor/workflow-webhook@v1
