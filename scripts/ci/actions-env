@@ -279,11 +279,13 @@ OP_TEST_OPERATOR_VERSIONS_ALL_COUNT=0
 # echo "::set-output name=op_test_set_label_operator_version_overwrite::0"
 # echo "::set-output name=op_test_set_label_operator_recreate::0"
 
-[[ $OPRT -eq 0 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && { echo "Error: Multiple versions [$OP_TEST_OPERATOR_VERSIONS] were modified and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::5"; exit 1;  }
-
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -eq 1 ]] && [[ $OP_TEST_IS_MODIFIED -eq 1 ]] && OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=1
+[[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -eq 1 ]] && [[ $OP_TEST_IS_MODIFIED -eq 1 ]] && [ -n "$OP_TEST_OPERATOR_VERSIONS_REMOVED" ] && OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=1 && OP_TEST_VER_OVERWRITE=1 && OP_TEST_RECREATE=0
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && OP_TEST_SET_LABEL_OPERATOR_RECREATE=1 && OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=0 && OP_TEST_VER_OVERWRITE=1 && OP_TEST_RECREATE=0
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_ALL_COUNT -eq 1 ]] && OP_TEST_IS_NEW_OPERATOR=1 && OP_TEST_RECREATE=1 && OP_TEST_SET_LABEL_OPERATOR_RECREATE=1 && OP_TEST_VER_OVERWRITE=0 && OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE=0
+
+# [[ $OPRT -eq 0 ]] && [[ $OP_TEST_OPERATOR_VERSIONS_COUNT -gt 1 ]] && [[ ! $OP_TEST_RECREATE -eq 1 ]] && { echo "Error: Multiple versions [$OP_TEST_OPERATOR_VERSIONS] were modified and 'allow/operator-recreate' is NOT set !!! Please set it first !!! Exiting ..."; echo "::set-output name=op_test_error_code::5"; exit 1;  }
+
 
 [[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; echo "::set-output name=op_test_error_code::1"; exit 1; }
 
@@ -371,6 +373,9 @@ echo "op_test_ci_yaml_only=$OP_TEST_CI_YAML_ONLY"
 echo "op_test_op_delete=$OP_TEST_OP_DELETE"
 echo "op_test_ver_overwrite=$OP_TEST_VER_OVERWRITE"
 echo "op_test_recreate=${OP_TEST_RECREATE}"
+echo "op_test_set_label_operator_version_overwrite::$OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE"
+echo "op_test_set_label_operator_recreate::$OP_TEST_SET_LABEL_OPERATOR_RECREATE"
+
 echo "op_test_error_code=$OP_TEST_ERROR_CODE"
 echo "op_test_authorized_changes=$OP_TEST_AUTHORIZED_CHANGES"
 
@@ -383,7 +388,6 @@ echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
 echo "::set-output name=op_test_versions::${OP_TEST_OPERATOR_VERSIONS}"
 echo "::set-output name=op_test_is_new_operatror::${OP_TEST_IS_NEW_OPERATOR}"
 echo "::set-output name=op_test_pr_title::${OP_TEST_PR_TITLE}"
-
 
 echo "::set-output name=op_test_ci_yaml_only::${OP_TEST_CI_YAML_ONLY}"
 echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
