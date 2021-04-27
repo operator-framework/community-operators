@@ -1,0 +1,658 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "rp5.reportportal.io/v1",
+          "kind": "ReportPortal",
+          "metadata": {
+            "name": "reportportal-sample"
+          },
+          "spec": {
+            "analyzer_image": "quay.io/waynesun09/service-auto-analyzer:5.3.5",
+            "api_image": "quay.io/waynesun09/service-api:5.3.5-rootless",
+            "api_replicas": 1,
+            "app_domain": "apps.test-example.com",
+            "enable_pg_restic_backup": "yes",
+            "es_backup_schedule": "@daily",
+            "es_s3_backup_dir": "s3_backup",
+            "es_snapshot_bucket": "es-snapshot-123123",
+            "gateway_replicas": 1,
+            "index_image": "quay.io/waynesun09/service-index:5.0.10",
+            "index_replicas": 1,
+            "migration_image": "quay.io/waynesun09/migrations:5.3.5",
+            "pg_restic_password": "rp_user",
+            "pg_restic_s3_bucket_init": "yes",
+            "pg_s3_bucket_name": "pgbackup-123123",
+            "uat_image": "quay.io/waynesun09/service-authorization:5.3.5",
+            "ui_image": "quay.io/waynesun09/service-ui:5.3.5",
+            "ui_replicas": 1
+          }
+        },
+        {
+          "apiVersion": "rp5.reportportal.io/v1",
+          "kind": "ReportPortalRestore",
+          "metadata": {
+            "name": "reportportalrestore-sample"
+          },
+          "spec": {
+            "es_restore": "yes",
+            "es_restore_date": "2020-08-07",
+            "es_s3_backup_dir": "s3_backup",
+            "es_snapshot_bucket": "es-snapshot-123123",
+            "pg_recovery": "yes",
+            "pg_recovery_target_time": "2020-08-07 00:00:00",
+            "pg_restic_password": "rp_user",
+            "pg_s3_bucket_name": "pgbackup-123123"
+          }
+        },
+        {
+          "apiVersion": "rp5.reportportal.io/v1",
+          "kind": "ServiceApiServiceMonitor",
+          "metadata": {
+            "name": "serviceapiservicemonitor-sample"
+          },
+          "spec": {
+            "bearer_token_secret_key": "token",
+            "bearer_token_secret_name": "rp-user-auth"
+          }
+        }
+      ]
+    capabilities: Deep Insights
+    categories: Integration & Delivery
+    certified: "false"
+    containerImage: quay.io/waynesun09/rp5-operator:v0.0.7
+    createdAt: "2021-04-22 14:39:00"
+    repository: https://github.com/waynesun09/reportportal-operator
+    support: waynesun09
+    operators.operatorframework.io/builder: operator-sdk-v2.0.0+git
+    operators.operatorframework.io/project_layout: ansible.sdk.operatorframework.io/v1
+  name: reportportal-operator.v0.0.7
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: ReportPortalRestore
+      description: ReportPortal Restore from s3 backup
+      name: reportportalrestores.rp5.reportportal.io
+      version: v1
+      resources:
+      - kind: Pods
+        name: ""
+        version: v1
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: ReportPortalRestores
+        name: reportportalrestores.rp5.reportportal.io
+        version: v1
+      specDescriptors:
+      - description: Enable Postgres recovery, need be 'yes' or 'no'
+        displayName: Enable Postgres recovery
+        path: pg_recovery
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Postgres recovery target time, need be unique and valid time,
+          e.g. '2020-08-05 08:20:00 UTC'
+        displayName: The Postgres recovery target time
+        path: pg_recovery_target_time
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The s3 Postgres bucket name, need be unique and valid bucket
+          name
+        displayName: The s3 Postgres bucket name
+        path: pg_s3_bucket_name
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The s3 Postgres bucket restic password
+        displayName: Restic password
+        path: pg_restic_password
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot path dir, if set the snapshot will
+          be enabled
+        displayName: Elasticsearch snapshot path dir
+        path: es_s3_backup_dir
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot s3 bucket name
+        displayName: Elasticsearch snapshot s3 bucket name
+        path: es_snapshot_bucket
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: Enable elasticsearch snapshot restore, need be 'yes' or 'no'
+        displayName: Enable elasticsearch snapshot restore
+        path: es_restore
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The elasticsearch snapshot restore date, need be unique and valid time, e.g. '2020-08-05'
+        displayName: Elasticsearch snapshot restore date
+        path: es_restore_date
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+    - kind: ReportPortal
+      description: ReportPortal v5 Deployment with ReportPortal Operator
+      name: reportportals.rp5.reportportal.io
+      version: v1
+      resources:
+      - kind: Pods
+        name: ""
+        version: v1
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: ReportPortals
+        name: reportportals.rp5.reportportal.io
+        version: v1
+      - kind: ReplicaSets
+        name: ""
+        version: v1
+      - kind: Deployments
+        name: ""
+        version: v1
+      - kind: Services
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Clustser default sub domain hostname for the apps, if specified
+          route will be created with $namespace-reportportal.$app_domain.
+        displayName: App route base domain name
+        path: app_domain
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: service-ui container image url
+        displayName: service-ui container image
+        path: ui_image
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: Replicas number for service-ui component
+        displayName: RP service-ui replicas
+        path: ui_replicas
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:number
+      - description: service-api container image url
+        displayName: service-api container image
+        path: api_image
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: Replicas number for service-api component
+        displayName: RP service-api replicas
+        path: api_replicas
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:number
+      - description: migrations container image url
+        displayName: migrations container image
+        path: migration_image
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: service-authorization container image url
+        displayName: service-authorization container image
+        path: uat_image
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: service-auto-analyzer container image url
+        displayName: service-auto-analyzer container image
+        path: analyzer_image
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: service-index container image url
+        displayName: service-index container image
+        path: index_image
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: Replicas number for service-index component
+        displayName: RP service-index replicas
+        path: index_replicas
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:number
+      - description: Replicas number for gateway component
+        displayName: RP gateway replicas
+        path: gateway_replicas
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:number
+      - description: Whether to enable Postgres backup via restic, yes or no
+        displayName: Whether to enable Postgres backup via restic
+        path: enable_pg_restic_backup
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: Whether to init the Postgres bucket, yes or no
+        displayName: Whether to init the Postgres bucket
+        path: pg_restic_s3_bucket_init
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The s3 Postgres bucket name, need be unique and valid bucket
+          name
+        displayName: The s3 Postgres bucket name
+        path: pg_s3_bucket_name
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The s3 Postgres bucket restic password
+        displayName: Restic password
+        path: pg_restic_password
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot path dir, if set the snapshot will
+          be enabled
+        displayName: Elasticsearch snapshot path dir
+        path: es_s3_backup_dir
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot s3 bucket name
+        displayName: Elasticsearch snapshot s3 bucket name
+        path: es_snapshot_bucket
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The Elasticsearch snapshot to s3 bucket schedule, crontab schedule
+          format
+        displayName: Elasticsearch snapshot to s3 bucket schedule
+        path: es_backup_schedule
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      statusDescriptors:
+      - description: Conditions provided by deployment
+        displayName: Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+    - kind: ServiceApiServiceMonitor
+      description: ReportPortal service-api ServiceMonitor for metrics
+      name: serviceapiservicemonitors.rp5.reportportal.io
+      version: v1
+      resources:
+      - kind: Pods
+        name: ""
+        version: v1
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: serviceapiservicemonitors
+        name: serviceapiservicemonitors.rp5.reportportal.io
+        version: v1
+      specDescriptors:
+      - description: ReportPortal bearer token secret name
+        displayName: ReportPortal bearer token secret name
+        path: bearer_token_secret_name
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+      - description: The key in ReportPortal bearer token secret
+        displayName: The key in ReportPortal bearer token secret
+        path: bearer_token_secret_key
+        x-descriptors:
+        - urn:alm:descriptor:tectonic.ui:text
+  description: |-
+    ReportPortal is a test automation analytics platform. ReportPortal Operator support instantiating the ReportPortal services and required dependencies.
+
+    What services are included:
+
+        - Report Portal v5.3
+        - PostgreSQL
+        - Elasticsearch
+        - RabbitMQ
+        - Minio
+
+    The Operator also support data backup & restore and metrics monitoring.
+
+    ## Install
+
+    Install the Operator to a namespace, then create ReportPortal v5 instance under Provided APIs on the UI, all Report Portal v5 services and dependencies will be installed.
+
+    ## Data backup and restore
+
+    The Report Portal v5 data backup and restore in the operator include two parts, PostgreSQL database data and Elasticsearch index data.
+
+    The Operator support automatically data backup and restore for both.
+
+    ### PostgreSQL database WAL archiving and recovery
+
+    The Operator supports PostgreSQL WAL archiving and recovery point-in-time via Minio S3 using restic.
+
+    #### WAL archiving
+
+    When deploy Report Portal v5 instance, make sure `enable_pg_restic_backup` option is set as `yes`, then the WAL archiving will be enabled when initiate the database, the WAL archive data will be automatically backup to S3 storage via Minio using restic command.
+
+    Parameter `pg_restic_s3_bucket_init` is for init the bucket if not exist, `pg_s3_bucket_name` is the bucket name and `pg_restic_password` is the restic password for encryption.
+
+    #### WAL recovery
+
+    WAL archive recovery will download all WAL archive files to the Postgres container and restore point-in-time.
+
+    To restore PostgreSQL database point-in-time, on Operator UI select `ReportPortalRestore` under Provided APIs to create ReportPortalRestore operand.
+
+    After the ReportPortalRestore operand created, the PG WAL restore will get started, as restore time will base on the database size, the process will last in minutes, hours or days.
+
+    **Note:** Current Postgres container liveless probe timeout is set as one hour in the postgresql statefulset, it might cause restore fail if restore time is longer than one hour, so it might need be adjusted to be longer.
+
+    ### Elasticsearch snapshot and restore
+
+    The operator supports elasticsearch snapshot and restore with data saved in S3 bucket via Minio, the elasticsearch container have installed the s3 repository plugin.
+
+    #### Snapshot
+
+    When deploy Report Portal v5 instance, make sure following elasticsearch parameters are set:
+
+        es_s3_backup_dir: s3_backup
+        es_snapshot_bucket: es-snapshot-123123
+        es_backup_schedule: '@daily'
+
+    #### Restore
+
+    Elasticsearch restore support restore to certain date as default snapshot schedule is daily.
+
+    To restore elasticsearch from snapshot, on Operator UI select `ReportPortalRestore` under Provided APIs to create ReportPortalRestore operand.
+
+    The backup dir and bucket name should be same as when create the RP instance, `es_restore` need set to `yes` to enable the restore and `es_restore_date` is the restore target date.
+
+    The restore time will also be depend on the snapshot size.
+
+    ## Metrics
+
+    The operator by default have enabled metrics, the default ansible operator port 8080 is used for the operator container.
+
+    All Report Portal v5 depended services, rabbitmq, minio, postgresql and elasticsearch have metrics enabled in this operator.
+
+    The Report Portal gatway service have metrics enabled.
+
+    By default several ServiceMonitors have been defined when create ReportPortal v5 operand:
+
+        $ oc get servicemonitor
+        NAME                    AGE
+        elasticsearch-metrics   1d21h
+        gateway-metrics         1d21h
+        minio-metrics           1d21h
+        postgres-metrics        1d21h
+        rabbitmq-metrics        1d21h
+
+    To export Report Portal v5 service-api metrics with ServiceMonitor, create a `secret` with RP user api token. The api access token could be found with login to Report Portal -> Click user icon -> Profile.
+
+    Then select `ServiceApiServiceMonitor` under provided APIs to Create Instance on operator UI.
+
+    Input the secret name and key name that have been created, and click create, a api-metrics servicemonitor will be created.
+
+    To check the metrics, if [user workload monitoring](https://docs.openshift.com/container-platform/4.5/monitoring/monitoring-your-own-services.html) is enabled on the cluster, click to Monitoring on OpenShift UI and navigate to Metrics, where you could query the metrics.
+
+    You could also deploy Promethues Operator in the current project and query via it.
+
+    ## Doc
+
+    More detail with installation, data backup & restore and metrics could be found at https://github.com/waynesun09/reportportal-operator#reportportal-operator
+
+  displayName: reportportal-operator
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6b3NiPSJodHRwOi8vd3d3Lm9wZW5zd2F0Y2hib29rLm9yZy91cmkvMjAwOS9vc2IiCiAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgeG1sbnM6Y2M9Imh0dHA6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL25zIyIKICAgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIgogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB3aWR0aD0iMi4wNzY2N2luIgogICBoZWlnaHQ9IjEuMDAzMzNpbiIKICAgdmlld0JveD0iMCAwIDYyMyAzMDEiCiAgIHZlcnNpb249IjEuMSIKICAgaWQ9InN2ZzMiCiAgIHNvZGlwb2RpOmRvY25hbWU9InRlc3QxLnN2ZyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4wLjEgKDNiYzJlODEzZjUsIDIwMjAtMDktMDcpIj4KICA8bWV0YWRhdGEKICAgICBpZD0ibWV0YWRhdGE5Ij4KICAgIDxyZGY6UkRGPgogICAgICA8Y2M6V29yawogICAgICAgICByZGY6YWJvdXQ9IiI+CiAgICAgICAgPGRjOmZvcm1hdD5pbWFnZS9zdmcreG1sPC9kYzpmb3JtYXQ+CiAgICAgICAgPGRjOnR5cGUKICAgICAgICAgICByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIiAvPgogICAgICAgIDxkYzp0aXRsZT48L2RjOnRpdGxlPgogICAgICA8L2NjOldvcms+CiAgICA8L3JkZjpSREY+CiAgPC9tZXRhZGF0YT4KICA8ZGVmcwogICAgIGlkPSJkZWZzNyI+CiAgICA8bGluZWFyR3JhZGllbnQKICAgICAgIGlkPSJsaW5lYXJHcmFkaWVudDI4NDAiCiAgICAgICBvc2I6cGFpbnQ9InNvbGlkIj4KICAgICAgPHN0b3AKICAgICAgICAgc3R5bGU9InN0b3AtY29sb3I6IzAwZmYwMDtzdG9wLW9wYWNpdHk6MTsiCiAgICAgICAgIG9mZnNldD0iMCIKICAgICAgICAgaWQ9InN0b3AyODM4IiAvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudAogICAgICAgaW5rc2NhcGU6Y29sbGVjdD0iYWx3YXlzIgogICAgICAgeGxpbms6aHJlZj0iI2xpbmVhckdyYWRpZW50Mjg0MCIKICAgICAgIGlkPSJsaW5lYXJHcmFkaWVudDI4NDIiCiAgICAgICB4MT0iNzkuMjYwMDk0IgogICAgICAgeTE9IjM3LjA5NDE4NiIKICAgICAgIHgyPSIxNDAuMTA5MDIiCiAgICAgICB5Mj0iMzcuMDk0MTg2IgogICAgICAgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIC8+CiAgPC9kZWZzPgogIDxzb2RpcG9kaTpuYW1lZHZpZXcKICAgICBwYWdlY29sb3I9IiNmZmZmZmYiCiAgICAgYm9yZGVyY29sb3I9IiM2NjY2NjYiCiAgICAgYm9yZGVyb3BhY2l0eT0iMSIKICAgICBvYmplY3R0b2xlcmFuY2U9IjEwIgogICAgIGdyaWR0b2xlcmFuY2U9IjEwIgogICAgIGd1aWRldG9sZXJhbmNlPSIxMCIKICAgICBpbmtzY2FwZTpwYWdlb3BhY2l0eT0iMCIKICAgICBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIgogICAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgICBpbmtzY2FwZTp3aW5kb3ctaGVpZ2h0PSIxMDE2IgogICAgIGlkPSJuYW1lZHZpZXc1IgogICAgIHNob3dncmlkPSJmYWxzZSIKICAgICBpbmtzY2FwZTpzbmFwLW5vZGVzPSJ0cnVlIgogICAgIGlua3NjYXBlOnpvb209IjYuNjExMTQ1MyIKICAgICBpbmtzY2FwZTpjeD0iNzAuNTYyNjYiCiAgICAgaW5rc2NhcGU6Y3k9IjQ4LjAwODU4IgogICAgIGlua3NjYXBlOndpbmRvdy14PSIwIgogICAgIGlua3NjYXBlOndpbmRvdy15PSIwIgogICAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjEiCiAgICAgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ic3ZnMyIgLz4KICA8cGF0aAogICAgIGlkPSJTZWxlY3Rpb24iCiAgICAgZmlsbD0ibm9uZSIKICAgICBzdHJva2U9ImJsYWNrIgogICAgIHN0cm9rZS13aWR0aD0iMSIKICAgICBkPSJNIDYuMDAsMTQuMDAgICAgICAgICAgICBDIDYuMDAsMTQuMDAgMTE1LjAwLDE0LjAwIDExNS4wMCwxNC4wMCAgICAgICAgICAgICAgMTM4LjQ5LDE0LjAwIDE2NC41NCwxMi44MCAxODYuMDAsMjQuMTIgICAgICAgICAgICAgIDIxMy4wOSwzOC40MSAyMTkuNTgsNzQuMDkgMjAzLjQ1LDk5LjAwICAgICAgICAgICAgICAxOTUuMTMsMTExLjg1IDE3OC4xMCwxMjEuODcgMTYzLjAwLDEyNC4wMCAgICAgICAgICAgICAgMTYzLjAwLDEyNC4wMCAxODkuMDAsMTU4LjAwIDE4OS4wMCwxNTguMDAgICAgICAgICAgICAgIDIwMy4zNywxNzYuMjkgMjA5Ljc0LDE5MC45NCAyMzUuMDAsMTkzLjAwICAgICAgICAgICAgICAyMzUuMDAsMTkzLjAwIDIzNS4wMCwyMTguMDAgMjM1LjAwLDIxOC4wMCAgICAgICAgICAgICAgMjM1LjAwLDIxOC4wMCAxNzIuMDAsMjE4LjAwIDE3Mi4wMCwyMTguMDAgICAgICAgICAgICAgIDE3Mi4wMCwyMTguMDAgMTY0LjQ2LDIxNy4wMSAxNjQuNDYsMjE3LjAxICAgICAgICAgICAgICAxNjQuNDYsMjE3LjAxIDE0Ny4xNSwxOTUuMDAgMTQ3LjE1LDE5NS4wMCAgICAgICAgICAgICAgMTQ3LjE1LDE5NS4wMCAxMTEuNjMsMTQ3LjAwIDExMS42MywxNDcuMDAgICAgICAgICAgICAgIDExMS42MywxNDcuMDAgOTguODMsMTMxLjYwIDk4LjgzLDEzMS42MCAgICAgICAgICAgICAgOTguODMsMTMxLjYwIDkzLjAwLDEzMS4wMCA5My4wMCwxMzEuMDAgICAgICAgICAgICAgIDkzLjAwLDEzMS4wMCA4NS4wMCwxMzEuMDAgODUuMDAsMTMxLjAwICAgICAgICAgICAgICA4NS4wMCwxMzEuMDAgODUuMDAsMTY4LjAwIDg1LjAwLDE2OC4wMCAgICAgICAgICAgICAgODUuMDYsMTczLjI0IDg1LjkxLDE4MS43NyA4OS40MiwxODUuODEgICAgICAgICAgICAgIDk0LjE2LDE5MS4yOSAxMDUuMDcsMTkyLjY4IDExMi4wMCwxOTMuMDAgICAgICAgICAgICAgIDExMi4wMCwxOTMuMDAgMTEyLjAwLDIxOC4wMCAxMTIuMDAsMjE4LjAwICAgICAgICAgICAgICAxMTIuMDAsMjE4LjAwIDYuMDAsMjE4LjAwIDYuMDAsMjE4LjAwICAgICAgICAgICAgICA2LjAwLDIxOC4wMCA2LjAwLDE5My4wMCA2LjAwLDE5My4wMCAgICAgICAgICAgICAgMjIuNTQsMTkxLjY2IDMxLjkxLDE4OC42NiAzMi4wMCwxNzAuMDAgICAgICAgICAgICAgIDMyLjAwLDE3MC4wMCAzMi4wMCw2My4wMCAzMi4wMCw2My4wMCAgICAgICAgICAgICAgMzEuOTksNTkuNzMgMzIuMDcsNTcuMjQgMzEuMzIsNTQuMDAgICAgICAgICAgICAgIDI4LjI5LDQwLjkwIDE3LjA4LDQwLjQ2IDYuMDAsMzkuMDAgICAgICAgICAgICAgIDYuMDAsMzkuMDAgNi4wMCwxNC4wMCA2LjAwLDE0LjAwIFogICAgICAgICAgICBNIDI0Ny4wMCwxNC4wMCAgICAgICAgICAgIEMgMjQ3LjAwLDE0LjAwIDM1MC4wMCwxNC4wMCAzNTAuMDAsMTQuMDAgICAgICAgICAgICAgIDM3MC40MSwxNC4wMCAzOTIuNzIsMTIuNjEgNDExLjAwLDIzLjQ1ICAgICAgICAgICAgICA0NDUuNTAsNDMuOTEgNDQ5LjAwLDk4LjkyIDQxNy4wMCwxMjEuMTAgICAgICAgICAgICAgIDM5MS4xNiwxMzkuMDAgMzU1LjkwLDEzNi4wMCAzMjYuMDAsMTM2LjAwICAgICAgICAgICAgICAzMjYuMDAsMTM2LjAwIDMyNi4wMCwxNjguMDAgMzI2LjAwLDE2OC4wMCAgICAgICAgICAgICAgMzI2LjA3LDE3My44MyAzMjYuOTQsMTgyLjUwIDMzMS4yMiwxODYuNzggICAgICAgICAgICAgIDMzNS43NywxOTEuMzIgMzQ2LjcyLDE5Mi43MSAzNTMuMDAsMTkzLjAwICAgICAgICAgICAgICAzNTMuMDAsMTkzLjAwIDM1My4wMCwyMTguMDAgMzUzLjAwLDIxOC4wMCAgICAgICAgICAgICAgMzUzLjAwLDIxOC4wMCAyNDcuMDAsMjE4LjAwIDI0Ny4wMCwyMTguMDAgICAgICAgICAgICAgIDI0Ny4wMCwyMTguMDAgMjQ3LjAwLDE5My4wMCAyNDcuMDAsMTkzLjAwICAgICAgICAgICAgICAyNjMuNTMsMTkyLjI0IDI3Mi45MSwxODguMTYgMjczLjAwLDE3MC4wMCAgICAgICAgICAgICAgMjczLjAwLDE3MC4wMCAyNzMuMDAsNjMuMDAgMjczLjAwLDYzLjAwICAgICAgICAgICAgICAyNzIuOTksNTkuNzMgMjczLjA3LDU3LjI0IDI3Mi4zMiw1NC4wMCAgICAgICAgICAgICAgMjY5LjI5LDQwLjkwIDI1OC4wOCw0MC40NiAyNDcuMDAsMzkuMDAgICAgICAgICAgICAgIDI0Ny4wMCwzOS4wMCAyNDcuMDAsMTQuMDAgMjQ3LjAwLDE0LjAwIFogICAgICAgICAgICBNIDg1LjAwLDEwMi4wMCAgICAgICAgICAgIEMgODUuMDAsMTAyLjAwIDEwMS4wMCwxMDIuMDAgMTAxLjAwLDEwMi4wMCAgICAgICAgICAgICAgMTA1Ljk3LDEwMS45OCAxMjEuNDEsMTAwLjcwIDEyNi4wMCw5OS41MiAgICAgICAgICAgICAgMTMxLjY4LDk4LjA2IDEzNy4zMCw5NS42NiAxNDEuNTYsOTEuNTMgICAgICAgICAgICAgIDE0Ny43MCw4NS41OSAxNTAuMzAsNzguNDUgMTQ5Ljk2LDcwLjAwICAgICAgICAgICAgICAxNDkuMDQsNDcuMjUgMTI5LjYyLDQyLjgyIDExMS4wMCw0Mi4wNCAgICAgICAgICAgICAgMTA1LjMyLDQxLjgwIDkwLjU4LDQyLjYyIDg3LjA5LDQ3LjM5ICAgICAgICAgICAgICA4NC44Miw1MC40OCA4NS4wMSw1NS4zNCA4NS4wMCw1OS4wMCAgICAgICAgICAgICAgODUuMDAsNTkuMDAgODUuMDAsMTAyLjAwIDg1LjAwLDEwMi4wMCBaICAgICAgICAgICAgTSAzMjYuMDAsMTA4LjAwICAgICAgICAgICAgQyAzMzUuNTYsMTA4LjA5IDM0NC41MiwxMDguOTYgMzU0LjAwLDEwNi41MiAgICAgICAgICAgICAgMzYwLjAxLDEwNC45OCAzNjYuMzgsMTAyLjA3IDM3MC45Niw5Ny44MiAgICAgICAgICAgICAgMzg2LjAyLDgzLjg0IDM4Mi4zNSw1NS4zOCAzNjQuMDAsNDUuOTkgICAgICAgICAgICAgIDM1Ni41Miw0Mi4xNiAzNDYuMTksNDEuMTcgMzM4LjAwLDQyLjgxICAgICAgICAgICAgICAzMzQuNjMsNDMuNDggMzMwLjkyLDQ0LjMyIDMyOC43NCw0Ny4yMiAgICAgICAgICAgICAgMzI2LjI0LDUwLjU1IDMyNi4wMSw1OC44NSAzMjYuMDAsNjMuMDAgICAgICAgICAgICAgIDMyNi4wMCw2My4wMCAzMjYuMDAsMTA4LjAwIDMyNi4wMCwxMDguMDAgWiAgICAgICAgICAgIE0gNTE0LjAwLDY1LjQzICAgICAgICAgICAgQyA1MzcuMjQsNjIuNTYgNTY3LjU3LDY2Ljk3IDU4Ni4wMCw4Mi4zMiAgICAgICAgICAgICAgNTk1LjkyLDkwLjU5IDYwMi43MywxMDAuMDcgNjA3LjU1LDExMi4wMCAgICAgICAgICAgICAgNjE5LjI2LDE0MS4wMCA2MTIuODUsMTgyLjE1IDU4OC4wMCwyMDIuNTQgICAgICAgICAgICAgIDU2Ny4wOCwyMTkuNjkgNTQ2Ljc0LDIyMS4zMCA1MjEuMDAsMjIxLjAwICAgICAgICAgICAgICA1MDEuNjQsMjIwLjc3IDQ3OC4yMSwyMTEuNDMgNDY1LjE3LDE5Ny4wMCAgICAgICAgICAgICAgNDQzLjE2LDE3Mi42MiA0MzkuNDMsMTI3Ljk2IDQ1Ni40NiwxMDAuMDAgICAgICAgICAgICAgIDQ2OS43Niw3OC4xNiA0ODkuOTEsNjkuMzcgNTE0LjAwLDY1LjQzIFogICAgICAgICAgICBNIDUyNi4wMCw5Ni4zMCAgICAgICAgICAgIEMgNTA2Ljc1LDEwMC4wNiA1MDMuMTQsMTE3LjEzIDUwMS44NywxMzQuMDAgICAgICAgICAgICAgIDUwMS4xNCwxNDQuNTkgNTAwLjczLDE0Mi45MyA1MDEuODcsMTU0LjAwICAgICAgICAgICAgICA1MDIuMzgsMTU5LjQzIDUwMi4xMywxNjAuMjIgNTAzLjQyLDE2Ni4wMCAgICAgICAgICAgICAgNTA2LjQ3LDE3OS42MSA1MTIuMzgsMTkwLjgwIDUyOC4wMCwxOTEuMDAgICAgICAgICAgICAgIDUzMS4zNiwxOTEuMDQgNTM0Ljc3LDE5MS4xNSA1MzguMDAsMTkwLjA4ICAgICAgICAgICAgICA1NTguNzMsMTgzLjIxIDU1Ny4yMCwxNTIuNDAgNTU3LjAwLDEzNS4wMCAgICAgICAgICAgICAgNTU2LjkxLDEyNy4zNyA1NTQuODIsMTE2Ljg4IDU1MS41MSwxMTAuMDAgICAgICAgICAgICAgIDU0Ni40MCw5OS40MCA1MzcuMzksOTUuMjAgNTI2LjAwLDk2LjMwIFogICAgICAgICAgICBNIDAuMDAsMjgxLjAwICAgICAgICAgICAgQyA0LjYwLDI4MS4wMCAxMC43NCwyODEuNDMgMTUuMDAsMjc5Ljg3ICAgICAgICAgICAgICAyNy4wOSwyNzUuNDUgMzYuNjYsMjYzLjM0IDQ2LjA0LDI1NS4wMCAgICAgICAgICAgICAgNDkuODcsMjUxLjYwIDUxLjEzLDI1MS4xNCA1NS4wMCwyNDguNDMgICAgICAgICAgICAgIDYzLjQzLDI0Mi41MyA2OC4yNywyMzcuMDYgNzkuMDAsMjM3LjAwICAgICAgICAgICAgICA3OS4wMCwyMzcuMDAgMTA3LjAwLDIzNy4wMCAxMDcuMDAsMjM3LjAwICAgICAgICAgICAgICAxMTYuMTYsMjM3LjEzIDEyMS4xNCwyNDIuNzMgMTI2LjA1LDI1MC4wMCAgICAgICAgICAgICAgMTI3Ljg0LDI1Mi42NSAxMzEuNzAsMjU5Ljc3IDEzNS4wOCwyNjAuMTIgICAgICAgICAgICAgIDEzNy42MSwyNjAuMzkgMTM5LjkwLDI1Ny42NSAxNDEuMzksMjU1Ljk2ICAgICAgICAgICAgICAxNDQuMzAsMjUyLjY0IDE1MC4xOCwyNDUuNDAgMTU0LjE3LDI0My43NCAgICAgICAgICAgICAgMTU2LjI5LDI0Mi44NSAxNTkuNjgsMjQzLjAwIDE2Mi4wMCwyNDMuMDAgICAgICAgICAgICAgIDE2Mi4wMCwyNDMuMDAgMTg3LjAwLDI0My4wMCAxODcuMDAsMjQzLjAwICAgICAgICAgICAgICAyMDEuMDIsMjQzLjAyIDE5OS40MCwyNDUuODggMjEwLjAwLDI1MS45NCAgICAgICAgICAgICAgMjEwLjAwLDI1MS45NCAyMjIuMDAsMjU3LjU1IDIyMi4wMCwyNTcuNTUgICAgICAgICAgICAgIDIzMS42OCwyNjEuNDcgMjMyLjQ4LDI2MC4xNyAyMzkuMDAsMjYyLjA0ICAgICAgICAgICAgICAyMzkuMDAsMjYyLjA0IDI3Mi4wMCwyNzMuMDAgMjcyLjAwLDI3My4wMCAgICAgICAgICAgICAgMjcyLjAwLDI3My4wMCAyODcuMDAsMjc3LjY3IDI4Ny4wMCwyNzcuNjcgICAgICAgICAgICAgIDI5NS45OCwyODAuNzAgMjk3LjQ5LDI4Mi44NyAzMDguMDAsMjgzLjAwICAgICAgICAgICAgICAzMTkuODYsMjgzLjE0IDMxOC4yNSwyODMuMDcgMzMwLjAwLDI4NS4yNiAgICAgICAgICAgICAgMzM0LjM5LDI4Ni4wOCAzMzkuNjAsMjg3Ljk3IDM0NC4wMCwyODYuOTMgICAgICAgICAgICAgIDM0NC4wMCwyODYuOTMgMzcwLjAwLDI3Ni43MiAzNzAuMDAsMjc2LjcyICAgICAgICAgICAgICAzNzAuMDAsMjc2LjcyIDM5NC4wMCwyNjkuNzQgMzk0LjAwLDI2OS43NCAgICAgICAgICAgICAgNDAwLjQ3LDI2OC4xMiA0MDUuNjksMjY3LjgzIDQxMi4wMCwyNjQuNjIgICAgICAgICAgICAgIDQxNS45MywyNjIuNjIgNDIwLjc0LDI1OC40MSA0MjMuNDcsMjU0Ljk2ICAgICAgICAgICAgICA0MjQuOTUsMjUzLjEwIDQyNi44MCwyNDkuMzAgNDI4LjQ3LDI0OC4xNyAgICAgICAgICAgICAgNDMwLjU3LDI0Ni43NSA0MzQuNTAsMjQ3LjAwIDQzNy4wMCwyNDcuMDAgICAgICAgICAgICAgIDQzNy4wMCwyNDcuMDAgNDYzLjAwLDI0Ny4wMCA0NjMuMDAsMjQ3LjAwICAgICAgICAgICAgICA0NzcuNDksMjQ3LjA3IDQ4MC4zOCwyNTQuNzEgNDg5LjQzLDI2NC4yOCAgICAgICAgICAgICAgNDkyLjQ3LDI2Ny41MCA0OTYuNTgsMjczLjU2IDUwMS4wMCwyNzQuMTQgICAgICAgICAgICAgIDUwMS4wMCwyNzQuMTQgNTExLjAwLDI3My4wNyA1MTEuMDAsMjczLjA3ICAgICAgICAgICAgICA1MTEuMDAsMjczLjA3IDUzOS4wMCwyNjkuNDMgNTM5LjAwLDI2OS40MyAgICAgICAgICAgICAgNTM5LjAwLDI2OS40MyA1NjMuMDAsMjY2LjU3IDU2My4wMCwyNjYuNTcgICAgICAgICAgICAgIDU4NS40MCwyNjMuMjUgNTk5LjcyLDI2MC4wMCA2MjMuMDAsMjYwLjAwICAgICAgICAgICAgICA2MjMuMDAsMjYyLjYyIDYyMy41MCwyNzAuNDAgNjIyLjAxLDI3Mi4yNiAgICAgICAgICAgICAgNjIwLjQ2LDI3NC4yMCA2MTQuNDUsMjc0LjY2IDYxMi4wMCwyNzUuMDAgICAgICAgICAgICAgIDYxMi4wMCwyNzUuMDAgNTg3LjAwLDI3OC41OCA1ODcuMDAsMjc4LjU4ICAgICAgICAgICAgICA1ODcuMDAsMjc4LjU4IDU1Ny4wMCwyODIuNzIgNTU3LjAwLDI4Mi43MiAgICAgICAgICAgICAgNTU3LjAwLDI4Mi43MiA1NDEuMDAsMjg0LjQ2IDU0MS4wMCwyODQuNDYgICAgICAgICAgICAgIDU0MS4wMCwyODQuNDYgNTE0LjAwLDI5MS4xNCA1MTQuMDAsMjkxLjE0ICAgICAgICAgICAgICA1MDUuMzcsMjkzLjcyIDUwOC4wNCwyOTQuOTggNDk4LjAwLDI5NS4wMCAgICAgICAgICAgICAgNDk4LjAwLDI5NS4wMCA0NjkuMDAsMjk1LjAwIDQ2OS4wMCwyOTUuMDAgICAgICAgICAgICAgIDQ2Ni45NSwyOTQuOTYgNDY0LjkyLDI5NC45OCA0NjMuMDUsMjkzLjk4ICAgICAgICAgICAgICA0NTguMDUsMjkxLjMwIDQ1Mi45NiwyNzcuNTMgNDQ1LjAwLDI3Ny40NCAgICAgICAgICAgICAgNDQ1LjAwLDI3Ny40NCA0MzIuMDAsMjgwLjU4IDQzMi4wMCwyODAuNTggICAgICAgICAgICAgIDQyMC4zOCwyODMuMTkgNDA4Ljk5LDI4Ni40NyAzOTguMDAsMjkxLjE0ICAgICAgICAgICAgICAzODguMDcsMjk1LjM3IDM4NC43MiwyOTguOTQgMzczLjAwLDI5OS4wMCAgICAgICAgICAgICAgMzczLjAwLDI5OS4wMCAzNTYuMDAsMzAwLjAwIDM1Ni4wMCwzMDAuMDAgICAgICAgICAgICAgIDM1Ni4wMCwzMDAuMDAgMzI5LjAwLDMwMC4wMCAzMjkuMDAsMzAwLjAwICAgICAgICAgICAgICAzMjkuMDAsMzAwLjAwIDMwNS4wMCwyOTguNjggMzA1LjAwLDI5OC42OCAgICAgICAgICAgICAgMzA1LjAwLDI5OC42OCAyODQuMDAsMjk0LjE3IDI4NC4wMCwyOTQuMTcgICAgICAgICAgICAgIDI4NC4wMCwyOTQuMTcgMjU4LjAwLDI5Mi4yMSAyNTguMDAsMjkyLjIxICAgICAgICAgICAgICAyNTguMDAsMjkyLjIxIDI0Mi4wMCwyODYuMDAgMjQyLjAwLDI4Ni4wMCAgICAgICAgICAgICAgMjQyLjAwLDI4Ni4wMCAyMTguMDAsMjc4LjU4IDIxOC4wMCwyNzguNTggICAgICAgICAgICAgIDIxMC4yNCwyNzUuNjYgMTkzLjk1LDI2OS45OSAxODYuMDAsMjY5LjM4ICAgICAgICAgICAgICAxNzkuODEsMjY4LjkxIDE3Ny4yOCwyNzUuNzEgMTczLjcxLDI3OS41NyAgICAgICAgICAgICAgMTY4Ljg3LDI4NC44MiAxNjMuNDAsMjg5LjQ3IDE1OC4wMCwyOTQuMTMgICAgICAgICAgICAgIDE1NS45NCwyOTUuOTEgMTUyLjE1LDI5OS42MSAxNDkuNzIsMzAwLjQ4ICAgICAgICAgICAgICAxNDcuOTUsMzAxLjEyIDE0NC45MiwzMDEuMDAgMTQzLjAwLDMwMS4wMCAgICAgICAgICAgICAgMTQzLjAwLDMwMS4wMCAxMTIuMDAsMzAxLjAwIDExMi4wMCwzMDEuMDAgICAgICAgICAgICAgIDEwOS44MCwzMDAuOTggMTA3LjE2LDMwMS4xMiAxMDUuMjEsMjk5Ljk4ICAgICAgICAgICAgICAxMDIuOTYsMjk4LjY3IDEwMC4zMCwyOTQuMjYgOTguODYsMjkyLjAwICAgICAgICAgICAgICA5My4wNCwyODIuODggOTEuODYsMjc2LjcwIDg4LjAwLDI2Ny4wMCAgICAgICAgICAgICAgODAuODIsMjcxLjU3IDc5LjQzLDI3NC40MyA3My41OCwyNzkuNDkgICAgICAgICAgICAgIDY3LjA5LDI4NS4wOSA1MC42NiwyOTQuODUgNDIuMDAsMjk1LjAwICAgICAgICAgICAgICAyNi45NywyOTUuMjQgMTUuNDMsMjk3LjA0IDAuMDAsMjk1LjAwICAgICAgICAgICAgICAwLjAwLDI5NS4wMCAwLjAwLDI4MS4wMCAwLjAwLDI4MS4wMCBaIiAvPgogIDxwYXRoCiAgICAgc3R5bGU9ImZpbGw6I2EwYTBhMDtzdHJva2U6bm9uZTtzdHJva2Utd2lkdGg6MC4xNTEyNiIKICAgICBkPSJtIDIuMTE3NjM2MSw2NS43OTA4NjUgdiAtMy43NzIyMjQgbCAwLjcxODQ4MzcsLTAuMDg4MzcgQyA0LjM3NzU1MjQsNjEuNzQwNjgzIDYuMDU1OTEwNiw2MS4zODI2NTEgNi44NzgwNjAxLDYxLjA2ODAzMyA3Ljk1NDAwMjIsNjAuNjU2MjkzIDkuMTI2Mjg5NSw1OS42MTcwNjUgOS42MjUwMjMyLDU4LjYzMjg2MiAxMC40NDYwNiw1Ny4wMTI2MjIgMTAuNDMxNDU1LDU3LjQwMjgyNyAxMC40MzQyOTQsMzcuMDExODggMTAuNDM2MTM1LDIzLjc4OTY0MyAxMC4zODY4MjgsMTcuOTEwMDAyIDEwLjI2OTM5MSwxNy4zNDgxMTYgOS42NTc2ODIxLDE0LjQyMTM0NiA3LjU2ODc4MjUsMTIuODg2Mjk0IDMuNjMwMjMzMywxMi40NjkyNTMgMS45NTEzNzIsMTIuMjkxNDg0IDIuMTE3NjM2MSwxMi43MzQ4ODIgMi4xMTc2MzYxLDguNDM1NDA4MSBWIDQuNjU1NTQ2NCBMIDI0LjYxNzUyLDQuNzE2OTU3NCBjIDIzLjQ2Nzg4MiwwLjA2NDA1MyAyMy41MTE4LDAuMDY1MiAyNy4xMTMzMDUsMC43MDc4Nzk2IDcuMTM5NzI1LDEuMjc0MDY3MSAxMS43MTMyMTgsNC4yODU0NjE0IDE0LjIxODI3Myw5LjM2MTk1IDEuOTM2NDU0LDMuOTI0MjIgMi4yMTQ5NjYsOC43OTQ1MTEgMC43NDE3NzgsMTIuOTcxMzIgLTAuOTU2ODY4LDIuNzEyOTI4IC0xLjk5NDgzNSw0LjM3NTM0MyAtMy45MDc5MTIsNi4yNTg5NDkgLTIuNTg3NjAxLDIuNTQ3NzM3IC01Ljk4MDE5Miw0LjM5MTcgLTkuNTcwOTQyLDUuMjAyMDYzIGwgLTEuNDY4MzY3LDAuMzMxMzgzIDMuNjM5Mzc3LDQuNzU4NDQ4IGMgMi4wMDE2NTYsMi42MTcxNDYgNC44Njk0NDksNi4zOTIwNTMgNi4zNzI4NzQsOC4zODg2ODEgMi45NjI1MjIsMy45MzQzODUgNS4yNjg1Nyw2LjQxNDkyMiA2Ljc5OTYxNSw3LjMxNDEwNSAxLjU2MTY1NCwwLjkxNzE2MiAzLjc0Njk1OSwxLjY0MzMxOSA1Ljc1MDgxNywxLjkxMDk0NiBsIDAuNzE4NDg0LDAuMDk1OTYgdiAzLjc3MjIyNCAzLjc3MjIyNSBsIC05Ljg2OTY5NywxLjUyZS00IGMgLTYuNjU1NDkxLDEuM2UtNCAtMTAuMjc3ODczLC0wLjA1Njg0IC0xMS4xMjMwNjIsLTAuMTc0OTQ3IEwgNTIuNzc4Njk5LDY5LjIxMzE1NSA1MC4wODAyMTQsNjUuNzkwMDkgQyA0OC41OTYwNDcsNjMuOTA3NDA0IDQ0Ljg0MjkyNSw1OC45MzIxNjUgNDEuNzM5OTQyLDU0LjczNDAwMyAzOC42MzY5NTksNTAuNTM1ODQgMzUuMTI5NzcxLDQ1LjkzNjgxNyAzMy45NDYxOTIsNDQuNTEzOTUgMzEuNDcxMTcyLDQxLjUzODU5IDMxLjgzODM4Nyw0MS43MzU3MSAyOC43NjU0MDksNDEuNzMyOTY4IGwgLTEuODY0Njg0LC0wLjAwMTcgMC4wNjQzNiw3LjA3MTM5MiBjIDAuMDY5NzcsNy42NjU2ODEgMC4xMzAxNDYsOC4yOTg4MjEgMC45NTE0MDYsOS45Nzc0MTcgMC44NTIwMDUsMS43NDE0MzUgMi45MTMyNTEsMi42OTk0NCA2Ljc1OTc5OCwzLjE0MTc1MiBsIDAuODY5NzQ0LDAuMTAwMDEgdiAzLjc3MDYxIDMuNzcwNjA4IEggMTguODMxODM1IDIuMTE3NjM2MSBaIE0gMzguMDg5NTYyLDMyLjQ0Njk4IGMgMi40MDY4OTIsLTAuMzI3MTM3IDMuMzc0MTI0LC0wLjU5NzI1NSA1LjAxOTQ1OSwtMS40MDE3NzYgMy4xODY3MywtMS41NTgyMTcgNS4xNDUwOTMsLTQuNjY0ODQ2IDUuMTM0OTI3LC04LjE0NTczOCAtMC4wMDY2LC0yLjI0MzI5NyAtMC44MjU1NDcsLTQuNzA4NDc1IC0yLjAxOTc0MSwtNi4wNzk0MzIgLTAuNzAwMjM3LC0wLjgwMzg4NCAtMi4yOTg4NTQsLTEuODYwMTM3IC0zLjU2ODk2NSwtMi4zNTgxMTggLTQuMzUzMzQ2LC0xLjcwNjg0NCAtMTIuNjgwNzkzLC0xLjU3MTA1NyAtMTQuNjUyODYxLDAuMjM4OTI5IC0wLjE5OTYxOSwwLjE4MzIxNCAtMC41MDY4NDksMC42Mzk0MTYgLTAuNjgyNzMzLDEuMDEzNzg0IC0wLjMxMTMzNCwwLjY2MjY3NSAtMC4zMjEwMSwwLjg5ODA3OCAtMC4zNjYwMDcsOC45MDQ5MDggbCAtMC4wNDYyMiw4LjIyNDIzOSA0LjczNTI3LC0wLjA4MjA4IGMgMi45NTQzMzIsLTAuMDUxMjEgNS4zNzkwMDMsLTAuMTY5NTc0IDYuNDQ2ODY5LC0wLjMxNDcxNSB6IgogICAgIGlkPSJwYXRoMTEiCiAgICAgdHJhbnNmb3JtPSJtYXRyaXgoMy4xMjUwMTA0LDAsMCwzLjEyNTAxMDQsLTAuMDAxNTM4OTEsMCkiIC8+CiAgPHBhdGgKICAgICBzdHlsZT0iZmlsbDojODFmODgxO3N0cm9rZTpub25lO3N0cm9rZS13aWR0aDowLjE1MTI2O2ZpbGwtb3BhY2l0eToxIgogICAgIGQ9Im0gMi4xMTc2MzYxLDY1Ljc5NTc5MSB2IC0zLjY5MTY2OSBsIDAuNzk0MTEzNSwtMC4xMDM0MTEgYyAxLjQ1MzAzMDYsLTAuMTg5MjE5IDMuNjU1MjQwNCwtMC43MDkyNTYgNC4zMTMyMDU3LC0xLjAxODUzNiAwLjk2NTk3OTgsLTAuNDU0MDY0IDIuMDg2MjUsLTEuNTM3ODU5IDIuNTMyNTc3NiwtMi40NTAxMiAwLjI4NTUxMDEsLTAuNTgzNTYyIDAuNDM1NTY3MSwtMS4yMTk1NjcgMC41NDI1NDYxLC0yLjI5OTU0MyAwLjA5MDI2LC0wLjkxMTIyMyAwLjEzMDk5NiwtOC44MzAxMDUgMC4xMDQ1NDYsLTIwLjMyNDcxIEwgMTAuMzYxMjkxLDE3LjA3NTk2NyAxMC4wMTU5MTMsMTYuMjIxNzg5IEMgOS4xNDU3MjY3LDE0LjA2OTY3NiA3LjIxNTE3NDgsMTIuODY3MjQ2IDMuOTU5NzUyNSwxMi40NDk3NTUgMy4wODU0MjAxLDEyLjMzNzYyNiAyLjUwNTY0ODgsMTIuMTg3NDI4IDIuMzg0Njg4LDEyLjA0MTcxMSAyLjI0NjAyMjYsMTEuODc0NjY2IDIuMTc4NDQ3NCwxMC44Mzc4NDQgMi4xMzk0OTgzLDguMjc5NzA1OSBMIDIuMDg1NzMwNiw0Ljc0ODI5OTUgMTcuNDE2NzMsNC43NTc1ODI4IGMgOC40MzIwNSwwLjAwNTExIDE4Ljk3MjU3OCwwLjA2ODA4MyAyMy40MjMzOTUsMC4xMzk5NSA3LjE0NjQyNCwwLjExNTM5MjEgOC4zMTI4NzMsMC4xNjc5NjU2IDkuOTc4NDk5LDAuNDQ5NzQ0OSA0LjI1NzE2MSwwLjcyMDE5ODMgNy4xNjYwNzYsMS43NDkxNDgyIDkuNzI0OTg5LDMuNDM5OTUyNSA2LjM1MDg0Niw0LjE5NjMyOTggOC43Mzc1MDIsMTIuNjcwNDAyOCA1LjYzODIxOSwyMC4wMTkwODg4IC0wLjg5NzAzNSwyLjEyNjk0OSAtMS42ODIwNzksMy4yODA4NjcgLTMuMzk3MTM5LDQuOTkzMzY3IC0yLjgyMTEzMSwyLjgxNjkyMiAtNi4yMTkwMDgsNC42NDg5OTIgLTEwLjExNDYzOSw1LjQ1MzYyMyAtMC41MTY1NzYsMC4xMDY2OTcgLTAuOTM5MjI5LDAuMjQyMzUgLTAuOTM5MjI5LDAuMzAxNDUgMCwwLjExNTczOSA4Ljg1MzM2OCwxMS43OTU5MDQgMTEuMzkyMTA5LDE1LjAyOTUwMyAwLjg0NzMyOCwxLjA3OTI0NCAyLjI1ODYwNywyLjY4NzY0NiAzLjEzNjE3NSwzLjU3NDIyNiAxLjQxODg3OSwxLjQzMzQ0OSAxLjc1NzQ4LDEuNjkwNzI2IDMuMDU3NTA4LDIuMzIzMTUzIDAuODA0MDYyLDAuMzkxMTUzIDEuNTMyNDczLDAuNjY3NTkxIDEuNjE4NjkxLDAuNjE0MzA1IDAuMDg2MjIsLTAuMDUzMjkgMC4xNTY3NjEsLTAuMDE3NTIgMC4xNTY3NjEsMC4wNzk0OSAwLDAuMDk3IDAuMTAyMTAxLDAuMTM3MTkxIDAuMjI2ODksMC4wODkzIDAuMTI0Nzg5LC0wLjA0Nzg5IDAuMjI2ODg5LC0wLjAzMzU4IDAuMjI2ODg5LDAuMDMxNzkgMCwwLjEyMDgyMyAxLjY2NjkyOSwwLjU0NDUzMyAyLjgzNjEyLDAuNzIwOSBsIDAuNjQyODU0LDAuMDk2OTcgdiAzLjY5OTY2NSAzLjY5OTY2NCBsIC0xMC41NTAzNjYsLTAuMDczNzIgYyAtNS44MDI3MDEsLTAuMDQwNTUgLTEwLjgwMTg5LC0wLjEzMTU0MiAtMTEuMTA5MzExLC0wLjIwMjIwOSAtMC40ODkwMzYsLTAuMTEyNDE2IC0wLjc4OTkwNCwtMC40MjE3MTYgLTIuNDA1NTgsLTIuNDczMDEyIC0xLjAxNTY1LC0xLjI4OTQ4OSAtNC42NjYxNDQsLTYuMTA1MjIgLTguMTEyMjEsLTEwLjcwMTYyNSAtMy40NDYwNjQsLTQuNTk2NDA1IC02LjMzOTc5MywtOC4zNTcxIC02LjQzMDUwNiwtOC4zNTcxIC0wLjA5MDcxLDAgLTAuMTIyOTA2LC0wLjA0MjAzIC0wLjA3MTUzLC0wLjA5MzQgMC4wOTI4NiwtMC4wOTI4NiAtMS4zMTk5NzcsLTEuOTQyNTEzIC0zLjE4OTk0NywtNC4xNzYyMjEgQyAzMS43ODIxNCw0MS43OTYwOSAzMS40NDM5Miw0MS42NTU2NyAyOC44NjYxOTEsNDEuNjU1NjcgSCAyNi44MTk2NCBsIDAuMDU4MjEsNi4wMTI1NzQgYyAwLjAzMjAyLDMuMzA2OTE1IDAuMTIzOTQ2LDYuODEwNjkyIDAuMjA0MjkzLDcuNzg2MTcyIDAuMjI4MjE5LDIuNzcwODI2IDAuOTI2MTI1LDQuMjI2MDYxIDIuNDQ5MTU2LDUuMTA2ODQ1IDAuODg4NjI3LDAuNTEzOSAyLjc0NTczOSwxLjEzNTczOSAyLjk3Mjc5MSwwLjk5NTQxNCAwLjA4MDkxLC0wLjA1IDAuMTg2MTkzLC0wLjAyNzY3IDAuMjMzOTY0LDAuMDQ5NjIgMC4wNDc3NywwLjA3NzMgMC42OTkxMSwwLjIyNDIwNyAxLjQ0NzQxOSwwLjMyNjQ2OSBsIDEuMzYwNTYyLDAuMTg1OTI4IHYgMy42ODQzODMgMy42ODQzODEgSCAxOC44MzE4MzUgMi4xMTc2MzYxIFogTSAzNi4zNzc5NjMsMzIuNjUyNDcyIGMgNS4wNzE5ODIsLTAuMjc0MTYgOC4yODc3NjgsLTEuNzAyMTE2IDEwLjMzOTYsLTQuNTkxMjU3IDAuMjU4NDgyLC0wLjM2Mzk2MyAwLjQzMzE1NSwtMC43MjEzMTQgMC4zODgxNjIsLTAuNzk0MTE0IC0wLjA0NDk5LC0wLjA3MjggLTAuMDE4MSwtMC4xMzIzNjMgMC4wNTk3NiwtMC4xMzIzNjMgMC4xOTU2ODYsMCAwLjcxMzYzNiwtMS4yNjIyMzIgMC45MzkzNTcsLTIuMjg5MTk5IDAuMjAyNzY3LC0wLjkyMjUzIDAuMTQ2MDU4LC00LjAwMDY1OSAtMC4wODA0NiwtNC4zNjcxNzEgLTAuMDcyNDUsLTAuMTE3MjMyIC0wLjE0NzQ2MywtMC4zNjA2NzcgLTAuMTY2Njg2LC0wLjU0MDk4OCAtMC4wNTEzMSwtMC40ODEyMzIgLTAuNjc4NjY5LC0xLjg3ODIyNSAtMC44NDM0NzMsLTEuODc4MjI1IC0wLjA3Nzg2LDAgLTAuMTA0NzQ3LC0wLjA1OTU2IC0wLjA1OTc2LC0wLjEzMjM2MyAwLjEyMjMxMiwtMC4xOTc5MDQgLTAuNjk4ODkxLC0xLjI2MDY0MSAtMS40NDczODgsLTEuODczMTAyIC0xLjYzMDU2OSwtMS4zMzQyMTkgLTQuMzg0MTA5LC0yLjM4MDgzOCAtNi45MDg1NzksLTIuNjI1OTQ1IC0zLjU2ODU1NSwtMC4zNDY0ODEgLTcuMTE3MzMxLC0wLjE4Mjc2OSAtOS4wNjI2NDcsMC40MTgwNzggLTAuOTQ1NzI2LDAuMjkyMTA1IC0yLjA4Mjc5NCwxLjA5MzcxMSAtMS45MjE1MzQsMS4zNTQ2MzYgMC4wNDYyNCwwLjA3NDgxIDAuMDIyOTEsMC4xMzYwMjEgLTAuMDUxODQsMC4xMzYwMjEgLTAuMDc0NzUsMCAtMC4yMjQ0OSwwLjE4NzE4NCAtMC4zMzI3NiwwLjQxNTk2NCAtMC4yMzI4MzcsMC40OTIwMDEgLTAuMjgyNTE3LDEuOTkyMTAyIC0wLjM1NjQ1MywxMC43NjMxNjYgbCAtMC4wNTQwNyw2LjQxNDQ0NiA0LjAyMzA4OCwtMC4wOTc5MSBjIDIuMjEyNjk3LC0wLjA1Mzg1IDQuNzAzNzU2LC0wLjEzNDcwMiA1LjUzNTY4NCwtMC4xNzk2NzIgeiIKICAgICBpZD0icGF0aDEzIgogICAgIHRyYW5zZm9ybT0ibWF0cml4KDMuMTI1MDEwNCwwLDAsMy4xMjUwMTA0LC0wLjAwMTUzODkxLDApIiAvPgogIDxwYXRoCiAgICAgc3R5bGU9ImZpbGw6IzdhZmY3YTtzdHJva2Utd2lkdGg6MC4xNTEyNjtmaWxsLW9wYWNpdHk6MSIKICAgICBkPSJtIDc5LjI2MDA5NCw2NS43MjgyODMgdiAtMy43NTkxNzkgbCAxLjI0Nzg5MywtMC4wOTYxNCBjIDIuMjk5NTcyLC0wLjE3NzE2MyA0LjE1MjAwNiwtMC44NDcwMzcgNS4yNjE4MTEsLTEuOTAyNzcgMC43NTQ4MjQsLTAuNzE4MDQ4IDEuNDUyMDcxLC0yLjIxODc2MSAxLjY1NzEyNiwtMy41NjY3IDAuMTA5MjA3LC0wLjcxNzg3NSAwLjE0NzUwOCwtNy4xNzE0MzIgMC4xMTg5NDksLTIwLjA0MTkxMyBMIDg3LjUwMzc0OSwxNy4zNzg0ODYgODcuMTc5MjMsMTYuNTIxMTY4IGMgLTAuOTMxLC0yLjQ1OTUyNyAtMi40NTQ1NjksLTMuNDQ4NjkzIC02LjE2NjUzLC00LjAwMzU3MSBMIDc5LjI2MDA5NCwxMi4yNTU2MTEgViA4LjUwMTk1NTQgNC43NDgyOTk1IGggMjAuNDA0MDM3IGMgMTIuNzI2MTc5LDAgMjAuOTkzNDY5LDAuMDU3OTgxIDIxLjk3MDQ3OSwwLjE1NDA4NTYgNi4xNzgxNywwLjYwNzcyNzQgMTAuMjA3NTMsMi4zNzYxMDUgMTMuNTE1OTUsNS45MzE3ODM5IDQuNjM3MDUsNC45ODM2MDkgNi4zMDA4NSwxMi43MjYxNzMgNC4xNjExMiwxOS4zNjM5NTQgLTAuODYzNTUsMi42Nzg4NSAtMi4wMDEwOCw0LjU0MzQ0NiAtNC4wMDIwOSw2LjU2MDA1NyAtMy4zMTg5MSwzLjM0NDc5NSAtOC4xMjc4OSw1LjMyMjc0NSAtMTUuMDU4MTEsNi4xOTM0NSAtMS41NTczLDAuMTk1NjU2IC0zLjcyMDU1LDAuMjczNTIyIC05LjExMzQsMC4zMjgwMzQgbCAtNy4wNzEzOSwwLjA3MTQ4IFYgNDguODk4MSBjIDAsNy4yMzE4NDEgMC4yNDg0Nyw5LjEwODc0MSAxLjQwODI1LDEwLjYzNzY2NSAwLjg5OTg0LDEuMTg2MjQyIDMuMjg1ODYsMi4xMDEwODggNi4xMDAzNiwyLjMzOTAwMiBsIDEuMTEzMTksMC4wOTQxIHYgMy43NTkyOTggMy43NTkyOTcgSCA5NS45NzQyOTQgNzkuMjYwMDk0IFogTSAxMTEuNjI5NjcsMzQuNjI5MzE0IGMgNC40MTg3OSwtMC42NzAwMTcgNy43MzM2OSwtMi43NzE2MTYgOS4xOTY5MSwtNS44MzA3MTkgMi41MTA4OCwtNS4yNDkzOTkgMC41MDg3NywtMTEuOTM3NzQ3IC00LjI4MDk2LC0xNC4zMDEyMTIgLTMuNTA3NzQsLTEuNzMwODY5IC05LjM5OTcsLTEuNjMxMzIxIC0xMS4zMDI2MywwLjE5MDk2MyAtMS4wMjg1NiwwLjk4NDk3NCAtMS4xNjYwMSwyLjQwNTIwMiAtMS4xNzE2MywxMi4xMDYwNTggbCAtMC4wMDUsOC4wNTQ1OCAzLjA2MzAxLC05LjA3ZS00IGMgMS44OTU5MiwtNi4wNWUtNCAzLjYxMDUzLC0wLjA4MzkxIDQuNDk5OTcsLTAuMjE4Nzc4IHoiCiAgICAgaWQ9InBhdGgxNSIKICAgICB0cmFuc2Zvcm09Im1hdHJpeCgzLjEyNTAxMDQsMCwwLDMuMTI1MDEwNCwtMC4wMDE1Mzg5MSwwKSIgLz4KICA8cGF0aAogICAgIHN0eWxlPSJmaWxsOiMwMGZmMDA7c3Ryb2tlLXdpZHRoOjAuMTUxMjYiCiAgICAgZD0ibSAxNjUuMDcxNzYsNzAuMzkxODcxIGMgLTYuMTM3MDUsLTAuNTk2MzE3IC0xMi4zMjAyLC0zLjUzMzk2NyAtMTYuMTAwNjIsLTcuNjQ5NDkzIC0zLjA0ODEzLC0zLjMxODMxNSAtNS4xODg5MywtOC40NzQwMjkgLTUuODg5MjksLTE0LjE4MzE5OSAtMC4yODU5NywtMi4zMzEyMDMgLTAuMTAzODYsLTYuNjgyNjk3IDAuMzc1MDgsLTguOTYyNTIxIDAuOTk5OTcsLTQuNzYwMDAyIDIuODUzNTgsLTguMjc3ODk5IDYuMDU1NzgsLTExLjQ5Mjk5NiAzLjQxNjU4LC0zLjQzMDM1NCA3LjQ5OTczLC01LjQzOTAzNCAxMy41MjgyOCwtNi42NTUxNTYgMy43NDIxMSwtMC43NTQ4ODMgOC45NDg0OCwtMC42NjAxMjggMTMuMzM2ODEsMC4yNDI3MjggNS40NzE2LDEuMTI1NzI3IDkuMjczNTMsMy4wNTkxMzUgMTIuNjIzMzMsNi40MTkzODYgMy41ODAyMywzLjU5MTM5NSA1LjgzNzU1LDguMDkxMzE5IDYuNjQyOTMsMTMuMjQyNTMyIDEuMDI3MTQsNi41Njk1ODIgLTAuMzgwMjQsMTMuNjQ5NjE4IC0zLjczNjkzLDE4Ljc5OTIzMSAtMS42NDAxMiwyLjUxNjE3OSAtMy4zNzc0Niw0LjI0MTEzMSAtNi4wODQ1Niw2LjA0MTIxNCAtMy4zODIxNiwyLjI0ODk1MiAtNi43NzU1MywzLjQ1NzEzMyAtMTEuMTM5MTQsMy45NjU5ODcgLTIuNDA0NTUsMC4yODA0MDMgLTcuNzc5NjIsMC40MTAzMDMgLTkuNjExNjcsMC4yMzIyODcgeiBtIDguMDIyOTUsLTkuNzE1MzI3IGMgMi43ODc3MSwtMS4zMzEwNjMgNC40Mzk0OSwtNC4yMjIwNDYgNS4xMjA1MywtOC45NjIxMDEgMC4xMjczOCwtMC44ODY1MTUgMC4xOTQxNywtMi45OTY4MzYgMC4xOTE1LC02LjA1MDM4OSAtMC4wMDQsLTUuMDE2OTczIC0wLjExNzQ0LC02LjAxNDQ2MSAtMC45ODU2NiwtOC42OTc0MzQgLTEuMzk2ODcsLTQuMzE2NjIzIC00LjAxMTY3LC02LjQwMzkxNCAtOC4wMTAxOSwtNi4zOTQyMjEgLTMuODE3OTgsMC4wMDkzIC02LjY1NjE3LDIuMjUyMDI4IC03Ljk5NjA4LDYuMzE4NTkxIC0wLjk1ODA2LDIuOTA3NjYzIC0xLjQxMzQ5LDcuODUzNjM1IC0xLjA5NTg3LDExLjkwMTAwNiAwLjU5MTY4LDcuNTM5NzY4IDIuNTI4OTksMTEuMTgzMzA5IDYuNTM3NTIsMTIuMjk1MjYzIDAuNTgwMjksMC4xNjA5NjkgMS40MjQ2OSwwLjIxNjA1NCAyLjkzMjU4LDAuMTkxMzA1IDIuMTA0MTMsLTAuMDM0NTQgMi4xMjUyMSwtMC4wMzgzOCAzLjMwNTY3LC0wLjYwMjAyIHoiCiAgICAgaWQ9InBhdGgxNyIKICAgICB0cmFuc2Zvcm09Im1hdHJpeCgzLjEyNTAxMDQsMCwwLDMuMTI1MDEwNCwtMC4wMDE1Mzg5MSwwKSIgLz4KICA8cGF0aAogICAgIHN0eWxlPSJmaWxsOiMwMGZmZmY7c3Ryb2tlLXdpZHRoOjAuMTUxMjY7ZmlsbC1vcGFjaXR5OjEiCiAgICAgZD0ibSAxNjMuODk0MDYsNzAuMTY2NTM5IGMgLTcuOTEwMzcsLTEuMjk3MzYgLTE0LjM0MDgxLC01LjQ0NTYxNCAtMTcuNTM4NzUsLTExLjMxNDE5MiAtMS40MjIsLTIuNjA5NTI4IC0yLjUyNjU5LC01Ljk4MzUyNiAtMy4wNTA1LC05LjMxNzg1NiAtMC4zNTcwNywtMi4yNzI0MjkgLTAuMjI1NTYsLTcuNzQwMjA3IDAuMjM4NiwtOS45MjA4MjYgMS43MDc5MSwtOC4wMjM3MDUgNi42NDQ5NSwtMTMuNzc4ODM5IDE0LjI1OTc3LC0xNi42MjI3MDIgMS43NzU0NSwtMC42NjMwNjggNS4yOTk3MSwtMS41MzYzNjYgNy4wNjU5NSwtMS43NTA5MTcgMS42NDkxOSwtMC4yMDAzMzIgNi4wOTgyMSwtMC4yMDAzODUgNy45ODg4OCwtOS42ZS01IDMuNjk4MDUsMC4zOTE3NTYgNy42ODMyNSwxLjQ3MTEzOCAxMC4zMjA2NCwyLjc5NTMyMSA3Ljg5NzI4LDMuOTY1MDY3IDEyLjcwMDIxLDEyLjE0NDU3MyAxMi43MDAyMSwyMS42Mjg3ODMgMCw0LjMzNjE3IC0wLjkwNTA0LDguMjcwODcgLTIuNzgzMzcsMTIuMTAwNzc4IC0xLjc5OTcyLDMuNjY5NjM1IC0zLjg5NTk2LDYuMDUyNTM3IC03LjM1OTA0LDguMzY1Mzc4IC0zLjEzNDkyLDIuMDkzNjc0IC02LjUzMTY0LDMuMzMxMjU1IC0xMC42OTEwMiwzLjg5NTIyOCAtMi40NTI1NiwwLjMzMjU0MyAtOS40NDQ2NSwwLjQyMTAxNyAtMTEuMTUxMzcsMC4xNDExMDEgeiBtIDkuNDEyMTMsLTkuNTA4ODg1IGMgMi45MTc4MSwtMS41NTkwNTYgNC42MjcwNiwtNC45NDI0MzUgNS4wNTI5MywtMTAuMDAyMDI5IDAuMDk5OSwtMS4xODYyNDggMC4xMzE4NywtMy42NDY2NTMgMC4wODA3LC02LjIwMTY0OSAtMC4wNjk0LC0zLjQ2Njc1MSAtMC4xMzkwNCwtNC40Njg1NzIgLTAuMzgzNjUsLTUuNTIwOTc5IC0xLjI3NzIzLC01LjQ5NTA2IC0zLjcyNTI5LC04LjA2NDY3OSAtOC4wMDg1NywtOC40MDYyMTIgLTMuMzEzODYsLTAuMjY0MjM3IC02LjI5NTMzLDEuNDA4MjUgLTcuODUzMTEsNC40MDUyOTMgLTEuNDMxMzQsMi43NTM3NjMgLTEuOTMwNTcsNS42NTE2OTkgLTEuOTI3LDExLjE4NTc1NSAwLjAwMiwzLjQxMDM5MSAwLjA0ODMsNC4xOTM5MzUgMC4zNDc0LDUuODk5MTMgMC44MDM0OSw0LjU4MTQ1MiAyLjI2MDE4LDcuMjI3MTc0IDQuNjkzMTEsOC41MjM5MTYgMS4yNzg3NSwwLjY4MTU2MyAxLjc4NDEzLDAuNzY0MTA1IDQuNDgxMDMsMC43MzE4NjEgbCAyLjQyMDE1LC0wLjAyODkzIHoiCiAgICAgaWQ9InBhdGgxOSIKICAgICB0cmFuc2Zvcm09Im1hdHJpeCgzLjEyNTAxMDQsMCwwLDMuMTI1MDEwNCwtMC4wMDE1Mzg5MSwwKSIgLz4KICA8cGF0aAogICAgIHN0eWxlPSJmaWxsOiMwMGZmZmY7c3Ryb2tlLXdpZHRoOjAuMTUxMjY7ZmlsbC1vcGFjaXR5OjEiCiAgICAgZD0ibSAzNC4yMzQyMzUsOTUuOTQ2MDU2IGMgLTAuNjA1MTI3LC0wLjE3OTAzNyAtMS41MjA5MDUsLTEuMjEzNDQ2IC0yLjQ2MDk0NiwtMi43Nzk3NDQgLTEuMjIzNjc4LC0yLjAzODg5IC0xLjMyNjI3MywtMi4yNzYyMTUgLTMuMzU2ODY5LC03Ljc2NTI2NiAtMC4xMjgyMDUsLTAuMzQ2NTU3IC0wLjEyOTAzMiwtMC4zNDYzNDIgLTEuMDM0NTUzLDAuMjY4NTg1IC0wLjQ5ODQzNCwwLjMzODQ4MSAtMS42MzkxMjgsMS4zMTQzOTkgLTIuNTM0ODczLDIuMTY4NzA3IC0wLjg5NTc0NSwwLjg1NDMwOCAtMi4wMzExMzgsMS44NDk4OTkgLTIuNTIzMDk3LDIuMjEyNDIzIC0yLjE4ODQwOSwxLjYxMjY0MSAtNS42MjIwNzIsMy4zODQ2NjUgLTcuNDU2MjQzLDMuODQ3OTcgLTEuNzgxODAyLDAuNDUwMDc4IC0xMy43NzU1NDc0LDAuNzE0MjAyIC0xNC40MTc0MjgxMiwwLjMxNzQ5OCAtMC4wODM2NDMxLC0wLjA1MTY5IC0wLjE0NzcwNjQ0LC0wLjkzMDI1OCAtMC4xNDc3MDY0NCwtMi4wMjU2NDUgdiAtMS45MzQzNTcgbCAxLjc3NzMwMTc2LC0wLjA5MDYgQyA1LjgyODkyNTksODkuOTc0NDk2IDcuMzI5MzE4OSw4OS4wNzU3NSAxMy4wMzA0Nyw4My42MDYxMDggYyAxLjY3MDI0NSwtMS42MDI0MiAzLjEzNDI4NCwtMi44NDUyMDcgNC4zNDg3NTgsLTMuNjkxNTU0IDUuOTYxMjY2LC00LjE1NDMwNiA0Ljc3Mzc4NSwtMy43OTkxMjggMTIuNTA2MDk5LC0zLjc0MDYwMSA1LjcxMTcyOSwwLjA0MzIzIDUuOTA5Mjk0LDAuMDU0NTggNi42MTM5MzMsMC4zNzk4NjcgMS4wODM4OTQsMC41MDAzNjQgMi41NjUwMjksMi4wMjI2MiAzLjg2NDQ0NywzLjk3MTczNSAwLjYzNjM5OCwwLjk1NDU5MiAxLjQxMjMzNywxLjk5MjYxMSAxLjcyNDMxMSwyLjMwNjcxMSAwLjQ5NDg1LDAuNDk4MjIyIDAuNjU3NDE0LDAuNTcxMDg5IDEuMjc0MDg0LDAuNTcxMDg5IGggMC43MDY4NiBsIDIuNTA3NDEsLTIuNTU5NTcgYyAyLjQ4NzEyNCwtMi41Mzg4NjQgMi41MTQ1MTIsLTIuNTYwOTkxIDMuMzg1NzQxLC0yLjczNTE4MyAwLjYwNjIxNywtMC4xMjEyMDUgMi42NDQ3MDEsLTAuMTU4MjY3IDYuNTc5Nzk4LC0wLjExOTYyOCA2LjYzNDY0MywwLjA2NTE1IDYuMTYyMTY1LC0wLjAzMDM0IDguOTY1NTEsMS44MTE4MjggMS43NDQxNjIsMS4xNDYxNDIgNS4yODU4NjMsMi44NTkyNDQgNy4wOTcyNDUsMy40MzI5IDAuNTQwNzU0LDAuMTcxMjU0IDEuNDU5NjU3LDAuMzg0NDYyIDIuMDQyMDA3LDAuNDczNzk2IDAuNTgyMzUsMC4wODkzMyAzLjcxMzQyNiwxLjAzOTE3NCA2Ljk1Nzk0NywyLjExMDc1NiAzLjI0NDUyMSwxLjA3MTU4MiA3LjAyMjIzMywyLjMwMTQzMyA4LjM5NDkxNSwyLjczMzAwMSAxLjM3MjY4MSwwLjQzMTU2OSAzLjAwMDc0LDAuOTg1MTk5IDMuNjE3OTA4LDEuMjMwMjkgMS45NTc3MDMsMC43Nzc0NDggMi42NTAxMzEsMC44OTgyNDggNS45MTE0NTQsMS4wMzEzMDcgMi43NDEwMjMsMC4xMTE4MzEgMy40NjA2MjMsMC4xOTk2MiA2LjIwMTY1MywwLjc1NjU4MyAyLjA5Njg2LDAuNDI2MDc0IDMuMzIxMiwwLjYwNTM4NiAzLjc4MTQ5LDAuNTUzODI1IDAuMzc0MzcsLTAuMDQxOTMgMi41MTg0NywtMC44MDE0NDUgNC43NjQ2OCwtMS42ODc3OTggNC4yMDY5MiwtMS42NjAwNDggMTAuMDYzMSwtMy40OTY4OCAxMy41Mzc3NCwtNC4yNDYyMDQgMi4yMzI1MSwtMC40ODE0NTEgMy4wMjA0LC0wLjczNjYzNSA0LjI2MTYyLC0xLjM4MDI2NiAxLjI5NzQzLC0wLjY3Mjc4NCAzLjIyODM0LC0yLjQ2Nzk2NCA0LjI0NTksLTMuOTQ3NDQ0IDAuNDM3MjMsLTAuNjM1NzA1IDAuOTY1MTMsLTEuMjQxNzU5IDEuMTczMTEsLTEuMzQ2Nzg3IDAuNTY1OTQsLTAuMjg1NzkxIDExLjcyMzIzLC0wLjI3MjIxNyAxMi44MDQxLDAuMDE1NTggMS43NzMyOCwwLjQ3MjE1NCAyLjQ3NDA1LDEuMDYxODI4IDYuMDE0MjQsNS4wNjA4MTIgMi44ODU1NSwzLjI1OTUwMyAzLjE1NTQ3LDMuNDQyNjQxIDQuODM3NzEsMy4yODI0MzYgMC41OTEyLC0wLjA1NjMgMi45MTI3MiwtMC4zMzc4MDIgNS4xNTg5MiwtMC42MjU1NTcgMi4yNDYyMSwtMC4yODc3NTUgNi4zMDU1NCwtMC43OTM3MDMgOS4wMjA3MywtMS4xMjQzMyAyLjcxNTE4LC0wLjMzMDYyNyA3LjEzOTUzLC0wLjkzODY2MyA5LjgzMTg4LC0xLjM1MTE5IDUuMjY0NDMsLTAuODA2NjMgOC4zMzQxOCwtMS4xNDkyODUgMTEuNzMxNTcsLTEuMzA5NTE2IGwgMi4xNDczNCwtMC4xMDEyNzYgMC4xMDQwMiwwLjQxNDQ0NSBjIDAuMTAxNTMsMC40MDQ1NCAtMC4wMTA3LDIuMjE2OTk2IC0wLjE3ODgsMi44ODY2MjYgLTAuMTc4OTYsMC43MTMwNDYgLTAuNDQ3NzgsMC43NjI3NjQgLTE1LjAzNDk4LDIuNzgwNjI3IC0zLjAzNjU0LDAuNDIwMDQ4IC02Ljc3MDY2LDAuOTAxOTU2IC04LjI5ODA1LDEuMDcwOTA2IC0yLjMxMTU1LDAuMjU1Njg3IC0zLjUzOTI4LDAuNDk4MDQ3IC03LjMyMzgxLDEuNDQ1NzUxIC0yLjY4MjYxLDAuNjcxNzY1IC00Ljk4NTg4LDEuMzM3MTE0IC01LjYxNzgzLDEuNjIyODMxIGwgLTEuMDcxMTIsMC40ODQyNjEgLTYuMzUyOTEsMC4wNDE3OSBjIC01Ljk2Mzk1LDAuMDM5MjMgLTYuMzg1MzIsMC4wMjQ0NSAtNi44ODIzMSwtMC4yNDEzMTYgLTAuMzIzNzgsLTAuMTczMTQyIC0xLjA0MjY3LC0wLjk1MzEzNSAtMS44NTA4NCwtMi4wMDgxNjEgLTEuNTUyNzgsLTIuMDI3MDkzIC0yLjMwMywtMi43NDU2MjQgLTMuMjQwNTcsLTMuMTAzNjgzIC0wLjY2NTUxLC0wLjI1NDE2MSAtMC43Mjk4MSwtMC4yNTE3MTMgLTIuMTQ2MDUsMC4wODE3MiAtOC40NzQ3OCwxLjk5NTMgLTExLjM4NDEzLDIuOTIxMDg2IC0xNi4xMzIxNyw1LjEzMzQ0MyAtMS4wODE1MSwwLjUwMzkzIC0yLjM3NDc4LDEuMDE5NTQ1IC0yLjg3MzkzLDEuMTQ1ODExIC0xLjI1NDgsMC4zMTc0MTQgLTcuOTg1NzQsMC42ODc4NjQgLTEyLjUxODI5LDAuNjg4OTY4IC0yLjA1OTg4LDQuNTRlLTQgLTUuNTk2MSwtMC4xMDQ0OTEgLTcuODU4MjksLTAuMjMzMzE5IC0zLjg1NTM5NywtMC4yMTk1NiAtNC4zMDc3NjIsLTAuMjc2ODc4IC03LjIyMTEwNCwtMC45MTQ5NzYgLTIuNzM2ODk0LC0wLjU5OTQ1MiAtMy42MzQ4MzYsLTAuNzIyOTMgLTcuNTE5NDQ1LC0xLjAzNDAwMyBsIC00LjQxMTQwMiwtMC4zNTMyNTkgLTIuNTQ2NTQ1LC0wLjk5MzE1OSBjIC0xLjQwMDYwMSwtMC41NDYyMzkgLTQuMTEyMDg1LC0xLjQ3NjU2OSAtNi4wMjU1MiwtMi4wNjc0MDMgLTEuOTEzNDM2LC0wLjU5MDgzMyAtNC45NzY0NDUsLTEuNTc5NTQzIC02LjgwNjY4OCwtMi4xOTcxMzIgLTMuODU2OTIzLC0xLjMwMTQ2MyAtNS45MjU2MTMsLTEuODUzMzI5IC03LjQxMTcyNiwtMS45NzcyMzMgLTEuNDkxNzI4LC0wLjEyNDM3MyAtMi4wODQzNSwwLjIxODIxIC0zLjQ0MTg5MiwxLjk4OTY4NyAtMC41NzAzNCwwLjc0NDI0NSAtMS4yNTQ0NCwxLjU4MzEzNCAtMS41MjAyMTksMS44NjQxOTcgLTAuNzcwMTI3LDAuODE0NDA5IC01Ljg2ODk3Myw1LjMwNTYwOCAtNi41MjIzNDUsNS43NDUwNTQgbCAtMC41OTM3NTgsMC4zOTkzNSAtNi41MTU0NDksMC4wMjcyNSBjIC0zLjcwNzc0MiwwLjAxNTUgLTYuNzIyMjQzLC0wLjAzMzk0IC02Ljk5NTMyMiwtMC4xMTQ3MzIgeiIKICAgICBpZD0icGF0aDIxIgogICAgIHRyYW5zZm9ybT0ibWF0cml4KDMuMTI1MDEwNCwwLDAsMy4xMjUwMTA0LC0wLjAwMTUzODkxLDApIiAvPgogIDxwYXRoCiAgICAgc3R5bGU9ImZpbGw6IzAwZmYwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2Utd2lkdGg6MC4xNTEyNiIKICAgICBkPSJtIDIuMTUyNzYxOSw2NS44MzIwNTEgMC4wNDA1MDQsLTMuNjU1NDA3IDEuNTEyNTk3MiwtMC4yNTQ2MjggYyAzLjA0NTg2NzcsLTAuNTEyNzM0IDQuMDM3Mjg0MywtMC45MzUxNTcgNS4yMzc1OTcyLC0yLjIzMTYzOSAxLjU0NDE4MTcsLTEuNjY3OSAxLjQxMTgwMTcsMC4zODM4MjkgMS40NTkzODc3LC0yMi42MTg2NjIgTCAxMC40NDQ0MDQsMTYuOTgzNjM4IDkuOTg4ODA4LDE2LjAyOTAyMiBDIDguOTYyMDk0NywxMy44Nzc3MzcgNy4yOTc1Njg1LDEyLjg5OTU3MyAzLjY1ODQ5NTksMTIuMzA4OTkyIDIuNzU0NjY5NiwxMi4xNjIzMTEgMi41MzAzNzMzLDEyLjA3MDAwNiAyLjQzMjM5MjEsMTEuODA0NDE0IDIuMzY2NDM3LDExLjYyNTYzMiAyLjI2NzMyMjYsOS45NzMxNTg2IDIuMjEyMTM3Nyw4LjEzMjI0OTMgTCAyLjExMTgwMTcsNC43ODUxNDE2IDIwLjA3NjgxLDQuODQ5MjE3NiBjIDIyLjEzMDYyMywwLjA3ODkzMyAyOC43ODk4MTEsMC4yMTcxMDQ4IDMxLjEyNDYwNiwwLjY0NTgwMzMgNC4wNDE5MDIsMC43NDIxNDU1IDYuODY5NDIxLDEuNzcxNDM3OSA5LjM5MDU0NCwzLjQxODQwODkgMS4yNjg2MDEsMC44Mjg3MzY4IDMuMzUyMjIxLDIuOTYxNDI3MiA0LjI2ODE2LDQuMzY4Njc4MiAzLjQzNTcxMiw1LjI3ODYzMSAzLjQxMTY3OCwxMi42MDg3MDEgLTAuMDU4OTMsMTcuOTczNzE1IC0wLjg2MTA4MiwxLjMzMTA5OSAtMy4wODExMDIsMy41Njk2NjEgLTQuNTk5ODE5LDQuNjM4MjQzIC0yLjA4Nzk0OCwxLjQ2OTA5NyAtNC42NDYzOTEsMi42MDAxODUgLTcuMzczOTExLDMuMjYwMDA3IC0wLjYwMzE0OCwwLjE0NTkxIC0xLjA5NjYzMywwLjMzNzUgLTEuMDk2NjMzLDAuNDI1NzU2IDAsMC4yNjgxMjkgMTAuMzU1OTgsMTMuODk3MjAxIDEyLjQ5MTA0MywxNi40Mzg5MzkgMS41MTc4MzcsMS44MDY5NDggMy42MjI3MTMsMy43ODUxMzEgNC41NjQyMjEsNC4yODk1MDIgMS4xMDIwNzgsMC41OTAzOSAzLjE4MjcwMSwxLjI4Mzg3MyA0LjgwMTc2NiwxLjYwMDQ1NyBsIDEuMzYxMzM3LDAuMjY2MTkgMC4wNDA0OSwzLjY0ODQyIDAuMDQwNDksMy42NDg0MjEgLTcuOTgxNjIyLC0wLjA3MTY1IGMgLTQuMzg5OSwtMC4wMzk0IC05LjI5NTcwMiwtMC4xMTE1MTUgLTEwLjkwMTc4OSwtMC4xNjAyNDYgLTIuNzkyNjU1LC0wLjA4NDczIC0yLjkzODg5LC0wLjEwNDM2NSAtMy4zNDkxNTIsLTAuNDQ5NTc3IEMgNTIuMjY0NDk1LDY4LjM0MTY5NyA1MC4xMzI2NTQsNjUuNTk2NTY5IDQzLjQzMjU4Miw1Ni43MzExMjMgMzQuODczMjE4LDQ1LjQwNTQ4OSAzNC40MTU4ODcsNDQuODA4NjAzIDMzLjMzMDU0Nyw0My41NDY0MTggMzEuODM1NDYzLDQxLjgwNzcyNSAzMS40NzU4MjYsNDEuNjU1NjcyIDI4Ljg1ODU1Niw0MS42NTU2NzIgaCAtMi4wODU1ODUgbCAwLjAwNjksMy41MTY3ODggYyAwLjAwMzgsMS45MzQyMzQgMC4wNjkxMyw1LjI1MjQ5NCAwLjE0NTE2OSw3LjM3MzkxMiAwLjE4NDc1OCw1LjE1NTAxNyAwLjQ2NjYwMSw2LjI3ODUzOCAxLjg4OTEzMSw3LjUzMDY5OCAwLjczMTQ5NywwLjY0Mzg4OCAyLjI2NjYyOCwxLjM0MDk5NiAzLjQwNDEyNCwxLjU0NTgyMyAwLjM3NDM2OCwwLjA2NzQxIDEuMTIzMTA0LDAuMjAwNTYxIDEuNjYzODU3LDAuMjk1ODg4IDAuNTQwNzU0LDAuMDk1MzMgMS4xMzYzMzksMC4yMDQ5NyAxLjMyMzUyMywwLjI0MzY0OSBsIDAuMzQwMzM0LDAuMDcwMzMgdiAzLjYyNzM1MiBsIC0xMGUtNywzLjYyNzM1MSBIIDE4LjgyOTE0NiAyLjExMjI1NzcgWiBNIDMzLjg4MjE3OCwzMi44MDAyNiBjIDQuNzA4MTE2LC0wLjEzMDcwNSA2Ljk1MzQyMywtMC41MjMwOSA5LjIyNjg0MywtMS42MTI0NjYgMS4wMjk1MDEsLTAuNDkzMzE1IDEuNTI5NDI4LC0wLjg2MDU3MSAyLjUwODc1MywtMS44NDI5NzYgMS45OTMzOTcsLTEuOTk5NjY1IDIuNjM0MDc3LC0zLjU3OTI2MyAyLjYzNDA3NywtNi40OTQzMTMgMCwtNC41MTc5MzMgLTEuOTIxMzc1LC03LjIxMDU2MyAtNi4yMDE2NDgsLTguNjkxMDM5IC0yLjE3NTk2MSwtMC43NTI2MjkgLTMuMDc5ODA2LC0wLjg2NDk5MiAtNi45NTc5NDgsLTAuODY0OTkyIC0yLjg2OTE4MywwIC0zLjc3MzM1NSwwLjA1MTUzIC00LjY4OTA1MSwwLjI2NzIyNiAtMS41NTUwMDQsMC4zNjYyOTEgLTIuNTkyODQzLDAuOTgzOTA5IC0zLjAzMjMxMSwxLjgwNDUzMiAtMC4zMjMyMjksMC42MDM1NjQgLTAuMzU2NzI3LDAuOTA0MDAyIC0wLjQ2MDQ2Niw0LjEyOTg5IC0wLjA2MTUzLDEuOTEzNDM2IC0wLjExNzYzNCw1Ljc0NzY3NiAtMC4xMjQ2NjcsOC41MjA1MzMgbCAtMC4wMTI3OSw1LjA0MTU1OSAyLjAwNDE5MSwtMC4wODU5MyBjIDEuMTAyMzA1LC0wLjA0NzI2IDMuMzk5NTYyLC0wLjEyNDY3MSA1LjEwNTAxNiwtMC4xNzIwMTkgeiIKICAgICBpZD0icGF0aDg3MCIKICAgICB0cmFuc2Zvcm09Im1hdHJpeCgzLjEyNTAxMDQsMCwwLDMuMTI1MDEwNCwtMC4wMDE1Mzg5MSwwKSIgLz4KICA8cGF0aAogICAgIHN0eWxlPSJmaWxsOnVybCgjbGluZWFyR3JhZGllbnQyODQyKTtmaWxsLW9wYWNpdHk6MTtzdHJva2Utd2lkdGg6MC4xNTEyNiIKICAgICBkPSJtIDc5LjI2MDA5NCw2NS44MDA1MDUgdiAtMy42ODY5NTYgbCAwLjQ3MjY4NywtMC4wOTQ1NCBjIDAuMjU5OTc4LC0wLjA1MiAwLjY4NTM5NiwtMC4wOTU3MiAwLjk0NTM3MywtMC4wOTcxNiAwLjY4MDAzMSwtMC4wMDM4IDIuMjk5Mzg4LC0wLjM3MDU2OSAzLjMwMTQ5LC0wLjc0NzggMS43MDIxNzUsLTAuNjQwNzY3IDMuMDAwNjYyLC0yLjI5MDg1IDMuNDMyNTgsLTQuMzYyMDM0IDAuMTE2OTg2LC0wLjU2MDk4MiAwLjE2NzE1NSwtNi42MDk4NzYgMC4xNjcxNTUsLTIwLjE1Mzc2NyBWIDE3LjMwNjAzOSBsIC0wLjM5MjAxNSwtMC45NzkyMzYgYyAtMC40MjQ3NzcsLTEuMDYxMDcyIC0xLjI4MzMxMywtMi4xNDcxMDkgLTIuMDkyODU2LC0yLjY0NzQzNSAtMC43NzY2NjcsLTAuNDgwMDA2IC0yLjEwNjc1LC0wLjg5MjY2NCAtMy43MDcxNiwtMS4xNTAxNDQgLTAuNzk1NjIyLC0wLjEyODAwMyAtMS41OTk3MzUsLTAuMjY0NzM0IC0xLjc4NjkxOSwtMC4zMDM4NDcgbCAtMC4zNDAzMzUsLTAuMDcxMTIgViA4LjQyNzU4ODEgNC43MDA5MTQxIEwgMTAwLjE3MTc1LDQuODA1NjA1IGMgMTIuNDEzMDksMC4wNjIxNDQgMjEuNDM0MTcsMC4xNjY3OTU0IDIyLjE5NzM2LDAuMjU3NTA1OSAxLjgzMjIyLDAuMjE3NzcxNyAzLjk5ODYzLDAuNjc2Mzc5MyA1LjM4NTQ3LDEuMTQwMDQ5NiA3LjQ2NDUsMi40OTU2NjQ3IDEyLjM0Mjc0LDkuNTk2MDAzNSAxMi4zNTQ0MiwxNy45ODIwMTM1IDAuMDA2LDQuMzI5MzA3IC0xLjIyNDU3LDguMTA2OTE2IC0zLjYxMzYsMTEuMDkyODM3IC0zLjIyNzk4LDQuMDM0NDY5IC03Ljk2ODQxLDYuMzUzMjM4IC0xNS4yMzcxLDcuNDUzMTc4IC0xLjYyMDIyLDAuMjQ1MTgxIC0zLjI4Mjk3LDAuMzI2NTYyIC04Ljk0Nzk2LDAuNDM3OTM5IC0zLjgyNjg3LDAuMDc1MjQgLTcuMjUzMzYsMC4xMzk4NTkgLTcuNjE0NDIsMC4xNDM2IGwgLTAuNjU2NDcsMC4wMDY4IDAuMDY4LDYuNTQxOTgzIGMgMC4wNzIsNi45MTgxMTcgMC4xMzgyOSw3LjYxODM3NCAwLjg1Mjg1LDkuMDA0NzE1IDAuNzc4MSwxLjUwOTYxMSAzLjA4MzM0LDIuNjc5MzQ5IDUuODY3MDEsMi45NzcwNjggMC40ODI4NywwLjA1MTY0IDEuMDk5MTYsMC4xMjgxNTMgMS4zNjk1NCwwLjE3MDAyMiBsIDAuNDkxNTksMC4wNzYxMyB2IDMuNjk5MDA4IDMuNjk5MDAzIEggOTUuOTc0Mjk0IDc5LjI2MDA5NCBaIE0gMTEzLjM2OTE2LDM0LjM0NjUzOSBjIDUuNjEyNTEsLTEuNDgxNjY2IDguNTQ2MTgsLTUuMDczNjI3IDguNTQ2MTgsLTEwLjQ2Mzg4NSAwLC00LjU2MDExOCAtMi4zMjk4NywtOC4yOTg2MzggLTYuMDc5NDMsLTkuNzU1MDg5IC0zLjM3Mzc1LC0xLjMxMDQ3NSAtOC4zNDcyMiwtMS4xNzM5OSAtMTAuMzYwMzUsMC4yODQzMTUgLTEuMjg2MzgsMC45MzE4NDggLTEuNDAyOCwxLjk2NDQ3NSAtMS40MDYyNSwxMi40NzMwNSBsIC0wLjAwMyw3Ljk5Mzg0NiAzLjg5NDk0LC0wLjA2NjQ2IGMgMy42MDc1NiwtMC4wNjE1NiA0LjAwNjU0LC0wLjA5NTkyIDUuNDA3NTMsLTAuNDY1Nzc3IHoiCiAgICAgaWQ9InBhdGg4NzIiCiAgICAgdHJhbnNmb3JtPSJtYXRyaXgoMy4xMjUwMTA0LDAsMCwzLjEyNTAxMDQsLTAuMDAxNTM4OTEsMCkiIC8+Cjwvc3ZnPgo=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          - pods
+          - pods/exec
+          - pods/log
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - serviceaccounts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - deployments/scale
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          - rolebindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          - cronjobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - alertmanagers
+          - servicemonitors
+          - prometheuses
+          - prometheusrules
+          verbs:
+          - get
+          - list
+          - create
+          - update
+          - delete
+          - deletecollection
+          - watch
+          - patch
+        - apiGroups:
+          - apps
+          resourceNames:
+          - reportportal-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - rp5.reportportal.io
+          resources:
+          - reportportals
+          - reportportals/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rp5.reportportal.io
+          resources:
+          - reportportalrestores
+          - reportportalrestores/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rp5.reportportal.io
+          resources:
+          - serviceapiservicemonitors
+          - serviceapiservicemonitors/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: reportportal-operator-controller-manager
+      deployments:
+      - name: reportportal-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.7.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --health-probe-bind-address=:6789
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                - --leader-election-id=reportportal-operator
+                env:
+                - name: ANSIBLE_GATHERING
+                  value: explicit
+                image: quay.io/waynesun09/rp5-operator:v0.0.7
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 6789
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 6789
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources: {}
+                securityContext:
+                  allowPrivilegeEscalation: false
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: reportportal-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - coordination.k8s.io
+          resources:
+          - configmaps
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: reportportal-operator-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - reportportal
+  - failure analysis
+  - test automation
+  links:
+  - name: Documentation
+    url: https://github.com/waynesun09/reportportal-operator/blob/master/README.md
+  - name: ReportPortal.io
+    url: https://reportportal.io
+  maintainers:
+  - email: gsun@redhat.com
+    name: Wayne Sun
+  maturity: alpha
+  provider:
+    name: Red Hat CCIT
+  version: 0.0.7
