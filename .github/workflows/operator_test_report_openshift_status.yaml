@@ -7,22 +7,42 @@ on:
       - openshift-test-status
 
 jobs:
-  build:
+  remove-label:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        labels: context.payload.client_payload.remove_labels
     steps:
-      - name: "Setting Openshift deployment status"
+      - name: "Remove labels"
         uses: actions/github-script@v3
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            console.log(context.payload.client_payload.source_pr)
-            github.issues.addLabels({
-              issue_number: context.payload.client_payload.source_pr,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: [ 'deployment-ok' ]
-            })
+            console.log(context)
+#            github.issues.removeLabel({
+#              issue_number: context.payload.client_payload.source_pr,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              name: ${{ matrix.labels }}
+#            })
+        continue-on-error: true
+#
+#  add-label:
+#    runs-on: ubuntu-latest
+#    needs: remove-label
+#    steps:
+#      - name: "Add labels"
+#        uses: actions/github-script@v3
+#        with:
+#          github-token: ${{secrets.GITHUB_TOKEN}}
+#          script: |
+#            console.log(context.payload.client_payload.source_pr)
+#            github.issues.addLabels({
+#              issue_number: context.payload.client_payload.source_pr,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              labels: context.payload.client_payload.add_labels
+#            })
 #      - name: "Setting Openshift deployment status"
 #        uses: actions/github-script@v3
 #        with:
