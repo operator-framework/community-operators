@@ -1,0 +1,41 @@
+name: Report Openshift status
+
+on:
+  repository_dispatch:
+    types:
+      - manual-openshift-report
+      - openshift-test-status
+
+jobs:
+  remove-add-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Remove labels"
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            console.log(context.payload.client_payload.source_pr)
+            for (const label of context.payload.client_payload.remove_labels) {
+              github.issues.removeLabel({
+                issue_number: context.payload.client_payload.source_pr,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label
+              })
+
+            }
+        continue-on-error: true
+
+      - name: "Add labels"
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            console.log(context.payload.client_payload.source_pr)
+            github.issues.addLabels({
+              issue_number: context.payload.client_payload.source_pr,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: context.payload.client_payload.add_labels
+            })

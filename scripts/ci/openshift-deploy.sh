@@ -11,6 +11,11 @@ OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
 
+curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+-X POST \
+-H "Accept: application/vnd.github.v3+json" \
+https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"deployment-ok\", \"openshift-started\"], \"add_labels\": [\"openshift-started\"]}}"
+
 pwd
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
 
@@ -126,6 +131,18 @@ git clone https://github.com/operator-framework/operator-test-playbooks.git
 cd operator-test-playbooks/upstream
 export ANSIBLE_CONFIG=/tmp/playbooks2/operator-test-playbooks/upstream/ansible.cfg
 ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG $EXTRA_ARGS -vv
+if [ $? -eq 0 ]; then
+  curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+  -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"deployment-ok\"], \"add_labels\": [\"deployment-ok\"]}}"
+else
+  curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+  -X POST \
+  -H "Accept: application/vnd.github.v3+json" \
+  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"deployment-ok\"], \"add_labels\": [\"openshift-failed\"]}}"
+fi
+
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
