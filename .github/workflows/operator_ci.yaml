@@ -76,7 +76,6 @@ jobs:
         run: |
           bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt.sh)
 
-
       - name: "Comment operator test error code [10]"
         if: steps.op-traffic-light.outputs.op_test_error_code == '10'
         uses: mshick/add-pr-comment@v1
@@ -86,6 +85,32 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
           allow-repeats: false
+          
+      - name: "Mention reviewers if exists"
+        if: steps.op-traffic-light.outputs.op_test_pr_revievers != ''
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            ${{ steps.op-traffic-light.outputs.op_test_pr_revievers }}, please approve as you are original reviewer(s).
+            Please note, that you can also add the contributor to ci.yaml as a reviewer. More info [here](https://operator-framework.github.io/community-operators/operator-ci-yaml).
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: false
+
+      - name: "Mention reviewers if ci.yaml was changed"
+        if: steps.op-traffic-light.outputs.op_test_pr_revievers != '' && steps.op-traffic-light.outputs.op_test_ci_yaml_changed == '1'
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            /hold
+            
+            ${{ steps.op-traffic-light.outputs.op_test_pr_revievers }}, Please note that ci.yml was changed. 
+
+            Please add comment with `/hold cancel` if change is OK.
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: false
+
 
       - name: "Comment operator test error code [1]"
         if: failure() && steps.op-traffic-light.outputs.op_test_error_code == '1'
@@ -95,7 +120,7 @@ jobs:
             Overwrite and recreate labels cannot be set at the same time.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       - name: "Comment operator test error code [2]"
         if: failure() && steps.op-traffic-light.outputs.op_test_error_code == '2'
@@ -109,7 +134,7 @@ jobs:
             Please add comment with `/hold cancel` when ready.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
 
       - name: "Comment operator test error code [3]"
@@ -121,7 +146,7 @@ jobs:
 
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       - name: "Comment operator test error code [4]"
         if: failure() && steps.op-traffic-light.outputs.op_test_error_code == '4'
@@ -137,7 +162,7 @@ jobs:
             Please add comment with `/hold cancel` when ready.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       - name: "Comment operator test error code [5]"
         if: failure() && steps.op-traffic-light.outputs.op_test_error_code == '5'
@@ -151,7 +176,7 @@ jobs:
             Please add comment with `/hold cancel` when ready.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       # Please make it automatic (so we set recreate label)
       - name: "Comment operator test error code [6]"
@@ -166,7 +191,7 @@ jobs:
             Please add comment with `/hold cancel` when ready.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       - name: "Comment operator test error code [7]"
         if: failure() && steps.op-traffic-light.outputs.op_test_error_code == '7'
@@ -180,7 +205,7 @@ jobs:
             Please add comment with `/hold cancel` when ready.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       - name: Update title
         uses: actions/github-script@v3
@@ -255,7 +280,7 @@ jobs:
             </details>
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       - name: "Removing Operator recreate label when exists"
         uses: actions/github-script@v3
@@ -314,7 +339,7 @@ jobs:
             Warning: Operator is going to run in `semver-mode` since 'updateGraph' is not present in 'ci.yaml' file.
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: true # This is the default
+          allow-repeats: true
 
       # - name: Setup reviewers
       #   uses: kentaro-m/auto-assign-action@v1.1.2
@@ -349,7 +374,7 @@ jobs:
       #       </details>
       #     repo-token: ${{ secrets.GITHUB_TOKEN }}
       #     repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-      #     allow-repeats: true # This is the default
+      #     allow-repeats: true
 
     outputs:
       op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"

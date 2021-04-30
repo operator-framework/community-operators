@@ -3,14 +3,19 @@
 Each operator might have `ci.yaml` configuration file to be present in operator directory (for example `community-operators/aqua/ci.yaml`). This configuration file is used by [community-operators](https://github.com/operator-framework/community-operators) pipeline to setup various feature like `reviewers` or `operator versioning`.
 
 !!! note
-    One can create `ci.yaml` file with new operator version when file is not already present. This operation can be done in the same PR with other operator changes. 
-
-!!! warning
-    If `ci.yaml` is already present, modification to the file will be `only` possible via an extra PR with single file modification. One can update list of reviewers or change version strategy.
+    One can create or modify `ci.yaml` file with new operator version. This operation can be done in the same PR with other operator changes. 
 
 ## Reviewers
 
-If you want to accelerate publishing your changes, consider adding yourself and others you trust to the reviewers list. If the author of PR will be in that list, chnages she/he made will be taken as authorized changes (label `authorized-changes` will be set). This will be the indicator for our pipeline that the PR is ready to merged automatically. For this to work, it is required to setup reviewers in `ci.yaml` file. It can be done by adding `reviewers` tag with list of github usernames. For example
+If you want to accelerate publishing your changes, consider adding yourself and others you trust to the reviewers list. If the author of PR will be in that list, chnages she/he made will be taken as authorized changes (label `authorized-changes` will be set). This will be the indicator for our pipeline that the PR is ready to merged automatically. 
+
+!!! note
+    If author of PR is not in `reviewers` list, PR will not be merged automatically. For automatic merging PR needs to have `authorized-changes` label set.
+
+!!! note
+    If auhor of PR is not in `reviewers` list and `reviewers` are present in `ci.yaml` file. All `reviewers` will be mentioned in PR comment to check for upcomming changes
+
+For this to work, it is required to setup reviewers in `ci.yaml` file. It can be done by adding `reviewers` tag with list of github usernames. For example
 
 ### Example
 ```

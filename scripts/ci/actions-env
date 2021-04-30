@@ -8,6 +8,9 @@ OP_TEST_OP_DELETE=${OP_TEST_OP_DELETE-0}
 OP_TEST_PR_AUTHOR=${OP_TEST_PR_AUTHOR-""}
 DELETE_APPREG=${DELETE_APPREG-0}
 OPRT=${OPRT-0}
+PROJECT_REPO=${PROJECT_REPO-"operator-framework/community-operators"}
+PROJECT_BRANCH=${PROJECT_BRANCH-"master"}
+
 
 OP_TEST_CHANGES_GITHUB=0
 OP_TEST_CHANGES_CI=0
@@ -22,6 +25,7 @@ OP_TEST_IS_OPERATOR=0
 OP_TEST_IS_NEW_OPERATOR=0
 OP_TEST_PR_TITLE=
 OP_TEST_AUTHORIZED_CHANGES=0
+OP_TEST_REVIEVERS=""
 
 # Error codes:
 #   [1] overwrite and recreate labels set at same time
@@ -290,50 +294,53 @@ echo "Versions Count: CHANGED[$OP_TEST_OPERATOR_VERSIONS] REMOVED[$OP_TEST_OPERA
 
 [[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; echo "::set-output name=op_test_error_code::1"; exit 1; }
 
-[[ $OPRT -eq 1 ]] && [[ $OP_TEST_CI_YAML_MODIFIED -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; echo "::set-output name=op_test_error_code::7"; exit 1; }
+# [[ $OPRT -eq 1 ]] && [[ $OP_TEST_CI_YAML_MODIFIED -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; echo "::set-output name=op_test_error_code::7"; exit 1; }
 
 echo "::set-output name=op_test_stream::${OP_TEST_STREAM_NAME}"
 echo "::set-output name=op_test_name::${OP_TEST_OPERATOR_NAME}"
 
-if [[ $OP_TEST_READY -eq 1 ]] || [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]];then
+yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
+
+# Hanlde remote ci.yaml for authorized changes
+CI_YAML_REMOTE="https://raw.githubusercontent.com/$PROJECT_REPO/$PROJECT_BRANCH/$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml"
+CI_YAML_REMOTE_LOCAL="/tmp/ci.yaml"
+echo "Downloading '$CI_YAML_REMOTE' to $CI_YAML_REMOTE_LOCAL ... "
+rm -f $CI_YAML_REMOTE_LOCAL
+curl -s -f -o $CI_YAML_REMOTE_LOCAL $CI_YAML_REMOTE || true
+if [ -f $CI_YAML_REMOTE_LOCAL ];then
+  echo "File '$CI_YAML_REMOTE' was found ..."
+  if [ -n "$OP_TEST_PR_AUTHOR" ];then
+    TEST_REVIEWERS=$(cat  $CI_YAML_REMOTE_LOCAL | yq '.reviewers')
+    for row in $(echo "${TEST_REVIEWERS}" | yq -r '.[]'); do
+      echo "checking if reviewer '$row' is pr author '$OP_TEST_PR_AUTHOR' ..."
+      if [ "$OP_TEST_PR_AUTHOR" == "$row" ];then
+        echo "[AUTHORIZED_CHANGES=1] : Author '$OP_TEST_PR_AUTHOR' is in reviewer list" && OP_TEST_AUTHORIZED_CHANGES=1
+      else
+        OP_TEST_REVIEVERS="@$row,$OP_TEST_REVIEVERS"
+      fi
+    done
+    OP_TEST_REVIEVERS=$(echo $OP_TEST_REVIEVERS | sed 's/\(.*\),/\1 /')
+    [[ $OP_TEST_AUTHORIZED_CHANGES -eq 1 ]] && OP_TEST_REVIEVERS=""
+  fi
+else
+  echo "File '$CI_YAML_REMOTE' was not found ..."
+fi
+
+if [[ $OP_TEST_READY -eq 1 ]];then
   if [ -f $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml ];then 
-  
-    yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
     TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers')
     # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
     
     if [ "$TEST_REVIEWERS" != "null" ];then
       TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
       [[ $TEST_REVIEWERS -eq 0 ]] && { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
-
-
-      if [ -n "$OP_TEST_PR_AUTHOR" ];then
-        TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.reviewers')
-        for row in $(echo "${TEST_REVIEWERS}" | yq -r '.[]'); do
-          echo "checking if reviewer '$row' is pr author '$OP_TEST_PR_AUTHOR' ..."
-          [ "$OP_TEST_PR_AUTHOR" == "$row" ] && echo "[AUTHORIZED_CHANGES=1] : Author '$OP_TEST_PR_AUTHOR' is in reviewer list" && OP_TEST_AUTHORIZED_CHANGES=1 && break
-        done
-      fi
-
     else
       echo "File '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
       OP_TEST_ERROR_CODE=10
     fi
-    # TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.addReviewers')
-    # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' contains 'addReviewers' field ('addReviewers: true') !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
-    # [ "$TEST_REVIEWERS" == "false" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' has 'addReviewers: true' set !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
-
-
-    # for f in $OP_TEST_CI_YAML_UNSUPPORTED_FIELDS;do
-    #   echo "Checking existance of unsupported field '$f' in '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' ..."
-    #   TEST_REVIEWERS=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq ".$f")
-    #   [ $TEST_REVIEWERS != "null" ] &&  { echo "We require that file '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' must NOT contain '$f' field !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=op_test_error_code::4"; exit 1; }
-    # done
-
     TEST_UPDATE_GRAPH=$(cat $OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
     [ $TEST_UPDATE_GRAPH == "null" ] && OP_TEST_UPDATEGRAPH=0
     echo "OP_TEST_UPDATEGRAPH=$OP_TEST_UPDATEGRAPH"
-
 
   else
     echo "File '$OP_TEST_STREAM_NAME/$OP_TEST_OPERATOR_NAME/ci.yaml' is present !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
@@ -345,7 +352,7 @@ OP_TEST_PR_TITLE="$OP_TEST_STREAM_NAME"
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_VER_OVERWRITE -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE [O]"
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && [[ $OP_TEST_IS_NEW_OPERATOR -eq 0 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE [R]"
 [[ $OPRT -eq 1 ]] && [[ $OP_TEST_RECREATE -eq 1 ]] && [[ $OP_TEST_IS_NEW_OPERATOR -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE [N]"
-[[ $OPRT -eq 1 ]] && [[ $OP_TEST_CI_YAML_ONLY -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE [CI]"
+[[ $OPRT -eq 1 ]] && [[ $OP_TEST_CI_YAML_CHANGED -eq 1 ]] && OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE [CI]"
 OP_TEST_PR_TITLE="$OP_TEST_PR_TITLE $OP_TEST_OPERATOR_NAME ($OP_TEST_OPERATOR_VERSIONS)"
 
 echo "Latest : $LATEST"
@@ -369,13 +376,15 @@ echo "op_test_version=${OP_TEST_OPERATOR_VERSION}"
 echo "op_test_versions=${OP_TEST_OPERATOR_VERSIONS}"
 echo "op_test_is_new_operatror=${OP_TEST_IS_NEW_OPERATOR}"
 echo "op_test_pr_title=${OP_TEST_PR_TITLE}"
+echo "op_test_pr_revievers=${OP_TEST_REVIEVERS}"
 
 echo "op_test_ci_yaml_only=$OP_TEST_CI_YAML_ONLY"
+echo "op_test_ci_yaml_changed=${OP_TEST_CI_YAML_CHANGED}"
 echo "op_test_op_delete=$OP_TEST_OP_DELETE"
 echo "op_test_ver_overwrite=$OP_TEST_VER_OVERWRITE"
 echo "op_test_recreate=${OP_TEST_RECREATE}"
-echo "op_test_set_label_operator_version_overwrite::$OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE"
-echo "op_test_set_label_operator_recreate::$OP_TEST_SET_LABEL_OPERATOR_RECREATE"
+echo "op_test_set_label_operator_version_overwrite=$OP_TEST_SET_LABEL_OPERATOR_VERSION_OVERWRITE"
+echo "op_test_set_label_operator_recreate=$OP_TEST_SET_LABEL_OPERATOR_RECREATE"
 
 echo "op_test_error_code=$OP_TEST_ERROR_CODE"
 echo "op_test_authorized_changes=$OP_TEST_AUTHORIZED_CHANGES"
@@ -389,8 +398,12 @@ echo "::set-output name=op_test_version::${OP_TEST_OPERATOR_VERSION}"
 echo "::set-output name=op_test_versions::${OP_TEST_OPERATOR_VERSIONS}"
 echo "::set-output name=op_test_is_new_operatror::${OP_TEST_IS_NEW_OPERATOR}"
 echo "::set-output name=op_test_pr_title::${OP_TEST_PR_TITLE}"
+echo "::set-output name=op_test_pr_revievers::${OP_TEST_REVIEVERS}"
+
 
 echo "::set-output name=op_test_ci_yaml_only::${OP_TEST_CI_YAML_ONLY}"
+echo "::set-output name=op_test_ci_yaml_changed::${OP_TEST_CI_YAML_CHANGED}"
+
 echo "::set-output name=op_test_op_delete::${OP_TEST_OP_DELETE}"
 echo "::set-output name=op_test_ver_overwrite::${OP_TEST_VER_OVERWRITE}"
 echo "::set-output name=op_test_recreate::${OP_TEST_RECREATE}"
