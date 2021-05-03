@@ -63,16 +63,12 @@ REPO_FULL=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.repo.clone_url'
 BRANCH=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.ref')
 COMMIT=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.sha')
 REPO=$(echo "$REPO_FULL"| awk -F'https://github.com/' '{print $2}')
-#echo "::set-output name=op_test_repo::$REPO"
-#echo "::set-output name=op_test_branch::$BRANCH"
-#echo "::set-output name=op_test_commit::$COMMIT"
-#echo "Pull request #$1 : $REPO $BRANCH $COMMIT"
+
 rm -f $tmpfile > /dev/null 2>&1
 
 OPRT_REPO=${REPO_FULL-""}
 OPRT_SHA=${COMMIT-""}
 OPRT_SRC_BRANCH=${OPRT_SRC_BRANCH-"master"}
-#OPRT_SCRIPT=${OPRT_SCRIPT-"https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/actions-env"}
 export OPRT=1
 
 [ -n "$OPRT_REPO" ] || { echo "Error: '\$OPRT_REPO' is empty !!!"; exit 1; }
@@ -156,14 +152,6 @@ else
       CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
     done
 
-
-    #export OP_STREAM=community-operators
-    #export OP_VERSION=$OP_VER
-    #export OP_NAME=$OP_NAME
-    #export OP_OSR_HAH= #"quay.io/operator_testing|$OP_TOKEN|$COMMIT"
-    #export STORAGE_DRIVER=vfs
-    #bash <(curl -sL https://raw.githubusercontent.com/J0zi/operator-test-playbooks/upstream-community/test/osr_test.sh)
-    ##solve secret or local registry (empty token)
 
     #deploy start
     mkdir -p /tmp/playbooks2
