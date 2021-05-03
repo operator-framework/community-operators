@@ -1,0 +1,269 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: pmemcsideployments.pmem-csi.intel.com
+spec:
+  group: pmem-csi.intel.com
+  names:
+    kind: PmemCSIDeployment
+    listKind: PmemCSIDeploymentList
+    plural: pmemcsideployments
+    shortNames:
+    - pcd
+    singular: pmemcsideployment
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.deviceMode
+      name: DeviceMode
+      type: string
+    - jsonPath: .spec.nodeSelector
+      name: NodeSelector
+      type: string
+    - jsonPath: .spec.image
+      name: Image
+      type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: PmemCSIDeployment is the Schema for the deployments API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DeploymentSpec defines the desired state of Deployment
+            properties:
+              controllerDriverResources:
+                description: ControllerDriverResources Compute resources required by central driver container
+                properties:
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                type: object
+              controllerTLSSecret:
+                description: ControllerTLSSecret is the name of a secret which contains ca.crt, tls.crt and tls.key data for the scheduler extender and pod mutation webhook. A controller is started if (and only if) this secret is specified.
+                type: string
+              deviceMode:
+                description: DeviceMode to use to manage PMEM devices.
+                enum:
+                - lvm
+                - direct
+                type: string
+              image:
+                description: PMEM-CSI driver container image
+                type: string
+              imagePullPolicy:
+                description: PullPolicy image pull policy one of Always, Never, IfNotPresent
+                type: string
+              kubeletDir:
+                description: KubeletDir kubelet's root directory path
+                type: string
+              labels:
+                additionalProperties:
+                  type: string
+                description: Labels contains additional labels for all objects created by the operator.
+                type: object
+              logFormat:
+                description: LogFormat
+                enum:
+                - text
+                - json
+                type: string
+              logLevel:
+                description: LogLevel number for the log verbosity
+                type: integer
+              mutatePods:
+                description: MutatePod defines how a mutating pod webhook is configured if a controller is started. The field is ignored if the controller is not enabled. The default is "Try".
+                enum:
+                - Always
+                - Try
+                - Never
+                type: string
+              nodeDriverResources:
+                description: NodeDriverResources Compute resources required by driver container running on worker nodes
+                properties:
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                type: object
+              nodeRegistrarImage:
+                description: NodeRegistrarImage CSI node driver registrar sidecar image
+                type: string
+              nodeRegistrarResources:
+                description: NodeRegistrarResources Compute resources required by node registrar sidecar container
+                properties:
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                type: object
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: NodeSelector node labels to use for selection of driver node
+                type: object
+              pmemPercentage:
+                description: PMEMPercentage represents the percentage of space to be used by the driver in each PMEM region on every node. Unset (= zero) selects the default of 100%. This is only valid for driver in LVM mode.
+                maximum: 100
+                minimum: 0
+                type: integer
+              provisionerImage:
+                description: ProvisionerImage CSI provisioner sidecar image
+                type: string
+              provisionerResources:
+                description: ProvisionerResources Compute resources required by provisioner sidecar container
+                properties:
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                type: object
+              schedulerNodePort:
+                description: SchedulerNodePort, if non-zero, ensures that the "scheduler" service is created as a NodeService with that fixed port number. Otherwise that service is created as a cluster service. The number must be from the range reserved by Kubernetes for node ports. This is useful if the kube-scheduler cannot reach the scheduler extender via a cluster service.
+                format: int32
+                type: integer
+            type: object
+          status:
+            description: DeploymentStatus defines the observed state of Deployment
+            properties:
+              conditions:
+                description: Conditions
+                items:
+                  properties:
+                    lastUpdateTime:
+                      description: Last time the condition was probed.
+                      format: date-time
+                      nullable: true
+                      type: string
+                    reason:
+                      description: Message human readable text that explain why this condition is in this state
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              driverComponents:
+                items:
+                  properties:
+                    component:
+                      description: 'DriverComponent represents type of the driver: controller or node'
+                      type: string
+                    lastUpdated:
+                      description: LastUpdated time of the driver status
+                      format: date-time
+                      nullable: true
+                      type: string
+                    reason:
+                      description: Reason represents the human readable text that explains why the driver is in this state.
+                      type: string
+                    status:
+                      description: Status represents the state of the component; one of `Ready` or `NotReady`. Component becomes `Ready` if all the instances(Pods) of the driver component are in running state. Otherwise, `NotReady`.
+                      type: string
+                  required:
+                  - component
+                  - reason
+                  - status
+                  type: object
+                type: array
+              lastUpdated:
+                description: LastUpdated time of the deployment status
+                format: date-time
+                nullable: true
+                type: string
+              phase:
+                description: Phase indicates the state of the deployment
+                type: string
+              reason:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
