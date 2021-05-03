@@ -99,6 +99,7 @@ export OP_TEST_ADDED_MODIFIED_FILES=$(git diff --diff-filter=AM upstream/$OPRT_S
 BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
 echo "BRANCH_NAME=$BRANCH_NAME"
 
+OP_VER="no-operator-version-detected"
 for sf in ${OP_TEST_ADDED_MODIFIED_FILES[@]}; do
   echo $sf
   if [ $(echo $sf| awk -F'/' '{print NF}') -ge 4 ]; then
@@ -120,57 +121,68 @@ echo "OP_VER=$OP_VER"
 
 #cd aqua
 
-OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
-echo
-curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
--X POST \
--H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\"}}"
-
-CHECK_TEMP_INDEX=1
-while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
-  echo "Checking index $QUAY_HASH presence ... $CHECK_TEMP_INDEX minutes."
-  if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then
-   echo "Temp index $QUAY_HASH found."
-   break
-  elif [ "$CHECK_TEMP_INDEX" -eq "$MAX_LIMIT_FOR_INDEX_WAIT" ]; then
+if [[ "$OP_VER" == "no-operator-version-detected" ]]; then
     echo
     echo
-    echo 'Temp index not found. Are your commits squashed? If so, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
+    echo
+    echo "Operator version not found, nothing to test [OK]"
     echo
     echo
-    exit 1
-  fi
-  sleep 60s
-  CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
-done
-
-
-#export OP_STREAM=community-operators
-#export OP_VERSION=$OP_VER
-#export OP_NAME=$OP_NAME
-#export OP_OSR_HAH= #"quay.io/operator_testing|$OP_TOKEN|$COMMIT"
-#export STORAGE_DRIVER=vfs
-#bash <(curl -sL https://raw.githubusercontent.com/J0zi/operator-test-playbooks/upstream-community/test/osr_test.sh)
-##solve secret or local registry (empty token)
-
-#deploy start
-mkdir -p /tmp/playbooks2
-cd /tmp/playbooks2
-git clone https://github.com/operator-framework/operator-test-playbooks.git
-cd operator-test-playbooks/upstream
-export ANSIBLE_CONFIG=/tmp/playbooks2/operator-test-playbooks/upstream/ansible.cfg
-ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG $EXTRA_ARGS -vv
-if [ $? -eq 0 ]; then
-  curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
-  -X POST \
-  -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"deployment-ok\"], \"add_labels\": [\"deployment-ok\"]}}"
+    echo
 else
-  curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
-  -X POST \
-  -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"deployment-ok\"], \"add_labels\": [\"openshift-failed\"]}}"
+    #prepare temp index
+    OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
+    echo
+    curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+    -X POST \
+    -H "Accept: application/vnd.github.v3+json" \
+    https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"index-for-openshift-test\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\"}}"
+
+    CHECK_TEMP_INDEX=1
+    while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
+      echo "Checking index $QUAY_HASH presence ... $CHECK_TEMP_INDEX minutes."
+      if [ $(curl -s 'https://quay.io/v2/operator_testing/catalog/tags/list'|grep $QUAY_HASH) ]; then
+       echo "Temp index $QUAY_HASH found."
+       break
+      elif [ "$CHECK_TEMP_INDEX" -eq "$MAX_LIMIT_FOR_INDEX_WAIT" ]; then
+        echo
+        echo
+        echo 'Temp index not found. Are your commits squashed? If so, please check logs https://github.com/operator-framework/community-operators/actions?query=workflow%3Aprepare-test-index'
+        echo
+        echo
+        exit 1
+      fi
+      sleep 60s
+      CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
+    done
+
+
+    #export OP_STREAM=community-operators
+    #export OP_VERSION=$OP_VER
+    #export OP_NAME=$OP_NAME
+    #export OP_OSR_HAH= #"quay.io/operator_testing|$OP_TOKEN|$COMMIT"
+    #export STORAGE_DRIVER=vfs
+    #bash <(curl -sL https://raw.githubusercontent.com/J0zi/operator-test-playbooks/upstream-community/test/osr_test.sh)
+    ##solve secret or local registry (empty token)
+
+    #deploy start
+    mkdir -p /tmp/playbooks2
+    cd /tmp/playbooks2
+    git clone https://github.com/operator-framework/operator-test-playbooks.git
+    cd operator-test-playbooks/upstream
+    export ANSIBLE_CONFIG=/tmp/playbooks2/operator-test-playbooks/upstream/ansible.cfg
+    ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG $EXTRA_ARGS -vv
+    if [ $? -eq 0 ]; then
+      curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+      -X POST \
+      -H "Accept: application/vnd.github.v3+json" \
+      https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"deployment-ok\"], \"add_labels\": [\"deployment-ok\"]}}"
+    else
+      curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+      -X POST \
+      -H "Accept: application/vnd.github.v3+json" \
+      https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"deployment-ok\"], \"add_labels\": [\"openshift-failed\"]}}"
+    fi
 fi
 
 echo "Variable summary:"
