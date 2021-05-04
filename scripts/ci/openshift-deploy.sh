@@ -4,7 +4,7 @@
 set -e #fail in case of non zero return
 
 #remove
-PULL_NUMBER=3730
+PULL_NUMBER=3725
 
 JQ_VERSION='1.6'
 MAX_LIMIT_FOR_INDEX_WAIT=20
@@ -106,6 +106,9 @@ done
 echo
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
+
+[ -n "$OP_NAME" ] || { echo "Error: '\$OP_NAME' is empty !!!"; exit 1; }
+[ -n "$OP_VER" ] || { echo "Error: '\$OP_VER' is empty !!!"; exit 1; }
 
 #detection end
 
