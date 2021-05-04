@@ -52,7 +52,6 @@ curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 && echo "Longer deployment detected" && EXTRA_ARGS='-e pod_start_retries=300'
 
 cd "$TARGET_PATH"
-pwd
 
 tmpfile=$(mktemp /tmp/pr-details-XXXXXXX.json)
 curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$PULL_NUMBER -o $tmpfile
