@@ -11,6 +11,7 @@ OC_DIR_CORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 SUBDIR_ARG="-e work_subdir_name=oc-$OC_DIR_CORE"
 echo "SUBDIR_ARG = $SUBDIR_ARG"
 
+
 curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
@@ -52,24 +53,47 @@ curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 
 cd "$TARGET_PATH"
 pwd
-COMMIT=$(git --no-pager log -n1 --pretty=format:%h | tail -n 1)
-echo
-echo "Target commit $COMMIT"
 
-echo "git log:"
-git --no-pager log --oneline|head
-echo
-echo "Source commit details:"
-git --no-pager log -m -1 --name-only --first-parent $COMMIT
-QUAY_HASH=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|head -n 2|grep 'Merge: '|awk '{print $3}')
+tmpfile=$(mktemp /tmp/pr-details-XXXXXXX.json)
+curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$PULL_NUMBER -o $tmpfile
+REPO_FULL=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.repo.clone_url')
+BRANCH=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.ref')
+COMMIT=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.sha')
+REPO=$(echo "$REPO_FULL"| awk -F'https://github.com/' '{print $2}')
+QUAY_HASH=$(echo ${COMMIT::8})
 
-declare -A CHANGED_FILES
-##community only
-echo "changed community files:"
-CHANGED_FILES=$(git --no-pager log -m -1 --name-only --first-parent $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || { echo '******* No community operator (Openshift) modified, no reason to deploy on Openshift *******'; exit 0; }
-echo
+rm -f $tmpfile > /dev/null 2>&1
 
-for sf in ${CHANGED_FILES[@]}; do
+OPRT_REPO=${REPO_FULL-""}
+OPRT_SHA=${COMMIT-""}
+OPRT_SRC_BRANCH=${OPRT_SRC_BRANCH-"master"}
+export OPRT=1
+
+[ -n "$OPRT_REPO" ] || { echo "Error: '\$OPRT_REPO' is empty !!!"; exit 1; }
+[ -n "$OPRT_SHA" ] || { echo "Error: '\$OPRT_SHA' is empty !!!"; exit 1; }
+
+git clone $REPO_FULL community-operators > /dev/null 2>&1
+cd community-operators
+BRANCH_NAME=$(git branch -a --contains $OPRT_SHA | grep remotes/ | grep -v HEAD | cut -d '/' -f 2-)
+git checkout $BRANCH_NAME > /dev/null 2>&1
+git log --oneline | head
+
+git config --global user.email "test@example.com"
+git config --global user.name "Test User"
+
+git remote add upstream https://github.com/operator-framework/community-operators -f > /dev/null 2>&1
+git pull --rebase -Xours upstream $OPRT_SRC_BRANCH
+
+export OP_TEST_ADDED_FILES=$(git diff --diff-filter=A upstream/$OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
+export OP_TEST_MODIFIED_FILES=$(git diff --diff-filter=M upstream/$OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
+export OP_TEST_REMOVED_FILES=$(git diff --diff-filter=D upstream/$OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
+export OP_TEST_RENAMED_FILES=$(git diff --diff-filter=R upstream/$OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
+export OP_TEST_RENAMED_ADDED_MODIFIED_FILES=$(git diff --diff-filter=RAM upstream/$OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
+
+BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
+echo "BRANCH_NAME=$BRANCH_NAME"
+
+for sf in ${OP_TEST_RENAMED_ADDED_MODIFIED_FILES[@]}; do
   echo $sf
   if [ $(echo $sf| awk -F'/' '{print NF}') -ge 4 ]; then
       OP_NAME="$(echo "$sf" | awk -F'/' '{ print $2 }')"
@@ -80,6 +104,9 @@ echo
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
 
+[ -n "$OP_NAME" ] || { echo "Error: '\$OP_NAME' is empty !!!"; exit 1; }
+[ -n "$OP_VER" ] || { echo "Error: '\$OP_VER' is empty !!!"; exit 1; }
+
 #detection end
 
 #test
@@ -88,8 +115,7 @@ echo "OP_VER=$OP_VER"
 #COMMIT=1234
 #echo "Forced specific operator - $OP_NAME $OP_VER $COMMIT"
 
-cd aqua
-
+#prepare temp index
 OP_TOKEN=$(cat /var/run/cred/op_token_quay_test)
 echo
 curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
@@ -114,15 +140,6 @@ while [ "$CHECK_TEMP_INDEX" -le "$MAX_LIMIT_FOR_INDEX_WAIT" ]; do
   sleep 60s
   CHECK_TEMP_INDEX=$(($CHECK_TEMP_INDEX + 1))
 done
-
-
-#export OP_STREAM=community-operators
-#export OP_VERSION=$OP_VER
-#export OP_NAME=$OP_NAME
-#export OP_OSR_HAH= #"quay.io/operator_testing|$OP_TOKEN|$COMMIT"
-#export STORAGE_DRIVER=vfs
-#bash <(curl -sL https://raw.githubusercontent.com/J0zi/operator-test-playbooks/upstream-community/test/osr_test.sh)
-##solve secret or local registry (empty token)
 
 #deploy start
 mkdir -p /tmp/playbooks2
