@@ -93,6 +93,8 @@ export OP_TEST_RENAMED_ADDED_MODIFIED_FILES=$(git diff --diff-filter=RAM upstrea
 BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
 echo "BRANCH_NAME=$BRANCH_NAME"
 
+[ -n "$OP_TEST_REMOVED_FILES" ] && [ -z "$OP_TEST_RENAMED_ADDED_MODIFIED_FILES" ] && echo "Nothing to test - [OK]" && echo "only deleted files detected:" && echo ${OP_TEST_REMOVED_FILES[@]} && exit 0;
+
 for sf in ${OP_TEST_RENAMED_ADDED_MODIFIED_FILES[@]}; do
   echo $sf
   if [ $(echo $sf| awk -F'/' '{print NF}') -ge 4 ]; then
