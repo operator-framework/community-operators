@@ -63,6 +63,7 @@ REPO_FULL=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.repo.clone_url'
 BRANCH=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.ref')
 COMMIT=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.sha')
 REPO=$(echo "$REPO_FULL"| awk -F'https://github.com/' '{print $2}')
+QUAY_HASH=$(echo ${COMMIT::8})
 
 rm -f $tmpfile > /dev/null 2>&1
 
