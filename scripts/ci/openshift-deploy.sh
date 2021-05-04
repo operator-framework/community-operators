@@ -3,9 +3,6 @@
 
 set -e #fail in case of non zero return
 
-#remove
-PULL_NUMBER=3725
-
 JQ_VERSION='1.6'
 MAX_LIMIT_FOR_INDEX_WAIT=20
 EXTRA_ARGS=''
