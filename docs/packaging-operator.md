@@ -147,6 +147,52 @@ You can verify the generated bundle metadata for semantic correctness with the t
 operator-sdk bundle validate /tmp/my-operator-2.0.0-bundle/ --select-optional name=operatorhub
 ```
 
+#### About the Dockerfile
+
+A `Dockerfile` is typically part of the bundle metadata used to build the bundle image. For security reasons, our release process is generating an internal `Dockerfile` that is used to build and publish the bundle image. Existing `Dockerfile` or `bundle.Dockerfile` will be ignored.  You can leverage the `annotations.yaml` file to control an custom labels the resulting image should have. For example 
+```
+annotations:
+  # Core bundle annotations.
+  operators.operatorframework.io.bundle.mediatype.v1: registry+v1
+  operators.operatorframework.io.bundle.manifests.v1: manifests/
+  operators.operatorframework.io.bundle.metadata.v1: metadata/
+  operators.operatorframework.io.bundle.package.v1: global-load-balancer-operator
+  operators.operatorframework.io.bundle.channels.v1: alpha
+  operators.operatorframework.io.bundle.channel.default.v1: alpha
+  operators.operatorframework.io.metrics.mediatype.v1: metrics+v1
+  operators.operatorframework.io.metrics.builder: operator-sdk-v1.4.0+git
+  operators.operatorframework.io.metrics.project_layout: go.kubebuilder.io/v3
+
+  # Annotations for testing.
+  operators.operatorframework.io.test.mediatype.v1: scorecard+v1
+  operators.operatorframework.io.test.config.v1: tests/scorecard/
+
+```
+will generate `Dockerfile`
+
+```
+FROM scratch
+
+# from metadata/annotations.yaml
+LABEL operators.operatorframework.io.bundle.mediatype.v1="registry+v1"
+LABEL operators.operatorframework.io.bundle.manifests.v1="manifests/"
+LABEL operators.operatorframework.io.bundle.metadata.v1="metadata/"
+LABEL operators.operatorframework.io.bundle.package.v1="global-load-balancer-operator"
+LABEL operators.operatorframework.io.bundle.channels.v1="alpha"
+LABEL operators.operatorframework.io.bundle.channel.default.v1="alpha"
+LABEL operators.operatorframework.io.metrics.mediatype.v1="metrics+v1"
+LABEL operators.operatorframework.io.metrics.builder="operator-sdk-v1.4.0+git"
+LABEL operators.operatorframework.io.metrics.project_layout="go.kubebuilder.io/v3"
+LABEL operators.operatorframework.io.test.mediatype.v1="scorecard+v1"
+LABEL operators.operatorframework.io.test.config.v1="tests/scorecard/"
+
+COPY ./manifests manifests/
+COPY ./metadata metadata/
+COPY ./tests/scorecard/ tests/scorecard/
+```
+!!! note
+    If you specify the `operators.operatorframework.io.test.config.v1` to embed [scorecard](https://sdk.operatorframework.io/docs/advanced-topics/scorecard/scorecard/) tests in your bundle, make sure the supplied directory path (e.g. `tests/scorecard/` relative from the bundle root directory) actually exists, otherwise the validation will fail
+
 You can download `operator-sdk` [here](https://github.com/operator-framework/operator-sdk/releases/latest).
 #### Operator icon ####
 Icon is defined in a CSV as `spec.icon`. If you don't have own icon, you should use default one:
@@ -188,4 +234,3 @@ A large part of the information gathered in the CSV is used for user-friendly vi
 * What the managed application is about and where to find more information
 * The features your Operator and how to use it
 * Any manual steps required to fulfill pre-requisites for running / installing your Operator
-
