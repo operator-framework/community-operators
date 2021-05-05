@@ -312,12 +312,12 @@ This is currently tested on <a href="https://github.com/kubernetes-sigs/kind">Ku
 <p>All further dependencies are encapsulated in a container image that this <code>Makefile</code> will execute as a test driver.</p>
 <h2 id="available-test-modes">Available test modes</h2>
 <p>The <code>Makefile</code> supports two test modes. Both have these supported options:</p>
-<h3>Options:</h3>
+<h3 id="options">Options:</h3>
 <p><code>OP_PATH</code> - relative path to your operator (required)</p>
 <p><code>OP_VER</code> - version of operator (if not provided the latest will be determined from your <code>package.yaml</code>)</p>
 <p><code>OP_CHANNEL</code> - channel of operator if is not provided it will be parsed by operator package yaml or use the default ones</p>
 <p><code>VERBOSE</code> - enable verbose output of executed subcommands</p>
-<h3>Linting metadata only</h3>
+<h3 id="linting-metadata-only">Linting metadata only</h3>
 <p>Using <code>operator-courier</code>, this test verifies your CSV and the package definition. More details can be found in the <a href="https://github.com/operator-framework/operator-courier">docs</a>. As part of this test nothing will be changed on your system.</p>
 <p>Example, run from the top-level directory of this repository:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">make</span> <span class="k">operator</span><span class="p">.</span><span class="n">verify</span> <span class="n">OP_PATH</span><span class="o">=</span><span class="n">upstream</span><span class="o">-</span><span class="n">community</span><span class="o">-</span><span class="n">operators</span><span class="o">/</span><span class="n">cockroachdb</span> <span class="k">VERBOSE</span><span class="o">=</span><span class="mi">1</span>
@@ -333,7 +333,7 @@ This is currently tested on <a href="https://github.com/kubernetes-sigs/kind">Ku
 <span class="n">WARNING</span><span class="p">:</span> <span class="n">csv</span> <span class="n">metadata</span><span class="p">.</span><span class="n">annotations</span><span class="p">.</span><span class="n">certified</span> <span class="k">not</span> <span class="k">defined</span><span class="p">.</span> <span class="p">[</span><span class="mi">2</span><span class="p">.</span><span class="mi">1</span><span class="p">.</span><span class="mi">1</span><span class="o">/</span><span class="n">cockroachdb</span><span class="p">.</span><span class="n">v2</span><span class="p">.</span><span class="mi">1</span><span class="p">.</span><span class="mi">1</span><span class="p">.</span><span class="n">clusterserviceversion</span><span class="p">.</span><span class="n">yaml</span><span class="p">]</span>
 <span class="n">Lint</span> <span class="k">Operator</span> <span class="n">metadata</span>                            <span class="p">[</span>  <span class="n">OK</span>  <span class="p">]</span>
 </code></pre></div>
-<h3>Deploying and Testing your Operator</h3>
+<h3 id="deploying-and-testing-your-operator">Deploying and Testing your Operator</h3>
 <p>Using the <a href="https://github.com/operator-framework/operator-lifecycle-manager">Operator Lifecycle Manager</a> (OLM) your Operator will be packaged into a temporary catalog, containing all currently published community operators and yours. OLM will be installed for you if not present.</p>
 <p>Using the current community catalog as a base allows you to test with dependencies on Operators currently published in this catalog. If you have dependencies outside of this catalog, you need to prepare your own cluster, install OLM, and ship a catalog with these dependencies present; otherwise installation will fail. 
 You can provide a Kubernetes cluster as a testbed via <code>KUBECONFIG</code> or <code>~/.kube/confg</code>. If you have multiple cluster contexts configured in your <code>KUBECONFIG</code> you will be able to select one. If you have no cluster configured or reachable the Makefile will install a <code>kind</code> cluster named <code>operator-test</code> for you.</p>
@@ -404,10 +404,10 @@ You can provide a Kubernetes cluster as a testbed via <code>KUBECONFIG</code> or
 </code></pre></div>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <p>Here are some common scenarios, why your test can fail:</p>
-<h3>Failures when linting Operator metadata</h3>
+<h3 id="failures-when-linting-operator-metadata">Failures when linting Operator metadata</h3>
 <p><code>ERROR: metadata.annotations.alm-examples contains invalid json string [1.4.4/my-operator.v1.4.4.clusterserviceversion.yaml]</code></p>
 <p>The linter checks for valid JSON in <code>metadata.annotations.alm-examples</code>. The rest of the CSV is supposed to be YAML.</p>
-<h3>Failures when loading the Operator into the Community Catalog</h3>
+<h3 id="failures-when-loading-the-operator-into-the-community-catalog">Failures when loading the Operator into the Community Catalog</h3>
 <p><code>my-operator.v2.1.11 specifies replacement that couldn't be found</code></p>
 <p>Explanation: This happens because the catalog cannot load your Operator since it's pointing to a non-existent previous version of your Operator using <code>spec.replaces</code>. For updates, it is important that this property points to another, older version of your Operator that is already in the catalog.</p>
 <p><code>error adding operator bundle : error decoding CRD: no kind \"CustomResourceDefinition\" is registered for version \"apiextensions.k8s.io/v1\" in scheme \"pkg/registry/bundle.go</code></p>
@@ -418,23 +418,23 @@ You can provide a Kubernetes cluster as a testbed via <code>KUBECONFIG</code> or
 <p>Explanation: This happens when either
 - Your Operator package defines more than one channel in <code>package.yaml</code> but does not define <code>defaultChannel</code>.
 - The package just defines a single channel (in which case you can omit <code>defaultChannel</code>) but the catalog couldn't load the CSV that this channel points to using <code>currentCSV</code>. This can happen when in the CSV the specified name in <code>metadata.name</code> is actually different from what <code>currentCSV</code> points to.</p>
-<h3>Failures when deploying via OLM</h3>
+<h3 id="failures-when-deploying-via-olm">Failures when deploying via OLM</h3>
 <p><code>Check if subscription passes</code> times out</p>
 <p>Explanation: In this case the <code>Subscription</code> object created by the test suite did not transition to the state <code>AtLatestKnown</code> before hitting a timeout. There are various reasons for this, ranging from the catalog pod crashing to problems with the <code>catalog-operator</code> pod of OLM itself. In any case, the logs of either pod will likely help troubleshooting and finding the root cause.</p>
 <p><code>Check if CSV passes</code> times out</p>
 <p>Explanation: OLM could not install the Operator's <code>Deployment</code> from its CSV before hitting a timeout. This is usually due to <code>Deployment</code> reaching its expected replica count, likely because the pod is crash-looping.</p>
-<h3>Failures during tests of the Operator with Operator-SDK scorecard</h3>
+<h3 id="failures-during-tests-of-the-operator-with-operator-sdk-scorecard">Failures during tests of the Operator with Operator-SDK scorecard</h3>
 <p><code>failed to get proxyPod: timed out waiting for the condition:</code></p>
 <p>Explanation: If this happened it is likely the Operator pod crashed in the middle of the scorecard test suite. For example, when it failed to parse a Custom Resource fed to scorecard from the list in <code>metadata.annotations.alm-examples</code>. OLM will wait for the <code>Deployment</code> of the Operator to recover before re-installing the Operator. Re-installation changes the Operator pod's name and hence scorecard fails to reach the logs of scorecard proxy using its old name.</p>
 <p><code>failed to create cr resource: object is being deleted: someapi.k8s.io "myCRD" already exists:</code></p>
 <p>Explanation: This can happen when your Operator automatically creates a CR on startup, with the same name of an example for that CR provided in the CSV <code>metadata.annotations.alm-examples</code> section. Simply use a different name in the example. Otherwise, your Operator could be slow to delete a CR due to a finalizer.</p>
 <h2 id="additional-shortcuts">Additional shortcuts</h2>
-<h3>Clean up after a failed test</h3>
+<h3 id="clean-up-after-a-failed-test">Clean up after a failed test</h3>
 <p>As explained above, the default <code>CLEAN_MODE</code> of <code>NORMAL</code> will delete anything that got installed on your cluster if all tests run correctly.. If something fails, the deployed resources will not be deleted in order to give you a chance to debug.
 After you have finished debugging you can use the following command to clean up any residual resources as part of a test of a particular Operator:</p>
 <div class="codehilite"><pre><span></span><code><span class="err">make operator.cleanup OP_PATH=upstream-community-operators/cockroachdb</span>
 </code></pre></div>
-<h3>Install a KIND cluster</h3>
+<h3 id="install-a-kind-cluster">Install a KIND cluster</h3>
 <p>Install a <code>kind</code> cluster as a testbed for the Operator deployment.</p>
 <div class="codehilite"><pre><span></span><code>$ kind create cluster --name operator-test
 </code></pre></div>
@@ -445,7 +445,7 @@ operator-test
 $ kind get nodes --name operator-test
 operator-test-control-plane
 </code></pre></div>
-<h3>Install Operator Lifecycle Manager</h3>
+<h3 id="install-operator-lifecycle-manager">Install Operator Lifecycle Manager</h3>
 <p>Install OLM to an existing cluster (determined via <code>KUBECONFIG</code> or <code>~/.kube/config</code>).</p>
 <div class="codehilite"><pre><span></span><code><span class="err">make olm.install</span>
 </code></pre></div>
