@@ -24,6 +24,34 @@ jobs:
               repo: context.repo.repo,
               name: 'needs-ok-to-test'
             })
+      - name: "Remove ready"
+        uses: actions/github-script@v3
+        if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'ready'
+            })
+
+      - name: "Remove deployment-ok"
+        uses: actions/github-script@v3
+        if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'deployment-ok'
+            })
+
       - name: "Add Assignees"
         uses: actions/github-script@v3
         if: github.event.action == 'opened' || github.event.action == 'reopened'
