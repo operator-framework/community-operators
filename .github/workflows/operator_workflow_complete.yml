@@ -11,15 +11,19 @@ jobs:
     steps:
       - name: PR number
         id: pr-number
-        # continue-on-error: true
+        continue-on-error: true
         run: |
           echo " github.event.workflow_run.logs_url: ${{ github.event.workflow_run.logs_url }}"
           curl -L --header "Authorization: token ${{secrets.GITHUB_TOKEN}}" ${{ github.event.workflow_run.logs_url }} -o /tmp/out.zip
           unzip /tmp/out.zip
           PR=$(cat Summary/*PR*.txt | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" | grep OP_PR= | tail -n 1| cut -d '=' -f 2)
           echo "::set-output name=pr::${PR}"
+          curl -L --header "Authorization: token ${{secrets.GITHUB_TOKEN}}" https://api.github.com/repos/operator-framework/community-operators/issues/${PR}/labels -o /tmp/labels.json
+          LABELS=$(cat /tmp/labels.json)
+          echo "::set-output name=labels::${LABELS//'%'/'%25'}"
     outputs:
       pr: "${{ steps.pr-number.outputs.pr }}"
+      labels: "${{ steps.pr-number.outputs.labels }}"
 
   on-success:
     runs-on: ubuntu-latest
@@ -38,6 +42,14 @@ jobs:
               repo: context.repo.repo,
               labels: ['ready']
             })
+      - name: "kubernetes-operator label is set"
+        uses: actions/github-script@v3
+        if: (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'kubernetes-operator '))
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            console.log("Hura")
   on-failure:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
@@ -54,4 +66,16 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'ready'
+            })
+      - name: "Removing deployment-ok label"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'deployment-ok'
             })
