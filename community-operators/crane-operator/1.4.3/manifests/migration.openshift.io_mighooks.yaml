@@ -1,0 +1,114 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: mighooks.migration.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: Ready
+    type: string
+  - JSONPath: .spec.image
+    name: Image
+    type: string
+  - JSONPath: .spec.targetCluster
+    name: TargetCluster
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: migration.openshift.io
+  names:
+    kind: MigHook
+    listKind: MigHookList
+    plural: mighooks
+    singular: mighook
+  scope: Namespaced
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: MigHook is the Schema for the mighooks API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MigHookSpec defines the desired state of MigHook
+          properties:
+            activeDeadlineSeconds:
+              format: int64
+              type: integer
+            custom:
+              type: boolean
+            image:
+              type: string
+            playbook:
+              type: string
+            targetCluster:
+              type: string
+          required:
+          - custom
+          - image
+          - targetCluster
+          type: object
+        status:
+          description: MigHookStatus defines the observed state of MigHook
+          properties:
+            conditions:
+              items:
+                description: Condition Type - The condition type. Status - The condition
+                  status. Reason - The reason for the condition. Message - The human
+                  readable description of the condition. Durable - The condition is
+                  not un-staged. Items - A list of `items` associated with the condition
+                  used to replace [] in `Message`. staging - A condition has been
+                  explicitly set/updated.
+                properties:
+                  category:
+                    type: string
+                  durable:
+                    type: boolean
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - category
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+            observedGeneration:
+              format: int64
+              type: integer
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
