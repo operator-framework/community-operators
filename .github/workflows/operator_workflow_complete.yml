@@ -47,14 +47,19 @@ jobs:
               repo: context.repo.repo,
               labels: ['ready']
             })
-      - name: "kubernetes-operator label is set"
+      - name: "Set deployment-ok when kubernetes-operator label is set"
         uses: actions/github-script@v3
-        if: (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'kubernetes-operator '))
+        if: (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'kubernetes-operator '))
         continue-on-error: true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            console.log("Hura")
+            github.issues.addLabels({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['deployment-ok']
+            })
   on-failure:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
