@@ -9,27 +9,58 @@ jobs:
   pr:
     runs-on: ubuntu-latest
     steps:
-      - name: PR number
+
+      - name: 'Download artifact'
+        uses: actions/github-script@v3.1.0
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{github.event.workflow_run.id }},
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "pr"
+            })[0];
+            var download = await github.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip',
+            });
+            var fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/pr.zip', Buffer.from(download.data));
+      - run: unzip pr.zip
+      - name: 'PR Number'
         id: pr-number
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+            var fs = require('fs');
+            var issue_number = Number(fs.readFileSync('./NR'));
+            PR=$(cat ./NR)
+            echo "::set-output name=pr::${PR}"
+      - name: Labels
+        id: pr-labels
         continue-on-error: true
         run: |
-          echo " github.event.workflow_run.logs_url: ${{ github.event.workflow_run.logs_url }}"
-          curl -L --header "Authorization: token ${{secrets.GITHUB_TOKEN}}" ${{ github.event.workflow_run.logs_url }} -o /tmp/out.zip
-          unzip /tmp/out.zip
-          PR=$(cat Summary/*PR*.txt | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" | grep OP_PR | tail -n 1| cut -d '=' -f 2)
-          echo PR=$PR
-          re='^[0-9]+$'
-          if ! [[ $PR =~ $re ]] ; then
-            echo "PR is not number !!!"            
-            # exit 1
-          fi
-          echo "::set-output name=pr::${PR}"
-          curl -L --header "Authorization: token ${{secrets.GITHUB_TOKEN}}" https://api.github.com/repos/operator-framework/community-operators/issues/${PR}/labels -o /tmp/labels.json
+          # echo " github.event.workflow_run.logs_url: ${{ github.event.workflow_run.logs_url }}"
+          # curl -L --header "Authorization: token ${{secrets.GITHUB_TOKEN}}" ${{ github.event.workflow_run.logs_url }} -o /tmp/out.zip
+          # unzip /tmp/out.zip
+          # PR=$(cat Summary/*PR*.txt | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" | grep OP_PR | tail -n 1| cut -d '=' -f 2)
+          # echo PR=${{ steps.pr-number.outputs.pr }}
+          # re='^[0-9]+$'
+          # if ! [[ $PR =~ $re ]] ; then
+          #   echo "PR is not number !!!"            
+          #   # exit 1
+          # fi
+          curl -L --header "Authorization: token ${{secrets.GITHUB_TOKEN}}" https://api.github.com/repos/operator-framework/community-operators/issues/${{ steps.pr-number.outputs.pr }}/labels -o /tmp/labels.json
           LABELS=$(cat /tmp/labels.json)
           echo "::set-output name=labels::${LABELS//'%'/'%25'}"
     outputs:
       pr: "${{ steps.pr-number.outputs.pr }}"
-      labels: "${{ steps.pr-number.outputs.labels }}"
+      labels: "${{ steps.pr-labels.outputs.labels }}"
 
   on-success:
     runs-on: ubuntu-latest
@@ -63,7 +94,7 @@ jobs:
             })
       - uses: actions/github-script@v3
         with:
-          github-token: ${{secrets.MERGE}}
+          github-token: ${{secrets.FRAMEWORK_MERGE}}
           script: |
             github.issues.createComment({
               issue_number: ${{ needs.pr.outputs.pr }},
