@@ -1,0 +1,291 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: druid-operator.v0.0.6
+  namespace: placeholder
+  annotations:
+    categories: 'Big Data, Database'
+    certified: 'False'
+    description: 'Druid Operator allows creating apache druid cluster and manage their lifecycle'
+    containerImage: 'druidio/druid-operator:0.0.6'
+    capabilities: Full Lifecycle
+    createdAt: 2019-10-20 00:00:00
+    repository: 'https://github.com/druid-io/druid-operator'
+    alm-examples: |-
+      [
+        {
+            "apiVersion": "druid.apache.org/v1alpha1",
+            "kind": "Druid",
+            "metadata": {
+               "name": "tiny-cluster"
+            },
+            "spec": {
+               "image": "apache/druid:0.20.0",
+               "startScript": "/druid.sh",
+               "podLabels": {
+                  "environment": "stage",
+                  "release": "alpha"
+               },
+               "podAnnotations": {
+                  "dummykey": "dummyval"
+               },
+               "readinessProbe": {
+                  "httpGet": {
+                     "path": "/status/health",
+                     "port": 8088
+                  }
+               },
+               "securityContext": {
+                  "fsGroup": 1000,
+                  "runAsUser": 1000,
+                  "runAsGroup": 1000
+               },
+               "services": [
+                  {
+                     "spec": {
+                        "type": "ClusterIP",
+                        "clusterIP": "None"
+                     }
+                  }
+               ],
+               "commonConfigMountPath": "/opt/druid/conf/druid/cluster/_common",
+               "jvm.options": "-server\n-XX:MaxDirectMemorySize=10240g\n-Duser.timezone=UTC\n-Dfile.encoding=UTF-8\n-Dlog4j.debug\n-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager\n-Djava.io.tmpdir=/druid/data",
+               "log4j.config": "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<Configuration status=\"WARN\">\n    <Appenders>\n        <Console name=\"Console\" target=\"SYSTEM_OUT\">\n            <PatternLayout pattern=\"%d{ISO8601} %p [%t] %c - %m%n\"/>\n        </Console>\n    </Appenders>\n    <Loggers>\n        <Root level=\"info\">\n            <AppenderRef ref=\"Console\"/>\n        </Root>\n    </Loggers>\n</Configuration>",
+               "common.runtime.properties": "# Zookeeper\ndruid.zk.service.host=tiny-cluster-zk-0.tiny-cluster-zk\ndruid.zk.paths.base=/druid\ndruid.zk.service.compress=false\n# Metadata Store\ndruid.metadata.storage.type=derby\ndruid.metadata.storage.connector.connectURI=jdbc:derby://localhost:1527/druid/data/derbydb/metadata.db;create=true\ndruid.metadata.storage.connector.host=localhost\ndruid.metadata.storage.connector.port=1527\ndruid.metadata.storage.connector.createTables=true\n# Deep Storage\ndruid.storage.type=local\ndruid.storage.storageDirectory=/druid/deepstorage\n#\n# Extensions\n#\ndruid.extensions.loadList=[\"druid-kafka-indexing-service\"]\n#\n# Service discovery\n#\ndruid.selectors.indexing.serviceName=druid/overlord\ndruid.selectors.coordinator.serviceName=druid/coordinator\ndruid.indexer.logs.type=file\ndruid.indexer.logs.directory=/druid/data/indexing-logs\ndruid.lookup.enableLookupSyncOnStartup=false\n",
+               "volumeMounts": [
+                  {
+                     "mountPath": "/druid/data",
+                     "name": "data-volume"
+                  },
+                  {
+                     "mountPath": "/druid/deepstorage",
+                     "name": "deepstorage-volume"
+                  }
+               ],
+               "volumes": [
+                  {
+                     "name": "data-volume",
+                     "emptyDir": {}
+                  },
+                  {
+                     "name": "deepstorage-volume",
+                     "hostPath": {
+                        "path": "/tmp/druid/deepstorage",
+                        "type": "DirectoryOrCreate"
+                     }
+                  }
+               ],
+               "env": [
+                  {
+                     "name": "POD_NAME",
+                     "valueFrom": {
+                        "fieldRef": {
+                           "fieldPath": "metadata.name"
+                        }
+                     }
+                  },
+                  {
+                     "name": "POD_NAMESPACE",
+                     "valueFrom": {
+                        "fieldRef": {
+                           "fieldPath": "metadata.namespace"
+                        }
+                     }
+                  }
+               ],
+               "nodes": {
+                  "brokers": {
+                     "nodeType": "broker",
+                     "druid.port": 8088,
+                     "nodeConfigMountPath": "/opt/druid/conf/druid/cluster/query/broker",
+                     "replicas": 1,
+                     "runtime.properties": "druid.service=druid/broker\ndruid.broker.http.numConnections=5\ndruid.server.http.numThreads=10\ndruid.processing.buffer.sizeBytes=1\ndruid.processing.numMergeBuffers=1\ndruid.processing.numThreads=1\ndruid.sql.enable=true\n",
+                     "extra.jvm.options": "-Xmx512M\n-Xms512M"
+                  },
+                  "coordinators": {
+                     "nodeType": "coordinator",
+                     "druid.port": 8088,
+                     "nodeConfigMountPath": "/opt/druid/conf/druid/cluster/master/coordinator-overlord",
+                     "replicas": 1,
+                     "runtime.properties": "druid.service=druid/coordinator\ndruid.coordinator.startDelay=PT30S\ndruid.coordinator.period=PT30S\ndruid.coordinator.asOverlord.enabled=true\ndruid.coordinator.asOverlord.overlordService=druid/overlord\ndruid.indexer.queue.startDelay=PT30S\ndruid.indexer.runner.type=local\n",
+                     "extra.jvm.options": "-Xmx512M\n-Xms512M"
+                  },
+                  "historicals": {
+                     "nodeType": "historical",
+                     "druid.port": 8088,
+                     "nodeConfigMountPath": "/opt/druid/conf/druid/cluster/data/historical",
+                     "replicas": 1,
+                     "runtime.properties": "druid.service=druid/historical\ndruid.server.http.numThreads=5\ndruid.processing.buffer.sizeBytes=536870912\ndruid.processing.numMergeBuffers=1\ndruid.processing.numThreads=1\ndruid.segmentCache.locations=[{\\\"path\\\":\\\"/druid/data/segments\\\",\\\"maxSize\\\":10737418240}]\ndruid.server.maxSize=10737418240\n",
+                     "extra.jvm.options": "-Xmx512M\n-Xms512M"
+                  },
+                  "routers": {
+                     "nodeType": "router",
+                     "druid.port": 8088,
+                     "nodeConfigMountPath": "/opt/druid/conf/druid/cluster/query/router",
+                     "replicas": 1,
+                     "runtime.properties": "druid.service=druid/router\ndruid.router.http.numConnections=10\ndruid.router.http.readTimeout=PT5M\ndruid.router.http.numMaxThreads=10\ndruid.server.http.numThreads=10\ndruid.router.defaultBrokerServiceName=druid/broker\ndruid.router.coordinatorServiceName=druid/coordinator\ndruid.router.managementProxy.enabled=true\n",
+                     "extra.jvm.options": "-Xmx512M\n-Xms512M"
+                  }
+               }
+            }
+         }
+      ]
+spec:
+  displayName: Druid Operator
+  description: 
+    'A kubernetes operator based on the Kubebuilder framework
+    for creating and managing apache druid clusters on kubernetes.
+
+    Druid is a high performance real-time analytics database.
+
+    # Current Status
+
+    The Operator can deploy and manage multiple Druid instances on Kubernetes.
+
+    The following features are supported:
+
+    * Install Druid in a single namespace.
+
+    * Upgrade Druid cluster seamlessly.
+
+    * Install Druid clusters accross various namespaces.
+
+    * Manage Lifecycle for Druid clusters and underlying objects created.
+
+  '
+  maturity: stable
+  version: 0.0.6
+  minKubeVersion: 1.14.0
+  keywords:
+    - Big Data
+    - Database
+  maintainers:
+    - name: Himanshu Gupta
+      email: "g.himanshu@gmail.com"
+    - name: Adheip Singh
+      email: adheip.singh@rilldata.com
+  provider:
+    name: 'Druid Community'
+  links:
+    - name: Druid Websitegit
+      url: 'https://druid.apache.org/'
+    - name: Druid Operator Documentation
+      url: 'https://github.com/druid-io/druid-operator/tree/master/docs'
+    - name: Druid Operator Repository
+      url: 'https://github.com/druid-io/druid-operator'
+  icon:
+    - base64data: >-
+         PHN2ZyBpZD0iM2U3ZGYyN2YtOTNkZS00NjhhLTkyYWUtNTk3N2QxYWUwOTg0IiBkYXRhLW5hbWU9IkxhYWcgMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTAyNS43NiAyNzAuMTIiPjx0aXRsZT5kcnVpZDwvdGl0bGU+PHBhdGggZD0iTTIwNi40MSwxOWMyMy41LDAsNDctLjEyLDcwLjQ5LDAsNDUsLjI4LDg2LjI5LDI5LDEwMiw3MC45Miw2Ljc3LDE4LjEsOC4yNCwzNi44Myw2LjMxLDU2LjA2LTIuODMsMjguMjQtMTEuMjYsNTQuNDUtMjcuMjMsNzcuOTQtMjQuNjQsMzYuMjYtNTkuMzcsNTYuNDEtMTAyLjM4LDYzLjEyLTE0LjU4LDIuMjctMjkuMjEsMi00My44NiwyLTYuMDgsMC05LjMzLTIuNzgtOS42OS03LjgxLS4zOS01LjM5LDMtOS41Myw5LTkuODksNi42NC0uNDEsMTMuMzMtLjA3LDIwLS4yNSw0MC40OS0xLjEsNzUuNTUtMTUuMDUsMTAzLjMyLTQ1LDE5LjQ2LTIxLDI5LjMyLTQ2LjU4LDMyLjY2LTc0Ljc3LDIuMzItMTkuNTYsMi4wNy0zOS01LjY2LTU3LjUzQzM0OS41MSw2NS40NCwzMjguMjYsNDguMDYsMjk5LDQwYy0xMS4zNi0zLjEzLTIzLTMuNzItMzQuNjUtMy43OS00My40OS0uMjYtODctLjEtMTMwLjQ4LS4xMS0xLjgzLDAtMy42OC4wNy01LjUtLjA5YTguNzUsOC43NSwwLDAsMS03LjkzLTguMjIsOC41NCw4LjU0LDAsMCwxLDctOC41MywzMy43MSwzMy43MSwwLDAsMSw2LS4yOXEzNi40OSwwLDczLDBaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTguMDcgLTE4Ljk0KSIgc3R5bGU9ImZpbGw6IzI5ZjFmYiIvPjxwYXRoIGQ9Ik0xNjEuODcsMjI3aC03OGEzNy43NywzNy43NywwLDAsMS01LS4xMWMtNC41MS0uNjEtNy4zNS0zLjItNy43OS03Ljc2czEuNy03LjY4LDYtOS4yOGMyLjczLTEsNS41OS0uNzksOC40MS0uNzksNTEuMzEsMCwxMDIuNjMuMDgsMTUzLjk0LS4wOSwxOC0uMDYsMzMuNTQtNi43Myw0NS44OS0xOS45MywxMC41OS0xMS4zMiwxNi4xNC0yNSwxNy43OS00MC40LDEuMy0xMi4wOC0uNDItMjMuMTktNy45Mi0zMy4wNS04LjM0LTExLTE5LjYxLTE2LjUyLTMzLjE2LTE2LjU4LTQ4LjQ4LS4yMS05Ny0uMDgtMTQ1LjQ0LS4xNS01LjE1LDAtMTAuMzEtLjQyLTE1LjQ0LS45LTQuNDMtLjQxLTYuODgtMy4wOC03LjE4LTcuNTQtLjMzLTQuODYsMi4xNi04LjM2LDYuNTctOS4yMUEyMy43NiwyMy43NiwwLDAsMSwxMDUsODFRMTgzLDgxLDI2MSw4MWMyNi4yMS4wNSw0OC44NywxNS45LDU3LjEzLDQwLjY4LDUuODYsMTcuNTksMy43NywzNS4zMi0yLjgsNTIuMzdDMzAyLjcxLDIwNi43OCwyNzMsMjI2LjkxLDIzNy44NCwyMjcsMjEyLjUyLDIyNy4wNywxODcuMTksMjI3LDE2MS44NywyMjdaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTguMDcgLTE4Ljk0KSIgc3R5bGU9ImZpbGw6IzI5ZjFmYiIvPjxwYXRoIGQ9Ik00NS41NSw5OGMtNiwwLTEyLC4wOC0xOCwwLTUtLjA5LTguODQtMy4zOC05LjQxLTcuODZzMi4yNC04LjMzLDcuNjUtOS40M2E0Ny4yOCw0Ny4yOCwwLDAsMSw4Ljk0LS41OWM4LjE2LS4wNywxNi4zMy0uMDksMjQuNDksMGEzMS44NiwzMS44NiwwLDAsMSw3LjQuODZjNC40MSwxLjEyLDYuODIsNC44OCw2LjMsOS40NXMtMy4yOCw3LjMyLTcuOSw3LjQ3Yy02LjQ5LjIyLTEzLC4wNi0xOS40OS4wNloiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xOC4wNyAtMTguOTQpIiBzdHlsZT0iZmlsbDojMjlmMWZiIi8+PHBhdGggZD0iTTE1NSwyODljLTUuNjYsMC0xMS4zMi4xLTE3LDAtNS4zOC0uMTItOS0zLjE3LTkuNTUtNy42N2E5LDksMCwwLDEsOC4xMS05Ljc1LDIzNi4yNiwyMzYuMjYsMCwwLDEsMzYuMzgtLjA1LDguNCw4LjQsMCwwLDEsOCw5LjIzYy0uMzcsNS0zLjg5LDguMDYtOS40NSw4LjI4SDE1NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xOC4wNyAtMTguOTQpIiBzdHlsZT0iZmlsbDojMjlmMWZiIi8+PHBhdGggZD0iTTU1NS40NiwyMTEuMjZxLTkuODMsMTAuODktMjEuMTcsMTZhNjIuMjMsNjIuMjMsMCwwLDEtMjUuNyw1LjA4cS0yNS43LDAtMzguNjgtMTR0LTEzLTM3LjY3YTEwMy4wNiwxMDMuMDYsMCwwLDEsNC40MS0zMS4yNyw2My40Miw2My40MiwwLDAsMSwxMy4yMy0yMy42Niw1OC43Myw1OC43MywwLDAsMSwyMS45Mi0xNS4wOXExMy4xLTUuMzEsMzAuNDktNS4zMWE1NCw1NCwwLDAsMSwyMy40NCw1cTEwLjU4LDUsMTcuODksMTYuMzZMNTc4LjQsNDcuODRoMTYuMzhMNTY5LjMyLDIzMi4wNUg1NTIuOTRabS00NC4zNSw1LjY3cTE4LjE0LDAsMjguNi01LjZhMzkuMjcsMzkuMjcsMCwwLDAsMTUuNzUtMTQuNTMsNTEuMjgsNTEuMjgsMCwwLDAsNi42OC0yMCwxNzcuNzcsMTc3Ljc3LDAsMCwwLDEuMzktMjIsNTEuNDcsNTEuNDcsMCwwLDAtMS43Ni0xNC4wNSwyNC4wNiwyNC4wNiwwLDAsMC02LjE3LTEwLjYsMjcuOTEsMjcuOTEsMCwwLDAtMTEuODQtNi42N3EtNy40NC0yLjI2LTE4Ljc3LTIuMjYtMjQuMTksMC0zNy4zLDE1LjEzVDQ3NC41NywxODBRNDc0LjU3LDIxNi45NCw1MTEuMTEsMjE2LjkzWiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTE4LjA3IC0xOC45NCkiLz48cGF0aCBkPSJNNjkwLjc5LDEwNS4zbC0yLjI3LDE1Ljg4SDY4NnEtMTQuMTIsMC0yMy4zMSwzLjMyYTM2LjE0LDM2LjE0LDAsMCwwLTE0Ljg3LDkuNTksNDEuMTgsNDEuMTgsMCwwLDAtOC41NywxNS4zNywxMzUuNDIsMTM1LjQyLDAsMCwwLTQuNjYsMjAuNjVsLTguODIsNjJINjA5LjY0bDE3Ljg5LTEyNi41aDE2LjEzbC0yLjUyLDIxLjI5cTEwLjMzLTExLjQyLDIyLjMtMTYuNDhhNjMuMTgsNjMuMTgsMCwwLDEsMjQuODItNS4wNloiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xOC4wNyAtMTguOTQpIi8+PHBhdGggZD0iTTgwOC4yMSwxMDUuNTVoMTYuMTNMODA2LjcsMjMyLjA1SDc5MC41OGwyLjUyLTIwLjUxYTYzLjQsNjMuNCwwLDAsMS0yMi40MywxNS44OCw2Ni4xMiw2Ni4xMiwwLDAsMS0yNC45NSw0Ljg3LDUzLjYzLDUzLjYzLDAsMCwxLTE3LTIuNzEsMzguNzcsMzguNzcsMCwwLDEtMTQuMjQtOC4yNiwzNS40NCwzNS40NCwwLDAsMS05LjItMTMuOTNxLTMuMTUtOC4zOS0xLjM5LTIwbDExLjg0LTgxLjg3aDE2LjM4bC0xMS44NCw4MS42MmEyNi41MywyNi41MywwLDAsMCwxLjEzLDEzLjE1LDIyLjk0LDIyLjk0LDAsMCwwLDYuMTcsOS4xLDI1LjgzLDI1LjgzLDAsMCwwLDkuNDUsNS4yOCwzNS45MiwzNS45MiwwLDAsMCwxMSwxLjcycTE0LjExLDAsMjMuMzEtMy4zMmEzNi4xMiwzNi4xMiwwLDAsMCwxNC44Ny05LjU5LDQxLjE4LDQxLjE4LDAsMCwwLDguNTctMTUuMzYsMTM2LjMsMTM2LjMsMCwwLDAsNC42Ni0yMC42NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xOC4wNyAtMTguOTQpIi8+PHBhdGggZD0iTTg2NC45MSwxMDUuNTVIODgxbC0xNy44OSwxMjYuNUg4NDdabTMuOTEtNDEuODNhMTQuNSwxNC41LDAsMCwxLDEwLjQ2LTQuMjgsMTAuODcsMTAuODcsMCwwLDEsOC4xOSwzLjI4QTExLjUyLDExLjUyLDAsMCwxLDg5MC42Miw3MWExMy4zMSwxMy4zMSwwLDAsMS00LjU0LDEwLjIxLDE0Ljg3LDE0Ljg3LDAsMCwxLTEwLjMzLDQuMTZBMTAuOCwxMC44LDAsMCwxLDg2NC40MSw3NCwxMy44OCwxMy44OCwwLDAsMSw4NjguODIsNjMuNzJaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTguMDcgLTE4Ljk0KSIvPjxwYXRoIGQ9Ik0xMDA0LjUyLDIxMS4yNnEtOS44MywxMC44OS0yMS4xNywxNmE2Mi4yMyw2Mi4yMywwLDAsMS0yNS43LDUuMDhxLTI1LjcsMC0zOC42OC0xNHQtMTMtMzcuNjdhMTAzLDEwMywwLDAsMSw0LjQxLTMxLjI3LDYzLjQyLDYzLjQyLDAsMCwxLDEzLjIzLTIzLjY2LDU4LjczLDU4LjczLDAsMCwxLDIxLjkyLTE1LjA5cTEzLjEtNS4zMSwzMC40OS01LjMxYTU0LDU0LDAsMCwxLDIzLjQ0LDVxMTAuNTgsNSwxNy44OSwxNi4zNmwxMC4wOC03OC44NGgxNi4zOGwtMjUuNDUsMTg0LjIxSDEwMDJabS00NC4zNSw1LjY3cTE4LjE0LDAsMjguNi01LjZhMzkuMjcsMzkuMjcsMCwwLDAsMTUuNzUtMTQuNTMsNTEuMjcsNTEuMjcsMCwwLDAsNi42OC0yMCwxNzcuNjcsMTc3LjY3LDAsMCwwLDEuMzktMjIsNTEuNDUsNTEuNDUsMCwwLDAtMS43Ni0xNC4wNSwyNC4wNiwyNC4wNiwwLDAsMC02LjE3LTEwLjYsMjcuOTEsMjcuOTEsMCwwLDAtMTEuODQtNi42N3EtNy40NC0yLjI2LTE4Ljc3LTIuMjYtMjQuMTksMC0zNy4zLDE1LjEzVDkyMy42MywxODBROTIzLjYzLDIxNi45NCw5NjAuMTcsMjE2LjkzWiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTE4LjA3IC0xOC45NCkiLz48L3N2Zz4=
+      mediatype: image/svg+xml
+  apiservicedefinitions: { }
+  customresourcedefinitions:
+    owned:
+      - name: druids.druid.apache.org
+        displayName: Druid
+        kind: Druid
+        version: v1alpha1
+        description: Represents a Druid Cluster
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+        - serviceAccountName: druid-operator
+          rules:
+            - apiGroups:
+              - ""
+              resources:
+              - pods
+              - services
+              - services/finalizers
+              - endpoints
+              - persistentvolumeclaims
+              - events
+              - configmaps
+              - secrets
+              verbs:
+              - '*'
+            - apiGroups:
+              - apps
+              resources:
+              - deployments
+              - daemonsets
+              - replicasets
+              - statefulsets
+              verbs:
+              - '*'
+            - apiGroups:
+                - policy
+              resources:
+                - poddisruptionbudgets
+              verbs:
+                - '*'
+            - apiGroups:
+                - autoscaling
+              resources:
+                - horizontalpodautoscalers
+              verbs:
+                - '*'
+            - apiGroups:
+                - extensions
+              resources:
+                - ingresses
+              verbs:
+                - '*'
+            - apiGroups:
+              - monitoring.coreos.com
+              resources:
+              - servicemonitors
+              verbs:
+              - get
+              - create
+            - apiGroups:
+              - apps
+              resourceNames:
+              - druid-operator
+              resources:
+              - deployments/finalizers
+              verbs:
+              - update
+            - apiGroups:
+              - ""
+              resources:
+              - pods
+              verbs:
+              - get
+            - apiGroups:
+              - apps
+              resources:
+              - replicasets
+              verbs:
+              - get
+            - apiGroups:
+              - druid.apache.org
+              resources:
+              - '*'
+              verbs:
+              - '*'
+      deployments:
+        - name: druid-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: druid-operator
+            template:
+              metadata:
+                labels:
+                  app: druid-operator
+              spec:
+                serviceAccountName: druid-operator
+                containers:
+                  - name: druid-operator
+                    image: druidio/druid-operator:0.0.6
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: false
