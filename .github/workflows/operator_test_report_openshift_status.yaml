@@ -23,7 +23,6 @@ jobs:
                 repo: context.repo.repo,
                 name: label
               })
-
             }
         continue-on-error: true
 
@@ -39,3 +38,15 @@ jobs:
               repo: context.repo.repo,
               labels: context.payload.client_payload.add_labels
             })
+      - uses: actions/github-script@v3
+        if: (contains(context.payload.client_payload.add_labels, 'deployment-ok'))
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              issue_number: ${{ context.payload.client_payload.source_pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '/merge possible'
+            })
+

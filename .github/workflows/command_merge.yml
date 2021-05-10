@@ -19,7 +19,8 @@ jobs:
         uses: actions/github-script@v3
         if: |
           steps.command.outputs.command-name == 'merge' &&
-          steps.command.outputs.command-arguments == 'ready' &&
+          steps.command.outputs.command-arguments == 'possible' &&
+          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) &&
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) &&
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')) &&
           (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/work-in-progress')) &&
@@ -31,7 +32,25 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'Mainainer can merge now'
+              body: 'Mainainer can merge it now'
+            })
+
+      - name: Merge message when not able to merge
+        uses: actions/github-script@v3
+        if: |
+          steps.command.outputs.command-name == 'merge' &&
+          steps.command.outputs.command-arguments == 'possible' && (
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) ||
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) ||
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready'))
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Automatic merging labels (`authorized-changes`,`deployment-ok`,`ready`) are not set.'
             })
 
       - name: Act on the command ('')
@@ -43,7 +62,7 @@ jobs:
       #   uses: "pascalgn/automerge-action@v0.13.1"
       #   env:
       #     GITHUB_TOKEN: "${{ secrets.FRAMEWORK_MERGE }}"
-      #     MERGE_LABELS: "ready,deployment-ok,!do-not-merge/hold,!do-not-merge/work-in-progress"
+      #     MERGE_LABELS: "authorized-changes,ready,deployment-ok,!do-not-merge/hold,!do-not-merge/work-in-progress"
       #     MERGE_REMOVE_LABELS: ""
       #     MERGE_METHOD: "merge"
       #     MERGE_COMMIT_MESSAGE: "pull-request-title"

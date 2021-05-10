@@ -78,6 +78,10 @@ jobs:
               labels: ['deployment-ok']
             })
       - uses: actions/github-script@v3
+        if: |
+          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'kubernetes-operator')) &&
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/hold'))
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -85,7 +89,7 @@ jobs:
               issue_number: ${{ needs.pr.outputs.pr }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '/merge ready'
+              body: '/merge possible'
             })
 
   on-failure:
