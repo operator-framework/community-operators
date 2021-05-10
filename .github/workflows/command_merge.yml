@@ -20,9 +20,11 @@ jobs:
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' &&
+          
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) &&
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) &&
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')) &&
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'new-operator')) &&
           (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/work-in-progress')) &&
           (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/hold'))
         with:
@@ -42,7 +44,7 @@ jobs:
           steps.command.outputs.command-arguments == 'possible' && (
           (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) ||
           (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) ||
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready'))
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -62,7 +64,7 @@ jobs:
       #   uses: "pascalgn/automerge-action@v0.13.1"
       #   env:
       #     GITHUB_TOKEN: "${{ secrets.FRAMEWORK_MERGE }}"
-      #     MERGE_LABELS: "authorized-changes,ready,deployment-ok,!do-not-merge/hold,!do-not-merge/work-in-progress"
+      #     MERGE_LABELS: "authorized-changes,ready,deployment-ok,!new-operator,!do-not-merge/hold,!do-not-merge/work-in-progress"
       #     MERGE_REMOVE_LABELS: ""
       #     MERGE_METHOD: "merge"
       #     MERGE_COMMIT_MESSAGE: "pull-request-title"
