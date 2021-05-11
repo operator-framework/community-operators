@@ -5,6 +5,14 @@ jobs:
     name: Merge command handler
     runs-on: ubuntu-latest
     steps:
+
+      - name: Print info about event
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            console.log(github.event)
+
       - name: Merge command handler
         id: command
         uses: xt0rted/slash-command-action@v1
@@ -15,17 +23,18 @@ jobs:
           reaction-type: "eyes"
           allow-edits: "false"
           permission-level: admin
+
       - name: Dry run merge message
         uses: actions/github-script@v3
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' &&
-          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) &&
-          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) &&
-          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')) &&
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'new-operator')) &&
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/work-in-progress')) &&
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/hold'))
+          (contains(github.event.pull_request.labels.*.name, 'authorized-changes')) &&
+          (contains(github.event.pull_request.labels.*.name, 'deployment-ok')) &&
+          (contains(github.event.pull_request.labels.*.name, 'ready')) &&
+          (!contains(github.event.pull_request.labels.*.name, 'new-operator')) &&
+          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -41,9 +50,9 @@ jobs:
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' && (
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) ||
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) ||
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')))
+          (!contains(github.event.pull_request.labels.*.name, 'authorized-changes')) ||
+          (!contains(github.event.pull_request.labels.*.name, 'deployment-ok')) ||
+          (!contains(github.event.pull_request.labels.*.name, 'ready')))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -59,12 +68,12 @@ jobs:
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' &&
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) &&
-          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) &&
-          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')) &&
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'new-operator')) &&
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/work-in-progress')) &&
-          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/hold'))
+          (!contains(github.event.pull_request.labels.*.name, 'authorized-changes')) &&
+          (contains(github.event.pull_request.labels.*.name, 'deployment-ok')) &&
+          (contains(github.event.pull_request.labels.*.name, 'ready')) &&
+          (!contains(github.event.pull_request.labels.*.name, 'new-operator')) &&
+          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
