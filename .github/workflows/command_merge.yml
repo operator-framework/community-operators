@@ -20,7 +20,6 @@ jobs:
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' &&
-          
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) &&
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) &&
           (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')) &&
@@ -53,6 +52,27 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: 'Automatic merging labels (`authorized-changes`,`deployment-ok`,`ready`) are not set.'
+            })
+
+      - name: Merge message when not able to merge and inform user about authorized_changes
+        uses: actions/github-script@v3
+        if: |
+          steps.command.outputs.command-name == 'merge' &&
+          steps.command.outputs.command-arguments == 'possible' &&
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'authorized-changes')) &&
+          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'deployment-ok')) &&
+          (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'ready')) &&
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'new-operator')) &&
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(needs.pr.outputs.pr.outputs.labels.*.name, 'do-not-merge/hold'))
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Current PR can be merged automatically, but there is missing `authorized-changes` label. One can find out more info [here](https://operator-framework.github.io/community-operators/operator-ci-yaml/#reviewers).'
             })
 
       - name: Act on the command ('')
