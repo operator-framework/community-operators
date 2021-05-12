@@ -52,7 +52,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     needs: [pr]
     steps:
-      - name: "Setting ready label"
+      - name: "Setting package-validated label"
         uses: actions/github-script@v3
         continue-on-error: true
         with:
@@ -62,9 +62,9 @@ jobs:
               issue_number: ${{ needs.pr.outputs.pr }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ['ready']
+              labels: ['package-validated']
             })
-      - name: "Set deployment-ok when kubernetes-operator label is set"
+      - name: "Set installation-valiadated when kubernetes-operator label is set"
         uses: actions/github-script@v3
         if: (contains(needs.pr.outputs.pr.outputs.labels.*.name, 'kubernetes-operator'))
         continue-on-error: true
@@ -75,7 +75,7 @@ jobs:
               issue_number: ${{ needs.pr.outputs.pr }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ['deployment-ok']
+              labels: ['installation-valiadated']
             })
       - uses: actions/github-script@v3
         if: |
@@ -97,7 +97,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'failure'
     needs: [pr]
     steps:
-      - name: "Removing ready label"
+      - name: "Removing package-validated label"
         if: needs.pr.outputs.pr != '0'
         uses: actions/github-script@v3
         continue-on-error: true
@@ -108,9 +108,9 @@ jobs:
               issue_number: ${{ needs.pr.outputs.pr }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'ready'
+              name: 'package-validated'
             })
-      - name: "Removing deployment-ok label"
+      - name: "Removing installation-valiadated label"
         if: needs.pr.outputs.pr != '0'
         uses: actions/github-script@v3
         continue-on-error: true
@@ -121,5 +121,5 @@ jobs:
               issue_number: ${{ needs.pr.outputs.pr }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'deployment-ok'
+              name: 'installation-valiadated'
             })
