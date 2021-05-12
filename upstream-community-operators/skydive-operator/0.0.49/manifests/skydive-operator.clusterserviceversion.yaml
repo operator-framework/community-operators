@@ -2,6 +2,12 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
+    capabilities: Basic Install
+    categories: "Logging & Tracing Monitoring"
+    containerImage: docker.io/xxmrxx1/skydive-operator:0.0.49
+    createdAt: 2021-05-01T10:21:00Z
+    support: IBM
+    repository: https://github.com/skydive-project/skydive-golang-operator
     alm-examples: |-
       [
         {
@@ -92,13 +98,14 @@ metadata:
           }
         }
       ]
-    capabilities: Basic Install
+
+    description: An operator to run the Skydive network monitoring tool
     operators.operatorframework.io/builder: operator-sdk-v1.5.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: skydive-operator.v0.0.49
   namespace: placeholder
 spec:
-  apiservicedefinitions: {}
+  apiservicedefinitions: { }
   customresourcedefinitions:
     owned:
       - description: Skydive is the Schema for the skydives API
@@ -106,6 +113,54 @@ spec:
         kind: Skydive
         name: skydives.skydive-group.example.com
         version: v1
+        resources:
+          - kind: Deployment
+            version: apps/v1
+          - kind: Service
+            version: v1
+          - kind: ConfigMap
+            version: v1
+          - kind: Route
+            version: route.openshift.io/v1
+          - kind: Ingress
+            version: extensions/v1beta1
+          - kind: DaemonSet
+            version: apps/v1
+        specDescriptors:
+          - displayName: Skydive Namespace
+            description: "The namespace where Skydive and its associated resources will be created. Default: skydive"
+            path: namespace
+          - displayName: OpenShift Deployment
+            description: "When true, resources that are OpenShift unique will be created"
+            path: openShiftDeployment
+          - displayName: Enable Analyzer
+            description: "When true, Skydive analyzer will be created, when false, it will be deleted"
+            path: enable.analyzer
+          - displayName: Enable Agents
+            description: "When true, Skydive agents will be created, when false, it will be deleted"
+            path: enable.agents
+          - displayName: Enable Route
+            description: "When true, Skydive route will be created (make sure to have OpenShift Deployment set to true as well), when false, it will be deleted"
+            path: enable.route
+          - displayName: Enable Flow-Exporter
+            description: "When true, skydive Flow-Exporter will be created, when false, it will be deleted"
+            path: enable.flowExporter
+          - displayName: Enable Prometheus-Connector
+            description: "When true, Prometheus-Connector will be created, when false, it will be deleted"
+            path: enable.prometheusConnector
+          - displayName: Skydive Analyzer Deployment enviourment variables
+            description: "Defines environment variables for skydive analyzer deployment, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: analyzer.deployment.env
+          - displayName: Skydive Agents DaemonSet enviourment variables
+            description: "Defines environment variables for skydive agents daemonsSet, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: agents.daemonSet.env
+          - displayName: Skydive Flow Exporter Deployment enviourment variables
+            description: "Defines environment variables for skydive flow-exporter deployment, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: agents.daemonSet.env
+          - displayName: Skydive Promethues connector Deployment enviourment variables
+            description: "Defines environment variables for Promethues connector deployment, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: agents.daemonSet.env
+
   description: |
     # Skydive operator
     This is an operator to deploy skydive analyzer, agents, flow-exporter and promethues connector.
@@ -343,6 +398,15 @@ spec:
                CkQiyYMUiESSBykQiSQPUiASSR6kQCSSPEiBSCR5kAKRSPIgBSKR5EEKRCLJgxSIRJIHKRCJJA9S
                IBJJHv5/AAAA//9U0P9agDvNKwAAAABJRU5ErkJggg=='
       mediatype: 'image/png'
+  version: 0.0.49
+  provider:
+    name: Skydive Community
+  maintainers:
+    - email: 'oran.nahoum1@ibm.com'
+      name: 'IBM'
+  links:
+    - name: Skydive
+      url: 'https://github.com/skydive-project/skydive'
   install:
     spec:
       clusterPermissions:
@@ -388,12 +452,13 @@ spec:
           serviceAccountName: skydive-operator-controller-manager
       deployments:
         - name: skydive-operator-controller-manager
+          namespace: skydive
           spec:
             replicas: 1
             selector:
               matchLabels:
                 control-plane: controller-manager
-            strategy: {}
+            strategy: { }
             template:
               metadata:
                 labels:
@@ -410,7 +475,7 @@ spec:
                     ports:
                       - containerPort: 8443
                         name: https
-                    resources: {}
+                    resources: { }
                   - args:
                       - --health-probe-bind-address=:8081
                       - --metrics-bind-address=127.0.0.1:8080
@@ -418,28 +483,28 @@ spec:
                     command:
                       - /manager
                     image: docker.io/xxmrxx1/skydive-operator:0.0.49
+                    name: manager
                     livenessProbe:
                       httpGet:
                         path: /healthz
                         port: 8081
                       initialDelaySeconds: 15
                       periodSeconds: 20
-                    name: manager
-                    readinessProbe:
-                      httpGet:
-                        path: /readyz
-                        port: 8081
-                      initialDelaySeconds: 5
-                      periodSeconds: 10
-                    resources:
-                      limits:
-                        cpu: 100m
-                        memory: 30Mi
-                      requests:
-                        cpu: 100m
-                        memory: 20Mi
-                    securityContext:
-                      allowPrivilegeEscalation: false
+                      readinessProbe:
+                        httpGet:
+                          path: /readyz
+                          port: 8081
+                        initialDelaySeconds: 5
+                        periodSeconds: 10
+                      resources:
+                        limits:
+                          cpu: 100m
+                          memory: 30Mi
+                        requests:
+                          cpu: 100m
+                          memory: 20Mi
+                      securityContext:
+                        allowPrivilegeEscalation: false
                 securityContext:
                   runAsNonRoot: true
                 serviceAccountName: skydive-operator-controller-manager
@@ -480,13 +545,4 @@ spec:
       type: AllNamespaces
   keywords:
     - skydive
-  links:
-    - name: Skydive
-      url: https://github.com/skydive-project/skydive
-  maintainers:
-    - email: oran.nahoum1@ibm.com
-      name: IBM
   maturity: alpha
-  provider:
-    name: Skydive Community
-  version: 0.0.49
