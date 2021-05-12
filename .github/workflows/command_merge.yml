@@ -8,28 +8,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Print info about event
-        id: info
-        continue-on-error: true
-        uses: actions/github-script@v3
+      - uses: actions/github-script@v4
+        id: labels
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            console.log(context)
-            console.log(`::set-output name=xxx::${context.payload.issue.labels}`)
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: | 
+            const labels = await github.issues.listLabelsOnIssue({
+              issue_number: context.payload.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+            console.log(labels.data)
+            return labels.data
+
+
+      # - name: Print info about event
+      #   id: info
+      #   continue-on-error: true
+      #   uses: actions/github-script@v3
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       console.log(context)
+      #       console.log(`::set-output name=xxx::${context.payload.issue.labels}`)
 
       - name: Print
         continue-on-error: true
         run: |
           echo "The xxx was '${{ steps.info.outputs.xxx }}'"
 
-          echo "${{ contains(github.event.pull_request.labels.*.name, 'authorized-changes') }}"
-          echo "${{ contains(github.event.pull_request.labels.*.name, 'installation-valiadated') }}"
-          echo "${{ contains(github.event.pull_request.labels.*.name, 'package-validated') }}"
-          echo "${{ !contains(github.event.pull_request.labels.*.name, 'new-operator') }}"
-          echo "${{ !contains(github.event.pull_request.labels.*.name, 'do-not-merge/work-in-progress') }}"
-          echo "${{ !contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold') }}"
-          echo "${{ contains(steps.info.outputs.xxx.*.name, 'authorized-changes') }}"
+          echo "${{ contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes') }}"
+          echo "${{ contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-valiadated') }}"
+          echo "${{ contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated') }}"
+          echo "${{ !contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator') }}"
+          echo "${{ !contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress') }}"
+          echo "${{ !contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold') }}"
       - name: Merge command handler
         id: command
         uses: xt0rted/slash-command-action@v1
@@ -46,12 +59,12 @@ jobs:
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' &&
-          (contains(github.event.pull_request.labels.*.name, 'authorized-changes')) &&
-          (contains(github.event.pull_request.labels.*.name, 'installation-valiadated')) &&
-          (contains(github.event.pull_request.labels.*.name, 'package-validated')) &&
-          (!contains(github.event.pull_request.labels.*.name, 'new-operator')) &&
-          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/work-in-progress')) &&
-          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-valiadated')) &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold'))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -59,7 +72,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'Mainainer can merge it now'
+              body: 'Automatic merge is approved. (This PR will be merged, when automatic merging is enabled)'
             })
 
       - name: Merge message when not able to merge
@@ -67,9 +80,9 @@ jobs:
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' && (
-          (!contains(github.event.pull_request.labels.*.name, 'authorized-changes')) ||
-          (!contains(github.event.pull_request.labels.*.name, 'installation-valiadated')) ||
-          (!contains(github.event.pull_request.labels.*.name, 'package-validated')))
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) ||
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-valiadated')) ||
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -85,12 +98,12 @@ jobs:
         if: |
           steps.command.outputs.command-name == 'merge' &&
           steps.command.outputs.command-arguments == 'possible' &&
-          (!contains(github.event.pull_request.labels.*.name, 'authorized-changes')) &&
-          (contains(github.event.pull_request.labels.*.name, 'installation-valiadated')) &&
-          (contains(github.event.pull_request.labels.*.name, 'package-validated')) &&
-          (!contains(github.event.pull_request.labels.*.name, 'new-operator')) &&
-          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/work-in-progress')) &&
-          (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-valiadated')) &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold'))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
