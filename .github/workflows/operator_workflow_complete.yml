@@ -58,13 +58,26 @@ jobs:
       #     echo "::set-output name=labels::${LABELS//'%'/'%25'}"
     outputs:
       pr: "${{ steps.pr-number.outputs.pr }}"
-      labels: "${{ steps.pr-labels.outputs.result }}"
 
   on-success:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
     needs: [pr]
     steps:
+
+      - uses: actions/github-script@v4
+        id: pr-labels
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: | 
+            const labels = await github.issues.listLabelsOnIssue({
+              issue_number: ${{ steps.pr-number.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+            return labels.data
+
       - name: "Setting package-validated label"
         uses: actions/github-script@v3
         continue-on-error: true
@@ -79,7 +92,7 @@ jobs:
             })
       - name: "Set installation-valiadated when kubernetes-operator label is set"
         uses: actions/github-script@v3
-        if: (contains(fromJson(needs.pr.outputs.pr.outputs.labels).*.name, 'kubernetes-operator'))
+        if: (contains(fromJson(steps.pr-labels.outputs.result).*.name, 'kubernetes-operator'))
         continue-on-error: true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -92,9 +105,9 @@ jobs:
             })
       - uses: actions/github-script@v3
         if: |
-          (contains(fromJson(needs.pr.outputs.pr.outputs.labels).*.name, 'kubernetes-operator')) &&
-          (!contains(fromJson(needs.pr.outputs.pr.outputs.labels).*.name, 'do-not-merge/work-in-progress')) &&
-          (!contains(fromJson(needs.pr.outputs.pr.outputs.labels).*.name, 'do-not-merge/hold'))
+          (contains(fromJson(steps.pr-labels.outputs.result).*.name, 'kubernetes-operator')) &&
+          (!contains(fromJson(steps.pr-labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(fromJson(steps.pr-labels.outputs.result).*.name, 'do-not-merge/hold'))
         continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
