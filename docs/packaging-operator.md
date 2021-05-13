@@ -12,7 +12,9 @@ In general a released version of your Operator is described in a `ClusterService
 
 To add your operator to any of the supported platforms, you will need to submit metadata for your Operator to be used by the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager/) (OLM). This is YAML file called `ClusterServiceVersion` which contains references to all of the CRDs, RBAC rules, `Deployment` and container image needed to install and securely run your Operator. It also contains user-visible info like a description of its features and supported Kubernetes versions. Note that your Operator's CRDs are shipped in separate manifests alongside the CSV so OLM can register them during installation (your Operator is not supposed to self-register its CRDs).
 
-Follow [this guide](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md) to create an OLM-compatible CSV for your operator. You can also see an example [here](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#example-csv). An Operator's CSV must contain the fields mentioned [here](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#packaging-required-fields-for-operatorhub) for it to be displayed properly within the various platforms. If your operator needs new category, follow the instructions about [categories](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#categories).
+Follow [this guide](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md) to create an OLM-compatible CSV for your operator. You can also see an example [here](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#example-csv).
+##### Categories #####
+An Operator's CSV must contain the fields mentioned [here](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#packaging-required-fields-for-operatorhub) for it to be displayed properly within the various platforms. If your operator needs new category, follow the instructions about [categories](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#categories).
 
 There is one CSV per version of your Operator alongside the CRDs.
 
@@ -41,7 +43,9 @@ my-operator
 │   └── my-operator.v1.0.0.clusterserviceversion.yaml
 └── my-operator.package.yaml
 ```
-The `package.yaml` is a YAML file at the root level of the package directory. It provides the package name, a selection of channels pointing to potentially different Operator Versions/CSVs and a default channel. The package name is what users on cluster see when they discover Operators available to install. Use channels to allow your users to select a different update cadence, e.g. `stable` vs. `nightly`. If you have only a single channel the use of `defaultChannel` is optional.
+The `package.yaml` is a YAML file at the root level of the package directory. It provides the package name, a selection of channels pointing to potentially different Operator Versions/CSVs and a default channel. The package name is what users on cluster see when they discover Operators available to install. 
+##### Channels #####
+Use channels to allow your users to select a different update cadence, e.g. `stable` vs. `nightly`. If you have only a single channel the use of `defaultChannel` is optional.
 
 An example of `my-operator.package.yaml`:
 
@@ -205,7 +209,7 @@ Supported formats: svg, jpg, png
 
 ### Updating your existing Operator
 
-Unless of purely cosmectic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator.
+Unless of purely cosmetic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator.
 
 In order to have OLM enable updates to your new Operator version you can choose between three update modes: `semver-mode`, `semver-skippatch-mode` and `replaces-mode`. The default is `semver-mode`. If you want to change the default, place a file called `ci.yaml` in your top-level directory (works for both `packagemanifest` or `bundle` format) and set it to either of the two other values. For example:
 
