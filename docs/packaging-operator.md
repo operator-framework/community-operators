@@ -43,7 +43,9 @@ my-operator
 │   └── my-operator.v1.0.0.clusterserviceversion.yaml
 └── my-operator.package.yaml
 ```
-The `package.yaml` is a YAML file at the root level of the package directory. It provides the package name, a selection of channels pointing to potentially different Operator Versions/CSVs and a default channel. The package name is what users on cluster see when they discover Operators available to install. Use channels to allow your users to select a different update cadence, e.g. `stable` vs. `nightly`. If you have only a single channel the use of `defaultChannel` is optional.
+The `package.yaml` is a YAML file at the root level of the package directory. It provides the package name, a selection of channels pointing to potentially different Operator Versions/CSVs and a default channel. The package name is what users on cluster see when they discover Operators available to install. 
+##### Channels #####
+Use channels to allow your users to select a different update cadence, e.g. `stable` vs. `nightly`. If you have only a single channel the use of `defaultChannel` is optional.
 
 An example of `my-operator.package.yaml`:
 

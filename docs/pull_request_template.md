@@ -14,7 +14,7 @@ Thanks submitting your Operator. Please check below list before you create your 
 
 * [ ] Did you create a `ci.yaml` file according to the [update instructions](https://github.com/operator-framework/community-operators/blob/master/docs/operator-ci-yaml.md)?
 * [ ] Is your new CSV pointing to the previous version with the `replaces` property if you chose `replaces-mode` via the `updateGraph` property in `ci.yaml`?
-* [ ] Is your new CSV referenced in the [appropriate channel](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-operator.md#create-a-release-using-the-packagemanifest-format) defined in the `package.yaml` or `annotations.yaml` ?
+* [ ] Is your new CSV referenced in the [appropriate channel](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-operator.md#channels) defined in the `package.yaml` or `annotations.yaml` ?
 * [ ] Have you tested an update to your Operator when deployed via OLM?
 * [ ] Is your submission [signed](https://github.com/operator-framework/community-operators/blob/master/docs/contributing-prerequisites.md#sign-your-work)?
 
