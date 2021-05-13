@@ -20,7 +20,7 @@ community-operators/aqua/
 
 ## Minor (cosmetics) changes
 
-There are some case when only some minor changes to the existing operator are needed (like description update or an update of icon). In this case pipeline will set coresponding label and automatically handle such case.
+There are some case when only some minor changes to the existing operator are needed (like description update or an update of icon). In this case pipeline will set corresponding label and automatically handle such case.
 
 ### Allowed changes
 
@@ -29,6 +29,8 @@ There are some case when only some minor changes to the existing operator are ne
     - `spec.description`
     - `spec.DisplayName`
     - `spec.icon`
+    - `metadata.annotations.description`
+    - `metadata.annotations.alm-examples`
 
 ## Operator versioning strategy 
 
