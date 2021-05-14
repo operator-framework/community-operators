@@ -99,6 +99,17 @@ for sf in ${OP_TEST_RENAMED_ADDED_MODIFIED_FILES[@]}; do
   if [ $(echo $sf| awk -F'/' '{print NF}') -ge 4 ]; then
       OP_NAME="$(echo "$sf" | awk -F'/' '{ print $2 }')"
       OP_VER="$(echo "$sf" | awk -F'/' '{ print $3 }')"
+      OP_STREAM_DIR="$(echo "$sf" | awk -F'/' '{ print $1 }')"
+      if [[ "$OP_STREAM_DIR" == "community-operators" ]]; then
+          echo "Found changes to Openshift community-operators."
+      else
+          curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+          -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"]}}"
+          echo "Running operator deployment on an Openshift is not relevant for the affected commit, exiting."
+          exit 0;
+      fi
   fi
 done
 echo
@@ -148,8 +159,11 @@ cd /tmp/playbooks2
 git clone https://github.com/operator-framework/operator-test-playbooks.git
 cd operator-test-playbooks/upstream
 export ANSIBLE_CONFIG=/tmp/playbooks2/operator-test-playbooks/upstream/ansible.cfg
+set +e
 ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -i localhost, deploy-olm-operator-openshift-upstream.yml -e ansible_connection=local -e package_name=$OP_NAME -e operator_dir=$TARGET_PATH/$OP_NAME -e op_version=$OP_VER -e oc_bin_path="/tmp/oc-$OC_DIR_CORE/bin/oc" -e commit_tag=$QUAY_HASH -e dir_suffix_part=$OC_DIR_CORE $SUBDIR_ARG $EXTRA_ARGS -vv
-if [ $? -eq 0 ]; then
+ANSIBLE_STATUS=$?
+
+if [ $ANSIBLE_STATUS -eq 0 ]; then
   curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
   -X POST \
   -H "Accept: application/vnd.github.v3+json" \
@@ -164,3 +178,5 @@ fi
 echo "Variable summary:"
 echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
+
+if [ $ANSIBLE_STATUS -gt 0 ]; then echo "Ansible failed, see output above"; exit 1; done
