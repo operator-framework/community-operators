@@ -1,0 +1,46 @@
+name: DCO check
+on:
+ pull_request_target:
+   types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  commits_check_job:
+    runs-on: ubuntu-latest
+    name: Commits Check
+    steps:
+
+      - name: "Set signature-missing label"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.AddLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'signature-missing' ]
+            })
+      - name: Get PR Commits
+        id: 'get-pr-commits'
+        uses: tim-actions/get-pr-commits@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: DCO Check
+        uses: tim-actions/dco@v1.0
+        with:
+          commits: ${{ steps.get-pr-commits.outputs.commits }}
+          
+      - name: "Remove signature-missing label"
+        uses: actions/github-script@v3
+        if: always()
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'signature-missing'
+            })
