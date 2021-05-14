@@ -15,7 +15,7 @@ echo "SUBDIR_ARG = $SUBDIR_ARG"
 curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"installation-valiadated\", \"openshift-started\"], \"add_labels\": [\"openshift-started\"]}}"
+https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"installation-validated\", \"openshift-started\"], \"add_labels\": [\"openshift-started\"]}}"
 
 pwd
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
@@ -153,12 +153,12 @@ if [ $? -eq 0 ]; then
   curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
   -X POST \
   -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-valiadated\"], \"add_labels\": [\"installation-valiadated\"]}}"
+  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"], \"add_labels\": [\"installation-validated\"]}}"
 else
   curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
   -X POST \
   -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-valiadated\"], \"add_labels\": [\"installation-failed\"]}}"
+  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"], \"add_labels\": [\"installation-failed\"]}}"
 fi
 
 echo "Variable summary:"
