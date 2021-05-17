@@ -54,19 +54,6 @@ When operator tests are failing, one can see following picture
 
 In case of failures, please have a look at logs of specific tests. If error is not clear to you, please ask in the PR. Maintainers will be happy to help you with it.
 
-# Self merging service
-
-If your PR complies with the following prerequisites, it will be merged automatically:
-
-- no `hold`, nor `work-in-progress` label
-- contributor is on `ci.yaml` [reviewer](https://github.com/operator-framework/community-operators/blob/master/docs/operator-ci-yaml.md) list and `authorized-changes` label is set
-- operator was successfully installed on Kubernetes or Openshift and `installation-validated` label is set
-- the pipeline simulated operator release and `package-validated` label is set
-
-## Preventing automatic merging despite all conditions met
-You can have a reason to prevent automatic merge. Just post `/hold` command/comment.
-Once your changes are final, post `/hold cancel` command/comment.
-
 ## Useful commands interacting with the pipeline
 Command | Functionality
 --- | --- | 
