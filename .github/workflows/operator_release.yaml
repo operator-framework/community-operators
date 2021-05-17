@@ -4,12 +4,13 @@ env:
   OP_TEST_DEBUG: 1
   OP_TEST_CONTAINER_OPT: "-t"
   OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/test.sh"
+  ISS_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/iss.sh"
   OP_TEST_IMAGE: "quay.io/operator_testing/operator-test-playbooks:latest"
   # OP_TEST_SCRIPT_URL: "https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/feature/orange-release/upstream/test/test.sh"
   # OP_TEST_IMAGE: "quay.io/operator_testing/operator-test-playbooks:master"
   # OP_TEST_DRY_RUN: 1
   OP_TEST_PROD: 1
-  OP_TEST_INDEX_MIRROR: 1
+  OP_TEST_INDEX_MIRROR: 0
   OP_TEST_MIRROR_LATEST_TAG: "v4.6"
   # OP_TEST_LABELS: "allow/ci-changes allow/operator-version-overwrite"
   # OP_TEST_ADDED_MODIFIED_FILES: "community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
@@ -165,7 +166,7 @@ jobs:
           env:
             OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
             OP_TEST_CI_YAML_ONLY: 1
-            OP_TEST_IIB_INSTALL: 1
+            OP_TEST_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
             # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
@@ -177,7 +178,7 @@ jobs:
           if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
           env:
             OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
-            OP_TEST_IIB_INSTALL: 1
+            OP_TEST_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
             # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
@@ -189,7 +190,7 @@ jobs:
           if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
           env:
             OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
-            OP_TEST_IIB_INSTALL: 1
+            OP_TEST_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
             # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
@@ -222,6 +223,21 @@ jobs:
             webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
             data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}"
 
+
+  release-sha-openshift:
+      name: "Release sha / o7t"
+      needs: [ pr-check, release-openshift ]
+      if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          index-tag: [ v4.6, v4.7, v4.8 ]
+        fail-fast: false
+      steps:
+        - run: |
+            echo "openshift: ${{ matrix.index-tag }}"
+            bash <(curl -sL $ISS_SCRIPT_URL) openshift ${{ matrix.index-tag }}
+
   ohio-image-k8s:
     name: "Release / k8s ohio image"
     needs: [ pr-check, release-k8s_latest ]
@@ -241,7 +257,7 @@ jobs:
 
   ohio-image-o7t:
     name: "Release / o7t ohio image and sign 'latest'"
-    needs: [ pr-check, release-openshift ]
+    needs: [ release-sha-openshift ]
     # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
     runs-on: ubuntu-latest
     env:
