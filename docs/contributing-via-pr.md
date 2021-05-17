@@ -53,3 +53,12 @@ When operator tests are failing, one can see following picture
 ![Summary of test results when failing](images/op_pr_tests_failed.png)
 
 In case of failures, please have a look at logs of specific tests. If error is not clear to you, please ask in the PR. Maintainers will be happy to help you with it.
+
+## Useful commands interacting with the pipeline
+You can post the following comment/command:
+
+Command | Functionality
+--- | --- | 
+`/test deploy-operator-on-openshift` | Restarts Openshift deploy (Operator installation on an Openshift test)
+`/hold` | Setting PR on hold to prevent merging
+`/hold cancel` | Tests will be triggered again and merged if possible
