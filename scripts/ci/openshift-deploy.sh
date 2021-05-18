@@ -92,24 +92,25 @@ export OP_TEST_RENAMED_ADDED_MODIFIED_FILES=$(git diff --diff-filter=RAM upstrea
 BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
 echo "BRANCH_NAME=$BRANCH_NAME"
 
-[ -n "$OP_TEST_REMOVED_FILES" ] && [ -z "$OP_TEST_RENAMED_ADDED_MODIFIED_FILES" ] && echo "Nothing to test - [OK]" && echo "only deleted files detected:" && echo ${OP_TEST_REMOVED_FILES[@]} && exit 0;
+#deleted only
+[ -n "$OP_TEST_REMOVED_FILES" ] && [ -z "$OP_TEST_RENAMED_ADDED_MODIFIED_FILES" ] && echo "Nothing to test - [OK]" && echo "only deleted files detected:" && echo ${OP_TEST_REMOVED_FILES[@]} && curl -f -u framework-automation:$(cat /var/run/cred/framautom) -X POST -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"], \"add_labels\": [\"installation-validated\"]}}" && exit 0;
 
 for sf in ${OP_TEST_RENAMED_ADDED_MODIFIED_FILES[@]}; do
   echo $sf
+  OP_STREAM_DIR="$(echo "$sf" | awk -F'/' '{ print $1 }')"
+  # make green when PR from maintainers targeting CI
+  if [[ "$OP_STREAM_DIR" != "community-operators" ]]; then
+    curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
+    -X POST \
+    -H "Accept: application/vnd.github.v3+json" \
+    https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"]}}"
+    echo "Running operator deployment on an Openshift is not relevant for the affected commit. Found changes outside Openshift community operators, exiting."
+    exit 0;
+  fi
+
   if [ $(echo $sf| awk -F'/' '{print NF}') -ge 4 ]; then
       OP_NAME="$(echo "$sf" | awk -F'/' '{ print $2 }')"
       OP_VER="$(echo "$sf" | awk -F'/' '{ print $3 }')"
-      OP_STREAM_DIR="$(echo "$sf" | awk -F'/' '{ print $1 }')"
-      if [[ "$OP_STREAM_DIR" == "community-operators" ]]; then
-          echo "Found changes to Openshift community-operators."
-      else
-          curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
-          -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"]}}"
-          echo "Running operator deployment on an Openshift is not relevant for the affected commit, exiting."
-          exit 0;
-      fi
   fi
 done
 echo

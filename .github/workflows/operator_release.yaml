@@ -346,3 +346,21 @@ jobs:
         run: |
           echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
           scripts/ci/trigger-operatorhubio-ci.sh
+
+  monitoring:
+    name: "Monitoring"
+    needs: [ pr-check, release-k8s_latest, release-openshift, release-sha-openshift, ohio-image-k8s, ohio-image-o7t, push-to-quay-o7t, ohio-page-k8s, ohio-page-o7t ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo job
+        run: |
+          echo "${{ job }}"
+      - name: Report Status
+        uses: ravsamhq/notify-slack-action@master
+        with:
+          status: ${{ job.status }}
+          notify_when: 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ACTION_MONITORING_SLACK }}
+        continue-on-error: true
