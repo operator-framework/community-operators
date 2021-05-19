@@ -6,11 +6,12 @@ By default only [community-operators](https://github.com/operator-framework/comm
 
 If you want to speed up the process of publishing an update, it is possible to have your PRs automatically merge without reviews by the maintainers. The following criteria needs to be met:
 
-- All GitHub checks are successful
-- If you are updating an already published Operator, only minor (cosmetic) changes are done ([more info](./operator-version-strategy))
-- You are part of the `reviewer` group for the Operator in question ([more info](./operator-ci-yaml.md#reviewers)) Then and `authorized-changes` label is set.
-- No `hold`, nor `work-in-progress` label is set.
+- All GitHub checks are successful and `package-validated ` label is set.
 - Operator was successfully installed on Kubernetes or Openshift and `installation-validated` label is set.
+- You are part of the `reviewer` group for the Operator in question ([more info](./operator-ci-yaml.md#reviewers)) Then and `authorized-changes` label is set.
+- If you are updating an already published Operator, only minor (cosmetic) changes are done ([more info](./operator-version-strategy))
+- No `do-not-merge/hold `, nor `do-not-merge/work-in-progress` label is set.
+- Issue cannot be in draft mode
 
 If those criteria are fulfilled the PR will be automatically merged.
 
