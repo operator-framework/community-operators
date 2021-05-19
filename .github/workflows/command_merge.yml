@@ -54,44 +54,44 @@ jobs:
           allow-edits: "false"
           permission-level: write
 
-      - name: Dry run merge message
-        uses: actions/github-script@v3
-        if: |
-          steps.command.outputs.command-name == 'merge' &&
-          steps.command.outputs.command-arguments == 'possible' &&
-          (contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) &&
-          (contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated')) &&
-          (contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')) &&
-          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator')) &&
-          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
-          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold'))
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Automatic merge is approved. (This PR will be merged, when automatic merging is enabled)'
-            })
+      # - name: Dry run merge message
+      #   uses: actions/github-script@v3
+      #   if: |
+      #     steps.command.outputs.command-name == 'merge' &&
+      #     steps.command.outputs.command-arguments == 'possible' &&
+      #     (contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) &&
+      #     (contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated')) &&
+      #     (contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')) &&
+      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator')) &&
+      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
+      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold'))
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       github.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: 'Automatic merge is approved. (This PR will be merged, when automatic merging is enabled)'
+      #       })
 
-      - name: Merge message when not able to merge
-        uses: actions/github-script@v3
-        if: |
-          steps.command.outputs.command-name == 'merge' &&
-          steps.command.outputs.command-arguments == 'possible' && (
-          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) ||
-          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated')) ||
-          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')))
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Merge is not possible, because one of the automatic merging labels (`authorized-changes`,`installation-validated`,`package-validated`) is not set.'
-            })
+      # - name: Merge message when not able to merge
+      #   uses: actions/github-script@v3
+      #   if: |
+      #     steps.command.outputs.command-name == 'merge' &&
+      #     steps.command.outputs.command-arguments == 'possible' && (
+      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) ||
+      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated')) ||
+      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')))
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       github.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: 'Merge is not possible, because one of the automatic merging labels (`authorized-changes`,`installation-validated`,`package-validated`) is not set.'
+      #       })
 
       - name: Merge message when not able to merge and inform user about authorized_changes
         uses: actions/github-script@v3
@@ -114,22 +114,34 @@ jobs:
               body: 'Current PR can be merged automatically, but there is missing `authorized-changes` label. One can find out more info [here](https://operator-framework.github.io/community-operators/operator-ci-yaml/#reviewers).'
             })
 
-      - name: Act on the command ('')
-        if: steps.command.outputs.command-name == 'merge' && steps.command.outputs.command-arguments == ''
-        run: echo "The command was '${{ steps.command.outputs.command-name }}' with arguments '${{ steps.command.outputs.command-arguments }}'"
+      - name: Message when automerge is disabled
+        uses: actions/github-script@v3
+        if: |
+          steps.command.outputs.command-name == 'merge' &&
+          steps.command.outputs.command-arguments == 'possible' &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'automerge-disabled'))
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Automatic merge is disabled temporarily due to a maintenance.'
+            })
 
-      # - name: automerge
-      #   if: steps.command.outputs.command-name == 'merge' && steps.command.outputs.command-arguments == ''
-      #   uses: "pascalgn/automerge-action@v0.13.1"
-      #   env:
-      #     GITHUB_TOKEN: "${{ secrets.FRAMEWORK_MERGE }}"
-      #     MERGE_LABELS: "authorized-changes,package-validated,installation-validated,!new-operator,!do-not-merge/hold,!do-not-merge/work-in-progress"
-      #     MERGE_REMOVE_LABELS: ""
-      #     MERGE_METHOD: "merge"
-      #     MERGE_COMMIT_MESSAGE: "pull-request-title"
-      #     MERGE_FORKS: "true"
-      #     MERGE_RETRIES: "6"
-      #     MERGE_RETRY_SLEEP: "10000"
-      #     UPDATE_LABELS: ""
-      #     UPDATE_METHOD: "rebase"
+      - name: automerge
+        if: steps.command.outputs.command-name == 'merge' && steps.command.outputs.command-arguments == 'possible'
+        uses: "pascalgn/automerge-action@v0.13.1"
+        env:
+          GITHUB_TOKEN: "${{ secrets.FRAMEWORK_MERGE }}"
+          MERGE_LABELS: "authorized-changes,package-validated,installation-validated,!new-operator,!do-not-merge/hold,!do-not-merge/work-in-progress,!automerge-disabled"
+          MERGE_REMOVE_LABELS: ""
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "pull-request-title"
+          MERGE_FORKS: "true"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"
+          UPDATE_LABELS: ""
+          UPDATE_METHOD: "rebase"
 
