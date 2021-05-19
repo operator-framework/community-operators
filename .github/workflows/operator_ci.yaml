@@ -2,8 +2,41 @@ name: Operator CI
 on:
  pull_request_target:
    types: [opened, synchronize, reopened, ready_for_review]
-
+env:
+  AUTOMERGE_ENABLED: ${{ secrets.AUTOMERGE_ENABLED }}
+  
 jobs:
+  operator-automerge-enabled:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Remove automerge-disabled"
+        if: ${{ env.AUTOMERGE_ENABLED == '1' }}
+        uses: actions/github-script@v3
+        if: always()
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'automerge-disabled'
+            })
+      - name: Add automerge-disabled
+        uses: actions/github-script@v3
+        if: ${{ env.AUTOMERGE_ENABLED == '0' }}
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'automerge-disabled' ]
+            })
+
   operator-ci:
     if: github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'allow/test-in-draft-mode')
     runs-on: ubuntu-latest
