@@ -1,7 +1,7 @@
 name: Operator CI
 on:
  pull_request_target:
-   types: [opened, synchronize, reopened, ready_for_review]
+   types: [opened, synchronize, reopened, ready_for_review, unlabeled]
 env:
   AUTOMERGE_ENABLED: ${{ secrets.AUTOMERGE_ENABLED }}
   
@@ -40,6 +40,31 @@ jobs:
     if: github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'allow/test-in-draft-mode')
     runs-on: ubuntu-latest
     steps:
+      - name: "Remove kubernetes-operator"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'kubernetes-operator'
+            })
+
+      - name: "Remove openshift-operator"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'openshift-operator'
+            })
       - uses: actions/labeler@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
@@ -56,6 +81,7 @@ jobs:
               repo: context.repo.repo,
               name: 'needs-ok-to-test'
             })
+
       - name: "Remove package-validated"
         uses: actions/github-script@v3
         if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
@@ -317,7 +343,7 @@ jobs:
           [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Recreating operator. Exiting with '0' ..."; exit 0; } || true
           [[ $OP_TEST_ALLOW_SERIOUS_CHANGES -eq 1 ]] && { echo "Allowing serious changes. Exiting with '0' ..."; exit 0; } || true
           [ -n "$OP_TEST_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetic::1" || true
-          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!!\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; exit 20; } || true
+          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!! Please ask maintainers to set `allow/serious-changes-to-existing` label.\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; exit 20; } || true
 
       - name: Operator cosmetic change check
         id: op-cosmetic-change-check
