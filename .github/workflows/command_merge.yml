@@ -21,7 +21,6 @@ jobs:
             console.log(labels.data)
             return labels.data
 
-
       # - name: Print info about event
       #   id: info
       #   continue-on-error: true
@@ -32,17 +31,6 @@ jobs:
       #       console.log(context)
       #       console.log(`::set-output name=xxx::${context.payload.issue.labels}`)
 
-      - name: Print
-        continue-on-error: true
-        run: |
-          echo "The xxx was '${{ steps.info.outputs.xxx }}'"
-
-          echo "${{ contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes') }}"
-          echo "${{ contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated') }}"
-          echo "${{ contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated') }}"
-          echo "${{ !contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator') }}"
-          echo "${{ !contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress') }}"
-          echo "${{ !contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold') }}"
       - name: Merge command handler
         id: command
         uses: xt0rted/slash-command-action@v1
@@ -53,45 +41,6 @@ jobs:
           reaction-type: "eyes"
           allow-edits: "false"
           permission-level: write
-
-      # - name: Dry run merge message
-      #   uses: actions/github-script@v3
-      #   if: |
-      #     steps.command.outputs.command-name == 'merge' &&
-      #     steps.command.outputs.command-arguments == 'possible' &&
-      #     (contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) &&
-      #     (contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated')) &&
-      #     (contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')) &&
-      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator')) &&
-      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
-      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold'))
-      #   with:
-      #     github-token: ${{secrets.GITHUB_TOKEN}}
-      #     script: |
-      #       github.issues.createComment({
-      #         issue_number: context.issue.number,
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         body: 'Automatic merge is approved. (This PR will be merged, when automatic merging is enabled)'
-      #       })
-
-      # - name: Merge message when not able to merge
-      #   uses: actions/github-script@v3
-      #   if: |
-      #     steps.command.outputs.command-name == 'merge' &&
-      #     steps.command.outputs.command-arguments == 'possible' && (
-      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) ||
-      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated')) ||
-      #     (!contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')))
-      #   with:
-      #     github-token: ${{secrets.GITHUB_TOKEN}}
-      #     script: |
-      #       github.issues.createComment({
-      #         issue_number: context.issue.number,
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         body: 'Merge is not possible, because one of the automatic merging labels (`authorized-changes`,`installation-validated`,`package-validated`) is not set.'
-      #       })
 
       - name: Merge message when not able to merge and inform user about authorized_changes
         uses: actions/github-script@v3

@@ -8,8 +8,9 @@ env:
 jobs:
   operator-automerge-enabled:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.state == 'open'
     steps:
-      - name: "Remove automerge-disabled"
+      - name: Remove automerge-disabled when needed
         if: ${{ env.AUTOMERGE_ENABLED == '1' }}
         uses: actions/github-script@v3
         continue-on-error: true
@@ -22,7 +23,7 @@ jobs:
               repo: context.repo.repo,
               name: 'automerge-disabled'
             })
-      - name: Add automerge-disabled
+      - name: Add automerge-disabled when needed
         uses: actions/github-script@v3
         if: ${{ env.AUTOMERGE_ENABLED == '0' }}
         continue-on-error: true
@@ -38,6 +39,7 @@ jobs:
 
   operator-ci:
     if: github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'allow/test-in-draft-mode')
+    needs: operator-automerge-enabled
     runs-on: ubuntu-latest
     steps:
       - name: "Remove kubernetes-operator"
@@ -65,22 +67,10 @@ jobs:
               repo: context.repo.repo,
               name: 'openshift-operator'
             })
-      - uses: actions/labeler@v2
+      - name: Setting labels from changes in directory changes
+        uses: actions/labeler@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: "Remove needs-ok-to-test"
-        uses: actions/github-script@v3
-        if: always()
-        continue-on-error: true
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.issues.removeLabel({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'needs-ok-to-test'
-            })
 
       - name: "Remove package-validated"
         uses: actions/github-script@v3
@@ -485,6 +475,21 @@ jobs:
     needs: operator-ci
     runs-on: ubuntu-latest
     steps:
+
+      - name: "Remove needs-ok-to-test"
+        uses: actions/github-script@v3
+        if: always()
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'needs-ok-to-test'
+            })
+
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
         if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only == '0' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
