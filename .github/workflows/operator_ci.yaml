@@ -3,7 +3,7 @@ on:
  pull_request_target:
    types: [opened, synchronize, reopened, ready_for_review, unlabeled]
 env:
-  AUTOMERGE_ENABLED: ${{ secrets.AUTOMERGE_ENABLED }}
+  AUTOMERGE_ENABLED: 1
   
 jobs:
   operator-automerge-enabled:
@@ -471,13 +471,12 @@ jobs:
           echo "steps.op-traffic-light.outputs.op_test_version: ${{ steps.op-traffic-light.outputs.op_test_version }}"
           echo "steps.op-traffic-light.outputs.op_test_ci_yaml_only: ${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
     outputs:
-      # op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
-      # op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
+      op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
+      op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
       op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
-      op_test_ci_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
-      # op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
-      # op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
-
+      op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
+      op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
+      op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
 
   operator-ci-ok-to-test:
     needs: operator-ci
@@ -500,11 +499,11 @@ jobs:
       - name: Info
         run: |
           echo "needs.operator-ci.outputs.op_test_stream: ${{ needs.operator-ci.outputs.op_test_stream }}"
-          echo "needs.operator-ci.outputs.op_test_ci_only: ${{ needs.operator-ci.outputs.op_test_ci_only }}"
+          echo "needs.operator-ci.outputs.op_test_ci_yaml_only: ${{ needs.operator-ci.outputs.op_test_ci_yaml_only }}"
 
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
-        if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_only != '1' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
+        if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only != '1' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
