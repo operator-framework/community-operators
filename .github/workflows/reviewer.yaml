@@ -1,0 +1,57 @@
+name: Reviewer
+on:
+ pull_request_review:
+   types: [submitted, edited]
+   
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.event.review.state == 'approved'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip yq
+
+      - name: Operator traffic light
+        id: op-traffic-light
+        env:
+          OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          OP_TEST_PR_AUTHOR: "${{ github.event.review.user.login }}"
+          OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}"
+          OPRT_SHA: "${{ github.event.pull_request.head.sha }}"
+        run: |
+          bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt.sh)
+      
+      - name: Author info
+        id: author
+        run: |
+          echo "github.event.review.user.login: ${{ github.event.review.user.login }}"
+          echo "steps.op-traffic-light.outputs.op_test_pr_revievers: ${{ steps.op-traffic-light.outputs.op_test_pr_revievers }}"
+          echo "steps.op-traffic-light.outputs.op_test_authorized_changes: ${{ steps.op-traffic-light.outputs.op_test_authorized_changes }}"
+
+      - name: "Setting authorized-changes label"
+        uses: actions/github-script@v3
+        if: steps.op-traffic-light.outputs.op_test_authorized_changes == '1'
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'authorized-changes' ]
+            })
+
+      # - name: Author
+      #   id: author
+      #   run: |
+      #     echo "github.event.issue.user.login: ${{ github.event.issue.user.login }}"
+      #     echo "github.event.pull_request.user.login: ${{ github.event.pull_request.user.login }}"
+      #     echo "github.event.pull_request.state: ${{ github.event.pull_request.state }}"
+      #     echo "github.event.action: ${{ github.event.action }}"
+      #     echo "github.event.review.state: ${{ github.event.review.state }}"
+      #     echo "github.event.review.user.login: ${{ github.event.review.user.login }}"
+      #     ls -al
