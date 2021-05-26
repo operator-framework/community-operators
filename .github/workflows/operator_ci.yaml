@@ -333,7 +333,24 @@ jobs:
           [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Recreating operator. Exiting with '0' ..."; exit 0; } || true
           [[ $OP_TEST_ALLOW_SERIOUS_CHANGES -eq 1 ]] && { echo "Allowing serious changes. Exiting with '0' ..."; exit 0; } || true
           [ -n "$OP_TEST_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetic::1" || true
-          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!! Please ask maintainers to set `allow/serious-changes-to-existing` label.\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; exit 20; } || true
+          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!! Please ask maintainers to set `allow/serious-changes-to-existing` label.\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; echo "::set-output name=op_check_cosmetic::2"; exit 20; } || true
+
+      - name: "Comment for cosmetics change error when csv is changed"
+        if: failure() && steps.op-verify-modifications.outputs.op_check_cosmetic == '2'
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            /hold
+                     
+            Only minor (cosmetic) changes to already published operator version(s) are allowed. Consider bumping your operator version. In exceptional cases, it could be overridden by setting `allow/serious-changes-to-existing` label set by maintainers and then confirmed action by running command `/hold cancel`.
+            
+            <details>
+            Reason: Non CSV files were changed in existing operator !!!
+            More info about allowed changes can be found in [documetnation](https://operator-framework.github.io/community-operators/troubleshooting/#minor-changes).
+            </details>
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: true
 
       - name: Operator cosmetic change check
         id: op-cosmetic-change-check
