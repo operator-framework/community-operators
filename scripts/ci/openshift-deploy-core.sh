@@ -13,7 +13,7 @@ echo "SUBDIR_ARG = $SUBDIR_ARG"
 curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
 -X POST \
 -H "Accept: application/vnd.github.v3+json" \
-https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"installation-validated\", \"openshift-started\", \"installation-failed\"], \"add_labels\": [\"openshift-started\"]}}"
+https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\", \"openshift-started$OCP_CLUSTER_VERSION_SUFFIX\", \"installation-failed$OCP_CLUSTER_VERSION_SUFFIX\"], \"add_labels\": [\"openshift-started$OCP_CLUSTER_VERSION_SUFFIX\"]}}"
 
 pwd
 TARGET_PATH='/go/src/github.com/operator-framework/community-operators/community-operators'
@@ -91,7 +91,7 @@ BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
 echo "BRANCH_NAME=$BRANCH_NAME"
 
 #deleted only
-[ -n "$OP_TEST_REMOVED_FILES" ] && [ -z "$OP_TEST_RENAMED_ADDED_MODIFIED_FILES" ] && echo "Nothing to test - [OK]" && echo "only deleted files detected:" && echo ${OP_TEST_REMOVED_FILES[@]} && curl -f -u framework-automation:$(cat /var/run/cred/framautom) -X POST -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"], \"add_labels\": [\"installation-validated\"]}}" && exit 0;
+[ -n "$OP_TEST_REMOVED_FILES" ] && [ -z "$OP_TEST_RENAMED_ADDED_MODIFIED_FILES" ] && echo "Nothing to test - [OK]" && echo "only deleted files detected:" && echo ${OP_TEST_REMOVED_FILES[@]} && curl -f -u framework-automation:$(cat /var/run/cred/framautom) -X POST -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started$OCP_CLUSTER_VERSION_SUFFIX\", \"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"], \"add_labels\": [\"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"]}}" && exit 0;
 
 for sf in ${OP_TEST_RENAMED_ADDED_MODIFIED_FILES[@]}; do
   echo $sf
@@ -101,7 +101,7 @@ for sf in ${OP_TEST_RENAMED_ADDED_MODIFIED_FILES[@]}; do
     curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
     -X POST \
     -H "Accept: application/vnd.github.v3+json" \
-    https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"]}}"
+    https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started$OCP_CLUSTER_VERSION_SUFFIX\", \"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"]}}"
     echo "Running operator deployment on an Openshift is not relevant for the affected commit. Found changes outside Openshift community operators, exiting."
     exit 0;
   fi
@@ -116,7 +116,7 @@ echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
 
 #[ -n "$OP_NAME" ] || { echo "Error: '\$OP_NAME' is empty !!!"; exit 1; }
-[ -n "$OP_NAME" ] || { echo "Nothing to test, no community operator modified - [OK]"  && curl -f -u framework-automation:$(cat /var/run/cred/framautom) -X POST -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"], \"add_labels\": [\"installation-validated\"]}}" && exit 0; }
+[ -n "$OP_NAME" ] || { echo "Nothing to test, no community operator modified - [OK]"  && curl -f -u framework-automation:$(cat /var/run/cred/framautom) -X POST -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started$OCP_CLUSTER_VERSION_SUFFIX\", \"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"], \"add_labels\": [\"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"]}}" && exit 0; }
 [ -n "$OP_VER" ] || { echo "Error: '\$OP_VER' is empty !!!"; exit 1; }
 
 #detection end
@@ -167,12 +167,12 @@ if [ $ANSIBLE_STATUS -eq 0 ]; then
   curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
   -X POST \
   -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"], \"add_labels\": [\"installation-validated\"]}}"
+  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started$OCP_CLUSTER_VERSION_SUFFIX\", \"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"], \"add_labels\": [\"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"]}}"
 else
   curl -f -u framework-automation:$(cat /var/run/cred/framautom) \
   -X POST \
   -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started\", \"installation-validated\"], \"add_labels\": [\"installation-failed\"]}}"
+  https://api.github.com/repos/operator-framework/community-operators/dispatches --data "{\"event_type\": \"openshift-test-status\", \"client_payload\": {\"source_pr\": \"$PULL_NUMBER\", \"remove_labels\": [\"openshift-started$OCP_CLUSTER_VERSION_SUFFIX\", \"installation-validated$OCP_CLUSTER_VERSION_SUFFIX\"], \"add_labels\": [\"installation-failed$OCP_CLUSTER_VERSION_SUFFIX\"]}}"
 fi
 
 echo "Variable summary:"
