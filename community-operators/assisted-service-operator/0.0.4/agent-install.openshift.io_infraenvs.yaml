@@ -1,0 +1,182 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.0
+  creationTimestamp: null
+  name: infraenvs.agent-install.openshift.io
+spec:
+  group: agent-install.openshift.io
+  names:
+    kind: InfraEnv
+    listKind: InfraEnvList
+    plural: infraenvs
+    singular: infraenv
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              additionalNTPSources:
+                description: AdditionalNTPSources is a list of NTP sources (hostname or IP) to be added to all cluster hosts. They are added to any NTP sources that were configured through other means.
+                items:
+                  type: string
+                type: array
+              agentLabelSelector:
+                description: AgentLabelSelector specifies a label that should be applied to Agents that boot from the installation media of this InfraEnv. This is how a user would identify which agents are associated with a particular InfraEnv.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+              agentLabels:
+                additionalProperties:
+                  type: string
+                description: AgentLabels lists labels to apply to Agents that are associated with this InfraEnv upon the creation of the Agents.
+                type: object
+              clusterRef:
+                description: ClusterRef is the reference to the single ClusterDeployment that will be installed from this InfraEnv. Future versions will allow for multiple ClusterDeployments and this reference will be removed.
+                properties:
+                  name:
+                    description: Name is unique within a namespace to reference a cluster resource.
+                    type: string
+                  namespace:
+                    description: Namespace defines the space within which the cluster name must be unique.
+                    type: string
+                type: object
+              ignitionConfigOverride:
+                description: Json formatted string containing the user overrides for the initial ignition config
+                type: string
+              nmStateConfigLabelSelector:
+                description: NmstateConfigLabelSelector associates NMStateConfigs for hosts that are considered part of this installation environment.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+              proxy:
+                description: Proxy defines the proxy settings for agents and clusters that use the InfraEnv. If unset, the agents and clusters will not be configured to use a proxy.
+                properties:
+                  httpProxy:
+                    description: HTTPProxy is the URL of the proxy for HTTP requests.
+                    type: string
+                  httpsProxy:
+                    description: HTTPSProxy is the URL of the proxy for HTTPS requests.
+                    type: string
+                  noProxy:
+                    description: NoProxy is a comma-separated list of domains and CIDRs for which the proxy should not be used.
+                    type: string
+                type: object
+              pullSecretRef:
+                description: PullSecretRef is the reference to the secret to use when pulling images.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+              sshAuthorizedKey:
+                description: SSHAuthorizedKey is a SSH public keys that will be added to all agents for use in debugging.
+                type: string
+            required:
+            - agentLabelSelector
+            - clusterRef
+            - pullSecretRef
+            type: object
+          status:
+            properties:
+              conditions:
+                items:
+                  description: Condition represents the state of the operator's reconciliation functionality.
+                  properties:
+                    lastHeartbeatTime:
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      description: ConditionType is the state of the operator's reconciliation functionality.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              isoDownloadURL:
+                description: ISODownloadURL specifies an HTTP/S URL that contains a discovery ISO containing the configuration from this InfraEnv.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
