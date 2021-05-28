@@ -6,30 +6,19 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: flux-system
-    app.kubernetes.io/version: 0.9.1
-  name: helmcharts.source.toolkit.fluxcd.io
+    app.kubernetes.io/part-of: flux
+    app.kubernetes.io/version: 0.14.1
+  name: receivers.notification.toolkit.fluxcd.io
 spec:
-  group: source.toolkit.fluxcd.io
+  group: notification.toolkit.fluxcd.io
   names:
-    kind: HelmChart
-    listKind: HelmChartList
-    plural: helmcharts
-    singular: helmchart
+    kind: Receiver
+    listKind: ReceiverList
+    plural: receivers
+    singular: receiver
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .spec.chart
-          name: Chart
-          type: string
-        - jsonPath: .spec.version
-          name: Version
-          type: string
-        - jsonPath: .spec.sourceRef.kind
-          name: Source Kind
-          type: string
-        - jsonPath: .spec.sourceRef.name
-          name: Source Name
-          type: string
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
@@ -42,7 +31,7 @@ spec:
       name: v1beta1
       schema:
         openAPIV3Schema:
-          description: HelmChart is the Schema for the helmcharts API
+          description: Receiver is the Schema for the receivers API
           properties:
             apiVersion:
               description: "APIVersion defines the versioned schema of this representation of
@@ -62,86 +51,88 @@ spec:
             metadata:
               type: object
             spec:
-              description: HelmChartSpec defines the desired state of a Helm chart.
+              description: ReceiverSpec defines the desired state of Receiver
               properties:
-                chart:
-                  description: The name or path the Helm chart is available at in the SourceRef.
-                  type: string
-                interval:
-                  description: The interval at which to check the Source for updates.
-                  type: string
-                sourceRef:
-                  description: The reference to the Source the chart is available at.
+                events:
+                  description: A list of events to handle, e.g. 'push' for GitHub or 'Push Hook'
+                    for GitLab.
+                  items:
+                    type: string
+                  type: array
+                resources:
+                  description: A list of resources to be notified about changes.
+                  items:
+                    description: CrossNamespaceObjectReference contains enough information to let
+                      you locate the typed referenced object at cluster level
+                    properties:
+                      apiVersion:
+                        description: API version of the referent
+                        type: string
+                      kind:
+                        description: Kind of the referent
+                        enum:
+                          - Bucket
+                          - GitRepository
+                          - Kustomization
+                          - HelmRelease
+                          - HelmChart
+                          - HelmRepository
+                          - ImageRepository
+                          - ImagePolicy
+                          - ImageUpdateAutomation
+                        type: string
+                      name:
+                        description: Name of the referent
+                        maxLength: 53
+                        minLength: 1
+                        type: string
+                      namespace:
+                        description: Namespace of the referent
+                        maxLength: 53
+                        minLength: 1
+                        type: string
+                    required:
+                      - name
+                    type: object
+                  type: array
+                secretRef:
+                  description: Secret reference containing the token used to validate the payload
+                    authenticity
                   properties:
-                    apiVersion:
-                      description: APIVersion of the referent.
-                      type: string
-                    kind:
-                      description: Kind of the referent, valid values are ('HelmRepository',
-                        'GitRepository', 'Bucket').
-                      enum:
-                        - HelmRepository
-                        - GitRepository
-                        - Bucket
-                      type: string
                     name:
-                      description: Name of the referent.
+                      description: Name of the referent
                       type: string
                   required:
-                    - kind
                     - name
                   type: object
                 suspend:
-                  description: This flag tells the controller to suspend the reconciliation of
-                    this source.
+                  description: This flag tells the controller to suspend subsequent events
+                    handling. Defaults to false.
                   type: boolean
-                valuesFile:
-                  description: Alternative values file to use as the default chart values,
-                    expected to be a relative path in the SourceRef. Ignored
-                    when omitted.
-                  type: string
-                version:
-                  default: "*"
-                  description: The chart version semver expression, ignored for charts from
-                    GitRepository and Bucket sources. Defaults to latest when
-                    omitted.
+                type:
+                  description: Type of webhook sender, used to determine the validation procedure
+                    and payload deserialization.
+                  enum:
+                    - generic
+                    - generic-hmac
+                    - github
+                    - gitlab
+                    - bitbucket
+                    - harbor
+                    - dockerhub
+                    - quay
+                    - gcr
+                    - nexus
+                    - acr
                   type: string
               required:
-                - chart
-                - interval
-                - sourceRef
+                - resources
+                - type
               type: object
             status:
-              description: HelmChartStatus defines the observed state of the HelmChart.
+              description: ReceiverStatus defines the observed state of Receiver
               properties:
-                artifact:
-                  description: Artifact represents the output of the last successful chart sync.
-                  properties:
-                    checksum:
-                      description: Checksum is the SHA1 checksum of the artifact.
-                      type: string
-                    lastUpdateTime:
-                      description: LastUpdateTime is the timestamp corresponding to the last update of
-                        this artifact.
-                      format: date-time
-                      type: string
-                    path:
-                      description: Path is the relative file path of this artifact.
-                      type: string
-                    revision:
-                      description: Revision is a human readable identifier traceable in the origin
-                        source system. It can be a Git commit SHA, Git tag, a
-                        Helm index timestamp, a Helm chart version, etc.
-                      type: string
-                    url:
-                      description: URL is the HTTP address of this artifact.
-                      type: string
-                  required:
-                    - path
-                    - url
-                  type: object
                 conditions:
-                  description: Conditions holds the conditions for the HelmChart.
                   items:
                     description: >-
                       Condition contains details for one aspect of the current
@@ -218,16 +209,13 @@ spec:
                       - type
                     type: object
                   type: array
-                lastHandledReconcileAt:
-                  description: LastHandledReconcileAt holds the value of the most recent reconcile
-                    request value, so a change can be detected.
-                  type: string
                 observedGeneration:
                   description: ObservedGeneration is the last observed generation.
                   format: int64
                   type: integer
                 url:
-                  description: URL is the download link for the last chart pulled.
+                  description: Generated webhook URL in the format of
+                    '/hook/sha256sum(token+name+namespace)'.
                   type: string
               type: object
           type: object

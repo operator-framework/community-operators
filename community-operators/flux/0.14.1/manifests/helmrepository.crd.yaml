@@ -6,15 +6,18 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: flux-system
-    app.kubernetes.io/version: 0.9.1
-  name: buckets.source.toolkit.fluxcd.io
+    app.kubernetes.io/part-of: flux
+    app.kubernetes.io/version: 0.14.1
+  name: helmrepositories.source.toolkit.fluxcd.io
 spec:
   group: source.toolkit.fluxcd.io
   names:
-    kind: Bucket
-    listKind: BucketList
-    plural: buckets
-    singular: bucket
+    kind: HelmRepository
+    listKind: HelmRepositoryList
+    plural: helmrepositories
+    shortNames:
+      - helmrepo
+    singular: helmrepository
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -33,7 +36,7 @@ spec:
       name: v1beta1
       schema:
         openAPIV3Schema:
-          description: Bucket is the Schema for the buckets API
+          description: HelmRepository is the Schema for the helmrepositories API
           properties:
             apiVersion:
               description: "APIVersion defines the versioned schema of this representation of
@@ -53,39 +56,16 @@ spec:
             metadata:
               type: object
             spec:
-              description: BucketSpec defines the desired state of an S3 compatible bucket
+              description: HelmRepositorySpec defines the reference to a Helm repository.
               properties:
-                bucketName:
-                  description: The bucket name.
-                  type: string
-                endpoint:
-                  description: The bucket endpoint address.
-                  type: string
-                ignore:
-                  description: Ignore overrides the set of excluded patterns in the .sourceignore
-                    format (which is the same as .gitignore). If not provided, a
-                    default will be used, consult the documentation for your
-                    version to find out what those are.
-                  type: string
-                insecure:
-                  description: Insecure allows connecting to a non-TLS S3 HTTP endpoint.
-                  type: boolean
                 interval:
-                  description: The interval at which to check for bucket updates.
-                  type: string
-                provider:
-                  default: generic
-                  description: The S3 compatible storage provider name, default ('generic').
-                  enum:
-                    - generic
-                    - aws
-                  type: string
-                region:
-                  description: The bucket region.
+                  description: The interval at which to check the upstream for updates.
                   type: string
                 secretRef:
                   description: The name of the secret containing authentication credentials for
-                    the Bucket.
+                    the Helm repository. For HTTP/S basic auth the secret must
+                    contain username and password fields. For TLS the secret
+                    must contain a certFile and keyFile, and/or caCert fields.
                   properties:
                     name:
                       description: Name of the referent
@@ -98,19 +78,24 @@ spec:
                     this source.
                   type: boolean
                 timeout:
-                  default: 20s
-                  description: The timeout for download operations, defaults to 20s.
+                  default: 60s
+                  description: The timeout of index downloading, defaults to 60s.
+                  type: string
+                url:
+                  description: The Helm repository URL, a valid URL contains at least a protocol
+                    and host.
                   type: string
               required:
-                - bucketName
-                - endpoint
                 - interval
+                - url
               type: object
             status:
-              description: BucketStatus defines the observed state of a bucket
+              description: HelmRepositoryStatus defines the observed state of the
+                HelmRepository.
               properties:
                 artifact:
-                  description: Artifact represents the output of the last successful Bucket sync.
+                  description: Artifact represents the output of the last successful repository
+                    sync.
                   properties:
                     checksum:
                       description: Checksum is the SHA1 checksum of the artifact.
@@ -136,7 +121,7 @@ spec:
                     - url
                   type: object
                 conditions:
-                  description: Conditions holds the conditions for the Bucket.
+                  description: Conditions holds the conditions for the HelmRepository.
                   items:
                     description: >-
                       Condition contains details for one aspect of the current
@@ -222,8 +207,7 @@ spec:
                   format: int64
                   type: integer
                 url:
-                  description: URL is the download link for the artifact output of the last Bucket
-                    sync.
+                  description: URL is the download link for the last index fetched.
                   type: string
               type: object
           type: object

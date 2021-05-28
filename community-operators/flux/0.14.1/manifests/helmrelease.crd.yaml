@@ -6,7 +6,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: flux-system
-    app.kubernetes.io/version: 0.9.1
+    app.kubernetes.io/part-of: flux
+    app.kubernetes.io/version: 0.14.1
   name: helmreleases.helm.toolkit.fluxcd.io
 spec:
   group: helm.toolkit.fluxcd.io
@@ -99,8 +100,19 @@ spec:
                         valuesFile:
                           description: Alternative values file to use as the default chart values,
                             expected to be a relative path in the SourceRef.
-                            Ignored when omitted.
+                            Deprecated in favor of ValuesFiles, for backwards
+                            compatibility the file defined here is merged before
+                            the ValuesFiles items. Ignored when omitted.
                           type: string
+                        valuesFiles:
+                          description: Alternative list of values files to use as the chart values
+                            (values.yaml is not included by default), expected
+                            to be a relative path in the SourceRef. Values files
+                            are merged in the order of this list with the last
+                            file overriding the first. Ignored when omitted.
+                          items:
+                            type: string
+                          type: array
                         version:
                           default: "*"
                           description: Version semver expression, ignored for charts from
@@ -137,6 +149,22 @@ spec:
                   description: Install holds the configuration for Helm install actions for this
                     HelmRelease.
                   properties:
+                    crds:
+                      description: >-
+                        CRDs upgrade CRDs from the Helm Chart's crds directory
+                        according to the CRD upgrade policy provided here. Valid
+                        values are `Skip`, `Create` or `CreateReplace`. Default
+                        is `Create` and if omitted CRDs are installed but not
+                        updated. 
+                         Skip: do neither install nor replace (update) any CRDs. 
+                         Create: new CRDs are created, existing CRDs are neither updated nor deleted. 
+                         CreateReplace: new CRDs are created, existing CRDs are updated (replaced) but not deleted. 
+                         By default, CRDs are applied (installed) during Helm install action. With this option users can opt-in to CRD replace existing CRDs on Helm install actions, which is not (yet) natively supported by Helm. https://helm.sh/docs/chart_best_practices/custom_resource_definitions.
+                      enum:
+                        - Skip
+                        - Create
+                        - CreateReplace
+                      type: string
                     createNamespace:
                       description: CreateNamespace tells the Helm install action to create the
                         HelmReleaseSpec.TargetNamespace if it does not exist
@@ -185,8 +213,11 @@ spec:
                         in the history.
                       type: boolean
                     skipCRDs:
-                      description: SkipCRDs tells the Helm install action to not install any CRDs. By
-                        default, CRDs are installed if not already present.
+                      description: >-
+                        SkipCRDs tells the Helm install action to not install
+                        any CRDs. By default, CRDs are installed if not already
+                        present. 
+                         Deprecated use CRD policy (`crds`) attribute with value `Skip` instead.
                       type: boolean
                     timeout:
                       description: Timeout is the time to wait for any individual Kubernetes operation
@@ -458,6 +489,22 @@ spec:
                       description: CleanupOnFail allows deletion of new resources created during the
                         Helm upgrade action when it fails.
                       type: boolean
+                    crds:
+                      description: >-
+                        CRDs upgrade CRDs from the Helm Chart's crds directory
+                        according to the CRD upgrade policy provided here. Valid
+                        values are `Skip`, `Create` or `CreateReplace`. Default
+                        is `Skip` and if omitted CRDs are neither installed nor
+                        upgraded. 
+                         Skip: do neither install nor replace (update) any CRDs. 
+                         Create: new CRDs are created, existing CRDs are neither updated nor deleted. 
+                         CreateReplace: new CRDs are created, existing CRDs are updated (replaced) but not deleted. 
+                         By default, CRDs are not applied during Helm upgrade action. With this option users can opt-in to CRD upgrade, which is not (yet) natively supported by Helm. https://helm.sh/docs/chart_best_practices/custom_resource_definitions.
+                      enum:
+                        - Skip
+                        - Create
+                        - CreateReplace
+                      type: string
                     disableHooks:
                       description: DisableHooks prevents hooks from running during the Helm upgrade
                         action.
