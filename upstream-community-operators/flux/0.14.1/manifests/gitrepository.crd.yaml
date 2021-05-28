@@ -6,7 +6,8 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: flux-system
-    app.kubernetes.io/version: 0.9.1
+    app.kubernetes.io/part-of: flux
+    app.kubernetes.io/version: 0.14.1
   name: gitrepositories.source.toolkit.fluxcd.io
 spec:
   group: source.toolkit.fluxcd.io
@@ -14,6 +15,8 @@ spec:
     kind: GitRepository
     listKind: GitRepositoryList
     plural: gitrepositories
+    shortNames:
+      - gitrepo
     singular: gitrepository
   scope: Namespaced
   versions:
@@ -69,9 +72,39 @@ spec:
                     default will be used, consult the documentation for your
                     version to find out what those are.
                   type: string
+                include:
+                  description: Extra git repositories to map into the repository
+                  items:
+                    description: GitRepositoryInclude defines a source with a from and to path.
+                    properties:
+                      fromPath:
+                        description: The path to copy contents from, defaults to the root directory.
+                        type: string
+                      repository:
+                        description: Reference to a GitRepository to include.
+                        properties:
+                          name:
+                            description: Name of the referent
+                            type: string
+                        required:
+                          - name
+                        type: object
+                      toPath:
+                        description: The path to copy contents to, defaults to the name of the source
+                          ref.
+                        type: string
+                    required:
+                      - repository
+                    type: object
+                  type: array
                 interval:
                   description: The interval at which to check for repository updates.
                   type: string
+                recurseSubmodules:
+                  description: When enabled, after the clone is created, initializes all
+                    submodules within, using their default settings. This option
+                    is available only when using the 'go-git' GitImplementation.
+                  type: boolean
                 ref:
                   description: The Git reference to checkout and monitor for changes, defaults to
                     master branch.
@@ -248,6 +281,36 @@ spec:
                       - reason
                       - status
                       - type
+                    type: object
+                  type: array
+                includedArtifacts:
+                  description: IncludedArtifacts represents the included artifacts from the last
+                    successful repository sync.
+                  items:
+                    description: Artifact represents the output of a source synchronisation.
+                    properties:
+                      checksum:
+                        description: Checksum is the SHA1 checksum of the artifact.
+                        type: string
+                      lastUpdateTime:
+                        description: LastUpdateTime is the timestamp corresponding to the last update of
+                          this artifact.
+                        format: date-time
+                        type: string
+                      path:
+                        description: Path is the relative file path of this artifact.
+                        type: string
+                      revision:
+                        description: Revision is a human readable identifier traceable in the origin
+                          source system. It can be a Git commit SHA, Git tag, a
+                          Helm index timestamp, a Helm chart version, etc.
+                        type: string
+                      url:
+                        description: URL is the HTTP address of this artifact.
+                        type: string
+                    required:
+                      - path
+                      - url
                     type: object
                   type: array
                 lastHandledReconcileAt:

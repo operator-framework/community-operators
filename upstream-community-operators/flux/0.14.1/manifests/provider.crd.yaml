@@ -6,15 +6,16 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: flux-system
-    app.kubernetes.io/version: 0.9.1
-  name: alerts.notification.toolkit.fluxcd.io
+    app.kubernetes.io/part-of: flux
+    app.kubernetes.io/version: 0.14.1
+  name: providers.notification.toolkit.fluxcd.io
 spec:
   group: notification.toolkit.fluxcd.io
   names:
-    kind: Alert
-    listKind: AlertList
-    plural: alerts
-    singular: alert
+    kind: Provider
+    listKind: ProviderList
+    plural: providers
+    singular: provider
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -30,7 +31,7 @@ spec:
       name: v1beta1
       schema:
         openAPIV3Schema:
-          description: Alert is the Schema for the alerts API
+          description: Provider is the Schema for the providers API
           properties:
             apiVersion:
               description: "APIVersion defines the versioned schema of this representation of
@@ -50,61 +51,15 @@ spec:
             metadata:
               type: object
             spec:
-              description: AlertSpec defines an alerting rule for events involving a list of
-                objects
+              description: ProviderSpec defines the desired state of Provider
               properties:
-                eventSeverity:
-                  default: info
-                  description: Filter events based on severity, defaults to ('info'). If set to
-                    'info' no events will be filtered.
-                  enum:
-                    - info
-                    - error
+                address:
+                  description: HTTP/S webhook address of this provider
+                  pattern: ^(http|https)://
                   type: string
-                eventSources:
-                  description: Filter events based on the involved objects.
-                  items:
-                    description: CrossNamespaceObjectReference contains enough information to let
-                      you locate the typed referenced object at cluster level
-                    properties:
-                      apiVersion:
-                        description: API version of the referent
-                        type: string
-                      kind:
-                        description: Kind of the referent
-                        enum:
-                          - Bucket
-                          - GitRepository
-                          - Kustomization
-                          - HelmRelease
-                          - HelmChart
-                          - HelmRepository
-                          - ImageRepository
-                          - ImagePolicy
-                          - ImageUpdateAutomation
-                        type: string
-                      name:
-                        description: Name of the referent
-                        maxLength: 53
-                        minLength: 1
-                        type: string
-                      namespace:
-                        description: Namespace of the referent
-                        maxLength: 53
-                        minLength: 1
-                        type: string
-                    required:
-                      - name
-                    type: object
-                  type: array
-                exclusionList:
-                  description: A list of Golang regular expressions to be used for excluding
-                    messages.
-                  items:
-                    type: string
-                  type: array
-                providerRef:
-                  description: Send events using this provider.
+                certSecretRef:
+                  description: CertSecretRef can be given the name of a secret containing a
+                    PEM-encoded CA certificate (`caFile`)
                   properties:
                     name:
                       description: Name of the referent
@@ -112,19 +67,48 @@ spec:
                   required:
                     - name
                   type: object
-                summary:
-                  description: Short description of the impact and affected cluster.
+                channel:
+                  description: Alert channel for this provider
                   type: string
-                suspend:
-                  description: This flag tells the controller to suspend subsequent events
-                    dispatching. Defaults to false.
-                  type: boolean
+                proxy:
+                  description: HTTP/S address of the proxy
+                  pattern: ^(http|https)://
+                  type: string
+                secretRef:
+                  description: Secret reference containing the provider webhook URL using
+                    "address" as data key
+                  properties:
+                    name:
+                      description: Name of the referent
+                      type: string
+                  required:
+                    - name
+                  type: object
+                type:
+                  description: Type of provider
+                  enum:
+                    - slack
+                    - discord
+                    - msteams
+                    - rocket
+                    - generic
+                    - github
+                    - gitlab
+                    - bitbucket
+                    - azuredevops
+                    - googlechat
+                    - webex
+                    - sentry
+                    - azureeventhub
+                  type: string
+                username:
+                  description: Bot username for this provider
+                  type: string
               required:
-                - eventSources
-                - providerRef
+                - type
               type: object
             status:
-              description: AlertStatus defines the observed state of Alert
+              description: ProviderStatus defines the observed state of Provider
               properties:
                 conditions:
                   items:
