@@ -6,26 +6,35 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: flux-system
-    app.kubernetes.io/version: 0.9.1
-  name: imageupdateautomations.image.toolkit.fluxcd.io
+    app.kubernetes.io/part-of: flux
+    app.kubernetes.io/version: 0.14.1
+  name: buckets.source.toolkit.fluxcd.io
 spec:
-  group: image.toolkit.fluxcd.io
+  group: source.toolkit.fluxcd.io
   names:
-    kind: ImageUpdateAutomation
-    listKind: ImageUpdateAutomationList
-    plural: imageupdateautomations
-    singular: imageupdateautomation
+    kind: Bucket
+    listKind: BucketList
+    plural: buckets
+    singular: bucket
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .status.lastAutomationRunTime
-          name: Last run
+        - jsonPath: .spec.url
+          name: URL
           type: string
-      name: v1alpha1
+        - jsonPath: .status.conditions[?(@.type=="Ready")].status
+          name: Ready
+          type: string
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
+          name: Status
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1beta1
       schema:
         openAPIV3Schema:
-          description: ImageUpdateAutomation is the Schema for the imageupdateautomations
-            API
+          description: Bucket is the Schema for the buckets API
           properties:
             apiVersion:
               description: "APIVersion defines the versioned schema of this representation of
@@ -45,82 +54,90 @@ spec:
             metadata:
               type: object
             spec:
-              description: ImageUpdateAutomationSpec defines the desired state of
-                ImageUpdateAutomation
+              description: BucketSpec defines the desired state of an S3 compatible bucket
               properties:
-                checkout:
-                  description: Checkout gives the parameters for cloning the git repository, ready
-                    to make changes.
-                  properties:
-                    branch:
-                      description: Branch gives the branch to clone from the git repository.
-                      type: string
-                    gitRepositoryRef:
-                      description: GitRepositoryRef refers to the resource giving access details to a
-                        git repository to update files in.
-                      properties:
-                        name:
-                          description: Name of the referent
-                          type: string
-                      required:
-                        - name
-                      type: object
-                  required:
-                    - branch
-                    - gitRepositoryRef
-                  type: object
-                commit:
-                  description: Commit specifies how to commit to the git repo
-                  properties:
-                    authorEmail:
-                      description: AuthorEmail gives the email to provide when making a commit
-                      type: string
-                    authorName:
-                      description: AuthorName gives the name to provide when making a commit
-                      type: string
-                    messageTemplate:
-                      description: MessageTemplate provides a template for the commit message, into
-                        which will be interpolated the details of the change
-                        made.
-                      type: string
-                  required:
-                    - authorEmail
-                    - authorName
-                  type: object
-                interval:
-                  description: Interval gives an lower bound for how often the automation run
-                    should be attempted.
+                bucketName:
+                  description: The bucket name.
                   type: string
-                suspend:
-                  description: Suspend tells the controller to not run this automation, until it
-                    is unset (or set to false). Defaults to false.
+                endpoint:
+                  description: The bucket endpoint address.
+                  type: string
+                ignore:
+                  description: Ignore overrides the set of excluded patterns in the .sourceignore
+                    format (which is the same as .gitignore). If not provided, a
+                    default will be used, consult the documentation for your
+                    version to find out what those are.
+                  type: string
+                insecure:
+                  description: Insecure allows connecting to a non-TLS S3 HTTP endpoint.
                   type: boolean
-                update:
-                  default:
-                    strategy: Setters
-                  description: Update gives the specification for how to update the files in the
-                    repository. This can be left empty, to use the default
-                    value.
+                interval:
+                  description: The interval at which to check for bucket updates.
+                  type: string
+                provider:
+                  default: generic
+                  description: The S3 compatible storage provider name, default ('generic').
+                  enum:
+                    - generic
+                    - aws
+                  type: string
+                region:
+                  description: The bucket region.
+                  type: string
+                secretRef:
+                  description: The name of the secret containing authentication credentials for
+                    the Bucket.
                   properties:
-                    strategy:
-                      default: Setters
-                      description: Strategy names the strategy to be used.
-                      enum:
-                        - Setters
+                    name:
+                      description: Name of the referent
                       type: string
                   required:
-                    - strategy
+                    - name
                   type: object
+                suspend:
+                  description: This flag tells the controller to suspend the reconciliation of
+                    this source.
+                  type: boolean
+                timeout:
+                  default: 20s
+                  description: The timeout for download operations, defaults to 20s.
+                  type: string
               required:
-                - checkout
-                - commit
+                - bucketName
+                - endpoint
                 - interval
               type: object
             status:
-              description: ImageUpdateAutomationStatus defines the observed state of
-                ImageUpdateAutomation
+              description: BucketStatus defines the observed state of a bucket
               properties:
+                artifact:
+                  description: Artifact represents the output of the last successful Bucket sync.
+                  properties:
+                    checksum:
+                      description: Checksum is the SHA1 checksum of the artifact.
+                      type: string
+                    lastUpdateTime:
+                      description: LastUpdateTime is the timestamp corresponding to the last update of
+                        this artifact.
+                      format: date-time
+                      type: string
+                    path:
+                      description: Path is the relative file path of this artifact.
+                      type: string
+                    revision:
+                      description: Revision is a human readable identifier traceable in the origin
+                        source system. It can be a Git commit SHA, Git tag, a
+                        Helm index timestamp, a Helm chart version, etc.
+                      type: string
+                    url:
+                      description: URL is the HTTP address of this artifact.
+                      type: string
+                  required:
+                    - path
+                    - url
+                  type: object
                 conditions:
+                  description: Conditions holds the conditions for the Bucket.
                   items:
                     description: >-
                       Condition contains details for one aspect of the current
@@ -197,27 +214,18 @@ spec:
                       - type
                     type: object
                   type: array
-                lastAutomationRunTime:
-                  description: LastAutomationRunTime records the last time the controller ran this
-                    automation through to completion (even if no updates were
-                    made).
-                  format: date-time
-                  type: string
                 lastHandledReconcileAt:
                   description: LastHandledReconcileAt holds the value of the most recent reconcile
                     request value, so a change can be detected.
                   type: string
-                lastPushCommit:
-                  description: LastPushCommit records the SHA1 of the last commit made by the
-                    controller, for this automation object
-                  type: string
-                lastPushTime:
-                  description: LastPushTime records the time of the last pushed change.
-                  format: date-time
-                  type: string
                 observedGeneration:
+                  description: ObservedGeneration is the last observed generation.
                   format: int64
                   type: integer
+                url:
+                  description: URL is the download link for the artifact output of the last Bucket
+                    sync.
+                  type: string
               type: object
           type: object
       served: true
