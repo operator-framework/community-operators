@@ -10,12 +10,21 @@ jobs:
   remove-add-label:
     runs-on: ubuntu-latest
     steps:
+    - name: "Info"
+      uses: actions/github-script@v3
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          console.log(context.payload.client_payload.source_pr)
+          console.log(context.payload.client_payload.remove_labels)
+          console.log(context.payload.client_payload.add_labels)
+
+      continue-on-error: true
       - name: "Remove labels"
         uses: actions/github-script@v3
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            console.log(context.payload.client_payload.source_pr)
             for (const label of context.payload.client_payload.remove_labels) {
               github.issues.removeLabel({
                 issue_number: context.payload.client_payload.source_pr,
@@ -31,7 +40,6 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            console.log(context.payload.client_payload.source_pr)
             github.issues.addLabels({
               issue_number: context.payload.client_payload.source_pr,
               owner: context.repo.owner,
@@ -42,7 +50,6 @@ jobs:
         with:
           github-token: ${{ secrets.FRAMEWORK_MERGE }}
           script: |
-            console.log(context.payload.client_payload.source_pr)
             for (const label of context.payload.client_payload.add_labels) {
               if (label === 'installation-validated') {
                 github.issues.createComment({
