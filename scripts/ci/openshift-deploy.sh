@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #This scripts is configured in https://github.com/openshift/release/tree/master/ci-operator/config/operator-framework/community-operators and executed from ci-operator/jobs
+echo "OCP_CLUSTER_VERSION=$OCP_CLUSTER_VERSION"
 OCP_CLUSTER_VERSION=${OCP_CLUSTER_VERSION-""}
 if [ -n "$OCP_CLUSTER_VERSION" ]; then
   if [[ "$OCP_CLUSTER_VERSION" = "4.6" ]]; then
