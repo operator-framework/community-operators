@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e #fail in case of non zero return
+echo "OCP_CLUSTER_VERSION_SUFFIX=$OCP_CLUSTER_VERSION_SUFFIX"
 
 JQ_VERSION='1.6'
 MAX_LIMIT_FOR_INDEX_WAIT=20
