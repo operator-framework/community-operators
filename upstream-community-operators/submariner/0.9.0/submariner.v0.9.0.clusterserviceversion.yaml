@@ -8,9 +8,13 @@ metadata:
           "apiVersion": "submariner.io/v1alpha1",
           "kind": "Broker",
           "metadata": {
-            "name": "broker-sample"
+            "name": "submariner-broker"
           },
           "spec": {
+            "components": [
+              "service-discovery",
+              "connectivity"
+            ],
             "defaultGlobalnetClusterSize": 8192,
             "globalnetEnabled": false
           }
@@ -19,24 +23,28 @@ metadata:
           "apiVersion": "submariner.io/v1alpha1",
           "kind": "Submariner",
           "metadata": {
-            "name": "example-submariner"
+            "name": "submariner"
           },
           "spec": {
             "broker": "k8s",
             "brokerK8sApiServer": "192.168.67.110:8443",
-            "brokerK8sApiServerToken": "$(SECRET_API_SERVER_TOKEN)",
-            "brokerK8sCA": "$(SECRET_CA)",
-            "brokerK8sRemoteNamespace": "submariner-broker",
+            "brokerK8sApiServerToken": "$(BROKER_K8S_API_TOKEN)",
+            "brokerK8sCA": "$(BROKER_K8S_CA)",
+            "brokerK8sRemoteNamespace": "submariner-k8s-broker",
             "cableDriver": "libreswan",
             "ceIPSecDebug": false,
-            "ceIPSecIKEPort": 500,
-            "ceIPSecNATTPort": 4500,
-            "ceIPSecPSK": "$(SECRET_IPSEC_PSK)",
+            "ceIPSecIKEPort": 501,
+            "ceIPSecNATTPort": 4501,
+            "ceIPSecPSK": "$(IPSEC_PSK)",
             "clusterCIDR": "192.168.67.0/24",
-            "clusterID": "east",
-            "colorCodes": "blue",
+            "clusterID": "cluster1",
+            "connectionHealthCheck": {
+              "enabled": true,
+              "intervalSeconds": 1,
+              "maxPacketLossCount": 5
+            },
             "debug": false,
-            "globalCIDR": "169.254.0.0/16",
+            "globalCIDR": "",
             "namespace": "submariner-operator",
             "natEnabled": true,
             "repository": "quay.io/submariner",
@@ -94,6 +102,15 @@ spec:
     ### Prerequisites
     Submariner has a few requirements to get started, all are documented [here](https://submariner.io/getting-started/quickstart/kind/#prerequisites).
 
+    If running on an OpenShift cluster, perform the following steps to bind the Submariner service accounts to the **privileged** SCC.
+
+    ```shell
+    oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-gateway
+    oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-routeagent
+    oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-globalnet
+    oc adm policy add-scc-to-user privileged system:serviceaccount:submariner-operator:submariner-lighthouse-coredns
+    ```
+
     ### Deployment
     Submariner provides an [Operator](https://github.com/submariner-io/submariner-operator) for easy API-based
     installation and management.
@@ -103,61 +120,71 @@ spec:
     For complete information about subctl, please refer to [this page](https://submariner.io/operations/deployment/subctl).
     In addition to Operator and subctl, Submariner also provides [Helm Charts](https://submariner.io/operations/deployment/helm).
 
-    #### Deploying with subctl
-    Install the tool:
-    ```bash
-    curl -Ls https://get.submariner.io | bash
-    export PATH=$PATH:~/.local/bin
-    echo export PATH=\$PATH:~/.local/bin >> ~/.profile
-    ```
-    Deploy the broker:
+    On the broker cluster:
+    1. Create the broker namespace called `submariner-k8s-broker`.
+    2. Apply the broker RBAC definitions:
 
-    `subctl deploy-broker --kubeconfig <PATH-TO-KUBECONFIG-BROKER>`
+        ```shell
+        git clone --depth 1 --single-branch --branch release-0.9 https://github.com/submariner-io/submariner-operator
+        kubectl apply -k submariner-operator/config/broker -n submariner-k8s-broker
+        ```
 
-    For each cluster you want to join, issue the following command:
+    3. Install the Submariner Operator from the catalog.
+    4. Create a new `Broker` custom resource named **submariner-broker**.
 
-    `subctl join --kubeconfig <PATH-TO-JOINING-CLUSTER> broker-info.subm --clusterid <ID>`
+    On connected clusters:
+    1. Install the Submariner Operator from the catalog.
+    2. Create a new `Submariner` custom resource named **submariner**.
 
-    More information can be found [here](https://submariner.io/operations/deployment/subctl).
+    The following values can be specified for the **Broker** CR:
+    * **defaultCustomDomains**: List of domains to use for multicluster service discovery.
+    * **defaultGlobalnetClusterSize**: Default cluster size for GlobalCIDR allocated to each cluster (amount of global IPs).
+    * **globalnetEnabled**: Enable support for Overlapping CIDRs in connecting clusters (default disabled).
+    * **globalnetCIDRRange**: GlobalCIDR supernet range for allocating GlobalCIDRs to each cluster.
+    * **components**: List of components to be installed [service-discovery, connectivity].
 
-    Submariner is deployed using the Submariner CR. The following values can be specified:
-    * **namespace**: the namespace to install in;
-    * **serviceCIDR**: the service CIDR;
-    * **clusterCIDR**: the cluster CIDR;
-    * **token**: the Submariner token
-        to retrieve the token run the following command on the broker cluster, assuming the broker is running in the
-        *submariner* namespace replace the two *submariner* instances as appropriate
-
-        `kubectl -n submariner get secrets -o
-        jsonpath="{.items[?(@.metadata.annotations['kubernetes.io/service-account.name']=='submariner-client')].data.token}"
-        | base64 --decode`
-
-    * **clusterID**: the Submariner cluster ID;
-    * **colorCodes**: the Submariner color code(s) for this cluster;
-    * **debug**: *'true'* to enable logging debugging information;
+    The following values can be specified for the **Submariner** CR:
+    * **namespace**: The namespace to install in.
+    * **serviceCIDR**: The service CIDR.
+    * **clusterCIDR**: The cluster CIDR.
+    * **clusterID**: The cluster ID used to identify the tunnels.
+    * **colorCodes**: The color code(s) for the cluster.
+    * **debug**: *'true'* to enable operator debugging information - verbose logging.
     * **natEnabled**: *'true'* if there is NAT between clusters. Typically *'true'* in public cloud or mixed on-prem/public cloud environments and *'false'* when all clusters are on-prem.
-    * **broker**: this must be *k8s* currently;
-    * **brokerK8sApiServer**: the broker API server URL
-        to retrieve it run the following command on the broker cluster
+    * **broker**: This must be *k8s* currently.
+    * **brokerK8sApiServer**: The broker API server URL.
+        To retrieve it run the following command on the broker cluster:
 
         `kubectl -n default get endpoints kubernetes -o
         jsonpath="{.subsets[0].addresses[0].ip}:{.subsets[0].ports[?(@.name=='https')].port}"`
 
-    * **brokerK8sApiServerToken**: the broker API server token (same as *submariner_token*);
-    * **brokerK8sRemoteNamespace**: the broker namespace;
-    * **brokerK8sCA**: the broker certificate authority
-        to retrieve the broker CA run the following command on the broker cluster, assuming the broker is running in
-        the *submariner* namespace replace the two *submariner* instances as appropriate
+    * **brokerK8sApiServerToken**: The broker API server token.
+        To retrieve the token run the following command on the broker cluster, assuming the broker is running in the
+        *submariner-k8s-broker* namespace:
 
-        `kubectl -n submariner get secrets -o
-        jsonpath="{.items[?(@.metadata.annotations['kubernetes.io/service-account.name']=='submariner-client')].data['ca.crt']}"`
+        `kubectl -n submariner-k8s-broker get secrets -o json
+        | jq -r -c '[.items[] | select(.metadata.annotations."kubernetes.io/service-account.name"=="submariner-k8s-broker-client")
+        | select(.data.token != null)] | .[0].data.token' | base64 --decode`
 
-    * **ceIPSecPSK**: the IPsec PSK (which must be identical in all route agents across the cluster);
-    * **ceIPSecDebug**: *'true'* to enable logging IPsec debugging information (from the IPsec daemon);
-    * **ceIPSecIKEPort**: the IPsec IKE port (500 usually);
-    * **ceIPSecNATTPort**: the IPsec NAT traversal port (4500 usually);
-    * **repository**: the container repository to use.
-    * **version**: the container version to use.
+    * **brokerK8sRemoteNamespace**: The broker namespace.
+    * **brokerK8sCA**: The broker certificate authority.
+        To retrieve the broker CA run the following command on the broker cluster, assuming the broker is running in
+        the *submariner-k8s-broker* namespace:
+
+        `kubectl -n submariner-k8s-broker get secrets -o json
+        | jq -r -c '[.items[] | select(.metadata.annotations."kubernetes.io/service-account.name"=="submariner-k8s-broker-client")
+        | select(.data."ca.crt" != null)] | .[0].data."ca.crt"' | base64 --decode`
+
+    * **ceIPSecPSK**: The IPsec Pre-Shared Key which must be identical in all route agents across the cluster.
+        To generate a unique PSK run the following command on your machine:
+
+        `dd if=/dev/urandom count=64 bs=8 | LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1`
+
+    * **ceIPSecDebug**: *'true'* to enable logging IPsec debugging information - verbose logging from the IPsec daemon.
+    * **ceIPSecIKEPort**: The IPsec IKE port (500 usually).
+    * **ceIPSecNATTPort**: The IPsec NAT traversal port (4500 usually).
+    * **repository**: The container repository to use.
+    * **version**: The container version to use.
     * **imageOverrides**: A string map that overrides the images by defining a path for each component.
                           This field is meant to be used by CI, development or testing.
 
