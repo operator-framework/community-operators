@@ -55,9 +55,7 @@ chmod +x "/tmp/jq-$OC_DIR_CORE/bin/jq" && echo "rights adjusted"
 -H "Accept: application/vnd.github.v3+json" \
 "https://api.github.com/repos/operator-framework/community-operators/issues/$PULL_NUMBER"|"/tmp/jq-$OC_DIR_CORE/bin/jq" '.labels[].name'|grep 'allow/longer-deployment' \
 && echo "Longer deployment detected" && EXTRA_ARGS='-e pod_start_retries=300'
-echo "bbb"
 cd "$TARGET_PATH"
-echo "ccc"
 tmpfile=$(mktemp /tmp/pr-details-XXXXXXX.json)
 curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$PULL_NUMBER -o $tmpfile
 cat $tmpfile
@@ -66,7 +64,6 @@ BRANCH=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.ref')
 COMMIT=$(cat $tmpfile | /tmp/jq-$OC_DIR_CORE/bin/jq -r '.head.sha')
 REPO=$(echo "$REPO_FULL"| awk -F'https://github.com/' '{print $2}')
 QUAY_HASH=$(echo ${COMMIT::8})
-echo "ddd"
 rm -f $tmpfile > /dev/null 2>&1
 
 OPRT_REPO=${REPO_FULL-""}
@@ -76,9 +73,7 @@ export OPRT=1
 
 [ -n "$OPRT_REPO" ] || { echo "Error: '\$OPRT_REPO' is empty !!!"; exit 1; }
 [ -n "$OPRT_SHA" ] || { echo "Error: '\$OPRT_SHA' is empty !!!"; exit 1; }
-echo "eee"
 git clone $REPO_FULL community-operators > /dev/null 2>&1
-echo "fff"
 cd community-operators
 BRANCH_NAME=$(git branch -a --contains $OPRT_SHA | grep remotes/ | grep -v HEAD | cut -d '/' -f 2-)
 git checkout $BRANCH_NAME > /dev/null 2>&1
