@@ -12,7 +12,8 @@ if [ $1 = "test-only" ]; then
     export TEST_OC_PATH=$6
   fi
 fi
-[[ $TEST_MODE -eq 1 ]] && export OCP_CLUSTER_VERSION=4.7 && export PULL_NUMBER=3966
+#[[ $TEST_MODE -eq 1 ]] && export OCP_CLUSTER_VERSION=4.7 && export PULL_NUMBER=3966
+[[ $TEST_MODE -eq 1 ]] && export OCP_CLUSTER_VERSION=4.7 && export PULL_NUMBER=3992
 
 echo "OCP_CLUSTER_VERSION=$OCP_CLUSTER_VERSION"
 OCP_CLUSTER_VERSION=${OCP_CLUSTER_VERSION-""}
