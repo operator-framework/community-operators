@@ -3,17 +3,16 @@
 if [ $1 = "test-only" ]; then
   echo "Running in test mode"
   export TEST_MODE=1
-  if [ -z "${2+xxx}" ]; then echo "Please provide test repo and branch for community operators 'test-only https://github.com/operator-framework/community-operators.git community_branch_name https://github.com/operator-framework/operator-test-playbooks.git playbook_branch_name /usr/local/bin/oc'"
+  if [ -z "${2+xxx}" ]; then echo "Please provide test repo and branch for community operators 'test-only https://github.com/operator-framework/community-operators.git community_branch_name https://github.com/operator-framework/operator-test-playbooks.git playbook_branch_name 3966'"
   else
     export TEST_COMMUNITY_REPO=$2
     export TEST_COMMUNITY_BRANCH=$3
     export TEST_PB_REPO=$4
     export TEST_PB_BRANCH=$5
-    export TEST_OC_PATH=$6
+    export PULL_NUMBER=$6
   fi
 fi
-#[[ $TEST_MODE -eq 1 ]] && export OCP_CLUSTER_VERSION=4.7 && export PULL_NUMBER=3966
-[[ $TEST_MODE -eq 1 ]] && export OCP_CLUSTER_VERSION=4.7 && export PULL_NUMBER=3992
+[[ $TEST_MODE -eq 1 ]] && export OCP_CLUSTER_VERSION=4.7
 
 echo "OCP_CLUSTER_VERSION=$OCP_CLUSTER_VERSION"
 OCP_CLUSTER_VERSION=${OCP_CLUSTER_VERSION-""}
