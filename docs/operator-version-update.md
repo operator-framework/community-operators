@@ -16,8 +16,6 @@ community-operators/aqua/
 ├── 1.0.1
 ```
 
-
-
 ## Minor (cosmetics) changes
 
 There are some case when only some minor changes to the existing operator are needed (like description update or an update of icon). In this case pipeline will set corresponding label and automatically handle such case.
