@@ -21,7 +21,6 @@ def get_pull_requests(owner='operator-framework', repo='community-operators',
     page = 1
 
     while (batch := _get_pull_requests(owner, repo, page)) and page <= lim:
-        # print(batch)
         for pr in batch:
             merged_at = pr['merged_at']
 
