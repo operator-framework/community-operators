@@ -62,6 +62,10 @@ And then, if you used [operator-sdk](https://github.com/operator-framework/opera
 operator-sdk scorecard bundle
 ```
 
+### FOR OPENSHIFT COMMUNITY OPERATORS
+
+For Openshift community operators make sure you understand and performed the required additional checks before publish your PR. See [OKD/OpenShift Catalogs criteria and options](./packaging-required-criteria-ocp.md).
+
 ## Accepted Contribution formats
 
 The process below assumes that you have a Kubernetes Operator in either of the two following formats supported by the Operator Framework:
