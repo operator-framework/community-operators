@@ -7,28 +7,30 @@ on:
 
 
 jobs:
-  - name: Detect installation failure
-    id: detect-failure
-    run: |
-      echo "Labels:"
-      echo "$OP_TEST_LABELS"
-      for label in $(echo $OP_TEST_LABELS); [[ $label == installation-faile* ]] && INSTALLATION_FAILED=1; done
-      [[ $INSTALLATION_FAILED == '1' ]] && echo "::set-env name=installation-failed::$INSTALLATION_FAILED"
+  installation-final-label:
+    steps:
+        - name: Detect installation failure
+          id: detect-failure
+          run: |
+            echo "Labels:"
+            echo "$OP_TEST_LABELS"
+            for label in $(echo $OP_TEST_LABELS); [[ $label == installation-faile* ]] && INSTALLATION_FAILED=1; done
+            [[ $INSTALLATION_FAILED == '1' ]] && echo "::set-env name=installation-failed::$INSTALLATION_FAILED"
 
-  - name: Add installation final label
-    uses: actions/github-script@v3
-    needs: detect-failure
-    if: installation-failed != '1'
-    continue-on-error: true
-    with:
-      github-token: ${{secrets.GITHUB_TOKEN}}
-      script: |
-        github.issues.addLabels({
-          issue_number: context.issue.number,
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          labels: [ 'installation-validated' ]
-        })
+        - name: Add installation final label
+          uses: actions/github-script@v3
+          needs: detect-failure
+          if: installation-failed != '1'
+          continue-on-error: true
+          with:
+            github-token: ${{secrets.GITHUB_TOKEN}}
+            script: |
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: [ 'installation-validated' ]
+              })
 
 #if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only != '1' && (!contains(github.event.pull_request.labels.*.name, 'installation-failed'))
 
