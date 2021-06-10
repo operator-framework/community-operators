@@ -1,6 +1,7 @@
 name: Installation final label
 env:
  OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+ ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 on:
  pull_request_target:
 # pull_request:
@@ -16,13 +17,13 @@ jobs:
             INSTALLATION_FAILED=0
             INSTALLATION_VALID=0
             VALID_INSTALLATIONS=0
-            TRUE_VALUE=1 # workaround
+#            TRUE_VALUE=1 # workaround
             echo "Labels:"
             echo "$OP_TEST_LABELS"
             for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-faile* ]] && INSTALLATION_FAILED=1; done || true
             [[ $INSTALLATION_FAILED == '1' ]] && echo "::set-env name=installation-failed::$INSTALLATION_FAILED" || true
             for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-validated-* ]] && let "VALID_INSTALLATIONS=VALID_INSTALLATIONS+1"; done || true
-            [[ $VALID_INSTALLATIONS == '3' ]] && echo "::set-env name=installation-is-valid::$TRUE_VALUE" && echo "Enough green installations - [OK]" || true
+            [[ $VALID_INSTALLATIONS == '3' ]] && echo "::set-env name=installation-is-valid::1" && echo "Enough green installations - [OK]" || true
             echo "VALID_INSTALLATIONS: $VALID_INSTALLATIONS"
 
         - name: Add installation final label
