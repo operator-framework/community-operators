@@ -1,0 +1,194 @@
+apiVersion: console.openshift.io/v1
+kind: ConsoleQuickStart
+metadata:
+  name: rhosak-devsandbox-kafkacat-toolscontainer-quickstart
+spec:
+  displayName: Using Kafkacat with Kafka instances in Red Hat OpenShift Streams for Apache Kafka
+  tags:
+    - streams
+    - kafka
+  durationMinutes: 10
+  description: Learn how to use Kafkacat to interact with a Kafka instance in Red Hat OpenShift Streams for Apache Kafka.
+  prerequisites:
+    - You have a running Kafka instance in Streams for Apache Kafka.
+    - You have the bootstrap server endpoint and the generated credentials for your service account.
+  introduction: >-
+    Welcome to the Red Hat OpenShift Streams for Apache Kafka Kafkacat quick start. 
+    In this quick start, you’ll learn how to use [Kafkacat](https://github.com/edenhill/kafkacat) to produce and consume messages for your Kafka instances in Streams for Apache Kafka.
+  tasks:
+    - title: Access Kafkacat
+      description: >-
+        [Kafkacat](https://github.com/edenhill/kafkacat) is a command-line utility for messaging in Apache Kafka 0.8 and later. 
+        You can install and use Kafkacat to test and debug your Kafka instances in Streams for Apache Kafka. 
+        With Kafkacat, you can produce and consume messages for your Kafka instances directly from the command line, 
+        and list topic and partition information for your Kafka instances.
+
+
+        We've provided Kafkacat in an image that you can deploy in your OpenShift project. So you don't need to install Kafkacat on your own machine.
+
+
+        To install the tooling image, do the following (if you prefer to use a local installation of Kafkacat, or if you've alread installed the tooling image in a previous Quick Start, you can skip these steps):
+
+        1. Click on the [perspective switcher]{{highlight qs-perspective-switcher}} at the top of the navigation, and select **Developer**.
+
+        1. In the navigation menu, click [Add]{{highlight qs-nav-add}}.
+
+        1. Make sure that your OpenShift **Project**, which you can see at the top of the **Add** window, is set to `{username}-dev` (where *{username}* is your username in the DevSandbox OpenShift environment).
+
+        1. Click on the **Container Image** card.  
+
+        1. In the **Image name from external registry** field, enter: `quay.io/rhosak/rhoas-tools`.
+
+        1. In the *Runtime icon* field, select `openshift`.
+
+        1. Uncheck the **Route** box and leave all other fields set to their default values.
+        You don't need a route for this application, so under the **Advanced Options** you can uncheck the **create a route to the Application** checkbox. 
+        Click the **Create** button. This will create a new OpenShift **Deployment** for the tools image.
+
+        Pulling the container image and creating the container will take a couple of seconds.
+
+        1. You will see the deployment of the tools image in the [Topology]{{highlight qs-nav-topology}} screen. The icon of the application should have a blue circle around it, indicating that the application has been deployed successfully.
+
+        1. Click on the icon of the tools application. This will open a panel on the righ-hand-side of your screen.
+        Click on the **Resources** tab. You will see the **Pods** of your Deployment. Currently we only have a single pod.
+
+        1. Click on the link to the pod. This opens the details page of the pod.
+
+        1. Open the **Terminal** tab. This opens a terminal inside the pod. To check whether you can access the required tooling, execute the command `kafkacat -V` in your terminal. 
+        This should print the Kafkacat version information.
+
+            ```
+            kafkacat - Apache Kafka producer and consumer tool
+            https://github.com/edenhill/kafkacat
+            Copyright (c) 2014-2019, Magnus Edenhill
+            Version 1.6.0 (JSON, Avro, Transactions, librdkafka 1.5.0 builtin.features=gzip,snappy,ssl,sasl,regex,lz4,sasl_gssapi,sasl_plain,sasl_scram,plugins,zstd,sasl_oauthbearer)
+            ```
+      review:
+        instructions: |-
+          Did you see the Kafkacat version information in the terminal of the tooling pod?
+        failedTaskHelp: This task isn’t verified yet. Try the task again.
+      summary:
+        success: >-
+          You have completed this task!
+        failed: Try the steps again.
+    - title: Configuring Kafkacat to connect to a Kafka instance
+      description: >-
+        To enable Kafkacat to access a Kafka instance, configure the connection using the bootstrap server endpoint and the generated credentials for your Streams for Apache Kafka service account. 
+        For Kafkacat, you can configure connection information either by passing options to the ```kafkacat``` command or by using a configuration file. 
+        The example in this task sets environment variables and then passes them to the ```kafkacat``` command.
+
+
+        For more information about Kafkacat configuration options, see [Configuration](https://github.com/edenhill/kafkacat#configuration) in the Kafkacat documentation.
+
+        1. On the command line in the terminal of the tooling pod, enter the following commands to set the Kafka instance bootstrap server and client credentials as environment variables 
+        to be used by Kafkacat or other applications. Replace the values with your own bootstrap server host and port and the *client id* and *client secret* of your service account.
+
+            ```
+            $ export BOOTSTRAP_SERVER=<bootstrap_server>
+            $ export USER=<client_id>
+            $ export PASSWORD=<client_secret>
+            ```
+
+      review:
+        instructions: |-
+          Have you completed this task?
+        failedTaskHelp: This task isn’t verified yet. Try the task again.
+      summary:
+        success: >-
+          You have completed this task!
+        failed: Try the steps again.
+    - title: Producing messages in Kafkacat
+      description: >-
+        You can use Kafkacat to produce messages to Kafka topics in several ways, such as reading them from standard input (`stdin`) directly on the command line or from a file. 
+        This example produces messages from input on the command line. For more examples of Kafkacat producer messaging, see the [Examples](https://github.com/edenhill/kafkacat#examples) in the Kafkacat documentation.
+
+        1. On the command line, enter the following commands to start Kafkacat in _producer_ mode. This mode enables you to produce messages to your Kafka topic.
+
+
+            This example uses the SASL/PLAIN authentication mechanism with the server and credential environment variables that you set previously. 
+            
+            This example produces messages to a topic in Streams for Apache Kafka named ```my-first-kafka-topic```. 
+            Replace the topic name with the relevant topic as needed. 
+            The topic that you use in this command must already exist in Streams for Apache Kafka.
+
+
+            Starting Kafkacat in producer mode:
+
+            ```
+            $ kafkacat -t my-first-kafka-topic -b "$BOOTSTRAP_SERVER" \
+            -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+            -X sasl.username="$USER" \
+            -X sasl.password="$PASSWORD" -P
+            ```
+
+            NOTE: Streams for Apache Kafka also supports the SASL/OAUTHBEARER mechanism for authentication, which is the recommended authentication mechanism to use. 
+            However, Kafkacat does not yet fully support OAUTHBEARER, so this example uses SASL/PLAIN.
+
+        1. With Kafkacat running in producer mode, enter messages into Kafkacat that you want to produce to the Kafka topic.
+
+
+            Example messages to produce to the Kafka topic:
+
+            ```
+            First message
+            Second message
+            Third message
+            ```
+
+        1. Close the Kafkacat producer by entering ```Ctrl+C``` and pressing **Enter**.
+
+      review:
+        instructions: |-
+          Were you able to connect to your Kafka instance and send messages without errors?
+        failedTaskHelp: This task isn’t verified yet. Try the task again.
+      summary:
+        success: >-
+          You have completed this task!
+        failed: Try the steps again.
+    - title: Consuming messages in Kafkacat
+      description: >-
+        You can use Kafkacat to consume messages from Kafka topics. 
+        This example consumes the messages that you sent previously with the producer that you created with Kafkacat.    
+
+        1. On the command line in the terminal of the tooling pod, enter the following commands to start Kafkacat in _consumer_ mode. 
+        This mode enables you to consume messages from your Kafka topic.
+
+
+            This example uses the SASL/PLAIN authentication mechanism with the server and credential environment variables that you set previously. 
+            This example consumes and displays the messages from the `my-first-kafka-topic` example topic, and states that it reached the end of partition `0` in the topic.
+
+
+            Starting Kafkacat in consumer mode:
+
+            ```
+            $ kafkacat -t my-first-kafka-topic -b "$BOOTSTRAP_SERVER" \
+            -X security.protocol=SASL_SSL -X sasl.mechanisms=PLAIN \
+            -X sasl.username="$USER" \
+            -X sasl.password="$PASSWORD" -C
+            ```
+
+            This will produce the following output:
+
+            ```
+            First message
+            Second message
+            Third message
+            % Reached end of topic my-first-kafka-topic [0] at offset 3
+            ```
+
+        1. Close the Kafkacat producer by entering ```Ctrl+C``` and pressing **Enter**.
+      review:
+        instructions: |-
+          Is your consumer running without any errors in the terminal?
+
+          Did the consumer display the messages from the `my-first-kafka-topic` example topic?
+        failedTaskHelp: This task isn’t verified yet. Try the task again.
+      summary:
+        success: >-
+          You have completed this task!
+        failed: Try the steps again.
+  conclusion: >-
+    Congratulations! You successfully completed the Streams for Apache Kafka Kafkacat quick start, 
+    and are now ready to produce and consume messages in the service.
+  nextQuickStart:
+    - rhosak-devsandbox-connect-cli-toolscontainer-quickstart
