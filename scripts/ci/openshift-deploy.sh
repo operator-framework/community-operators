@@ -23,7 +23,7 @@ if [ -n "$OCP_CLUSTER_VERSION" ]; then
 #    export OCP_CLUSTER_VERSION_SUFFIX=""
 #  else
     export OCP_CLUSTER_VERSION_SUFFIX="-$OCP_CLUSTER_VERSION"
-  fi
+#  fi
 else export OCP_CLUSTER_VERSION_SUFFIX=""
 fi
 
