@@ -1,6 +1,9 @@
 import requests
 from datetime import datetime
 from string import Template
+import os
+import json
+from python_graphql_client import GraphqlClient
 
 
 def build_comment_query(cursor):
@@ -34,7 +37,7 @@ def build_timeline_query(cursor):
     """).substitute({'cursor': cursor})
 
 
-def build_query(pr_cursor=0, comment_cursor=0, timeline_cursor=0):
+def build_query(pr_cursor, comment_cursor, timeline_cursor):
     """Build query for a single call to GitHub API
 
     Parameters:
@@ -45,8 +48,8 @@ def build_query(pr_cursor=0, comment_cursor=0, timeline_cursor=0):
     comment_query = build_comment_query(comment_cursor)
     timeline_query = build_timeline_query(timeline_cursor)
 
-    query = Template("""query {
-        repository(owner: “operator-framework”, name: “community-operators”) {
+    query = Template("""query PRQuery($owner: String!, $name: String!) {
+        repository(owner: $owner, name: $name) {
             pullRequests(states: MERGED, first: 100, after: $cursor) {
                 pageInfo {
                     hasNextPage
@@ -69,11 +72,27 @@ def build_query(pr_cursor=0, comment_cursor=0, timeline_cursor=0):
             resetAt
         }
     }
-    """).substitute({'cursor': pr_cursor,
+    """).safe_substitute({'cursor': pr_cursor,
                      'comment_query': comment_query,
                      'timeline_query': timeline_query})
     
     return query
+
+
+def get_pr_data():
+    client = GraphqlClient(endpoint='https://api.github.com/graphql')
+
+    pr_cursor = "null"
+    comment_cursor = "null"
+    timeline_cursor = "null"
+
+    data = client.execute(
+        query=build_query(pr_cursor, comment_cursor, timeline_cursor),
+        variables={"owner": "operator-framework", "name": "community-operators"},
+        headers={'Authorization': f"Bearer {os.environ['GH_TOKEN']}"}
+    )
+
+    return json.dumps(data, indent=2)
 
 
 def _get_pull_requests(owner, repo, page, per_page=100):
@@ -115,4 +134,4 @@ def get_pull_requests(owner='operator-framework', repo='community-operators',
 
 
 if __name__ == '__main__':
-    print(build_query())
+    print(get_pr_data())
