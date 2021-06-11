@@ -1,7 +1,7 @@
 name: Installation final label
 env:
  OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
- ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+# ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 on:
  pull_request_target:
 # pull_request:
@@ -19,15 +19,15 @@ jobs:
             VALID_INSTALLATIONS=0
             echo "Labels:"
             echo "$OP_TEST_LABELS"
-            for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-faile* ]] && INSTALLATION_FAILED=1; done || true
-            [[ $INSTALLATION_FAILED == '1' ]] && echo "::set-env name=installation-failed::$INSTALLATION_FAILED" || true
-            for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-validated-* ]] && let "VALID_INSTALLATIONS=VALID_INSTALLATIONS+1"; done || true
-            [[ $VALID_INSTALLATIONS == '3' ]] && echo "::set-env name=installation-is-valid::1" && echo "Enough green installations - [OK]" || true
+            for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-faile* ]] && INSTALLATION_FAILED=1; done
+            [[ $INSTALLATION_FAILED == '1' ]] && echo "::set-output name=installation-failed::$INSTALLATION_FAILED"
+            for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-validated-* ]] && let "VALID_INSTALLATIONS=VALID_INSTALLATIONS+1"; done
+            [[ $VALID_INSTALLATIONS == '3' ]] && echo "::set-output name=installation-is-valid::1" && echo "Enough green installations - [OK]"
             echo "VALID_INSTALLATIONS: $VALID_INSTALLATIONS"
 
         - name: Add installation final label
           uses: actions/github-script@v3
-          if: (${{ env.installation-failed != '1' }} && ${{ env.installation-is-valid == '1' }})
+          if: ( steps.detect-failure.outputs.installation-failed != '1'  && steps.detect-failure.outputs.installation-is-valid == '1' )
           continue-on-error: true
           with:
             github-token: ${{secrets.GITHUB_TOKEN}}
@@ -38,3 +38,4 @@ jobs:
                 repo: context.repo.repo,
                 labels: [ 'installation-validated' ]
               })
+# put back operator_ci 89
