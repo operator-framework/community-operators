@@ -86,20 +86,6 @@ jobs:
               name: 'package-validated'
             })
 
-      - name: "Remove installation-validated"
-        uses: actions/github-script@v3
-        if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
-        continue-on-error: true
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.issues.removeLabel({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'installation-validated'
-            })
-
       - name: "Add Assignees"
         uses: actions/github-script@v3
         if: github.event.action == 'opened' || github.event.action == 'reopened'
@@ -161,8 +147,22 @@ jobs:
       #     repo-token: ${{ secrets.GITHUB_TOKEN }}
       #     repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
       #     allow-repeats: false
-          
-      - name: "Mention reviewers if exists"
+
+      - name: "Remove installation-validated"
+        uses: actions/github-script@v3
+        if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold')) && (github.event.action != 'unlabeled')
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'installation-validated'
+            })
+
+      - name: "Mention reviewers if exist"
         if: (steps.op-traffic-light.outputs.op_test_pr_revievers != '') && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
         uses: mshick/add-pr-comment@v1
         with:

@@ -1,0 +1,39 @@
+name: Installation final label
+env:
+ OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+on:
+ pull_request_target:
+# pull_request:
+   types: [labeled]
+
+jobs:
+  installation-final-label:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Detect installation failure
+          id: detect-failure
+          run: |
+            INSTALLATION_FAILED=0
+            INSTALLATION_VALID=0
+            VALID_INSTALLATIONS=0
+            echo "Labels:"
+            echo "$OP_TEST_LABELS"
+            for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-faile* ]] && INSTALLATION_FAILED=1; done
+            [[ $INSTALLATION_FAILED == '1' ]] && echo "::set-output name=installation-failed::$INSTALLATION_FAILED"
+            for label in $(echo $OP_TEST_LABELS); do [[ $label == installation-validated-* ]] && let "VALID_INSTALLATIONS=VALID_INSTALLATIONS+1"; done
+            [[ $VALID_INSTALLATIONS == '3' ]] && echo "::set-output name=installation-is-valid::1" && echo "Enough green installations - [OK]"
+            echo "VALID_INSTALLATIONS: $VALID_INSTALLATIONS"
+
+        - name: Add installation final label
+          uses: actions/github-script@v3
+          if: ( steps.detect-failure.outputs.installation-failed != '1'  && steps.detect-failure.outputs.installation-is-valid == '1' )
+          continue-on-error: true
+          with:
+            github-token: ${{secrets.GITHUB_TOKEN}}
+            script: |
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: [ 'installation-validated' ]
+              })
