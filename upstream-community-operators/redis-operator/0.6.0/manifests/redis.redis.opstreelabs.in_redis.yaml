@@ -1,3 +1,5 @@
+
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -625,104 +627,58 @@ spec:
                         type: array
                     type: object
                 type: object
-              global:
-                description: GlobalConfig will be the JSON struct for Basic Redis
+              kubernetesConfig:
+                description: KubernetesConfig will be the JSON struct for Basic Redis
                   Config
                 properties:
-                  existingPasswordSecret:
-                    properties:
-                      key:
-                        type: string
-                      name:
-                        type: string
-                    type: object
                   image:
                     type: string
                   imagePullPolicy:
                     description: PullPolicy describes a policy for if/when to pull
                       a container image
                     type: string
-                  password:
-                    type: string
+                  redisSecret:
+                    description: ExistingPasswordSecret is the struct to access the
+                      existing secret
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                    type: object
                   resources:
-                    description: Resources describes requests and limits for the cluster
-                      resouces.
+                    description: ResourceRequirements describes the compute resource
+                      requirements.
                     properties:
                       limits:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
+                  serviceType:
+                    type: string
                 required:
                 - image
+                - serviceType
                 type: object
-              master:
-                description: RedisMaster interface will have the redis master configuration
-                properties:
-                  redisConfig:
-                    additionalProperties:
-                      type: string
-                    type: object
-                  resources:
-                    description: Resources describes requests and limits for the cluster
-                      resouces.
-                    properties:
-                      limits:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
-                        type: object
-                      requests:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
-                        type: object
-                    type: object
-                  service:
-                    description: Service is the struct for service definition
-                    properties:
-                      type:
-                        type: string
-                    required:
-                    - type
-                    type: object
-                type: object
-              mode:
-                type: string
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -746,64 +702,59 @@ spec:
                       a container image
                     type: string
                   resources:
-                    description: Resources describes requests and limits for the cluster
-                      resouces.
+                    description: ResourceRequirements describes the compute resource
+                      requirements.
                     properties:
                       limits:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                 required:
                 - image
                 type: object
               resources:
-                description: Resources describes requests and limits for the cluster
-                  resouces.
+                description: ResourceRequirements describes the compute resource requirements.
                 properties:
                   limits:
-                    description: ResourceDescription describes CPU and memory resources
-                      defined for a cluster.
-                    properties:
-                      cpu:
-                        type: string
-                      memory:
-                        type: string
-                    required:
-                    - cpu
-                    - memory
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Limits describes the maximum amount of compute resources
+                      allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                     type: object
                   requests:
-                    description: ResourceDescription describes CPU and memory resources
-                      defined for a cluster.
-                    properties:
-                      cpu:
-                        type: string
-                      memory:
-                        type: string
-                    required:
-                    - cpu
-                    - memory
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum amount of compute
+                      resources required. If Requests is omitted for a container,
+                      it defaults to Limits if that is explicitly specified, otherwise
+                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                     type: object
                 type: object
               securityContext:
@@ -950,63 +901,6 @@ spec:
                           If set in both SecurityContext and PodSecurityContext, the
                           value specified in SecurityContext takes precedence.
                         type: string
-                    type: object
-                type: object
-              service:
-                description: Service is the struct for service definition
-                properties:
-                  type:
-                    type: string
-                required:
-                - type
-                type: object
-              size:
-                format: int32
-                type: integer
-                minimum: 3
-              slave:
-                description: RedisSlave interface will have the redis slave configuration
-                properties:
-                  redisConfig:
-                    additionalProperties:
-                      type: string
-                    type: object
-                  resources:
-                    description: Resources describes requests and limits for the cluster
-                      resouces.
-                    properties:
-                      limits:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
-                        type: object
-                      requests:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
-                        type: object
-                    type: object
-                  service:
-                    description: Service is the struct for service definition
-                    properties:
-                      type:
-                        type: string
-                    required:
-                    - type
                     type: object
                 type: object
               storage:
@@ -1268,15 +1162,13 @@ spec:
                   type: object
                 type: array
             required:
-            - global
-            - mode
+            - kubernetesConfig
             - redisConfig
-            - service
             type: object
           status:
             description: RedisStatus defines the observed state of Redis
             properties:
-              cluster:
+              redis:
                 description: RedisSpec defines the desired state of Redis
                 properties:
                   affinity:
@@ -1896,105 +1788,59 @@ spec:
                             type: array
                         type: object
                     type: object
-                  global:
-                    description: GlobalConfig will be the JSON struct for Basic Redis
-                      Config
+                  kubernetesConfig:
+                    description: KubernetesConfig will be the JSON struct for Basic
+                      Redis Config
                     properties:
-                      existingPasswordSecret:
-                        properties:
-                          key:
-                            type: string
-                          name:
-                            type: string
-                        type: object
                       image:
                         type: string
                       imagePullPolicy:
                         description: PullPolicy describes a policy for if/when to
                           pull a container image
                         type: string
-                      password:
-                        type: string
+                      redisSecret:
+                        description: ExistingPasswordSecret is the struct to access
+                          the existing secret
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       resources:
-                        description: Resources describes requests and limits for the
-                          cluster resouces.
+                        description: ResourceRequirements describes the compute resource
+                          requirements.
                         properties:
                           limits:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                           requests:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
+                      serviceType:
+                        type: string
                     required:
                     - image
+                    - serviceType
                     type: object
-                  master:
-                    description: RedisMaster interface will have the redis master
-                      configuration
-                    properties:
-                      redisConfig:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      resources:
-                        description: Resources describes requests and limits for the
-                          cluster resouces.
-                        properties:
-                          limits:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
-                            type: object
-                          requests:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
-                            type: object
-                        type: object
-                      service:
-                        description: Service is the struct for service definition
-                        properties:
-                          type:
-                            type: string
-                        required:
-                        - type
-                        type: object
-                    type: object
-                  mode:
-                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -2018,64 +1864,61 @@ spec:
                           pull a container image
                         type: string
                       resources:
-                        description: Resources describes requests and limits for the
-                          cluster resouces.
+                        description: ResourceRequirements describes the compute resource
+                          requirements.
                         properties:
                           limits:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                           requests:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
                     required:
                     - image
                     type: object
                   resources:
-                    description: Resources describes requests and limits for the cluster
-                      resouces.
+                    description: ResourceRequirements describes the compute resource
+                      requirements.
                     properties:
                       limits:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
-                        description: ResourceDescription describes CPU and memory
-                          resources defined for a cluster.
-                        properties:
-                          cpu:
-                            type: string
-                          memory:
-                            type: string
-                        required:
-                        - cpu
-                        - memory
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                   securityContext:
@@ -2226,62 +2069,6 @@ spec:
                               PodSecurityContext, the value specified in SecurityContext
                               takes precedence.
                             type: string
-                        type: object
-                    type: object
-                  service:
-                    description: Service is the struct for service definition
-                    properties:
-                      type:
-                        type: string
-                    required:
-                    - type
-                    type: object
-                  size:
-                    format: int32
-                    type: integer
-                  slave:
-                    description: RedisSlave interface will have the redis slave configuration
-                    properties:
-                      redisConfig:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      resources:
-                        description: Resources describes requests and limits for the
-                          cluster resouces.
-                        properties:
-                          limits:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
-                            type: object
-                          requests:
-                            description: ResourceDescription describes CPU and memory
-                              resources defined for a cluster.
-                            properties:
-                              cpu:
-                                type: string
-                              memory:
-                                type: string
-                            required:
-                            - cpu
-                            - memory
-                            type: object
-                        type: object
-                      service:
-                        description: Service is the struct for service definition
-                        properties:
-                          type:
-                            type: string
-                        required:
-                        - type
                         type: object
                     type: object
                   storage:
@@ -2554,26 +2341,11 @@ spec:
                       type: object
                     type: array
                 required:
-                - global
-                - mode
+                - kubernetesConfig
                 - redisConfig
-                - service
                 type: object
             type: object
         type: object
-    additionalPrinterColumns:
-    - jsonPath: .spec.size
-      description: Current master node count
-      name: Master
-      type: integer
-    - jsonPath: .spec.size
-      description: Current slave node count
-      name: Slave
-      type: integer
-    - jsonPath: .metadata.creationTimestamp
-      description: Last Deployment Time
-      name: Last Deployment Time
-      type: date
     served: true
     storage: true
     subresources:
