@@ -1,4 +1,5 @@
 from datetime import datetime
+import pprint
 from graphql_handler import get_pr_data
 
 
@@ -13,9 +14,12 @@ def compute_duration(created_at, merged_at):
 
 def main():
     pr_data = get_pr_data(last=5)
-    print(len(pr_data))
-    return [pr_data]
+    pp = pprint.PrettyPrinter()
+    pp.pprint(pr_data)
+    print(f'{len(pr_data)} PRs queried')
+
+    return pr_data
 
 
 if __name__ == '__main__':
-    print(main())
+    main()
