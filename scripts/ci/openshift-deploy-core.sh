@@ -192,3 +192,5 @@ echo "OP_NAME=$OP_NAME"
 echo "OP_VER=$OP_VER"
 
 if [ $ANSIBLE_STATUS -gt 0 ]; then echo "Ansible failed, see output above"; exit 1; fi
+
+#remove special settings for 4.6
