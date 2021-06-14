@@ -49,7 +49,7 @@ def build_query(pr_cursor, comment_cursor, timeline_cursor):
 
     query = Template("""query PRQuery($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
-            pullRequests(states: MERGED, last: 100, before: $cursor) {
+            pullRequests(states: MERGED, last: 1, before: $cursor) {
                 nodes {
                     number
                     createdAt
@@ -74,7 +74,7 @@ def build_query(pr_cursor, comment_cursor, timeline_cursor):
     """).safe_substitute({'cursor': pr_cursor,
                      'comment_query': comment_query,
                      'timeline_query': timeline_query})
-    
+
     return query
 
 
