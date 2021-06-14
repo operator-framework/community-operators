@@ -8,12 +8,12 @@ from python_graphql_client import GraphqlClient
 def build_comment_query(cursor):
     return Template("""
         comments(first: 100, after: $cursor) {
+            nodes {
+                author { login }
+            }
             pageInfo {
                 hasNextPage
                 endCursor
-            }
-            nodes {
-                author { login }
             }
         }
     """).substitute({'cursor': cursor})
@@ -22,15 +22,15 @@ def build_comment_query(cursor):
 def build_timeline_query(cursor):
     return Template("""
         timelineItems(itemTypes: LABELED_EVENT, first: 100, after: $cursor) {
-            pageInfo {
-                hasNextPage
-                endCursor
-            }
             nodes {
                 ... on LabeledEvent {
                     actor { login }
                     label { name }
                 }
+            }
+            pageInfo {
+                hasNextPage
+                endCursor
             }
         }
     """).substitute({'cursor': cursor})
@@ -49,11 +49,7 @@ def build_query(pr_cursor, comment_cursor, timeline_cursor):
 
     query = Template("""query PRQuery($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
-            pullRequests(states: MERGED, first: 100, after: $cursor) {
-                pageInfo {
-                    hasNextPage
-                    endCursor
-                }
+            pullRequests(states: MERGED, last: 100, before: $cursor) {
                 nodes {
                     number
                     createdAt
@@ -61,6 +57,10 @@ def build_query(pr_cursor, comment_cursor, timeline_cursor):
                     author { login }
                     $comment_query
                     $timeline_query
+                }
+                pageInfo {
+                    hasPreviousPage
+                    startCursor
                 }
             }
         }
