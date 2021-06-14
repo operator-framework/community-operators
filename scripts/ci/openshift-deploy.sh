@@ -19,11 +19,11 @@ fi
 echo "OCP_CLUSTER_VERSION=$OCP_CLUSTER_VERSION"
 OCP_CLUSTER_VERSION=${OCP_CLUSTER_VERSION-""}
 if [ -n "$OCP_CLUSTER_VERSION" ]; then
-  if [[ "$OCP_CLUSTER_VERSION" = "4.6" ]]; then #to remove
-    export OCP_CLUSTER_VERSION_SUFFIX=""        #to remove
-  else                                          #to remove
+#  if [[ "$OCP_CLUSTER_VERSION" = "4.6" ]]; then #to remove
+#    export OCP_CLUSTER_VERSION_SUFFIX=""        #to remove
+#  else                                          #to remove
     export OCP_CLUSTER_VERSION_SUFFIX="-$OCP_CLUSTER_VERSION"
-  fi                                            #to remove
+#  fi                                            #to remove
 else export OCP_CLUSTER_VERSION_SUFFIX=""
 fi
 
