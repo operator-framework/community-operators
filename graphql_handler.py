@@ -35,17 +35,15 @@ def build_event_query(cursor):
     """).substitute({'cursor': cursor})
 
 
-def build_page_query(pr_cursor, comment_cursor, event_cursor):
+def build_page_query(pr_cursor):
     """Build query for a multi-PR call to GitHub API
 
-    Parameters:
-        pr_cursor (int): Cursor of last requested Pull-Request
-        comment_cursor (int): Cursor of last requested Comment
-        event_cursor (int): Cursor of last requested event
-    """
-    comment_query = build_comment_query(comment_cursor)
-    event_query = build_event_query(event_cursor)
+    Query is not complete and still needs to be populated with comment and
+    event queries built using build_comment_query and build_event_query
 
+    Parameters:
+        pr_cursor (str): Cursor of last requested Pull-Request
+    """
     query = Template("""query PRQuery($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
             pullRequests(states: MERGED, last: 100, before: $cursor) {
@@ -70,24 +68,21 @@ def build_page_query(pr_cursor, comment_cursor, event_cursor):
             resetAt
         }
     }
-    """).safe_substitute({'cursor': pr_cursor,
-                          'comment_query': comment_query,
-                          'event_query': event_query})
+    """).safe_substitute(cursor=pr_cursor)
 
     return query
 
 
-def build_pr_query(pr_number, comment_cursor, event_cursor):
+def build_pr_query(pr_number):
     """Build query for a single-PR call to GitHub API
 
-    Parameters:
-        pr_number (int): Number of PR to request
-        comment_cursor (int): Cursor of last requested Comment
-        event_cursor (int): Cursor of last requested event
-    """
-    comment_query = build_comment_query(comment_cursor)
-    event_query = build_event_query(event_cursor)
+    Query is not complete and still needs to be populated with comment and
+    event queries built using build_comment_query and build_event_query
 
+    Parameters:
+        pr_number (int): Number of PRs to request (reverse-chronological
+        order)
+    """
     query = Template("""query PRQuery($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
             pullRequest(number: $number) {
@@ -105,14 +100,12 @@ def build_pr_query(pr_number, comment_cursor, event_cursor):
             resetAt
         }
     }
-    """).safe_substitute({'number': pr_number,
-                          'comment_query': comment_query,
-                          'event_query': event_query})
+    """).safe_substitute({'number': pr_number})
 
     return query
 
 
-def execute_page_query(pr_cursor, comment_cursor, timeline_cursor):
+def execute_page_query(pr_cursor):
     """Execute query for a single page of PRs
 
     Parameters:
@@ -120,8 +113,13 @@ def execute_page_query(pr_cursor, comment_cursor, timeline_cursor):
         comment_cursor (int): Cursor of last requested Comment
         event_cursor (int): Cursor of last requested event
     """
+    query = Template(build_page_query(pr_cursor)).substitute({
+        'comment_query': build_comment_query("null"),
+        'event_query': build_event_query("null")
+    })
+
     return client.execute(
-        query=build_page_query(pr_cursor, comment_cursor, timeline_cursor),
+        query=query,
         variables={
             "owner": "operator-framework",
             "name": "community-operators"
@@ -146,14 +144,12 @@ def get_pr_data(last=None):
 
     remaining = last
     pr_cursor = "null"
-    comment_cursor = "null"
-    timeline_cursor = "null"
 
     pr_data = []
     has_prs = True
 
     while has_prs and (remaining is None or remaining >= 0):
-        data = execute_page_query(pr_cursor, comment_cursor, timeline_cursor)
+        data = execute_page_query(pr_cursor)
         print(data)
 
         page_info = data['data']['repository']['pullRequests']['pageInfo']
