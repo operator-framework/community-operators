@@ -12,7 +12,9 @@ def compute_duration(created_at, merged_at):
 
 
 def main():
-    return get_pr_data()
+    pr_data = get_pr_data(last=5)
+    print(len(pr_data))
+    return [pr_data]
 
 
 if __name__ == '__main__':
