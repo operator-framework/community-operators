@@ -149,18 +149,21 @@ jobs:
       #     allow-repeats: false
 
       - name: "Remove installation-validated"
-        uses: actions/github-script@v3
+        uses: actions/github-script@v4
         if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold')) && (github.event.action != 'unlabeled')
         continue-on-error: true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            github.issues.removeLabel({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'installation-validated'
-            })
+            const arr = ['installation-validated', 'installation-validated-4.6', 'installation-validated-4.7', 'installation-validated-4.8'];
+            for (let label of arr) {
+              github.issues.removeLabel({
+                issue_number: context.payload.client_payload.source_pr,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label
+              })
+            }
 
       - name: "Mention reviewers if exist"
         if: (steps.op-traffic-light.outputs.op_test_pr_revievers != '') && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
