@@ -123,6 +123,11 @@ def build_pr_query(pr_number):
     return query
 
 
+def format_cursor(cursor):
+    """Format cursor inside double quotations as required by API"""
+    return '"{}"'.format(cursor)
+
+
 def find_authorizer(label_event_info):
     for label_event in label_event_info['nodes']:
         if label_event['label']['name'] == 'authorized-changes':
@@ -132,7 +137,8 @@ def find_authorizer(label_event_info):
     if not has_events:
         return 'maintainer', False, None
     else:
-        return None, True, label_event_info['pageInfo']['endCursor']
+        return (None, True,
+                format_cursor(label_event_info['pageInfo']['endCursor']))
 
 
 def execute_page_query(pr_cursor, page_size):
@@ -152,7 +158,8 @@ def execute_page_query(pr_cursor, page_size):
 
     page_info = data['pageInfo']
     has_prs = bool(page_info['hasPreviousPage'])
-    pr_cursor = '"{}"'.format(page_info['startCursor']) if has_prs else None
+    pr_cursor = format_cursor(page_info['startCursor']) if has_prs else None
+
 
     pr_data = {}
     prs = data['nodes']
@@ -168,7 +175,7 @@ def execute_page_query(pr_cursor, page_size):
 
         comment_page_info = pr['comments']['pageInfo']
         has_comments = bool(comment_page_info['hasNextPage'])
-        comment_cursor = (comment_page_info['endCursor']
+        comment_cursor = (format_cursor(comment_page_info['endCursor'])
                           if has_comments else None)
 
         label_event_info = pr['timelineItems']
