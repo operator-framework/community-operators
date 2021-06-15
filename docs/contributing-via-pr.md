@@ -9,7 +9,7 @@ To submit an operator one has to do these steps
 1. Place the operator in the target directory. [More info](./contributing-where-to.md)
     - community-operators (Openshift operator)
     - upstream-community-operators (Kubernetes operator)
-1. Conigure `ci.yaml` file. [More info](./operator-ci-yaml.md)
+1. Configure `ci.yaml` file. [More info](./operator-ci-yaml.md)
     - Setup reviewers
     - Operator versioning strategy
 1. Verify tests and fix problems, if possible
@@ -20,6 +20,7 @@ To submit an operator one has to do these steps
 The team behind OperatorHub.io will support you in making sure your Operator works and is packaged correctly. You can accelerate your submission greatly by testing your Operator with the Operator Framework by following our [documentation for local manual testing](./testing-operators.md) or automated testing [using scripts](./operator-test-suite.md). You are responsible for testing your Operator's APIs when deployed with OLM.
 
 ## Pull request
+
 When a pull request is created, a number of tests are executed. One can see the results in `Checks` tab.
 
 ![PR](images/op_test_pr.png)
@@ -53,3 +54,12 @@ When operator tests are failing, one can see following picture
 ![Summary of test results when failing](images/op_pr_tests_failed.png)
 
 In case of failures, please have a look at logs of specific tests. If error is not clear to you, please ask in the PR. Maintainers will be happy to help you with it.
+
+## Useful commands interacting with the pipeline
+You can post the following comment/command:
+
+Command | Functionality
+--- | --- | 
+`/test deploy-operator-on-openshift` | Restarts Openshift deploy (Operator installation on an Openshift test)
+`/hold` | Setting PR on hold to prevent merging
+`/hold cancel` | Tests will be triggered again and merged if possible

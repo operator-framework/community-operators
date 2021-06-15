@@ -15,7 +15,8 @@ env:
   # OP_TEST_ADDED_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml upstream-community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_ADDED_MODIFIED_FILES: "upstream-community-operators/aqua/1.0.2/csv.yaml community-operators/aqua/1.0.2/csv1.yaml"
   # OP_TEST_REMOVED_FILES: ""
-  GODEBUG: x509ignoreCN=0
+  # GODEBUG: x509ignoreCN=0
+  KIND_KUBE_VERSION: v1.21.1
 
 on:
  pull_request:
@@ -59,6 +60,8 @@ jobs:
       op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
       op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
       op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
+      op_test_op_delete: "${{ steps.op-traffic-light.outputs.op_test_op_delete }}"
+      
 
   test-kiwi:
     name: "kiwi / Full operator test"
@@ -138,7 +141,7 @@ jobs:
   test-orange-latest:
     name: "orange / Deploy k8s latest"
     needs: pr-check
-    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators' && needs.pr-check.outputs.op_test_op_delete == '0'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -153,7 +156,7 @@ jobs:
   test-orange-openshift_4_6:
     name: "orange / Deploy o7t v4.6"
     needs: pr-check
-    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators' && needs.pr-check.outputs.op_test_op_delete == '0'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -168,7 +171,7 @@ jobs:
   test-orange-openshift_4_7:
     name: "orange / Deploy o7t v4.7"
     needs: pr-check
-    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators' && needs.pr-check.outputs.op_test_op_delete == '0'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -183,7 +186,7 @@ jobs:
   test-orange-openshift_4_8:
     name: "orange / Deploy o7t v4.8"
     needs: pr-check
-    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+    if: needs.pr-check.outputs.op_test_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators' && needs.pr-check.outputs.op_test_op_delete == '0'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -194,17 +197,38 @@ jobs:
         run: |
           echo "orange_v4.8 ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
           scripts/ci/op-test orange_v4.8 "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }}"
+  test-dco:
+    name: "DCO test (commits signoff)"
+    needs: pr-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR Commits
+        id: 'get-pr-commits'
+        uses: tim-actions/get-pr-commits@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: DCO Check
+        uses: tim-actions/dco@v1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commits: ${{ steps.get-pr-commits.outputs.commits }}
 
   test-summary:
-    name: "Test summary"
-    needs: [ pr-check, test-kiwi, test-lemon, test-lemon-openshift_4_6, test-lemon-openshift_4_7, test-orange-latest, test-orange-openshift_4_6, test-orange-openshift_4_7 ]
+    name: "Summary"
+    needs: [ pr-check, test-dco, test-kiwi, test-lemon, test-lemon-openshift_4_6, test-lemon-openshift_4_7, test-orange-latest, test-orange-openshift_4_6, test-orange-openshift_4_7 ]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Summary
+      - name: PR
         if: needs.pr-check.outputs.op_test_ready == '1'
         continue-on-error: true
         run: |
-          echo "This is summary"
+          echo "OP_PR=${{ github.event.pull_request.number }}"
+      - name: Save PR number
+        run: |
+          mkdir -p ./pr
+          echo ${{ github.event.number }} > ./pr/NR
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pr
+          path: pr/

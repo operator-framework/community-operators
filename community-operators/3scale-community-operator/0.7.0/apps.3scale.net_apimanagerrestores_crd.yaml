@@ -1,0 +1,101 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apimanagerrestores.apps.3scale.net
+spec:
+  group: apps.3scale.net
+  names:
+    kind: APIManagerRestore
+    listKind: APIManagerRestoreList
+    plural: apimanagerrestores
+    singular: apimanagerrestore
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: APIManagerRestore represents an APIManager restore
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: APIManagerRestoreSpec defines the desired state of APIManagerRestore
+          properties:
+            restoreSource:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+              properties:
+                persistentVolumeClaim:
+                  description: Restore data soure configuration
+                  properties:
+                    claimSource:
+                      description: PersistentVolumeClaim source of an existing PersistentVolumeClaim.
+                        See
+                      properties:
+                        claimName:
+                          description: 'ClaimName is the name of a PersistentVolumeClaim
+                            in the same namespace as the pod using this volume. More
+                            info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                          type: string
+                        readOnly:
+                          description: Will force the ReadOnly setting in VolumeMounts.
+                            Default false.
+                          type: boolean
+                      required:
+                      - claimName
+                      type: object
+                  required:
+                  - claimSource
+                  type: object
+              type: object
+          required:
+          - restoreSource
+          type: object
+        status:
+          description: APIManagerRestoreStatus defines the observed state of APIManagerRestore
+          properties:
+            apiManagerToRestoreRef:
+              description: Name of the APIManager to be restored
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+            completed:
+              description: Set to true when backup has been completed
+              type: boolean
+            completionTime:
+              description: Restore completion time. It is represented in RFC3339 form
+                and is in UTC.
+              format: date-time
+              type: string
+            mainStepsCompleted:
+              description: Set to true when main steps have been completed. At this
+                point restore still cannot be considered fully completed due to some
+                remaining post-backup tasks are pending (cleanup, ...)
+              type: boolean
+            startTime:
+              description: Restore start time. It is represented in RFC3339 form and
+                is in UTC.
+              format: date-time
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

@@ -1,6 +1,6 @@
 # Orange test fails even when my operator is ok. 
 There is one case when your operator is correct, but orange test might failt. This happened when some operator versions are already published and one wants to change
-some cosmetic changes to bundle or convert format from `package manifest` to `bundle` format. In tese scenarios one can follow instruction bellow
+some cosmetic changes to bundle or convert format from `package manifest` to `bundle` format. In these scenarios one can follow instruction bellow
 
 - Operator version overwrite
 - Operator recreate

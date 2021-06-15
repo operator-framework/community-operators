@@ -1,0 +1,99 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apimanagerbackups.apps.3scale.net
+spec:
+  group: apps.3scale.net
+  names:
+    kind: APIManagerBackup
+    listKind: APIManagerBackupList
+    plural: apimanagerbackups
+    singular: apimanagerbackup
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: APIManagerBackup represents an APIManager backup
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: APIManagerBackupSpec defines the desired state of APIManagerBackup
+          properties:
+            backupDestination:
+              description: Backup data destination configuration
+              properties:
+                persistentVolumeClaim:
+                  description: PersistentVolumeClaim as backup data destination configuration
+                  properties:
+                    resources:
+                      description: Resources configuration for the backup data PersistentVolumeClaim.
+                        Ignored when VolumeName field is set
+                      properties:
+                        requests:
+                          description: 'Storage Resource requests to be used on the
+                            PersistentVolumeClaim. To learn more about resource requests
+                            see: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          type: string
+                      required:
+                      - requests
+                      type: object
+                    storageClass:
+                      description: Storage class to be used by the PersistentVolumeClaim.
+                        Ignored when VolumeName field is set
+                      type: string
+                    volumeName:
+                      description: Name of an existing PersistentVolume to be bound
+                        to the backup data PersistentVolumeClaim
+                      type: string
+                  type: object
+              type: object
+          required:
+          - backupDestination
+          type: object
+        status:
+          description: APIManagerBackupStatus defines the observed state of APIManagerBackup
+          properties:
+            apiManagerSourceName:
+              description: Name of the APIManager from which the backup has been performed
+              type: string
+            backupPersistentVolumeClaimName:
+              description: Name of the backup data PersistentVolumeClaim. Only set
+                when PersistentVolumeClaim is used as the backup data destination
+              type: string
+            completed:
+              description: Set to true when backup has been completed
+              type: boolean
+            completionTime:
+              description: Backup completion time. It is represented in RFC3339 form
+                and is in UTC.
+              format: date-time
+              type: string
+            mainStepsCompleted:
+              description: Set to true when main steps have been completed. At this
+                point backup still cannot be considered  fully completed due to some
+                remaining post-backup tasks are pending (cleanup, ...)
+              type: boolean
+            startTime:
+              description: Backup start time. It is represented in RFC3339 form and
+                is in UTC.
+              format: date-time
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

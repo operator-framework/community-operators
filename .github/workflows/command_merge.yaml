@@ -1,0 +1,93 @@
+on: issue_comment
+name: Issue Comments
+jobs:
+  handle_comments:
+    name: Merge command handler
+    if: |
+      startsWith(github.event.comment.body, '/merge')
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/github-script@v4
+        id: labels
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: | 
+            const labels = await github.issues.listLabelsOnIssue({
+              issue_number: context.payload.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+            console.log(labels.data)
+            return labels.data
+
+      # - name: Print info about event
+      #   id: info
+      #   continue-on-error: true
+      #   uses: actions/github-script@v3
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       console.log(context)
+      #       console.log(`::set-output name=xxx::${context.payload.issue.labels}`)
+
+      - name: Merge command handler
+        id: command
+        uses: xt0rted/slash-command-action@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          command: merge
+          reaction: "true"
+          reaction-type: "eyes"
+          allow-edits: "false"
+          permission-level: write
+
+      - name: Merge message when not able to merge and inform user about authorized_changes
+        uses: actions/github-script@v3
+        if: |
+          steps.command.outputs.command-name == 'merge' &&
+          steps.command.outputs.command-arguments == 'possible' &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'authorized-changes')) &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'installation-validated')) &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'package-validated')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'new-operator')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(fromJSON(steps.labels.outputs.result).*.name, 'do-not-merge/hold'))
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Current PR can be merged automatically, but there is missing `authorized-changes` label. One can find out more info [here](https://operator-framework.github.io/community-operators/operator-ci-yaml/#reviewers).'
+            })
+
+      - name: Message when automerge is disabled
+        uses: actions/github-script@v3
+        if: |
+          steps.command.outputs.command-name == 'merge' &&
+          steps.command.outputs.command-arguments == 'possible' &&
+          (contains(fromJSON(steps.labels.outputs.result).*.name, 'automerge-disabled'))
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Automatic merge is disabled temporarily due to a maintenance.'
+            })
+
+      - name: automerge
+        if: steps.command.outputs.command-name == 'merge' && steps.command.outputs.command-arguments == 'possible'
+        uses: "pascalgn/automerge-action@v0.14.1"
+        env:
+          GITHUB_TOKEN: "${{ secrets.FRAMEWORK_MERGE }}"
+          MERGE_LABELS: "authorized-changes,package-validated,installation-validated,!do-not-merge/hold,!do-not-merge/work-in-progress,!automerge-disabled"
+          MERGE_REMOVE_LABELS: ""
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "pull-request-title"
+          MERGE_FORKS: "true"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"

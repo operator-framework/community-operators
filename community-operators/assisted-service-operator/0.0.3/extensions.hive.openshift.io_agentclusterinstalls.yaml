@@ -1,0 +1,236 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.0
+  creationTimestamp: null
+  name: agentclusterinstalls.extensions.hive.openshift.io
+spec:
+  group: extensions.hive.openshift.io
+  names:
+    kind: AgentClusterInstall
+    listKind: AgentClusterInstallList
+    plural: agentclusterinstalls
+    singular: agentclusterinstall
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: AgentClusterInstall represents a request to provision an agent based cluster.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AgentClusterInstallSpec defines the desired state of the AgentClusterInstall.
+            properties:
+              apiVIP:
+                description: APIVIP is the virtual IP used to reach the OpenShift cluster's API.
+                type: string
+              clusterDeploymentRef:
+                description: ClusterDeploymentRef is a reference to the ClusterDeployment associated with this AgentClusterInstall.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+              clusterMetadata:
+                description: ClusterMetadata contains metadata information about the installed cluster. It should be populated once the cluster install is completed. (it can be populated sooner if desired, but Hive will not copy back to ClusterDeployment until the Installed condition goes True.
+                properties:
+                  adminKubeconfigSecretRef:
+                    description: AdminKubeconfigSecretRef references the secret containing the admin kubeconfig for this cluster.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                  adminPasswordSecretRef:
+                    description: AdminPasswordSecretRef references the secret containing the admin username/password which can be used to login to this cluster.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                  clusterID:
+                    description: ClusterID is a globally unique identifier for this cluster generated during installation. Used for reporting metrics among other places.
+                    type: string
+                  infraID:
+                    description: InfraID is an identifier for this cluster generated during installation and used for tagging/naming resources in cloud providers.
+                    type: string
+                required:
+                - adminKubeconfigSecretRef
+                - adminPasswordSecretRef
+                - clusterID
+                - infraID
+                type: object
+              compute:
+                description: Compute is the configuration for the machines that comprise the compute nodes.
+                items:
+                  description: AgentMachinePool is a pool of machines to be installed.
+                  properties:
+                    hyperthreading:
+                      description: Hyperthreading determines the mode of hyperthreading that machines in the pool will utilize. Default is for hyperthreading to be enabled.
+                      enum:
+                      - ""
+                      - Enabled
+                      - Disabled
+                      type: string
+                  type: object
+                type: array
+              controlPlane:
+                description: ControlPlane is the configuration for the machines that comprise the control plane.
+                properties:
+                  hyperthreading:
+                    description: Hyperthreading determines the mode of hyperthreading that machines in the pool will utilize. Default is for hyperthreading to be enabled.
+                    enum:
+                    - ""
+                    - Enabled
+                    - Disabled
+                    type: string
+                type: object
+              imageSetRef:
+                description: ImageSetRef is a reference to a ClusterImageSet. The release image specified in the ClusterImageSet will be used to install the cluster.
+                properties:
+                  name:
+                    description: Name is the name of the ClusterImageSet that this refers to
+                    type: string
+                required:
+                - name
+                type: object
+              ingressVIP:
+                description: IngressVIP is the virtual IP used for cluster ingress traffic.
+                type: string
+              manifestsConfigMapRef:
+                description: ManifestsConfigMapRef is a reference to user-provided manifests to add to or replace manifests that are generated by the installer.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+              networking:
+                description: Networking is the configuration for the pod network provider in the cluster.
+                properties:
+                  clusterNetwork:
+                    description: ClusterNetwork is the list of IP address pools for pods. Default is 10.128.0.0/14 and a host prefix of /23.
+                    items:
+                      description: ClusterNetworkEntry is a single IP address block for pod IP blocks. IP blocks are allocated with size 2^HostSubnetLength.
+                      properties:
+                        cidr:
+                          description: CIDR is the IP block address pool.
+                          type: string
+                        hostPrefix:
+                          description: HostPrefix is the prefix size to allocate to each node from the CIDR. For example, 24 would allocate 2^8=256 adresses to each node. If this field is not used by the plugin, it can be left unset.
+                          format: int32
+                          type: integer
+                      required:
+                      - cidr
+                      type: object
+                    type: array
+                  machineNetwork:
+                    description: MachineNetwork is the list of IP address pools for machines.
+                    items:
+                      description: MachineNetworkEntry is a single IP address block for node IP blocks.
+                      properties:
+                        cidr:
+                          description: CIDR is the IP block address pool for machines within the cluster.
+                          type: string
+                      required:
+                      - cidr
+                      type: object
+                    type: array
+                  serviceNetwork:
+                    description: 'ServiceNetwork is the list of IP address pools for services. Default is 172.30.0.0/16. NOTE: currently only one entry is supported.'
+                    items:
+                      type: string
+                    maxItems: 1
+                    type: array
+                type: object
+              provisionRequirements:
+                description: ProvisionRequirements defines configuration for when the installation is ready to be launched automatically.
+                properties:
+                  controlPlaneAgents:
+                    description: ControlPlaneAgents is the number of matching approved and ready Agents with the control plane role required to launch the install. Must be either 1 or 3.
+                    type: integer
+                  workerAgents:
+                    description: WorkerAgents is the minimum number of matching approved and ready Agents with the worker role required to launch the install.
+                    minimum: 0
+                    type: integer
+                required:
+                - controlPlaneAgents
+                type: object
+              sshPublicKey:
+                description: SSHPublicKey will be added to all cluster hosts for use in debugging.
+                type: string
+            required:
+            - clusterDeploymentRef
+            - imageSetRef
+            - networking
+            - provisionRequirements
+            type: object
+          status:
+            description: AgentClusterInstallStatus defines the observed state of the AgentClusterInstall.
+            properties:
+              conditions:
+                description: Conditions includes more detailed status for the cluster install.
+                items:
+                  description: ClusterInstallCondition contains details for the current condition of a cluster install.
+                  properties:
+                    lastProbeTime:
+                      description: LastProbeTime is the last time we probed the condition.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating details about last transition.
+                      type: string
+                    reason:
+                      description: Reason is a unique, one-word, CamelCase reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status is the status of the condition.
+                      type: string
+                    type:
+                      description: Type is the type of the condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              connectivityMajorityGroups:
+                type: string
+              controlPlaneAgentsDiscovered:
+                description: ControlPlaneAgentsDiscovered is the number of Agents currently linked to this ClusterDeployment.
+                type: integer
+              controlPlaneAgentsReady:
+                description: ControlPlaneAgentsDiscovered is the number of Agents currently linked to this ClusterDeployment that are ready for use.
+                type: integer
+              workerAgentsDiscovered:
+                description: WorkerAgentsDiscovered is the number of worker Agents currently linked to this ClusterDeployment.
+                type: integer
+              workerAgentsReady:
+                description: WorkerAgentsDiscovered is the number of worker Agents currently linked to this ClusterDeployment that are ready for use.
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

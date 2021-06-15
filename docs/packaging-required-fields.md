@@ -4,6 +4,8 @@
 
 Before you begin, we strongly advise that you follow Operator-Lifecycle-Manager's docs on [building a CSV for the Operator Framework](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md). These outline the functional purpose of the CSV and which fields are required for installing your Operator CSV through OLM.
 
+Note that if you used `operator-sdk` to develop your Operator you can also leverage its packaging tooling to [create a bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle/#creating-a-bundle) by just running the target `make bundle`.
+
 ## Required fields for OperatorHub
 
 An Operator's CSV must contain the following fields and annotations for it to be displayed properly within OperatorHub.io and OperatorHub in OCP. Below is a guideline explaining each field, and at the bottom of this document is a full example of such a CSV.

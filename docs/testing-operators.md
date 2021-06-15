@@ -3,7 +3,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 <!-- **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*-->
 
-<!-- - [Overview](#overview)
+- [Overview](#overview)
 - [Accepted Contribution formats](#accepted-contribution-formats)
   - [*packagemanifest* format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)](#packagemanifest-format-mandatory-for-all-olm-versions-prior-to-0140-and-earlier-supported-on-all-available-versions)
   - [*bundle* format (supported with 0.14.0 or newer)](#bundle-format-supported-with-0140-or-newer)
@@ -19,54 +19,52 @@
   - [Building a catalog using `packagemanifest` format](#building-a-catalog-using-packagemanifest-format)
   - [Building a catalog using bundles](#building-a-catalog-using-bundles)
 - [Testing Operator Deployment on Kubernetes](#testing-operator-deployment-on-kubernetes)
-  - [Installing Operator Lifecycle Manager](#1-installing-operator-lifecycle-manager)
-  - [Adding the catalog containing your Operator](#2-adding-the-catalog-containing-your-operator)
-  - [View Available Operators](#3-view-available-operators)
-  - [Create an OperatorGroup](#4-create-an-operatorgroup)
-  - [Create a Subscription](#5-create-a-subscription)
-  - [Verify Operator health](#6-verify-operator-health)
+  - [1. Installing Operator Lifecycle Manager](#1-installing-operator-lifecycle-manager)
+    - [Troubleshooting](#troubleshooting)
+  - [2. Adding the catalog containing your Operator](#2-adding-the-catalog-containing-your-operator)
+    - [Troubleshooting](#troubleshooting-1)
+  - [3. View Available Operators](#3-view-available-operators)
+    - [Troubleshooting](#troubleshooting-2)
+  - [4. Create an OperatorGroup](#4-create-an-operatorgroup)
+  - [5. Create a Subscription](#5-create-a-subscription)
+    - [Troubleshooting](#troubleshooting-3)
+  - [6. Verify Operator health](#6-verify-operator-health)
+    - [Troubleshooting](#troubleshooting-4)
 - [Testing Operator Deployment on OpenShift](#testing-operator-deployment-on-openshift)
   - [1. Create the CatalogSource](#1-create-the-catalogsource)
   - [2. Find your Operator in the OperatorHub UI](#2-find-your-operator-in-the-operatorhub-ui)
   - [3. Install your Operator from OperatorHub](#3-install-your-operator-from-operatorhub)
   - [4. Verify Operator health](#4-verify-operator-health)
 - [Testing with scorecard](#testing-with-scorecard)
-- [Additional Resources](#additional-resources) -->
+- [Additional Resources](#additional-resources)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Overview
+
 These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework, when packaged for the Operator Lifecycle Manager. Although your submission will always be tested as part of the [CI](./tests-in-pr.md) you can accelerate the process by testing locally.
 
 > The tests described in this document can also be executed automatically in a single step using a [test suite](./operator-test-suite.md)
 
 > A previous version of this document required quay.io, `operator-courier` and `operator-marketplace` to conduct the tests. This is no longer required.
 
+However, note that you can easily check and test your bundles via [`operator-sdk bundle validate`][sdk-cli-bundle-validate]:
+
+```sh
+operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
+``` 
+
+**NOTE** For further information about the options available with `operator-sdk bundle validate` run `operator-sdk bundle validate --list-optional` and `operator-sdk bundle validate --help`.
+
+And then, if you used [operator-sdk](https://github.com/operator-framework/operator-sdk) to build your project and bundle you can leverage in [`operator-sdk scorecard`][sdk-cli-scorecard-bundle]:
+
+```sh
+operator-sdk scorecard bundle
+```
+
 ## Accepted Contribution formats
 
 The process below assumes that you have a Kubernetes Operator in either of the two following formats supported by the Operator Framework:
-
-### *packagemanifest* format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)
-
-```console
-$ tree my-operator/
-
-my-operator
-├── 0.1.0
-│   ├── my-operator-crd1.crd.yaml
-│   ├── my-operator-crd2.crd.yaml
-│   └── my-operator.v0.1.0.clusterserviceversion.yaml
-├── 0.5.0
-│   ├── my-operator-crd1.crd.yaml
-│   ├── my-operator-crd2.crd.yaml
-│   ├── my-operator-crd3.crd.yaml
-│   └── my-operator.v0.5.0.clusterserviceversion.yaml
-├── 1.0.0
-│   ├── my-operator-crd1.crd.yaml
-│   ├── my-operator-crd2.crd.yaml
-│   ├── my-operator-crd3.crd.yaml
-│   └── my-operator.v1.0.0.clusterserviceversion.yaml
-└── my-operator.package.yaml
-```
 
 ### *bundle* format (supported with 0.14.0 or newer)
 
@@ -102,6 +100,32 @@ my-operator
     │   └── annotations.yaml
     └── Dockerfile
 ...
+```
+
+
+### (Legacy) *packagemanifest* format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)
+
+**NOTE** It is recommended to use the `bundle` format instead. This format still valid for backwards compatibility only and at some point will no longer to be supported.
+
+```console
+$ tree my-operator/
+
+my-operator
+├── 0.1.0
+│   ├── my-operator-crd1.crd.yaml
+│   ├── my-operator-crd2.crd.yaml
+│   └── my-operator.v0.1.0.clusterserviceversion.yaml
+├── 0.5.0
+│   ├── my-operator-crd1.crd.yaml
+│   ├── my-operator-crd2.crd.yaml
+│   ├── my-operator-crd3.crd.yaml
+│   └── my-operator.v0.5.0.clusterserviceversion.yaml
+├── 1.0.0
+│   ├── my-operator-crd1.crd.yaml
+│   ├── my-operator-crd2.crd.yaml
+│   ├── my-operator-crd3.crd.yaml
+│   └── my-operator.v1.0.0.clusterserviceversion.yaml
+└── my-operator.package.yaml
 ```
 
 In both examples above *my-operator* is the name of your Operator which is available in 3 versions: `0.1.0`, `0.5.0` and `1.0.0`. If you are new to this or you don't have this format yet, refer to our [contribution documentation](./packaging-operator.md#package-your-operator). We will refer to both formats distinctively below where required.
@@ -710,3 +734,6 @@ Assuming you are still in your top-level directory where `my-operator/` is your 
 ## Additional Resources
 * [Cluster Service Version Spec](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md)
 * [Example Bundle](https://github.com/operator-framework/bundle-example)
+
+[sdk-cli-bundle-validate]: https://sdk.operatorframework.io/docs/cli/operator-sdk_bundle_validate/ 
+[sdk-cli-scorecard-bundle]: https://sdk.operatorframework.io/docs/cli/operator-sdk_scorecard/

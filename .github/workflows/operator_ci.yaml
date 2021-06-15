@@ -1,19 +1,18 @@
 name: Operator CI
 on:
  pull_request_target:
-   types: [opened, synchronize, reopened, ready_for_review]
-
+   types: [opened, synchronize, reopened, ready_for_review, unlabeled]
+env:
+  AUTOMERGE_ENABLED: 1
+  
 jobs:
-  operator-ci:
-    if: github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'allow/test-in-draft-mode')
+  operator-automerge-enabled:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.state == 'open'
     steps:
-      - uses: actions/labeler@v2
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: "Remove needs-ok-to-test"
+      - name: Remove automerge-disabled when needed
+        if: ${{ env.AUTOMERGE_ENABLED == '1' }}
         uses: actions/github-script@v3
-        if: always()
         continue-on-error: true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -22,8 +21,71 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'needs-ok-to-test'
+              name: 'automerge-disabled'
             })
+      - name: Add automerge-disabled when needed
+        uses: actions/github-script@v3
+        if: ${{ env.AUTOMERGE_ENABLED == '0' }}
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'automerge-disabled' ]
+            })
+
+  operator-ci:
+    if: github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'allow/test-in-draft-mode')
+    needs: operator-automerge-enabled
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Remove kubernetes-operator"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'kubernetes-operator'
+            })
+
+      - name: "Remove openshift-operator"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'openshift-operator'
+            })
+      - name: Setting labels from changes in directory changes
+        uses: actions/labeler@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: "Remove package-validated"
+        uses: actions/github-script@v3
+        if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold'))
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'package-validated'
+            })
+
       - name: "Add Assignees"
         uses: actions/github-script@v3
         if: github.event.action == 'opened' || github.event.action == 'reopened'
@@ -76,23 +138,37 @@ jobs:
         run: |
           bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt.sh)
 
-      - name: "Comment operator test error code [10]"
-        if: steps.op-traffic-light.outputs.op_test_error_code == '10'
-        uses: mshick/add-pr-comment@v1
+      # - name: "Comment operator test error code [10]"
+      #   if: steps.op-traffic-light.outputs.op_test_error_code == '10'
+      #   uses: mshick/add-pr-comment@v1
+      #   with:
+      #     message: |
+      #       If you want to accelerate publishing your changes, consider adding yourself and others you trust to the reviewers list see how that works [here](https://operator-framework.github.io/community-operators/operator-ci-yaml).
+      #     repo-token: ${{ secrets.GITHUB_TOKEN }}
+      #     repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+      #     allow-repeats: false
+
+      - name: "Remove installation-validated"
+        uses: actions/github-script@v3
+        if: (!contains(github.event.pull_request.labels.*.name, 'do-not-merge/hold')) && (github.event.action != 'unlabeled')
+        continue-on-error: true
         with:
-          message: |
-            If you want to accelerate publishing your changes, consider adding yourself and others you trust to the reviewers list see how that works [here](https://operator-framework.github.io/community-operators/operator-ci-yaml).
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
-          allow-repeats: false
-          
-      - name: "Mention reviewers if exists"
-        if: steps.op-traffic-light.outputs.op_test_pr_revievers != ''
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'installation-validated'
+            })
+
+      - name: "Mention reviewers if exist"
+        if: (steps.op-traffic-light.outputs.op_test_pr_revievers != '') && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
         uses: mshick/add-pr-comment@v1
         with:
           message: |
             ${{ steps.op-traffic-light.outputs.op_test_pr_revievers }}, please approve as you are original reviewer(s).
-            Please note, that you can also add the contributor to ci.yaml as a reviewer. More info [here](https://operator-framework.github.io/community-operators/operator-ci-yaml).
+            Please note, that you can more contributors to ci.yaml. More info [here](https://operator-framework.github.io/community-operators/operator-ci-yaml).
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
           allow-repeats: false
@@ -206,6 +282,17 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
           allow-repeats: true
+      - name: "Comment operator test error code [7]"
+        if: steps.op-traffic-light.outputs.op_test_dockerfile_changed == '1'
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            `Dockerfile` or `bundle.Dockerfile` is added/changed. Note that for security reasons none of these files are going to be used when building bundle. Docker file will be generated and all label information is taken from `annotations.yaml`.
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: true
+
+
 
       - name: Update title
         uses: actions/github-script@v3
@@ -246,7 +333,24 @@ jobs:
           [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Recreating operator. Exiting with '0' ..."; exit 0; } || true
           [[ $OP_TEST_ALLOW_SERIOUS_CHANGES -eq 1 ]] && { echo "Allowing serious changes. Exiting with '0' ..."; exit 0; } || true
           [ -n "$OP_TEST_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetic::1" || true
-          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!!\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; exit 20; } || true
+          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!! Please ask maintainers to set `allow/serious-changes-to-existing` label.\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; echo "::set-output name=op_check_cosmetic::2"; exit 20; } || true
+
+      - name: "Comment for cosmetics change error when csv is changed"
+        if: failure() && steps.op-verify-modifications.outputs.op_check_cosmetic == '2'
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            /hold
+                     
+            Only minor (cosmetic) changes to already published operator version(s) are allowed. Consider bumping your operator version. In exceptional cases, it could be overridden by setting `allow/serious-changes-to-existing` label set by maintainers and then confirmed action by running command `/hold cancel`.
+            
+            <details>
+            Reason: Non CSV files were changed in existing operator !!!
+            More info about allowed changes can be found in [documetnation](https://operator-framework.github.io/community-operators/operator-version-update/#minor-cosmetics-changes).
+            </details>
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+          allow-repeats: true
 
       - name: Operator cosmetic change check
         id: op-cosmetic-change-check
@@ -375,7 +479,14 @@ jobs:
       #     repo-token: ${{ secrets.GITHUB_TOKEN }}
       #     repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
       #     allow-repeats: true
-
+      - name: Info
+        run: |
+          echo "steps.op-traffic-light.outputs.op_test_ready: ${{ steps.op-traffic-light.outputs.op_test_ready }}"
+          echo "steps.op-traffic-light.outputs.op_release_ready: ${{ steps.op-traffic-light.outputs.op_release_ready }}"
+          echo "steps.op-traffic-light.outputs.op_test_stream: ${{ steps.op-traffic-light.outputs.op_test_stream }}"
+          echo "steps.op-traffic-light.outputs.op_test_name: ${{ steps.op-traffic-light.outputs.op_test_name }}"
+          echo "steps.op-traffic-light.outputs.op_test_version: ${{ steps.op-traffic-light.outputs.op_test_version }}"
+          echo "steps.op-traffic-light.outputs.op_test_ci_yaml_only: ${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
     outputs:
       op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
       op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
@@ -388,9 +499,28 @@ jobs:
     needs: operator-ci
     runs-on: ubuntu-latest
     steps:
+
+      - name: "Remove needs-ok-to-test"
+        uses: actions/github-script@v3
+        if: always()
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'needs-ok-to-test'
+            })
+      - name: Info
+        run: |
+          echo "needs.operator-ci.outputs.op_test_stream: ${{ needs.operator-ci.outputs.op_test_stream }}"
+          echo "needs.operator-ci.outputs.op_test_ci_yaml_only: ${{ needs.operator-ci.outputs.op_test_ci_yaml_only }}"
+
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
-        if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only == '0' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
+        if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only != '1' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -400,3 +530,17 @@ jobs:
               repo: context.repo.repo,
               labels: [ 'ok-to-test' ]
             })
+
+      - name: "Setting installation-validated label (opensift+ci_yaml_only)"
+        uses: actions/github-script@v3
+        if: needs.operator-ci.outputs.op_test_stream == 'community-operators' && needs.operator-ci.outputs.op_test_ci_yaml_only == '1'
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'installation-validated' ]
+            })
+
