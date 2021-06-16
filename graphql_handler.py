@@ -265,15 +265,17 @@ def execute_page_query(pr_cursor, page_size):
         'event_query': build_event_subquery("null")
     })
 
-    data = call_github_api(query)['data']['repository']['pullRequests']
+    data = call_github_api(query)['data']
+    repo_data = data['repository']['pullRequests']
+    rate_limit_data = data['rateLimit']
 
-    page_info = data['pageInfo']
+    page_info = repo_data['pageInfo']
     has_prs = bool(page_info['hasPreviousPage'])
     pr_cursor = format_cursor(page_info['startCursor']) if has_prs else None
 
     remaining_prs = []
     pr_data = {}
-    prs = data['nodes']
+    prs = repo_data['nodes']
 
     for pr in prs:
         number, pr_dict, comment_cursor, event_cursor = construct_pr_dict(pr)
@@ -284,14 +286,18 @@ def execute_page_query(pr_cursor, page_size):
 
     exhaust_comments_and_events(pr_data, remaining_prs)
 
-    return pr_data, has_prs, pr_cursor
+    return pr_data, has_prs, pr_cursor, rate_limit_data
 
 
-def get_pr_data(last=None, page_size=100, pr_cursor=None):
+def get_pr_data(last=None, page_size=100, pr_cursor=None, rate_limit=False):
     """Get PR contribution data
 
     Parameters:
         last (int): number of PRs to pull (most recent first)
+        page_size (int): number of PRs to pull with each page query
+        pr_cursor (str): cursor to last queried page
+        rate_limit (bool): set True to log rate limit data with each
+            page query
     """
     pr_cursor = "null" if pr_cursor is None else format_cursor(pr_cursor)
 
@@ -303,8 +309,14 @@ def get_pr_data(last=None, page_size=100, pr_cursor=None):
             page_size = min(page_size, last)
             last -= page_size
 
-        data, has_prs, pr_cursor = execute_page_query(pr_cursor, page_size)
+        data, has_prs, pr_cursor, rate_limit_data = execute_page_query(
+            pr_cursor,
+            page_size
+        )
 
         pr_data.update(data)
+
+        if rate_limit:
+            print(rate_limit_data)
 
     return pr_data
