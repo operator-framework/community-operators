@@ -12,7 +12,7 @@ Full documentation is generated via [mkdoc](https://www.mkdocs.org/) and is loca
 
 ## IMPORTANT NOTICE
 
-Kubernetes has been deprecating API(s) which will be removed and no longer available in `1.22` and in the Openshift version `4.9`. Note that your project will be unable to use them on `OCP 4.9/K8s 1.22` and then, it is strongly recommended to check [Deprecated API Migration Guide from v1.22](https://kubernetes.io/docs/reference/using-api/deprecation-guide/#v1-22) and ensure that your projects have them migrated and are not using any deprecated API.
+**IMPORTANT** Kubernetes has been deprecating API(s) which will be removed and no longer available in `1.22` and in the Openshift version `4.9`. Note that your project will be unable to use them on `OCP 4.9/K8s 1.22` and then, it is strongly recommended to check [Deprecated API Migration Guide from v1.22][k8s-deprecated-guide] and ensure that your projects have them migrated and are not using any deprecated API.
 
 ### FOR OPENSHIFT COMMUNITY OPERATORS
 
@@ -21,3 +21,5 @@ However, If you still need to publish the operator bundles with any of these API
 ## Reporting Bugs
 
 Use the issue tracker in this repository to report bugs.
+
+[k8s-deprecated-guide]: https://kubernetes.io/docs/reference/using-api/deprecation-guide/#v1-22
