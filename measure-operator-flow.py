@@ -13,7 +13,7 @@ def compute_duration(created_at, merged_at):
 
 
 def main():
-    pr_data = get_pr_data(last=5)
+    pr_data = get_pr_data(last=10)
     pp = pprint.PrettyPrinter()
     pp.pprint(pr_data)
     print(f'{len(pr_data)} PRs queried')

@@ -20,6 +20,7 @@ def call_github_api(query):
 
 
 def build_comment_query(cursor):
+    if cursor is None: return ''
     return Template("""
         comments(first: 100, after: $cursor) {
             nodes {
@@ -34,6 +35,7 @@ def build_comment_query(cursor):
 
 
 def build_event_query(cursor):
+    if cursor is None: return ''
     return Template("""
         timelineItems(itemTypes: LABELED_EVENT, first: 100, after: $cursor) {
             nodes {
@@ -51,7 +53,7 @@ def build_event_query(cursor):
 
 
 def build_page_query(pr_cursor, page_size):
-    """Build query for a multi-PR call to GitHub API
+    """Build query for a PR page call to GitHub API
 
     Query is not complete and still needs to be populated with comment and
     event queries built using build_comment_query and build_event_query
@@ -91,25 +93,36 @@ def build_page_query(pr_cursor, page_size):
     return query
 
 
-def build_pr_query(pr_number):
-    """Build query for a single-PR call to GitHub API
+def build_pr_subquery(pr_number):
+    """Build single-PR subquery for a batch PR call to GitHub API
 
     Query is not complete and still needs to be populated with comment and
     event queries built using build_comment_query and build_event_query
 
     Parameters:
-        pr_number (int): Number of PRs to request (reverse-chronological
-        order)
+        pr_number (int): number/ID of requested PR
     """
-    query = Template("""query PRQuery($owner: String!, $name: String!) {
+    return Template("""pr$number: pullRequest(number: $number) {
+        number
+        createdAt
+        mergedAt
+        author { login }
+        $comment_query
+        $event_query
+    }
+    """).safe_substitute({'number': pr_number})
+
+
+def build_pr_query(pr_subqueries):
+    """Build query for batch PR call to GitHub API
+
+    Parameters:
+        pr_subqueries (List[str]): list of subqueries created by
+            by calling build_pr_subquery
+    """
+    return Template("""query ($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
-            pullRequest(number: $number) {
-                createdAt
-                mergedAt
-                author { login }
-                $comment_query
-                $event_query
-            }
+            $subqueries
         }
         rateLimit {
             limit
@@ -118,9 +131,7 @@ def build_pr_query(pr_number):
             resetAt
         }
     }
-    """).safe_substitute({'number': pr_number})
-
-    return query
+    """).safe_substitute({'subqueries': ''.join(pr_subqueries)})
 
 
 def format_cursor(cursor):
@@ -131,14 +142,48 @@ def format_cursor(cursor):
 def find_authorizer(label_event_info):
     for label_event in label_event_info['nodes']:
         if label_event['label']['name'] == 'authorized-changes':
-            return label_event['actor']['login'], False, None
+            return label_event['actor']['login'], None
 
     has_events = label_event_info['pageInfo']['hasNextPage']
     if not has_events:
-        return 'maintainer', False, None
+        return 'maintainer', None
     else:
-        return (None, True,
-                format_cursor(label_event_info['pageInfo']['endCursor']))
+        return None, format_cursor(label_event_info['pageInfo']['endCursor'])
+
+
+def construct_pr_dict(pr):
+    """Construct dict with necessary data from API response"""
+    number = pr['number']
+    created_at = pr['createdAt']
+    merged_at = pr['mergedAt']
+    author = pr['author']
+
+    if 'comments' in pr:
+        comments = pr['comments']['nodes']
+        commentors = set([comment['author']['login'] for comment in comments])
+
+        comment_page_info = pr['comments']['pageInfo']
+        has_comments = bool(comment_page_info['hasNextPage'])
+        comment_cursor = (format_cursor(comment_page_info['endCursor'])
+                            if has_comments else None)
+    else:
+        commentors = set()
+        comment_cursor = None
+
+    if 'timelineItems' in pr:
+        label_event_info = pr['timelineItems']
+        labeler, event_cursor = find_authorizer(label_event_info)
+    else:
+        labeler = None
+        event_cursor = None
+
+    return number, {
+        'created_at': created_at,
+        'merged_at': merged_at,
+        'author': author,
+        'commentors': commentors,
+        'labeler': labeler
+    }, comment_cursor, event_cursor
 
 
 def execute_page_query(pr_cursor, page_size):
@@ -160,44 +205,56 @@ def execute_page_query(pr_cursor, page_size):
     has_prs = bool(page_info['hasPreviousPage'])
     pr_cursor = format_cursor(page_info['startCursor']) if has_prs else None
 
-
+    remaining_prs = []
     pr_data = {}
     prs = data['nodes']
 
     for pr in prs:
-        number = pr['number']
-        created_at = pr['createdAt']
-        merged_at = pr['mergedAt']
-        author = pr['author']
+        number, pr_dict, comment_cursor, event_cursor = construct_pr_dict(pr)
+        pr_data[number] = pr_dict
+    
+        if comment_cursor is not None or event_cursor is not None:
+            remaining_prs.append((number, comment_cursor, event_cursor))
 
-        comments = pr['comments']['nodes']
-        commentors = set([comment['author']['login'] for comment in comments])
-
-        comment_page_info = pr['comments']['pageInfo']
-        has_comments = bool(comment_page_info['hasNextPage'])
-        comment_cursor = (format_cursor(comment_page_info['endCursor'])
-                          if has_comments else None)
-
-        label_event_info = pr['timelineItems']
-        labeler, has_events, event_cursor = find_authorizer(label_event_info)
-
-        if has_comments or has_events:
-            print(comment_cursor, event_cursor)  # so flake8 doesn't complain
-
-        pr_data[number] = {
-            'created_at': created_at,
-            'merged_at': merged_at,
-            'author': author,
-            'commentors': commentors,
-            'labeler': labeler
-        }
+    exhaust_comments_and_events(pr_data, remaining_prs)
 
     return pr_data, has_prs, pr_cursor
 
 
-def exhaust_comments_and_events():
+def update_pr_data(pr_data, number, new_data):
+    """Add comment and event data from subsequent pages of queries"""
+    pr_data[number]['commentors'].update(new_data['commentors'])
+
+    if pr_data[number]['labeler'] is not None: return
+    if new_data['labeler'] is not None:
+        pr_data[number]['labeler'] = new_data['labeler']
+
+
+def exhaust_comments_and_events(pr_data, remaining_prs):
     """Exhaustively query comment and event pages for list of PRs"""
-    pass
+    while remaining_prs:
+        next_prs = []
+        subqueries = []
+
+        for number, comment_cursor, event_cursor in remaining_prs:
+            subquery = Template(build_pr_subquery(number)).safe_substitute({
+                'comment_query': build_comment_query(comment_cursor),
+                'event_query': build_event_query(event_cursor)
+            })
+            subqueries.append(subquery)
+
+        query = build_pr_query(subqueries)
+        data = call_github_api(query)['data']['repository']
+        print(data)
+        
+        for pr in data.values():
+            number, pr_dict, comment_cursor, event_cursor = construct_pr_dict(pr)  # noqa
+            update_pr_data(pr_data, number, pr_dict)
+
+            if comment_cursor is not None or event_cursor is not None:
+                next_prs.append((number, comment_cursor, event_cursor))
+
+        remaining_prs = next_prs
 
 
 def get_pr_data(last=None, page_size=100):
