@@ -21,7 +21,7 @@ def call_github_api(query):
     return data
 
 
-def build_comment_query(cursor):
+def build_comment_subquery(cursor):
     if cursor is None:
         return ''
     return Template("""
@@ -37,7 +37,7 @@ def build_comment_query(cursor):
     """).substitute({'cursor': cursor})
 
 
-def build_event_query(cursor):
+def build_event_subquery(cursor):
     if cursor is None:
         return ''
     return Template("""
@@ -152,7 +152,27 @@ def get_author(author):
     return author['login']
 
 
+def find_commentors(comment_info):
+    """Get list of distinct commentors from GitHub API response
+    
+    Additionally, return comment cursor if further paginating required
+    """
+    commentors = set([get_author(comment['author'])
+                      for comment in comment_info['nodes']])
+
+    comment_page_info = comment_info['pageInfo']
+    has_comments = bool(comment_page_info['hasNextPage'])
+    comment_cursor = (format_cursor(comment_page_info['endCursor'])
+                      if has_comments else None)
+    
+    return commentors, comment_cursor
+
+
 def find_authorizer(label_event_info):
+    """Get user who set label `authorized-changes`
+    
+    Additionally, return event cursor if further paginating required
+    """
     for label_event in label_event_info['nodes']:
         if label_event['label']['name'] == 'authorized-changes':
             return label_event['actor']['login'], None
@@ -160,6 +180,8 @@ def find_authorizer(label_event_info):
     has_events = label_event_info['pageInfo']['hasNextPage']
 
     if not has_events:
+        # for PRs from before `authorized-changes` label was used,
+        # assume changes were authorized by some maintainer
         return 'maintainer', None
 
     return None, format_cursor(label_event_info['pageInfo']['endCursor'])
@@ -173,21 +195,13 @@ def construct_pr_dict(pr):
     author = get_author(pr['author'])
 
     if 'comments' in pr:
-        comments = pr['comments']['nodes']
-        commentors = set([get_author(comment['author'])
-                          for comment in comments])
-
-        comment_page_info = pr['comments']['pageInfo']
-        has_comments = bool(comment_page_info['hasNextPage'])
-        comment_cursor = (format_cursor(comment_page_info['endCursor'])
-                          if has_comments else None)
+        commentors, comment_cursor = find_commentors(pr['comments'])
     else:
         commentors = set()
         comment_cursor = None
 
     if 'timelineItems' in pr:
-        label_event_info = pr['timelineItems']
-        labeler, event_cursor = find_authorizer(label_event_info)
+        labeler, event_cursor = find_authorizer(pr['timelineItems'])
     else:
         labeler = None
         event_cursor = None
@@ -201,6 +215,43 @@ def construct_pr_dict(pr):
     }, comment_cursor, event_cursor
 
 
+def update_pr_data(pr_data, number, new_data):
+    """Add comment and event data from subsequent pages of queries"""
+    # perform set addition to ignore duplicate commentors
+    pr_data[number]['commentors'].update(new_data['commentors'])
+
+    if pr_data[number]['labeler'] is not None:
+        return
+    if new_data['labeler'] is not None:
+        pr_data[number]['labeler'] = new_data['labeler']
+
+
+def exhaust_comments_and_events(pr_data, remaining_prs):
+    """Exhaustively query comment and event pages for list of PRs"""
+    while remaining_prs:
+        next_prs = []
+        subqueries = []
+
+        for number, comment_cursor, event_cursor in remaining_prs:
+            subquery = Template(build_pr_subquery(number)).safe_substitute({
+                'comment_query': build_comment_subquery(comment_cursor),
+                'event_query': build_event_subquery(event_cursor)
+            })
+            subqueries.append(subquery)
+
+        query = build_pr_query(subqueries)
+        data = call_github_api(query)['data']['repository']
+
+        for pr in data.values():
+            number, pr_dict, comment_cursor, event_cursor = construct_pr_dict(pr)  # noqa
+            update_pr_data(pr_data, number, pr_dict)
+
+            if comment_cursor is not None or event_cursor is not None:
+                next_prs.append((number, comment_cursor, event_cursor))
+
+        remaining_prs = next_prs
+
+
 def execute_page_query(pr_cursor, page_size):
     """Execute query for a single page of PRs
 
@@ -210,8 +261,8 @@ def execute_page_query(pr_cursor, page_size):
         event_cursor (int): Cursor of last requested event
     """
     query = Template(build_page_query(pr_cursor, page_size)).safe_substitute({
-        'comment_query': build_comment_query("null"),
-        'event_query': build_event_query("null")
+        'comment_query': build_comment_subquery("null"),
+        'event_query': build_event_subquery("null")
     })
 
     data = call_github_api(query)['data']['repository']['pullRequests']
@@ -234,43 +285,6 @@ def execute_page_query(pr_cursor, page_size):
     exhaust_comments_and_events(pr_data, remaining_prs)
 
     return pr_data, has_prs, pr_cursor
-
-
-def update_pr_data(pr_data, number, new_data):
-    """Add comment and event data from subsequent pages of queries"""
-    # perform set addition to ignore duplicate commentors
-    pr_data[number]['commentors'].update(new_data['commentors'])
-
-    if pr_data[number]['labeler'] is not None:
-        return
-    if new_data['labeler'] is not None:
-        pr_data[number]['labeler'] = new_data['labeler']
-
-
-def exhaust_comments_and_events(pr_data, remaining_prs):
-    """Exhaustively query comment and event pages for list of PRs"""
-    while remaining_prs:
-        next_prs = []
-        subqueries = []
-
-        for number, comment_cursor, event_cursor in remaining_prs:
-            subquery = Template(build_pr_subquery(number)).safe_substitute({
-                'comment_query': build_comment_query(comment_cursor),
-                'event_query': build_event_query(event_cursor)
-            })
-            subqueries.append(subquery)
-
-        query = build_pr_query(subqueries)
-        data = call_github_api(query)['data']['repository']
-
-        for pr in data.values():
-            number, pr_dict, comment_cursor, event_cursor = construct_pr_dict(pr)  # noqa
-            update_pr_data(pr_data, number, pr_dict)
-
-            if comment_cursor is not None or event_cursor is not None:
-                next_prs.append((number, comment_cursor, event_cursor))
-
-        remaining_prs = next_prs
 
 
 def get_pr_data(last=None, page_size=100, pr_cursor=None):
