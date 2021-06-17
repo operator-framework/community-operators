@@ -289,7 +289,7 @@ def execute_page_query(pr_cursor, page_size):
     return pr_data, has_prs, pr_cursor, rate_limit_data
 
 
-def get_pr_data(last=None, page_size=100, pr_cursor=None, rate_limit=False):
+def get_pr_data(last, page_size, pr_cursor, show_pr_cursor, show_rate_limit):
     """Get PR contribution data
 
     Parameters:
@@ -316,7 +316,10 @@ def get_pr_data(last=None, page_size=100, pr_cursor=None, rate_limit=False):
 
         pr_data.update(data)
 
-        if rate_limit:
-            print(rate_limit_data)
+        if show_pr_cursor:
+            print(f'PR Cursor: {pr_cursor}\n')
+
+        if show_rate_limit:
+            print(f'Rate Limit Data: {rate_limit_data}\n')
 
     return pr_data
