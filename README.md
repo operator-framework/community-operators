@@ -7,7 +7,7 @@ To use this, you need a GitHub token, which you can create by following this [gu
 running with -h flag will show you usage data:
 ```
 $ python3 measure-operator-flow.py -h
-usage: ./measure-operator-flow.py [options]
+usage: python3 measure-operator-flow.py [options]
 
 measure pull request performance on https://github.com/operator-framework/community-operators
 
