@@ -388,35 +388,52 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 <!-- **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*-->
-<!-- - [Overview](#overview)
-- [Accepted Contribution formats](#accepted-contribution-formats)
-  - [*packagemanifest* format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)](#packagemanifest-format-mandatory-for-all-olm-versions-prior-to-0140-and-earlier-supported-on-all-available-versions)
-  - [*bundle* format (supported with 0.14.0 or newer)](#bundle-format-supported-with-0140-or-newer)
-- [Pre-Requisites](#pre-requisites)
-  - [Kubernetes cluster](#kubernetes-cluster)
-  - [Container Tooling](#container-tooling)
-  - [Operator Framework components](#operator-framework-components)
-  - [Preparing file structure](#preparing-file-structure)
-- [Operator Metadata Validation](#operator-metadata-validation)
-  - [Temporary conversion of packagemanifest to bundle](#temporary-conversion-of-packagemanifest-to-bundle)
-  - [Using operator-sdk to validate your Operator](#using-operator-sdk-to-validate-your-operator)
-- [Publishing your Operator metadata to a catalog for testing](#publishing-your-operator-metadata-to-a-catalog-for-testing)
-  - [Building a catalog using `packagemanifest` format](#building-a-catalog-using-packagemanifest-format)
-  - [Building a catalog using bundles](#building-a-catalog-using-bundles)
-- [Testing Operator Deployment on Kubernetes](#testing-operator-deployment-on-kubernetes)
-  - [Installing Operator Lifecycle Manager](#1-installing-operator-lifecycle-manager)
-  - [Adding the catalog containing your Operator](#2-adding-the-catalog-containing-your-operator)
-  - [View Available Operators](#3-view-available-operators)
-  - [Create an OperatorGroup](#4-create-an-operatorgroup)
-  - [Create a Subscription](#5-create-a-subscription)
-  - [Verify Operator health](#6-verify-operator-health)
-- [Testing Operator Deployment on OpenShift](#testing-operator-deployment-on-openshift)
-  - [1. Create the CatalogSource](#1-create-the-catalogsource)
-  - [2. Find your Operator in the OperatorHub UI](#2-find-your-operator-in-the-operatorhub-ui)
-  - [3. Install your Operator from OperatorHub](#3-install-your-operator-from-operatorhub)
-  - [4. Verify Operator health](#4-verify-operator-health)
-- [Testing with scorecard](#testing-with-scorecard)
-- [Additional Resources](#additional-resources) -->
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#accepted-contribution-formats">Accepted Contribution formats</a></li>
+<li><a href="#packagemanifest-format-mandatory-for-all-olm-versions-prior-to-0140-and-earlier-supported-on-all-available-versions"><em>packagemanifest</em> format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)</a></li>
+<li><a href="#bundle-format-supported-with-0140-or-newer"><em>bundle</em> format (supported with 0.14.0 or newer)</a></li>
+<li><a href="#pre-requisites">Pre-Requisites</a></li>
+<li><a href="#kubernetes-cluster">Kubernetes cluster</a></li>
+<li><a href="#container-tooling">Container Tooling</a></li>
+<li><a href="#operator-framework-components">Operator Framework components</a></li>
+<li><a href="#preparing-file-structure">Preparing file structure</a></li>
+<li><a href="#operator-metadata-validation">Operator Metadata Validation</a></li>
+<li><a href="#temporary-conversion-of-packagemanifest-to-bundle">Temporary conversion of packagemanifest to bundle</a></li>
+<li><a href="#using-operator-sdk-to-validate-your-operator">Using operator-sdk to validate your Operator</a></li>
+<li><a href="#publishing-your-operator-metadata-to-a-catalog-for-testing">Publishing your Operator metadata to a catalog for testing</a></li>
+<li><a href="#building-a-catalog-using-packagemanifest-format">Building a catalog using <code>packagemanifest</code> format</a></li>
+<li><a href="#building-a-catalog-using-bundles">Building a catalog using bundles</a></li>
+<li><a href="#testing-operator-deployment-on-kubernetes">Testing Operator Deployment on Kubernetes</a></li>
+<li><a href="#1-installing-operator-lifecycle-manager">1. Installing Operator Lifecycle Manager</a><ul>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li><a href="#2-adding-the-catalog-containing-your-operator">2. Adding the catalog containing your Operator</a><ul>
+<li><a href="#troubleshooting-1">Troubleshooting</a></li>
+</ul>
+</li>
+<li><a href="#3-view-available-operators">3. View Available Operators</a><ul>
+<li><a href="#troubleshooting-2">Troubleshooting</a></li>
+</ul>
+</li>
+<li><a href="#4-create-an-operatorgroup">4. Create an OperatorGroup</a></li>
+<li><a href="#5-create-a-subscription">5. Create a Subscription</a><ul>
+<li><a href="#troubleshooting-3">Troubleshooting</a></li>
+</ul>
+</li>
+<li><a href="#6-verify-operator-health">6. Verify Operator health</a><ul>
+<li><a href="#troubleshooting-4">Troubleshooting</a></li>
+</ul>
+</li>
+<li><a href="#testing-operator-deployment-on-openshift">Testing Operator Deployment on OpenShift</a></li>
+<li><a href="#1-create-the-catalogsource">1. Create the CatalogSource</a></li>
+<li><a href="#2-find-your-operator-in-the-operatorhub-ui">2. Find your Operator in the OperatorHub UI</a></li>
+<li><a href="#3-install-your-operator-from-operatorhub">3. Install your Operator from OperatorHub</a></li>
+<li><a href="#4-verify-operator-health">4. Verify Operator health</a></li>
+<li><a href="#testing-with-scorecard">Testing with scorecard</a></li>
+<li><a href="#additional-resources">Additional Resources</a></li>
+</ul>
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 <h2 id="overview">Overview</h2>
 <p>These instructions walk you through how to manually test that your Operator deploys correctly with Operator Framework, when packaged for the Operator Lifecycle Manager. Although your submission will always be tested as part of the <a href="../tests-in-pr/">CI</a> you can accelerate the process by testing locally.</p>
@@ -424,28 +441,17 @@
 <p>The tests described in this document can also be executed automatically in a single step using a <a href="../operator-test-suite/">test suite</a></p>
 <p>A previous version of this document required quay.io, <code>operator-courier</code> and <code>operator-marketplace</code> to conduct the tests. This is no longer required.</p>
 </blockquote>
+<p>However, note that you can easily check and test your bundles via <a href="https://sdk.operatorframework.io/docs/cli/operator-sdk_bundle_validate/"><code>operator-sdk bundle validate</code></a>:</p>
+<div class="codehilite"><pre><span></span><code>operator-sdk bundle validate ./bundle --select-optional <span class="nv">suite</span><span class="o">=</span>operatorframework
+</code></pre></div>
+<p><strong>NOTE</strong> For further information about the options available with <code>operator-sdk bundle validate</code> run <code>operator-sdk bundle validate --list-optional</code> and <code>operator-sdk bundle validate --help</code>.</p>
+<p>And then, if you used <a href="https://github.com/operator-framework/operator-sdk">operator-sdk</a> to build your project and bundle you can leverage in <a href="https://sdk.operatorframework.io/docs/cli/operator-sdk_scorecard/"><code>operator-sdk scorecard</code></a>:</p>
+<div class="codehilite"><pre><span></span><code>operator-sdk scorecard bundle
+</code></pre></div>
+<h3 id="for-openshift-community-operators">FOR OPENSHIFT COMMUNITY OPERATORS</h3>
+<p>For Openshift community operators make sure you understand and performed the required additional checks before publish your PR. See <a href="../packaging-required-criteria-ocp/">OKD/OpenShift Catalogs criteria and options</a>.</p>
 <h2 id="accepted-contribution-formats">Accepted Contribution formats</h2>
 <p>The process below assumes that you have a Kubernetes Operator in either of the two following formats supported by the Operator Framework:</p>
-<h3 id="packagemanifest-format-mandatory-for-all-olm-versions-prior-to-0140-and-earlier-supported-on-all-available-versions"><em>packagemanifest</em> format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)</h3>
-<div class="codehilite"><pre><span></span><code><span class="gp">$ </span>tree my-operator/
-
-<span class="go">my-operator</span>
-<span class="go">├── 0.1.0</span>
-<span class="go">│   ├── my-operator-crd1.crd.yaml</span>
-<span class="go">│   ├── my-operator-crd2.crd.yaml</span>
-<span class="go">│   └── my-operator.v0.1.0.clusterserviceversion.yaml</span>
-<span class="go">├── 0.5.0</span>
-<span class="go">│   ├── my-operator-crd1.crd.yaml</span>
-<span class="go">│   ├── my-operator-crd2.crd.yaml</span>
-<span class="go">│   ├── my-operator-crd3.crd.yaml</span>
-<span class="go">│   └── my-operator.v0.5.0.clusterserviceversion.yaml</span>
-<span class="go">├── 1.0.0</span>
-<span class="go">│   ├── my-operator-crd1.crd.yaml</span>
-<span class="go">│   ├── my-operator-crd2.crd.yaml</span>
-<span class="go">│   ├── my-operator-crd3.crd.yaml</span>
-<span class="go">│   └── my-operator.v1.0.0.clusterserviceversion.yaml</span>
-<span class="go">└── my-operator.package.yaml</span>
-</code></pre></div>
 <h3 id="bundle-format-supported-with-0140-or-newer"><em>bundle</em> format (supported with 0.14.0 or newer)</h3>
 <div class="codehilite"><pre><span></span><code><span class="gp">$ </span>tree my-operator/
 
@@ -478,6 +484,27 @@
 <span class="go">    │   └── annotations.yaml</span>
 <span class="go">    └── Dockerfile</span>
 <span class="go">...</span>
+</code></pre></div>
+<h3 id="legacy-packagemanifest-format-mandatory-for-all-olm-versions-prior-to-0140-and-earlier-supported-on-all-available-versions">(Legacy) <em>packagemanifest</em> format (mandatory for all OLM versions prior to 0.14.0 and earlier, supported on all available versions)</h3>
+<p><strong>NOTE</strong> It is recommended to use the <code>bundle</code> format instead. This format still valid for backwards compatibility only and at some point will no longer to be supported.</p>
+<div class="codehilite"><pre><span></span><code><span class="gp">$ </span>tree my-operator/
+
+<span class="go">my-operator</span>
+<span class="go">├── 0.1.0</span>
+<span class="go">│   ├── my-operator-crd1.crd.yaml</span>
+<span class="go">│   ├── my-operator-crd2.crd.yaml</span>
+<span class="go">│   └── my-operator.v0.1.0.clusterserviceversion.yaml</span>
+<span class="go">├── 0.5.0</span>
+<span class="go">│   ├── my-operator-crd1.crd.yaml</span>
+<span class="go">│   ├── my-operator-crd2.crd.yaml</span>
+<span class="go">│   ├── my-operator-crd3.crd.yaml</span>
+<span class="go">│   └── my-operator.v0.5.0.clusterserviceversion.yaml</span>
+<span class="go">├── 1.0.0</span>
+<span class="go">│   ├── my-operator-crd1.crd.yaml</span>
+<span class="go">│   ├── my-operator-crd2.crd.yaml</span>
+<span class="go">│   ├── my-operator-crd3.crd.yaml</span>
+<span class="go">│   └── my-operator.v1.0.0.clusterserviceversion.yaml</span>
+<span class="go">└── my-operator.package.yaml</span>
 </code></pre></div>
 <p>In both examples above <em>my-operator</em> is the name of your Operator which is available in 3 versions: <code>0.1.0</code>, <code>0.5.0</code> and <code>1.0.0</code>. If you are new to this or you don't have this format yet, refer to our <a href="../packaging-operator/#package-your-operator">contribution documentation</a>. We will refer to both formats distinctively below where required.</p>
 <blockquote>
