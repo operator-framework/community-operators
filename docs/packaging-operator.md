@@ -172,11 +172,7 @@ Supported formats: svg, jpg, png
 
 Unless of purely cosmetic nature, subsequent updates to your Operator should result in new `bundle` directories being added, containing an updated CSV as well as copied, updated and/or potentially newly added CRDs. Within your new CSV, update the `spec.version` field to the desired new semantic version of your Operator.
 
-In order to have OLM enable updates to your new Operator version you can choose between three update modes: `semver-mode`, `semver-skippatch-mode` and `replaces-mode`. The default is `semver-mode`. If you want to change the default, place a file called `ci.yaml` in your top-level directory (works for both `packagemanifest` or `bundle` format) and set it to either of the two other values. For example:
-
-```yaml
-updateGraph: replaces-mode
-```
+In order to have OLM enable updates to your new Operator version you can choose between three update modes: `semver-mode`, `semver-skippatch-mode` and `replaces-mode`. The default is `replaces`.
 
 #### semver-mode
 OLM treats all your Operator versions with semantic version rules and update them in order of those versions. That is, every version will be replaced by the next higher version according semantic versioning sort order. During an update on the cluster OLM will update all the way to the latest version, one version at a time. To use this, simply specify `spec.version` in your CSV. If you accidentally add `spec.replaces` this will contradict semantic versioning and raise an error.
