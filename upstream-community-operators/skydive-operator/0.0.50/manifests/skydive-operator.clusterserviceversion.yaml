@@ -1,0 +1,548 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    capabilities: Basic Install
+    categories: "Logging & Tracing Monitoring"
+    containerImage: docker.io/skydive/skydive-operator:0.0.50
+    createdAt: 2021-05-01T10:21:00Z
+    support: IBM
+    repository: https://github.com/skydive-project/skydive-golang-operator
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "skydive-group.example.com/v1",
+          "kind": "Skydive",
+          "metadata": {
+            "name": "skydive-sample",
+            "namespace": "skydive"
+          },
+          "spec": {
+            "agents": {
+              "daemonSet": {
+                "env": [
+                  {
+                    "name": "SKYDIVE_ANALYZERS",
+                    "value": "$(SKYDIVE_ANALYZER_SERVICE_HOST):$(SKYDIVE_ANALYZER_SERVICE_PORT_API)"
+                  },
+                  {
+                    "name": "SKYDIVE_LOGGING_LEVEL",
+                    "value": "ERROR"
+                  }
+                ]
+              }
+            },
+            "analyzer": {
+              "deployment": {
+                "env": [
+                  {
+                    "name": "SKYDIVE_LOGGING_LEVEL",
+                    "value": "ERROR"
+                  }
+                ]
+              }
+            },
+            "enable": {
+              "agents": true,
+              "analyzer": true,
+              "flowExporter": false,
+              "prometheusConnector": false,
+              "route": false
+            },
+            "flowExporter": {
+              "deployment": {
+                "env": [
+                  {
+                    "name": "SKYDIVE_LOGGING_LEVEL",
+                    "value": "ERROR"
+                  },
+                  {
+                    "name": "SKYDIVE_PIPELINE_SUBSCRIBER_URL",
+                    "value": "ws://$(SKYDIVE_ANALYZER_SERVICE_HOST):$(SKYDIVE_ANALYZER_SERVICE_PORT_API)/ws/subscriber/flow"
+                  }
+                ]
+              }
+            },
+            "namespace": "skydive",
+            "openShiftDeployment": false,
+            "prometheusConnector": {
+              "deployment": {
+                "env": [
+                  {
+                    "name": "SKYDIVE_LOGGING_LEVEL",
+                    "value": "DEBUG"
+                  },
+                  {
+                    "name": "SKYDIVE_PIPELINE_SUBSCRIBER_URL",
+                    "value": "ws://skydive-analyzer:8082/ws/subscriber/flow"
+                  },
+                  {
+                    "name": "SKYDIVE_PIPELINE_MANGLE",
+                    "value": "none"
+                  },
+                  {
+                    "name": "SKYDIVE_PIPELINE_TRANSFORM_TYPE",
+                    "value": "none"
+                  },
+                  {
+                    "name": "SKYDIVE_PIPELINE_STORE_TYPE",
+                    "value": "prom_sky_con"
+                  },
+                  {
+                    "name": "SKYDIVE_PIPELINE_STORE_PROM_SKY_CON_PORT",
+                    "value": "9100"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+
+    description: An operator to run the Skydive network monitoring tool
+    operators.operatorframework.io/builder: operator-sdk-v1.5.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: skydive-operator.v0.0.50
+  namespace: placeholder
+spec:
+  apiservicedefinitions: { }
+  customresourcedefinitions:
+    owned:
+      - description: Skydive is the Schema for the skydives API
+        displayName: Skydive
+        kind: Skydive
+        name: skydives.skydive-group.example.com
+        version: v1
+        resources:
+          - kind: Deployment
+            version: apps/v1
+          - kind: Service
+            version: v1
+          - kind: ConfigMap
+            version: v1
+          - kind: Route
+            version: route.openshift.io/v1
+          - kind: Ingress
+            version: extensions/v1beta1
+          - kind: DaemonSet
+            version: apps/v1
+        specDescriptors:
+          - displayName: Skydive Namespace
+            description: "The namespace where Skydive and its associated resources will be created. Default: skydive"
+            path: namespace
+          - displayName: OpenShift Deployment
+            description: "When true, resources that are OpenShift unique will be created"
+            path: openShiftDeployment
+          - displayName: Enable Analyzer
+            description: "When true, Skydive analyzer will be created, when false, it will be deleted"
+            path: enable.analyzer
+          - displayName: Enable Agents
+            description: "When true, Skydive agents will be created, when false, it will be deleted"
+            path: enable.agents
+          - displayName: Enable Route
+            description: "When true, Skydive route will be created (make sure to have OpenShift Deployment set to true as well), when false, it will be deleted"
+            path: enable.route
+          - displayName: Enable Flow-Exporter
+            description: "When true, skydive Flow-Exporter will be created, when false, it will be deleted"
+            path: enable.flowExporter
+          - displayName: Enable Prometheus-Connector
+            description: "When true, Prometheus-Connector will be created, when false, it will be deleted"
+            path: enable.prometheusConnector
+          - displayName: Skydive Analyzer Deployment enviourment variables
+            description: "Defines environment variables for skydive analyzer deployment, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: analyzer.deployment.env
+          - displayName: Skydive Agents DaemonSet enviourment variables
+            description: "Defines environment variables for skydive agents daemonsSet, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: agents.daemonSet.env
+          - displayName: Skydive Flow Exporter Deployment enviourment variables
+            description: "Defines environment variables for skydive flow-exporter deployment, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: agents.daemonSet.env
+          - displayName: Skydive Promethues connector Deployment enviourment variables
+            description: "Defines environment variables for Promethues connector deployment, please check [this link](https://github.com/skydive-project/skydive/blob/master/etc/skydive.yml.default) for more details about skydive environment variables"
+            path: agents.daemonSet.env
+
+  description: |
+    # Skydive operator
+    This is an operator to deploy skydive analyzer, agents, flow-exporter and promethues connector.
+
+    ## Skydive
+    Skydive is an open source real-time network topology and protocols analyzer. It aims to provide a comprehensive way of understanding what is happening in the network infrastructure.
+
+    Skydive agents collect topology information and flows and forward them to a central agent for further analysis. All the information is stored in an Elasticsearch database.
+
+    Skydive is SDN-agnostic but provides SDN drivers in order to enhance the topology and flows information.
+
+    ## Skydive flow-exporter
+    The Skydive Flow Exporter provides a framework for building pipelines which extract flows from the Skydive Analyzer (via it WebSocket API), process them and send the results upstream. read more [here](https://github.com/skydive-project/skydive-flow-exporter)
+
+    ##Prometheus-connector
+    Prometheus is an open-source systems monitoring and alerting tool. Many different types of data are collected by different tools and are forwarded to Prometheus via various types of exporters. For example, the Prometheus Node Exporter exposes a wide variety of hardware- and kernel-related metrics. We developed an exporter for Skydive that reports metrics of individual captured network flows. The connector translates data from Skydive captured flows into a format that can be consumed by Prometheus. The first implementation of the Skydive-Prometheus connector periodically provides the byte transfer counts for each network connection under observation. The code can be easily tailored to provide additional flow information. read more [here](https://github.com/skydive-project/skydive.network/blob/3fcd5f66c6926d96460af7e7420339e69480cad1/blog/prometheus-connector.md)
+
+    ### Default deploy
+    This Operator will deploy an Analyzer and an Agent on each one of the worker nodes.
+    For more information about skydive and how it works please visit skydive project on [github](https://github.com/skydive-project/skydive)
+
+  displayName: skydive-operator
+  icon:
+    - base64data: 'iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAvGklEQVR4nOydCZhcR3Xv/3W3Xmdf
+               tIxGy6ySLEu2tQA2iw0BG4zDFgfs8OKYGBJ2AnHY+UiAx2MzL7xAwCQQTAjGwkaWbWQ2g7FsbEuy
+               rF2yFksaSbMvvfdd631VXd0aaWZaM1JvI9Vvvv5u9+3b91b31P/WOVWnTimQSCRTIgUikeRBCkQi
+               yYMUiESSBykQiSQPUiASSR6kQCSSPEiBSCR5kAKRSPIgBSKR5EEKRCLJgxSIRJIHKRCJJA9SIBJJ
+               HqRAJJI8SIFIJHmQApFI8iAFIpHkQQpEIsmDFIhEkgcpEIkkD1IgEkkepEAkkjxIgUgkeZACkUjy
+               IAUikeRBCkQiyYMUiESSBykQiSQPUiASSR6kQCSSPEiBSCR5kAKRSPIgBSKR5EEKRCLJgxSIRJIH
+               KRCJJA9SIBJJHqRAJJI8SIFIJHmQApFI8iAFIpHkQQpEIsmDVu4CSC6MutWra7xIpFFTlAYPaIDn
+               NVBC6omiBCigEyAsDq0FpYQ9oZSmiKKkx50mRj0vCkKiqqpGHdeN6ooy5tn2wIjf3489e6zyfLvy
+               Q8pdAMm5qV2yZBEMYxUo7QCliwkhS0DpEigK2waLfX0KDBJK+6EoJwmlfR7wIvG8wwQ4rAeDh/t3
+               7hwodhnKhRRIhdHQ1dXied51VFGuUghZRYErQWlducuVF0Ki1PMOKYTs9ICdFNjpKcrzsf37h8td
+               tAtFCqTMVC1d2mAAr/I87zUAXg1g6XQ+p+g+qIafb4mqQVF1KJrOn/OHooEQwiovCFEyW1UDdR1m
+               Y+XOQz2XmVwAdeG5Dqjr8n3sGNdOw7MtUNeGa6XhOTb7wEy+3ikKbCGEPAVKnwo1NGw78ac/pc7j
+               ZyobUiAlZMHLXhZIDg5eQRVlNQHWUOClALqm/D8QBZo/CNUfguYPQ/UFoPur4K+qg+4PwWD7dANm
+               IopUfBS2meAfM4wQAlXN8AVqoBpBKMr0+2IIF5QGTffBMuNIRPuRjPbDNuMgqg8EChwzATs5CicV
+               y4jISsNJJzLiy39yC573HBRls6IovxpOpTbj6NH0zH7F0iIFUkTmrFzZbCWTryWq+mpK6RoQshyU
+               Ttkxwu7weqgWRlUdQg0tCNXPR6CqHoFwPfyhGui+EFTdN+X1XMdCOj7KxZKOjyAdH0M6McZbFyYW
+               w18N3VcFX6AKimLM6Lu4jol0YhjxSC9MMwnVqIaqBwHPzojETcO14rDiw7CTUbjpBJx0HK6Zp8Eg
+               JAlKH6eE/Mqz7V9Gjxw5OKNClQApkMJC6rq6rgEhN4HS1wK4It9vrGgGtGA1/DVNqFvQjZo5SxCq
+               nYNAVQMUtXAdjKxlSTGxcNGMcuG4tskruBGoguGrgm6E4fOHQadRJTzPQSo+iGRsAOlUEooe5MLL
+               jhpQz4HnCNHYKdjxYaQifXASY3BS8YwJNznPA7jPdd310cOHDxXsB7gApEAKQG1X1ypCyK0A3gFK
+               F052DBMDN5UCYf6obl6C+pYuVDcugD9cn/EXSgjzO6xUDKmcaEaRTo7BtWzeUrEWR/eFuXAMX5j7
+               MFOcCOn0GFLRQaRSURDFD9UITahalP05abhOCmasD6nBY7DiI1wwU5SPmWI/pobxo8iuXaPF+A2m
+               gxTIeTJ/9epgOhZ7JwU+AODys98nigqdmUXhOhjhOu4/MFTNQFVDC9+yB3OsVWZa+ULQfcHcg32+
+               HHiei3RiFCY31ca4cKxkFBQKF4qm+5naQdifqkIhCi8r4VsNjpVEMjEM27ag6mEoin/iRXit8zIm
+               WWoY6ZETMCNDsGIjk3UCpAhwHzzvuyOHDj1dml/hrKJKpk/tkiWLiGG8H8AdZ3e/Mh/CqG6Av7aZ
+               m0689+g80X0BaEYQuj+YEY8RyIjHCELzB7gjrvr8vKIWAmb2WOk4zFSctyzp6DCS0UGYiTGkY6Nw
+               rSSo54GyCkyp2Hqn93lT924RYS4SReEdD1nxK7y3TQXR9FyvG/NfbCbK+NgEsbBWRdW0Lw7v27ch
+               MzxTfKRApkldW9tCaNqnQcjtoFTPvUEUGFX1CDe1YH77KtTXz0FtXTNC4ercz8vMGZt3lzpwPReO
+               Y2VMHMvklYu9x+7cruPAdR3+3LFPH8Pfc224rjvuPQ+WbXHhaL4gDCMARfdD1XRoumidVJ1vszAz
+               j1lKrmXCTMW4EMxkBInRAaQj/bBTsYxznd9PKA3s5jJ1l/IORVH+ZXj//l8UWyhSIOegsbt7vksp
+               EwZrMXK1jVU2f/1ctK18BVqXXIa58xZBK6BjPV2y4vNcF45r87EMx2Vis+HRjJhSyTgOH9yBRCLC
+               Kz+7QzvpJFwzkb+XqcLhLQrwvuGDB58p1jWkQKaio8NXpygfBSGfAqXZeCY+MFc9vwOdV74KHZ1X
+               IByuKW858zA83IfDB5/Hsf3bkBrphRUfPedYhc/nw7KODly+bBmWdnSgKhzm4yhsy1owlRDE43He
+               2qXTadiWBdM0kUwkoCoKUqkUF2iSbZ3MtYLBYEbIjgNN06CoKlRNg6brcD0PluPAdl1Yto1UOo2x
+               aBSn+vpw7ORJfu5zwGy879FQ6FNjzz8/VrhfL4MUyCTUdnf/OaH0LgDt2X1MGOE5i7F0zWuwdPlL
+               4PNN4nxWCKdOvYh9O59E76HtMEcH4DkTYw1ZpW+ZOxedbW3obm/nYpjb2AjmHYyNjWF0dBSDg4P8
+               +fDwMGKxGJLJJP9cIBDgQvL7/XzLKj17rrKKr6owDIP7E7quw/M8/hn22rKs3JaJh1V+9pwJjZ2f
+               PdjxVVVVqK6uRn19PTTDADO0jp04gaMnTuDkwABiQoTjoUC/Rsgbhw4c2FrI31IKZBxNl10213ac
+               fyOUvi27jzmRgaZWtF/xKly+8uXCt6hM+vt6sPu53+Pk/mdhRocn2PBtixbh2quvxsvXrcOaVat4
+               K7Bjxw7s3r0b+/bt4xU0HA7zys4qPavgTAyswrNWgD3PCoFVevbIPj97HxPCVO9NtY99hrVA7JEV
+               ZDQa5S0We822TLCRaBSjsRiGYjEMRKM5seiadvfA3r1/V8jfVApEUNvV9deEkG+C0vrsPl9NE5ra
+               V+GKda/FvHmLy1vAPIwM92PntsdwfPeTMCODZ7xXV1uLN11/Pd7y+tdjeVcXr2hbtmzB008/jcOH
+               D/O7Nav4bMseTBRnV+DpVO5CCGSy12cfz1qenp6e1NatW0f37t2rxRMJ7O3pSY4lElY6lXrLyKFD
+               ewv5217y80HCHR1Nuqr+Jyi9KRvEp/oCqFrQjc7Lr8aKlVdDU/VyF3NS0qkkdu14Age2/AqpoZNn
+               vNexZAluf/vb8aYbboCh67yV+Na3voVdu3YhFApxUXR2dvLWYXyFrBSYzxKJROjw8LA9ODiY7Ovr
+               S/X09NBoNFpNCHkewG89z3vw5+vXP1/MclzSAqlfuvR6Sul/gdK52X3MnKpfuBRXrX0t75mqRDzq
+               4ejh3XjuyYcROb7vDB+jffFifPiOO3DDdddx2/6x3/0Ojz76KLf1mZnU0tLC/YbsXbncsHJFo1F3
+               eHjYHB4eTjFBjI2NKYlEosbzPNYcHgSwjxCyT1GUbZZlbVu/fv14p8oA0ACgtxjluyQFUnvFFbUk
+               mfwC9bz3Z81M1mqEW7rR2r4Cq9e9FoZRmU746Eg/tjz9KPr2bznDnGqor8ed730v3nzDDdxWv+++
+               +/DYY4/xFoL5DczhLVcrwVqDaDTK7v7O2NiYHYlEzLGxMScWiwUcxyGEkMOU0hcIIXsIIfsJIQcA
+               vPCTn/wkMY3T3wLgZgBvLEbZLymB1HR0tBNCPkBSqXcByHnbvro5qJrfgc6la7D88pdBKXFc1HRw
+               PRf7dj+Dfc//EdHje+HZme5P1gr81Vvfio+85z3QVRUbNmzgLYZhGF4gEHDYVsl0vyqUUqIoiuLz
+               +VTWihSjBWEOdjQatUZHR9NjY2NmJBJRLMsKU0p7KaUHsyLwPO8Fz/MO3Hvvvacu4HLsH3UngA8V
+               8CucwSUhkNrOzleCkI8S4CYecip8DUUzEJrfDl91I6qq62HbJnY894dpn1fVdB6LpGoaFEUV3ZwZ
+               f8UwMmHp7HX2rs2Oz4af6LoGQiavoJnRcpuPuNuOxQf7Dh7YjqGeA4ideCHXO9U6fz6++tnP8h6p
+               J554Avfeey+llA77fL5HNE1jZsmoaZoRRVFYBQ0TQqo8z2tKJBKrVFVdSQgJB4NBz+fzGVVVVWQm
+               rQtrFeLxuMdag1gslo7FYk4qlQq5rpvwPG83gG2EkO2Kouw0TfOFs8yiQnEjAAfAY0U4N6fybpUF
+               pLqtrVNR1a8TQv58/P7MKPg8BBpbyhYUOBMo9ZDoPYL0yGkz+8Y/+zN86ROf4CPo3//+980DBw5E
+               TNO8/eGHH/7ldM9766231hFCrqGU3qJp2ltCoZBWU1OjV1dXT+hZsiyLxmIxi4khkUg4pmkyMZwE
+               sEVRlC2U0h2e5+346U9/OlSs32ESHgfwHQA/K9YFLkqBMB8DyeRnCCEfHB8eogXC8DfM5923FxJI
+               eL4QQrhPMBmaamSC+cbhug7G+o4i0fdizqRilfVDd9yB9912G3p6evC1r30tbdv2Lwkh71q/fn3k
+               fMt28803G4Zh3Oj3++/y+XytoVDITafTZiqVsk3TDLquyyr+VkVRniKEPKvr+nM/+MEPYud7vQKw
+               VgijS7QiReGiE0hNd/erFUp/BGBBdp/qDyE8r43P1lNVDR0dK7CgpY3PUciSGfmdfLaerhuT+iUq
+               nws+0UpllVjXLqxreHi4D4/e968Y6jk9yY454l//3Of4QN/o6Cg+9alPmbZtf3rDhg3fuKCLjePz
+               n/+8cvjw4Q95nnc9gM2shbAsa+v69etHCnWNAnG/MK2+XcyLXDwCuewyo85xvgBK/zE7tY2ZUsHm
+               hdyc0nUd7W0rsHz5VVg0pxFzav0X5Ix7lMJ1KSzP41vHozyuyHE88ZzCzu53Pf56OjDbfs/2P+IP
+               G77LAw4hHPG33XgjPvb3f4/62lqcOnUK3/jGN1LxePy/77///vec95eYvbQB+JPYTqen67y5KJz0
+               +vb2Vs+yNoCQq7L7fHVzEJ7Xzn2M9vbLsPrKV6CjpR6dc6sQ9GmIpmykLJdXbltUYMfLVG7bybzm
+               +1wPTq6iU9he5jWlhY+yTqWS+O0D38GRPafnBa278kp89h/+gcdKMXbu3InvfOc7puu63161atXH
+               77///oKXYxbwTwD+vdjiwMXQgjR2d69xKd0IYB7E5Jzw/A7uZ9TXN2PNmmvRtXgRrlhUh4Ch4cXB
+               OI4PJZBIF81snTY1IQMaIRiOmxgZ6sODP/wCoqP9/L05TU345Ac/yJ3xLL/+9a+99evX267r3rpx
+               48YHylj0ctIMYC+AZQAGi32xWd2C1HZ1vdkF/htAiL3WglWobl3GU+VcseoaLF16JTrmhLFsQQ2O
+               DsZx4GSMtxaVwPz6AKJJG5G0g6NH9mDTj78My8xkwLnummvwlc98BnU1mVB6x3Hwve99z9y5c+eI
+               ZVmve+SRR3YXuXhfBbAHwI+KfJ3z4UMAfloKcWA2C6S2s/N2AvwHKOX+Bmsxwgu6UFPbiGuuvgH1
+               dU1Y0VqDpuoAntg3iEiyQtLLEoKFDQH0jaVhOR52b38Cj93///jUVebc3/m+9+Fvb7kll8TBsizc
+               dddd6aNHj+72PO+GRx55pBTZCucIgVQa7Eb4bgBXl+qCs1IgtR0d7yKEfD/rjPsb5nN/o61tOdau
+               vQ66pmHlwjpeyR7f1w9vmg5ysVEIQWtjECdHktyBf/KxB7Dtt//D39M0DV/8+Me5M57FNE3ujB8/
+               fnwnIeTPfvGLX0yeAqTwVAEoZxfuVDBx/B7A4VJdcNYJpL67+28ppXdnxRGa24Zg0wKsuPwlWLni
+               JXzONRNHJGXj6ECp6tP0aKkP4vhQkveAPfH7B7BdiEPXdXz7y1/GdVefvjHG43F85StfSQ8NDW1O
+               JBI3bdq06ZxT6wpIuAIFwurqRwC8vdQXnTXULV16E/W87+XEMa8d4eaFeOlLX4fFizr5MZ1zq3Fy
+               NIWhaGVltGQ+R99Yis+Ye+rJX+L5x+7LvfeZj3zkDHEwn+Ob3/xmamBg4HcNDQ1vZY55iYvLWpDK
+               urtkhHEIQNHmn0/GrBFIfUfHy6jn/Qzgs0K5OEJNrXjFy29ES0tmMtOChiBOjCSRNMvfQzWexio/
+               xhI27yB4fsdTeP4PP8/NDX/3O9+JW9/yljOOv+eee6wTJ04csSzr7XfffXepxYEKNbE+BuCTpb7o
+               rBBIdVtbp6coGwnAs68FmloRbFyAl7/8DTlx1AR17vg6FdJLlYWViwmDifbQkT3Y+vgv4CQzdW/V
+               8uX46N+dOUN006ZN3rPPPjtq2/ZrHnrooWSZil1pJtb1oq7+utQXrpwpZFPQdNllYVVVf0GARvba
+               V9uM8NwluPrq69G6oI0fw/yOaMquOHGoKoHfUHkP2tBwH5558lGkBnv4e4FAAHf98z9DGxdy3tvb
+               iwceeMC1LOv1Gzdu7C9j0SutBblTdD2XvLel0gVCHMf5AQi5jL3QQzUIt3Ri2bKrsHhRV+4gvrxF
+               ZXRUnUFLbRADkTQs28TmzZsQO3Uol5DtvbfdhoUtLbljKaX44Q9/mCKEfGvjxo3by1hsiBakUnyQ
+               VSIgsWgRu/moaIHUdHZ+DJTeDJF2p6p1KebOXYhVK68pd9HOSWOVD4OxNBfu00//BpHh3twMQCaM
+               v73lljOOf+6553Ds2LG4bdufK1ORs2QjNitk4AifAHAXgHL4YpUrkMbu7jWKonyJvyAKqlqXQTMC
+               WLf21VCUyo6QMTSVm30py8Wx4wfR03M4Z1oxPnzHHTyRwniYv2Hb9pfK6HdkqSTzagmA1wD4z3IV
+               oCKd9Mbu7iqX0nvFhPxMqHqwCkuXXoHq6spero/BfKHBqMlz527b9jhfvizbeixubT0jvopx7Ngx
+               nDx5Ej6fr2wVYRyV5KB/FMDd5SxP5Qlk8WK/Q+k9RGQ1NKobebi6oqpYvnxtuUt3Bq7r5qbE2s7p
+               pNM8naZl4sSJg0ilEkiP9uU+8553vnPCXPBnn33WUxTlwfXr11eC3V8pYyD1IiHDhKUlSklFCaRq
+               yZJuTdfvFSszZdJ9zs9k/2yZvwQ+Y+rlxy4E13NhmSmeJidtpWCxO346BdNM8wBC00rx16xFYA63
+               bZlcAO651uQT02VNEaFbU12Nm173ugnHPPPMMynbtu8typebOZViYn1QTIoqSjqf6VIxAqnr7LwV
+               ivK9bKJoniR60WV80hP4XIkEtj33BHTDgK4ZPPGxrk0tGM+z+UQlVpEJPJiWmanwlqjgtpmr/LZd
+               PP+PiSObt+qtb3gD/L4zyyzy3xqU0t8WrRAzoxJMrCCA9wG4tszlqAiBkLqlS78Ez/tktq9WD9Xw
+               Hitl3NoWQ0O9/FFO+Nobmg+aWINDUXWevYSVUzd8PAOjKtbmYMe8sHszRoRzrus6z3R4Ntu3b2fv
+               Pblhw4ZyO+dZKsHEul1M991X5nKUWSAdHb46Vf0xPO/m7K5g80IEmwuf0VDlqxkpvFLrrBLrPhi6
+               D5rhh8YqNKvgWiZXFFFUnjhO0328wuu6jz9mkgHl0J4nMdZzIJds4eY3vhHz5syZcNzmzZsTpmn+
+               V0G/7IVRbhNLFUGJf13GMuQom0Dmr14dTMXjvwClGaOcd+V28xxVZ1Osyu03VIQMDZpKeJdswnSm
+               PXc8H/0nD+L4C9uQHDjOXweDQbzvb/5mwnE9PT04deqUDqCSZgeW28R6G4BTYs552SmLQOasXBlK
+               xeOPgNJXQSRXYP6GFsitUwPd8GP+ouWY37oUvmDVtM/NKnvQ0BDUVT73POjLiCBoqHz8hM83B4Xl
+               0EwISNziXbLeBQ7Fh30a4qaDZHwMB3Y8jnjvkVyCtw/cfjufQjueWCzGI3YVRfnGhg0bym3zj6fc
+               JtZHAXyxjNc/g9ILZPVq3YrF1gM4LY7FK6D5Q5kCaQZaO65E65IVp1PqECBkqJmK78tUdrYNaEpO
+               BOw9JgTTcXlcViTlIJq2uQj6I2lE0w5Mu3jr7i1sDGLvySgO7nkSZmwYVjSTP23RggW47S//8oxj
+               HcfB17/+9VQikdj4wAMPlHvk/GzK2YK8GkANgGknvys2pRYIqYvHmb39eoieqpolK6GKRNFzF3Sh
+               bdlLYYglky9bUIO1i+u5KXT22DmzhEYSFoZiJg71xzEUNTGcNGE7pQ/K0lWCxrAP6WQUo4M9iJ86
+               vQb+P99554RR802bNnkDAwOHGxoa/lc5AvDOAWtByhUomQ1KrJio05IKpLa7+zOg9FaIlqNm8eVc
+               HMxf6F71SjTNzUTnGpqCa5c2o735tMnleUBfNIXjI0k+ZXUwZlZMgGJzdQCjSRuDvS8iPdKXWxjz
+               +uuuwzVrzxzcHBkZwUMPPeS4rntHmeZ6nItyOemXi8ebynDtKSmZQMS6f5/nL5hDvnA5X3IgGK7F
+               5WtuQEAshtkQ9uGGlXNR7de5X3BiJIVDA3GersdyKubGcgZzavw4NZZEdKwfyaETfJ9hGPjkBz4w
+               4diHH37YJoT8/MEHHyzpzLgZUC4Ti7Ue/1pBQZKckgikvr29lWbSgfLgyKqWTh5bVds4n4tDFWk6
+               l86vxiu7mrgwdhwfw66TEcRSlXiTPZOmsA87jo9i5OQheFZmqu+bb7gBLfPmnXGcbdt46qmnqG3b
+               3yxTUadDOVqQBQDeUMxlDM6XUghEoZp2DyitZS8CjS180lNd4wKsWHs978JlDsZL2xtwRWsdDvbH
+               8NShYaSsypo2OxWEELg0k4kx2v9ibv/Z4ewQg4IATmzcuLGgK7EWmHL0Yn1UROwWfBnnC6XoAqnt
+               7Hw/KOUhA6o/hOCcxaiubcLla1/He6mYv3HDynmo8mu4f2sP9y1mE3zeR9SElU4gPTrA93UsWcJX
+               lD2bffv2ObZtV3qu0FKbWHUAbsvG31UaRRVIY3f3fBf4Ivemmd+xoBuBYDVWvuQNfNAvYGi4cdU8
+               xFIONu3oqZishzOhpdbPs6ikkrHcbMF1V0z+vz548GDKdd1nS1zEmVJqE+u9AB4E0FPCa06bogrE
+               9byvghC+1FmwaQH0YBjLr3wNNN0Pn6biTVfNx0DExO/39VdcX+d0aa72Y8eJCKz06TrVOm4q7Xj6
+               +vqCiqIUdVXWAlBKE8sH4P0AJoY4VwhFm1FY29W1CoRwQ1wx/DwTSWv7laiunwtFAe+pGo3b+MP+
+               gVkrDlUh3ESkHoWVPh1rWFtdPeHYdDoN13XVMo4xTJdStiDMtNpWoWlOOcWbckvpv+QSvM1ZjGCo
+               Bos7MqbHVYvrUR3Q8dj+vgsO8SgnC+qDPIaLYZunE9XZzsQOhmQyCUVRvI0bN5Y7UjYfmggWLEXW
+               PSKCEr9WgmudN0URSENX11JCyE0QjrmvpgmLu9dxvyPk03Blax0e2ztQllHvQtLRHEYyKxA7lduf
+               Sk+sX47jgBBiV+DI+XhK2Xq8WZhyT5ToeudFUQTiUfrh7NojwaZWBEI1aBYzA9ubw+gZSeLkaKVM
+               fzg/fJqCtqZwLheXM27SVf/gxMz8gUCAmVi+a6+9thLm4ExFKf2PfwTwf0p0rfOm8AJZvNif8z10
+               H4zqBrQsuiyXzj/kU7HrxHmvNVkxLG+p4ZHD2Qwrrnc6ELLn1MSlv5lAGD6fb6KDUjmUqgV5BTKJ
+               ADeU4FoXRMEFUu/z3SQiMvmAoKKqaG7pyL1/qD+OU7O89fDrKq5YyMc9oYmVaR3Hzs2APDGJQDRN
+               g2EYlqZp80tc3JlQqjGQOwF8o5KCEqei4AKhlObWJGe+R3XtnFx0LoMHGRb6oiXmFd1NXCTgLWLG
+               YrKtFI8tYxw5fhyOOzG0vqmpySSELC1xcWdCKUysbrGE84+LfJ2CUGiBEAq8FsK80vwh1DZU8g1z
+               5qxeVMed8yz1oUwcmWOZUH1B/tw0TRw9fnzCZxcuXOhTFGVZCYs7U0phYv0TgH8DkCrydQpCQQVS
+               3d7eTjLLd0EPZ0yQ6tqmQl6ibCiE4JrOJqxrbzhjf21A5+Mhlm1CC5ye+bj3hRcmnGPx4sWGz+d7
+               ZUkKfH4U28SaK8LZv1vEaxSUggpE07RcjIUuKksgWMk+6bnRVQULG4K4blkzqgIadp+I4NkjI7yb
+               +uHnT+G+LT2wHIuHmWRbEMa+Q4cmnKu7uxuu677s85//fKWmfC22ifUPAO4BUIp1FgtCQbscaWZh
+               d07WHtfHVZrZAmsRAobK10M3HRfHh5M40j8GM51AOhlDKhFFOhnh21QyinQqc9PVAqHcOQ4eOTLh
+               vAsXLgQhRN+6devlAHaU9EtNj2KaWOzc7wKwpkjnLwqFFQilc7JTYxWR1I0olXqzBF9ZljnXppni
+               W9tM8QyLppnkz5kgTDMBM5WAN40sioQovCfLcyxEotFJ3ifcUT916lR7hQqkmCbW3wN4FMCxIp2/
+               KBRUIATw555nhVHiLitPpBG1eCVPIp2K8zAQi6cPTcKxM8/tdAqOU5jJa6rh5wmq+fWFkEKh0KTH
+               mqZJKiBz4VRUFcn80QF8QIyezyoK3YJY2QFBKmKsWEXVdKNQF0Ca3dVTcW7asC0TADN7LH63ZwIo
+               /HwSRdOhGEFoRgiqPwzVCEL1haH6g9B8ITjJKIb2/i6TYlSk+pnbNHnnRDqdVgkhE5uXyqBYLchf
+               AdgLoNwLA82YwrYgitKXzaTg2Wl+Z7XMBJ93Pm2YCFIxnl8qER8bZ+9HuBhooYIbmTmk+7gpqOp+
+               noxO0f1QjADfr+pBXn6271wZFa1YJrTEs0+3SJNlUURm2q1S4S1IoctGxAKcHy7weUtCoVuQA1kf
+               xE7GoIdqERsbQm3DxPkRrKKzSp+IDiMaHUYqNopkYuyMiUczIlfhjUylZxVd1cW+TEXn7+lG5rWm
+               X/gXFri2MK/GmWxzGidmiEQmR69n2/b0M+GVlmL0Yt3IfiIAvy/weUtCYQXi8z1OLMsBpZqdiABN
+               rRgb6cO8RcuQjI0iERtBIjaKaGQQ8cjQtBxfVvE1IwjFH4Sq+UE0HzRfkFd4ld/xhQC0Aplx50HO
+               rBz3faqrJtdAdXW1E4vFmktWuJlRjBbkTgBfrvAo5ikpqEAiu3aN1nV3W/y8whYf7j+KzY/+MO/n
+               mEOv+mugB6qhBsLQ9ADUQBVUI8QnWxGxkm1d0IfGsB91IYOnBary6zBUBQPxNI4MxtAzkihIbt2Z
+               UBM0EFdFa0ROp7fzvMnDjGpra8nJkyfnlqp8M6TQPshaAK1inY9ZSUEFUrd6dQ1iMT7wMdUdndnz
+               eqgOeqieC0IP10PzVyObOjHk09FSF+SPppCfL8LfEPZxcSRMG72RFHojSZ6Hal9vhG/LOelqbrUf
+               A9kR9HECcSaZNMVoaWkJHjhwoCITFBTBxPq4CEqcHSlqJqGgAnFGRuZqIs2mMq7nik+5rW+Fr3Ye
+               jKpGPl7AqAnoaGuqzgiiJoj5tUF+R05aDm8NWOXf3jOM/rEU+mIpvhh/paEpCpoamzByELnvxbCm
+               WJSnvb1d2bx5c6WGmxTSxGoTYe23Feh8ZaGgAjF0vSZrWBAlc+rQvKWoal3BG4j6kMEF0dGceTSG
+               M4OJY0kLBwei2LTnJI4Px9E7lpw1Bisz6Zobm3BQ1UHU047/yb6+SY9va2uDZVnd1157rf8Pf/hD
+               Kaa2zoRCmlj/BODfASQKdL6yUFCBuIoSJML2znaN6qEatNaF8K5XdKE+eLpVYWbRtmNDeOrQIF4c
+               is3auem2S7kJqFc15nqzGC/2TJ7FpqmpCTU1NZbnea8B8EgJi3ouVJFlpBBRts0A/gJAJUcuT4uC
+               xoEQz8tN/MiOpKuaHwvqQ2eIgwniK5t24cd/OozDg9FZKw5G3LRRH/LBqGriN4Ws73Xk6NEpP7N2
+               7Vq/rutvLWExp0NY3O0L8c/4IIB7AUycezzLKKxAFOV0ZKIQCDM7OppOd3n+6dAAvvW7veiPzorp
+               AOcklrbRXOWHryozcq6KdU4OvvgiRiOTTy2+8sor2d36LRUW1Vso/4P9AO8B8H8LcK6yU9B/kOd5
+               uQCkrImlaDramjMh74cGorhv24sVs2xBIUhZDhbUhaCH63gICjMpIbp5/7R18hS8nZ2dUFU1sHXr
+               1peUuLj5KJT/8W4xKDgx3n8WUtgWhNLT3UxCBYqq8UlFjId29FxU4oCwR2zPQ0PIB3/9AhhV9bn3
+               Nj87eZZRRVFw1VVXKbqu/0UJi3ouCtHFq4lcV5WcvX5GFFYgqpqLBM2OKquqymfjDcXTODZcyTnT
+               zp9Towksb6lDoKGVTzNW9Ezv3K8ffxymNXnE8Lp16wxVVd9R4qLmoxAm1tsBHAZQqWufzJiCCkSh
+               NCcQz8mMA3gUSNsuhuOzK2v7TDg2ksCK+XV8AFTzheAT04wj0Sge27x50s8sX74clNLGN73pTZeX
+               uLhTUQgT62OVnilxphRUIDalI9nnnpsRiOvYvOVIFXEBzXKzrzeCzuYqvoSDv2EhfDWnQ63uf2Ty
+               nlxN07BixQrP87wbS1jUfFyoiXW9MLF+VcAylZ2CCiRUVdWXzXWUXafPc0w83zOSGxS8GBmOpzEY
+               T+OqRY0INrdxM0sTS1c/8cwzOHbixKSfW7p0qd/v919X4uJOxYWaWNkFOC8qL7OgAjm1bVsSAE/n
+               4aYzA6h2MoJnXxyET8/4IhcrO0+MYM2iBh5m76uZC39dZvk1z/Nwz/r1k35myZIl7P1KmaN9ISbW
+               KpHv6mcFLlPZKXziOOBJiLkRTioOKzrAwzF+u/cU2hordRrEhbPzxCha68OYWxNAsGkJ90Oyg4b3
+               //KXiCcmRly0trbCsqz6m2++uaYMRT6bCzGxPgHgLnY/LHCZyk7BBaIqSm4ReDMyACvaz5MjPHNk
+               EJpWSeNiheXkaJKvkLVmcSP8dS3Q/VXw12ei2hOJBH62ceOEz/h8PuaLOKlUqhLmh5yvibUEwGsA
+               /EcRylR2Cl5jhx3nEQoMsefp0X7YqTiSg5kUOAf7Z3/S6qnwKMVo0sKaRY08oXWwuR3++nl8whfj
+               v372s0nXDQkGg5ZI5FxuztfE+iiAuyt4GvEFUfhb+qFDpkLIv0OMhST7jyLWswdOOl7yyUylhnlY
+               tUGDRyoHmpZwf8Rfl5mb3jcwgEd+85sJn/H5fJ6iKOEyFPdszsfEqgdwC4BvF6lMZacoNg8Nh79B
+               xVJj6ZFepMd6MbL/cbjWxRF/NRXZKIG1ixt4iE2gqQ2BcfPx//OnPz0j6YTruhgbG/MBmJjIt/Sc
+               y8SaLyY/jeeDYrZgb5HLVjaKIpDRbdsiiqLclu3yjZ94AWZkECP7n8j1bl0s+DSVtxg3r1nCl4Rm
+               rFzQwNcuDM/r4tkWjeqMBbX/0CE8uWVL7rPbt28HIWRo48aNExP5lp5zmVgLxYKbt4rXQQDvu1iC
+               EqeiaKsdjezf/6u67u6vgdKPU89F5Ogufvcc2vsYatrWwl9bqdOywX0IhQB+TYOuEp6fN9tNHTAy
+               QZhBQ0NAV+E3NL7K1ImxBH62Jc5TlTJUonATK9C4GFZ8DFaUu2X4/k9+gpevW4fR0VHcc889adu2
+               P1khYwfnMrGyftJdojVJA9gMYF+JylcWiroc2Oi8eZ+p6+1tA6U3M38kemw3qhddhtEXNiPcsgzh
+               +cvOmKZaKXge5U1f3J2819JzbHhOmufBYlvXNvmAqGen4VmmeC+zzWZczKYkfWrLFjz4yCN47Ne/
+               TqXT6Xs2btz4oxJ/vak4l4k1T0yoYk7VZ5HJovktMbX2pHjNhF6pSfHOi+KP3F17rVbX2/s/TCSZ
+               KyqoWtDFF9fRfGFUL7kKvury93JmKn0Knm3DtVPwrDQ8z4ZnJjOV3bV4BWd+FJ1EOKyVdM0Uf59v
+               zWSmY8Kc6HctamqyFtTVvfvhhx/+cYW0HoxTAFbn8Se+AOAzZ+2zRapSV8wivENkb79oKM3Q9rXX
+               avW9vXdTSm/P7go2L0KweSF/HmhchNCcjlxyt3NlMpwOrMVid29+Zxd3d5dvTVDH5BU5s9/i27zn
+               8tzM+cSxmc9YGeHYZuY600x5qqrqWMgw3npsx45KS6QWE6bTVK3IDwH8zRTvjYgQ9y8WsXxloaSx
+               H3Xd3Z8GpV/IXtdXNwfh+R0TzCyiaDwVKOGZEP1QVCOTIVHPpAklqgHqOaKCps40cbIiGJedkVIP
+               lLUQrpOr7NntGfuyzz03s198Jpvja8YQcoxSup3540RRthPH2T5y6NDkgVnlhf0DLABGnnUDNwG4
+               YZL9F604UGqBMOq6ut4h7kY8E7weqoEWrM6IhBA+wYoXjG2zr4nC38+2LERVQV2XRwyzOzmvyOyO
+               zrc2N4EKUsGnRwqUHqaKcoAQ8gJ13YMKpfvdQGB/ZNeu0Rmch4hHORa2rBImVr5YoGdFIrjxjIhe
+               rC8UuXxloyzRg3Xd3ddQSjeQyhhBnggho6A0QoFhQsgQPG+IPQchw/C8E0RReuG6Pa7ffyq6Z89I
+               ga66BsBGMa6wXvQQlUoszAHfJkysqdgBYOW41xe9OFAugSCznmGHqqoPAlhe8JNnKvgIBUYJISOg
+               lL+Gqo6xik/Ya4AJIEoUJQLHiYDSKAiJjBw6VM5emEViDY2bRXTsJiGWTUXOTtgF4GGxnYr9okwQ
+               4vgugE8XsUwVQbnjz9Wa7u6FnmUZPp8v7FLqVxQl4HpeSGH2MKU1lFIVilIruqSrqOf5CSEBSmmK
+               ENJPKe0lwKCqqn3U8/qGdX0Qe/YUZmWc8rJYLHhZCrGsFvFUq/Mcc0wMFo6KhHAXvTgqER+AlmKP
+               z8xCFov1NTaLXFP3ALipgL9TCEC+9duZ8xcRSeX+d4GuOSsodwtyNivFHbIJmYjgPjEINdV2YDYn
+               Rj5PxrcsXWLdv2KbYY3i9/6mmPtxyVBpAhlPnXAa5+XZLhT99r2iF2aqbc/FOJmnCGLxiUE/Q/xe
+               2d+sGsA7hBl2SVHJApkuUkgZphLLL0Wlz8dcEXy4SISwM44Is2pMPMrR/Vx2LgaBTJdLSUhdQih/
+               CaBBdB3fI7pyxxMQCaZfAuDPhcgU4XMMiTASJrSfC7O2UsJiSsalJJDpUkghHa8AH6lbiGVY9D5l
+               CYrvcadI2VMjQt6zUNFqHAWwRSSj/u1sX85gpkiBnD+VKKTqaUbTsv/7q8R8jpeLCN3JwqqzIkmI
+               1ufTAHYVYaHPikUKpPiUUki3iElNXxUDf1P5DdVigZv3ivJhGnVhAMBDYoBw8qzcFyFyvKH4jIrH
+               nnMcN5mQ2gBcMwMh9Yju2HuFk71NzN0YP6VXF3ms1onxj+neJBsBXAfgT+I6/Rfwm8waZAsyu1CF
+               OZQV0WQtUouYm5H936aFH/E5AA8I3+NtIodu/QymXXvCj9kI4HvCL7nokS3I7MIVLcWpSXqkIHqk
+               Noqo3FHR2iQBvCjC2auEidYEwJxhTgIiHPklwvF/UfR0XdRIgVw8NAD4KxFh+0cRXDhZV/Rc8X+v
+               EU74dK0IIs7HWqB2YZ5JgUhmDcOTTImdjLjo6eoTFX06ZMc/fKLVCQihHbuA8s4KKi9jgqTYsFZg
+               tzDX6DQH/7ITuUaFaea7VG6uUiCXHqbwH/4oWp3pYo/za0YulVF1KZBLEyaMnwgH3jpHZadCHGNC
+               GEOik2Am04lnLReePkQyG7HH9XA1iTEOVZhSdNyWil6vIeFvML/lAICnxFqEF8PEtLxIgVy6mMIX
+               yWaXrxJ+hiIEpIho3iExENknlnfeIEy0SyLcRArk0oUKcQyJ0fdhkWkmKUyprCh6xaq1PxczGnvE
+               MZcEciRdAjEmsgzAlWIkvkpMmkqJEfPfCFFcMsLIIgUigagHfjH4t0D4JZbwNyLCHLskJ0xJJJI8
+               yG5eiSQPUiASSR6kQCSSPEiBSCR5kAKRSPIgBSKR5EEKRCLJgxSIRJIHKRCJJA9SIBJJHqRAJJI8
+               SIFIJHmQApFI8iAFIpHkQQpEIsmDFIhEkgcpEIkkD1IgEkkepEAkkjxIgUgkeZACkUjyIAUikeRB
+               CkQiyYMUiESSBykQiSQPUiASSR6kQCSSPEiBSCR5kAKRSPIgBSKR5EEKRCLJgxSIRJIHKRCJJA9S
+               IBJJHv5/AAAA//9U0P9agDvNKwAAAABJRU5ErkJggg=='
+      mediatype: 'image/png'
+  version: 0.0.50
+  provider:
+    name: Skydive Community
+  maintainers:
+    - email: 'oran.nahoum1@ibm.com'
+      name: 'IBM'
+  links:
+    - name: Skydive
+      url: 'https://github.com/skydive-project/skydive'
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - skydive-group.example.com
+              resources:
+                - skydives
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - skydive-group.example.com
+              resources:
+                - skydives/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - skydive-group.example.com
+              resources:
+                - skydives/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - authentication.k8s.io
+              resources:
+                - tokenreviews
+              verbs:
+                - create
+            - apiGroups:
+                - authorization.k8s.io
+              resources:
+                - subjectaccessreviews
+              verbs:
+                - create
+          serviceAccountName: skydive-operator-controller-manager
+      deployments:
+        - name: skydive-operator-controller-manager
+          namespace: skydive
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                control-plane: controller-manager
+            strategy: { }
+            template:
+              metadata:
+                labels:
+                  control-plane: controller-manager
+              spec:
+                containers:
+                  - args:
+                      - --secure-listen-address=0.0.0.0:8443
+                      - --upstream=http://127.0.0.1:8080/
+                      - --logtostderr=true
+                      - --v=10
+                    image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+                    name: kube-rbac-proxy
+                    ports:
+                      - containerPort: 8443
+                        name: https
+                    resources: { }
+                  - args:
+                      - --health-probe-bind-address=:8081
+                      - --metrics-bind-address=127.0.0.1:8080
+                      - --leader-elect
+                    command:
+                      - /manager
+                    image: docker.io/skydive/skydive-operator:0.0.50
+                    name: manager
+                    livenessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: 8081
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+                      readinessProbe:
+                        httpGet:
+                          path: /readyz
+                          port: 8081
+                        initialDelaySeconds: 5
+                        periodSeconds: 10
+                      resources:
+                        limits:
+                          cpu: 100m
+                          memory: 30Mi
+                        requests:
+                          cpu: 100m
+                          memory: 20Mi
+                      securityContext:
+                        allowPrivilegeEscalation: false
+                securityContext:
+                  runAsNonRoot: true
+                serviceAccountName: skydive-operator-controller-manager
+                terminationGracePeriodSeconds: 10
+      permissions:
+        - rules:
+            - apiGroups:
+                - ""
+                - coordination.k8s.io
+              resources:
+                - configmaps
+                - leases
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+          serviceAccountName: skydive-operator-controller-manager
+    strategy: deployment
+  installModes:
+    - supported: false
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  keywords:
+    - skydive
+  maturity: alpha
