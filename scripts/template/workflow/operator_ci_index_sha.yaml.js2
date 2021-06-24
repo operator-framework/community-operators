@@ -1,0 +1,51 @@
+name: Operator index sha sync
+
+on: 
+  workflow_dispatch:
+    inputs:
+      kubernetes:
+        description: 'Sync index sha for kuberentes'     
+        required: true
+        default: '0'
+      openshift:
+        description: 'Sync index sha for openshift'     
+        required: true
+        default: '0'
+env:
+  OP_TEST_CONTAINER_OPT: "-t"
+  SCRIPT_URL: "{{ default_config.testing.iss_script_url }}"
+  GODEBUG: x509ignoreCN=0
+  OP_TEST_INDEX_MIRROR: 1
+  OP_TEST_MIRROR_LATEST_TAG: "{{ default_config.production.index.latest }}"
+{% raw %}
+  QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
+  QUAY_API_TOKEN_OPERATORHUBIO: ${{ secrets.QUAY_API_TOKEN_OPERATORHUBIO }}
+  QUAY_RH_INDEX_PW: ${{ secrets.QUAY_RH_INDEX_PW }}
+  IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
+  IIB_OUTPUT_REGISTRY_TOKEN: ${{ secrets.IIB_OUTPUT_REGISTRY_TOKEN }}
+
+jobs:
+  k8s-index-sha:
+    if: github.event.inputs.kubernetes == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3600
+    steps:
+    - run: |
+        echo "kubernetes: ${{ github.event.inputs.kubernetes }} latest"
+        bash <(curl -sL $SCRIPT_URL) kubernetes latest
+
+  o7t-index-sha:
+    if: github.event.inputs.openshift == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3600
+    strategy:
+      matrix:
+{% endraw %}
+        index-tag: [ {{ default_config.production.index.tags|join(', ') }} ]{% raw %}
+      fail-fast: false
+    steps:
+    - run: |
+        echo "openshift: ${{ github.event.inputs.openshift }} ${{ matrix.index-tag }}"
+        bash <(curl -sL $SCRIPT_URL) openshift ${{ matrix.index-tag }}
+
+{% endraw %}

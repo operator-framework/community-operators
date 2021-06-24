@@ -1,0 +1,155 @@
+{% raw %}
+name: Operator Workflow Complete
+
+on:
+  workflow_run:
+    workflows: ["Operator test"]
+    types: [completed]
+
+jobs:
+  pr:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: 'Download artifact'
+        uses: actions/github-script@v3.1.0
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{github.event.workflow_run.id }},
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "pr"
+            })[0];
+            var download = await github.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip',
+            });
+            var fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/pr.zip', Buffer.from(download.data));
+      - run: unzip pr.zip
+      - name: 'PR Number'
+        id: pr-number
+        run: |
+          PR=$(cat ./NR)
+          echo "::set-output name=pr::${PR}"
+
+      - uses: actions/github-script@v4
+        id: pr-labels
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: | 
+            const labels = await github.issues.listLabelsOnIssue({
+              issue_number: ${{ steps.pr-number.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+            return labels.data
+      # - name: Labels
+      #   id: pr-labels
+      #   continue-on-error: true
+      #   run: |
+      #     curl -L --header "Authorization: token ${{secrets.GITHUB_TOKEN}}" https://api.github.com/repos/operator-framework/community-operators/issues/${{ steps.pr-number.outputs.pr }}/labels -o /tmp/labels.json
+      #     LABELS=$(cat /tmp/labels.json)
+      #     echo "::set-output name=labels::${LABELS//'%'/'%25'}"
+    outputs:
+      pr: "${{ steps.pr-number.outputs.pr }}"
+
+  on-success:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    needs: [pr]
+    steps:
+
+      - uses: actions/github-script@v4
+        id: pr-labels
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: | 
+            const labels = await github.issues.listLabelsOnIssue({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+            return labels.data
+
+      - name: "Setting package-validated label"
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['package-validated']
+            })
+      - name: "Set installation-validated when kubernetes-operator label is set"
+        uses: actions/github-script@v3
+        if: (contains(fromJson(steps.pr-labels.outputs.result).*.name, 'kubernetes-operator'))
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.addLabels({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['installation-validated']
+            })
+      - uses: actions/github-script@v3
+        if: |
+          (contains(fromJson(steps.pr-labels.outputs.result).*.name, 'kubernetes-operator')) &&
+          (!contains(fromJson(steps.pr-labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
+          (!contains(fromJson(steps.pr-labels.outputs.result).*.name, 'do-not-merge/hold'))
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.FRAMEWORK_MERGE }}
+          script: |
+            github.issues.createComment({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '/merge possible'
+            })
+
+  on-failure:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+    needs: [pr]
+    steps:
+      - name: "Removing package-validated label"
+        if: needs.pr.outputs.pr != '0'
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'package-validated'
+            })
+      - name: "Removing installation-validated label"
+        if: needs.pr.outputs.pr != '0'
+        uses: actions/github-script@v3
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.removeLabel({
+              issue_number: ${{ needs.pr.outputs.pr }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'installation-validated'
+            })
+
+{% endraw %}
