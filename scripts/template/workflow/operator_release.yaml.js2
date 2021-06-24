@@ -1,0 +1,366 @@
+name: Operator release
+
+env:
+  OP_TEST_DEBUG: 1
+  OP_TEST_CONTAINER_OPT: "-t"
+  OP_TEST_SCRIPT_URL: "{{ default_config.testing.test_script_url }}"
+  ISS_SCRIPT_URL: "{{ default_config.testing.iss_script_url }}"
+  OP_TEST_IMAGE: "{{ default_config.testing.image }}"
+  OP_TEST_PROD: 1
+  OP_TEST_INDEX_MIRROR: 0
+  OP_TEST_MIRROR_LATEST_TAG: "{{ default_config.production.index.latest }}"
+{% raw %}
+  GODEBUG: x509ignoreCN=0
+  CI_OHIO_TRIGGER_TOKEN: ${{ secrets.CI_OHIO_TRIGGER_TOKEN }}
+  OHIO_REGISTRY_TOKEN: ${{ secrets.OHIO_REGISTRY_TOKEN }}
+  QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
+  QUAY_API_TOKEN_OPERATORHUBIO: ${{ secrets.QUAY_API_TOKEN_OPERATORHUBIO }}
+  QUAY_APPREG_TOKEN: ${{ secrets.QUAY_APPREG_TOKEN }}
+  QUAY_COURIER_TOKEN: ${{ secrets.QUAY_COURIER_TOKEN }}
+  QUAY_RH_INDEX_PW: ${{ secrets.QUAY_RH_INDEX_PW }}
+  REPO_GHA_PAT: ${{ secrets.REPO_GHA_PAT }}
+
+on:
+ push:
+   branches:
+     - master
+     - feature/op_delete
+
+jobs:
+  pr-check:
+    name: "PR-traffic-light"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Block until there is no running workflow
+        uses: softprops/turnstyle@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
+      - id: prinfo
+        uses: actions-ecosystem/action-get-merged-pull-request@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip yq
+      - name: Operator test
+        id: op-traffic-light
+        env:
+          OP_TEST_ADDED_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.modified }}"
+          OP_TEST_RENAMED_FILES: "${{ steps.files.outputs.renamed }}"
+          OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
+          OP_TEST_LABELS: "${{ steps.prinfo.outputs.labels }}"
+        run: |
+          echo "PR : ${{ steps.prinfo.outputs.number }}"
+          echo "labels : ${{ steps.prinfo.outputs.labels }}"
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          scripts/ci/actions-env
+    outputs:
+      op_test_labels: "${{ steps.prinfo.outputs.labels }}"
+      op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
+      op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
+      op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
+      op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
+      op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
+      op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
+      op_test_ver_overwrite: "${{ steps.op-traffic-light.outputs.op_test_ver_overwrite }}"
+      op_test_op_delete: "${{ steps.op-traffic-light.outputs.op_test_op_delete }}"
+      op_release_delete_appreg: "${{ steps.op-traffic-light.outputs.op_release_delete_appreg }}"
+      op_test_pr_title: "${{ steps.op-traffic-light.outputs.op_test_pr_title }}"
+
+  release-k8s_latest:
+    name: "Release / k8s latest"
+    needs: pr-check
+    if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Remove operator from index
+        if: needs.pr-check.outputs.op_test_op_delete == '1'
+        env:
+          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+        run: |
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "op_delete ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test op_delete "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
+      - name: Index recreate only (Only ci.yaml was changed)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '1'
+        env:
+          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OP_TEST_CI_YAML_ONLY: 1
+        run: |
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
+      - name: Operator release (sync)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
+        env:
+          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+        run: |
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+      - name: Operator release (operator version overwrite)
+        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
+        env:
+          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+        run: |
+          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+  # release-openshift_latest:
+  #   name: "Release / o7t latest"
+  #   needs: pr-check
+  #   if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
+  #     - name: Operator release
+  #       env:
+  #         OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+  #       run: |
+  #         echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+  #         echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+  #         scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+
+  release-openshift:
+      name: "Release / o7t"
+      needs: pr-check
+      if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+{% endraw %}
+        index-tag: {{ default_config.production.index.tags }}
+{% raw %}
+        fail-fast: false
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: Remove operator from index
+          if: needs.pr-check.outputs.op_test_op_delete == '1'
+          env:
+            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+          run: |
+            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "op_delete_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
+            scripts/ci/op-test op_delete_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
+        - name: Index recreate only (Only ci.yaml was changed)
+          if: needs.pr-check.outputs.op_test_ci_yaml_only == '1'
+          env:
+            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OP_TEST_CI_YAML_ONLY: 1
+            OP_TEST_IIB_INSTALL: 0
+            IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
+            # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
+            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+          run: |
+            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
+            scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
+        - name: Operator release (sync)
+          if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
+          env:
+            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OP_TEST_IIB_INSTALL: 0
+            IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
+            # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
+            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+          run: |
+            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+            scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+        - name: Operator release (operator version overwrite)
+          if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
+          env:
+            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OP_TEST_IIB_INSTALL: 0
+            IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
+            # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
+            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+          run: |
+            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+            scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+        - name: Prepare variables for the sign process
+          id: openshift-vars
+          run: |
+            docker login quay.io -u $QUAY_USER -p $QUAY_PW
+            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
+            OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
+            OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
+            echo $OPERATOR_INDEX_RESOLVED
+            echo $OPERATOR_INDEX
+            echo "::set-output name=operator_index_resolved::${OPERATOR_INDEX_RESOLVED}"
+            echo "::set-output name=operator_index::${OPERATOR_INDEX}"
+          env:
+            QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
+            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+            QUAY_PW: ${{ secrets.QUAY_J }}
+            QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
+        - name: Initialize sign process
+          uses: operator-framework/community-operators@webhook
+          env:
+            INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
+            webhook_type: 'json-extended'
+            webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
+            webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+            data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}"
+
+
+  release-sha-openshift:
+      name: "Release sha / o7t"
+      needs: [ pr-check, release-openshift ]
+      if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+{% endraw %}
+          index-tag: {{ default_config.production.index.tags }}
+{% raw %}
+        fail-fast: false
+      steps:
+        - name: Release sha
+          env:
+            IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
+            IIB_OUTPUT_REGISTRY_TOKEN: ${{ secrets.IIB_OUTPUT_REGISTRY_TOKEN }}
+          run: |
+            echo "openshift: ${{ matrix.index-tag }}"
+            bash <(curl -sL $ISS_SCRIPT_URL) openshift ${{ matrix.index-tag }}
+
+  ohio-image-k8s:
+    name: "Release / k8s ohio image"
+    needs: [ pr-check, release-k8s_latest ]
+    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    runs-on: ubuntu-latest
+    env:
+      OHIO_INPUT_CATALOG_IMAGE: "quay.io/operatorhubio/catalog:latest"
+      OHIO_REGISTRY_IMAGE: "quay.io/operator-framework/upstream-community-operators:latest"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Ohio image
+        run: |
+          echo "ohio_image ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+          scripts/ci/disk-cleanup-on-startup.sh
+          scripts/ci/op-test ohio_image "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+
+  ohio-image-o7t:
+    name: "Release / o7t ohio image and sign 'latest'"
+    needs: [ pr-check, release-sha-openshift ]
+    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    runs-on: ubuntu-latest
+    env:
+      OHIO_INPUT_CATALOG_IMAGE: "quay.io/openshift-community-operators/catalog:v4.8"
+      OHIO_REGISTRY_IMAGE: "quay.io/operator-framework/upstream-community-operators:dev"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Prepare variables for the sign process
+        id: openshift-vars-latest
+        run: |
+          docker login quay.io -u $QUAY_USER -p $QUAY_PW
+          OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
+          OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
+          OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
+          echo $OPERATOR_INDEX_RESOLVED
+          echo $OPERATOR_INDEX
+          echo "::set-output name=operator_index_resolved_latest::${OPERATOR_INDEX_RESOLVED}"
+          echo "::set-output name=operator_index_latest::${OPERATOR_INDEX}"
+        env:
+          QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
+          OPERATOR_INDEX_TAG: "latest"
+          QUAY_PW: ${{ secrets.QUAY_J }}
+          QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
+      - name: Initialize sign process
+        uses: operator-framework/community-operators@webhook
+        env:
+          INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
+          webhook_type: 'json-extended'
+          webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
+          webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+          data: "{\"index_image\": \"${{ steps.openshift-vars-latest.outputs.operator_index_latest }}\", \"index_image_resolved\": \"${{ steps.openshift-vars-latest.outputs.operator_index_resolved_latest }}\"}"
+      - name: Ohio image
+        run: |
+          echo "ohio_image ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+          scripts/ci/disk-cleanup-on-startup.sh
+          scripts/ci/op-test ohio_image "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+
+  push-to-quay-o7t:
+    name: "Release / o7t push to quay"
+    needs: pr-check
+    if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+    runs-on: ubuntu-latest
+    env:
+      DELETE_APPREG: "${{ needs.pr-check.outputs.op_release_delete_appreg }}"
+      OP_TEST_VERSION: "${{ needs.pr-check.outputs.op_test_version }}"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Push to quay
+        run: |
+          echo "push_to_quay ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+          scripts/ci/op-test push_to_quay "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+
+  ohio-page-k8s:
+    name: "Release / operatorhub.io"
+    needs: ohio-image-k8s
+    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    runs-on: ubuntu-latest
+    env:
+      CI_OHIO_BRANCH: "latest"
+      REPO_GHA_PAT: ${{ secrets.REPO_GHA_PAT }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Ohio image
+        run: |
+          echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
+          scripts/ci/trigger-operatorhubio-ci.sh
+
+  ohio-page-o7t:
+    name: "Release / dev.operatorhub.io"
+    needs: ohio-image-o7t
+    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    runs-on: ubuntu-latest
+    env:
+      CI_OHIO_BRANCH: "master"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Ohio image
+        run: |
+          echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
+          scripts/ci/trigger-operatorhubio-ci.sh
+
+  slack-notification:
+    name: "Slack notification"
+    needs: [ pr-check, release-k8s_latest, release-openshift, release-sha-openshift, ohio-image-k8s, ohio-image-o7t, push-to-quay-o7t, ohio-page-k8s, ohio-page-o7t ]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report Status
+        uses: ravsamhq/notify-slack-action@master
+        with:
+          notification_title: 'Release pipeline failed: ${{ needs.pr-check.outputs.op_test_pr_title }}'
+          footer: 'monitoring'
+#          status: ${{ needs.pr-check.result }}
+          status: 'failure'
+          notify_when: 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ACTION_MONITORING_SLACK }}
+        continue-on-error: true
+
+{% endraw %}

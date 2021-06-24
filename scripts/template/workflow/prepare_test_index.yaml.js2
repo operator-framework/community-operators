@@ -1,0 +1,56 @@
+{% raw %}
+name: Prepare Test Index
+env:
+  GODEBUG: x509ignoreCN=0
+  
+on:
+  repository_dispatch:
+    types:
+      - manual-test-index
+      - index-for-openshift-test
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "prepare"
+        id: variables
+        env:
+          OP_PR: ${{ github.event.client_payload.source_pr }}
+        run: |
+          tmpfile=$(mktemp /tmp/XXXXXX.json)
+          curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR -o $tmpfile
+          REPO_FULL=$(cat $tmpfile | jq -r '.head.repo.clone_url')
+          BRANCH=$(cat $tmpfile | jq -r '.head.ref')
+          COMMIT=$(cat $tmpfile | jq -r '.head.sha')
+          REPO=$(echo "$REPO_FULL"| awk -F'https://github.com/' '{print $2}')
+          echo "::set-output name=op_test_repo::$REPO"
+          echo "::set-output name=op_test_branch::$BRANCH"
+          echo "::set-output name=op_test_commit::$COMMIT"
+          echo "Pull request #$1 : $REPO $BRANCH $COMMIT"
+          rm -f $tmpfile > /dev/null 2>&1
+
+      - name: Build temp index and push
+        env:
+          # CONTAINER_TOOL: podman
+          OP_DEBUG: 0
+          OP_TOKEN: ${{ secrets.QUAY_API_TOKEN_OPERATOR_TESTING }}
+          OPRT_SCRIPT: https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/osr_run.sh
+#          OP_PR: ${{ github.event.client_payload.source_pr }}
+          REPO: ${{ steps.variables.outputs.op_test_repo }}
+          BRANCH: ${{ steps.variables.outputs.op_test_branch }}
+          COMMIT: ${{ steps.variables.outputs.op_test_commit }}
+          OPRT_REPO: ${{ steps.variables.outputs.op_test_repo }}
+          OPRT_SHA: ${{ steps.variables.outputs.op_test_commit }}
+        run: |
+          echo ${{ github.event.client_payload.source_pr }} >> file
+          echo
+          echo
+          echo -n "Preparing temp index for PR: "
+          cat file
+          echo
+          echo
+          bash <(curl -sL https://raw.githubusercontent.com/operator-framework/operator-test-playbooks/master/upstream/test/oprt.sh)
+
+{% endraw %}
