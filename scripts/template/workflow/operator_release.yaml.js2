@@ -1,14 +1,14 @@
 name: Operator release
 
 env:
-  OP_TEST_DEBUG: 1
-  OP_TEST_CONTAINER_OPT: "-t"
-  OP_TEST_SCRIPT_URL: "{{ default_config.testing.test_script_url }}"
+  OPP_DEBUG: 1
+  OPP_CONTAINER_OPT: "-t"
+  OPP_SCRIPT_URL: "{{ default_config.testing.test_script_url }}"
   ISS_SCRIPT_URL: "{{ default_config.testing.iss_script_url }}"
-  OP_TEST_IMAGE: "{{ default_config.testing.image }}"
-  OP_TEST_PROD: 1
-  OP_TEST_INDEX_MIRROR: 0
-  OP_TEST_MIRROR_LATEST_TAG: "{{ default_config.production.index.latest }}"
+  OPP_IMAGE: "{{ default_config.testing.image }}"
+  OPP_PROD: 1
+  OPP_INDEX_MIRROR: 0
+  OPP_MIRROR_LATEST_TAG: "{{ default_config.production.index.latest }}"
   {% raw -%}
   GODEBUG: x509ignoreCN=0
   CI_OHIO_TRIGGER_TOKEN: ${{ secrets.CI_OHIO_TRIGGER_TOKEN }}
@@ -19,6 +19,7 @@ env:
   QUAY_COURIER_TOKEN: ${{ secrets.QUAY_COURIER_TOKEN }}
   QUAY_RH_INDEX_PW: ${{ secrets.QUAY_RH_INDEX_PW }}
   REPO_GHA_PAT: ${{ secrets.REPO_GHA_PAT }}
+  PRODUCTION_TYPE: "{{ default_config.production.type }}"
 
 on:
  push:
@@ -54,15 +55,15 @@ jobs:
       - name: Operator test
         id: op-traffic-light
         env:
-          OP_TEST_ADDED_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
-          OP_TEST_MODIFIED_FILES: "${{ steps.files.outputs.modified }}"
-          OP_TEST_RENAMED_FILES: "${{ steps.files.outputs.renamed }}"
-          OP_TEST_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
-          OP_TEST_LABELS: "${{ steps.prinfo.outputs.labels }}"
+          OPP_ADDED_MODIFIED_FILES: "${{ steps.files.outputs.added_modified }}"
+          OPP_MODIFIED_FILES: "${{ steps.files.outputs.modified }}"
+          OPP_RENAMED_FILES: "${{ steps.files.outputs.renamed }}"
+          OPP_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
+          OPP_LABELS: "${{ steps.prinfo.outputs.labels }}"
         run: |
           echo "PR : ${{ steps.prinfo.outputs.number }}"
           echo "labels : ${{ steps.prinfo.outputs.labels }}"
-          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "OPP_LABELS=$OPP_LABELS"
           scripts/ci/actions-env
     outputs:
       op_test_labels: "${{ steps.prinfo.outputs.labels }}"
@@ -88,34 +89,34 @@ jobs:
       - name: Remove operator from index
         if: needs.pr-check.outputs.op_test_op_delete == '1'
         env:
-          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
         run: |
-          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "OPP_LABELS=$OPP_LABELS"
           echo "op_delete ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test op_delete "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
       - name: Index recreate only (Only ci.yaml was changed)
         if: needs.pr-check.outputs.op_test_ci_yaml_only == '1'
         env:
-          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
-          OP_TEST_CI_YAML_ONLY: 1
+          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_CI_YAML_ONLY: 1
         run: |
-          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "OPP_LABELS=$OPP_LABELS"
           echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
       - name: Operator release (sync)
         if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
         env:
-          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
         run: |
-          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "OPP_LABELS=$OPP_LABELS"
           echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
       - name: Operator release (operator version overwrite)
         if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
         env:
-          OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
         run: |
-          echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+          echo "OPP_LABELS=$OPP_LABELS"
           echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
           scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
   # release-openshift_latest:
@@ -128,9 +129,9 @@ jobs:
   #       uses: actions/checkout@v2
   #     - name: Operator release
   #       env:
-  #         OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+  #         OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
   #       run: |
-  #         echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+  #         echo "OPP_LABELS=$OPP_LABELS"
   #         echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
   #         scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
 
@@ -151,47 +152,47 @@ jobs:
         - name: Remove operator from index
           if: needs.pr-check.outputs.op_test_op_delete == '1'
           env:
-            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
-            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "OPP_LABELS=$OPP_LABELS"
             echo "op_delete_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
             scripts/ci/op-test op_delete_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
         - name: Index recreate only (Only ci.yaml was changed)
           if: needs.pr-check.outputs.op_test_ci_yaml_only == '1'
           env:
-            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
-            OP_TEST_CI_YAML_ONLY: 1
-            OP_TEST_IIB_INSTALL: 0
+            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_CI_YAML_ONLY: 1
+            OPP_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
-            # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
+            # OPP_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
-            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "OPP_LABELS=$OPP_LABELS"
             echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
             scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
         - name: Operator release (sync)
           if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
           env:
-            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
-            OP_TEST_IIB_INSTALL: 0
+            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
-            # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
+            # OPP_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
-            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "OPP_LABELS=$OPP_LABELS"
             echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
             scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
         - name: Operator release (operator version overwrite)
           if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
           env:
-            OP_TEST_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
-            OP_TEST_IIB_INSTALL: 0
+            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
-            # OP_TEST_MIRROR_IMAGE_POSTFIX: "s"
+            # OPP_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
-            echo "OP_TEST_LABELS=$OP_TEST_LABELS"
+            echo "OPP_LABELS=$OPP_LABELS"
             echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
             scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
         - name: Prepare variables for the sign process
@@ -305,7 +306,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DELETE_APPREG: "${{ needs.pr-check.outputs.op_release_delete_appreg }}"
-      OP_TEST_VERSION: "${{ needs.pr-check.outputs.op_test_version }}"
+      OPP_VERSION: "${{ needs.pr-check.outputs.op_test_version }}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
