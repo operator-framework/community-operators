@@ -5,6 +5,7 @@ on:
    types: [opened, synchronize, reopened, ready_for_review, unlabeled]
 env:
   AUTOMERGE_ENABLED: 1
+  PRODUCTION_TYPE: "{{ default_config.production.type }}"
   
 jobs:
   operator-automerge-enabled:
@@ -131,8 +132,8 @@ jobs:
       - name: Operator traffic light
         id: op-traffic-light
         env:
-          OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
-          OP_TEST_PR_AUTHOR: "${{ github.event.pull_request.user.login }}"
+          OPP_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          OPP_PR_AUTHOR: "${{ github.event.pull_request.user.login }}"
           OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}"
           OPRT_SHA: "${{ github.event.pull_request.head.sha }}"
           #OPRT_SRC_BRANCH: "support/action-01"
@@ -328,16 +329,16 @@ jobs:
       - name: Verify operator modifications
         id: op-verify-modifications
         env:
-          OP_TEST_RECREATE: "${{ steps.op-traffic-light.outputs.op_test_recreate }}"
-          OP_TEST_ALLOW_SERIOUS_CHANGES: "${{ steps.op-traffic-light.outputs.op_test_allow_serious_changes }}"
-          OP_TEST_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
-          OP_TEST_MODIFIED_CSVS_OTHERS: "${{ steps.op-traffic-light.outputs.op_test_modified_others }}"
+          OPP_RECREATE: "${{ steps.op-traffic-light.outputs.op_test_recreate }}"
+          OPP_ALLOW_SERIOUS_CHANGES: "${{ steps.op-traffic-light.outputs.op_test_allow_serious_changes }}"
+          OPP_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
+          OPP_MODIFIED_CSVS_OTHERS: "${{ steps.op-traffic-light.outputs.op_test_modified_others }}"
         run: |
           echo "::set-output name=op_check_cosmetic::0"
-          [[ $OP_TEST_RECREATE -eq 1 ]] && { echo "Recreating operator. Exiting with '0' ..."; exit 0; } || true
-          [[ $OP_TEST_ALLOW_SERIOUS_CHANGES -eq 1 ]] && { echo "Allowing serious changes. Exiting with '0' ..."; exit 0; } || true
-          [ -n "$OP_TEST_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetic::1" || true
-          [ -n "$OP_TEST_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!! Please ask maintainers to set `allow/serious-changes-to-existing` label.\n    Files that cannot be changed : '$OP_TEST_MODIFIED_CSVS_OTHERS'"; echo "::set-output name=op_check_cosmetic::2"; exit 20; } || true
+          [[ $OPP_RECREATE -eq 1 ]] && { echo "Recreating operator. Exiting with '0' ..."; exit 0; } || true
+          [[ $OPP_ALLOW_SERIOUS_CHANGES -eq 1 ]] && { echo "Allowing serious changes. Exiting with '0' ..."; exit 0; } || true
+          [ -n "$OPP_MODIFIED_CSVS" ] && echo "::set-output name=op_check_cosmetic::1" || true
+          [ -n "$OPP_MODIFIED_CSVS_OTHERS" ] && { echo -e "Error:\n    Modifying exiting operator version !!!\n    Only cosmetic changes are allowed !!! Please ask maintainers to set `allow/serious-changes-to-existing` label.\n    Files that cannot be changed : '$OPP_MODIFIED_CSVS_OTHERS'"; echo "::set-output name=op_check_cosmetic::2"; exit 20; } || true
 
       - name: "Comment for cosmetics change error when csv is changed"
         if: failure() && steps.op-verify-modifications.outputs.op_check_cosmetic == '2'
@@ -360,13 +361,13 @@ jobs:
         id: op-cosmetic-change-check
         if: steps.op-verify-modifications.outputs.op_check_cosmetic == '1'
         env:
-          OP_TEST_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
-          OP_TEST_MODIFIED_REPO_BRANCH: "${{ steps.op-traffic-light.outputs.op_test_repo_branch }}"
-          OP_TEST_ANSIBLE_PULL_REPO: "https://github.com/operator-framework/operator-test-playbooks"
-          OP_TEST_ANSIBLE_PULL_BRANCH: "master"
-          OP_TEST_STREAM: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
+          OPP_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.op_test_modified_csvs }}"
+          OPP_MODIFIED_REPO_BRANCH: "${{ steps.op-traffic-light.outputs.op_test_repo_branch }}"
+          OPP_ANSIBLE_PULL_REPO: "https://github.com/operator-framework/operator-test-playbooks"
+          OPP_ANSIBLE_PULL_BRANCH: "master"
+          OPP_STREAM: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
         run: |
-          echo "OP_TEST_MODIFIED_CSVS=$OP_TEST_MODIFIED_CSVS"
+          echo "OPP_MODIFIED_CSVS=$OPP_MODIFIED_CSVS"
           echo "op_check_cosmetic: ${{ steps.op-verify-modifications.outputs.op_check_cosmetic }}"
           echo "op_test_set_label_operator_version_overwrite: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_version_overwrite }}"
           echo "op_test_set_label_operator_recreate: ${{ steps.op-traffic-light.outputs.op_test_set_label_operator_recreate }}"
