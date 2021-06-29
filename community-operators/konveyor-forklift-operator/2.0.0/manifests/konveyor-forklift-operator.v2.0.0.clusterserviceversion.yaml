@@ -1,0 +1,440 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: konveyor-forklift-operator.v2.0.0
+  namespace: konveyor-forklift
+  annotations:
+    olm.skipRange: '>=0.0.0 <2.0.0'
+    capabilities: Seamless Upgrades
+    description: >-
+      Facilitates migration of VM workloads to OpenShift Virtualization
+    categories: 'OpenShift Optional'
+    containerImage: quay.io/konveyor/forklift-operator:release-v2.0.0
+    createdAt: 2020-06-16T11:21:00Z
+    repository: https://github.com/konveyor/forklift-operator
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "forklift.konveyor.io/v1beta1",
+          "kind": "ForkliftController",
+          "metadata": {
+            "name": "forklift-controller",
+            "namespace": "konveyor-forklift"
+          },
+          "spec": {
+            "feature_ui": "true",
+            "feature_validation": "true"
+          }
+        },
+        {
+          "apiVersion": "forklift.konveyor.io/v1beta1",
+          "kind": "Migration",
+          "metadata": {
+            "name": "example-migration",
+            "namespace": "konveyor-forklift"
+          },
+          "spec": {
+             "plan": {
+                "name": "example-plan",
+                "namespace": "konveyor-forklift"
+             }
+          }
+        },
+        {
+          "apiVersion": "forklift.konveyor.io/v1beta1",
+          "kind": "Plan",
+          "metadata": {
+            "name": "example-plan",
+            "namespace": "konveyor-forklift"
+          },
+          "spec": {}
+        },
+        {
+          "apiVersion": "forklift.konveyor.io/v1beta1",
+          "kind": "Provider",
+          "metadata": {
+            "name": "example-provider",
+            "namespace": "konveyor-forklift"
+          },
+          "spec": {
+             "type": "vmware",
+             "secret": {
+                "name": "",
+                "namespace": ""
+             },
+             "url": ""
+          }
+        },
+        {
+          "kind": "Host",
+          "apiVersion": "forklift.konveyor.io/v1beta1",
+          "metadata": {
+            "name": "example-host",
+            "namespace": "konveyor-forklift"
+          },
+          "spec": {
+             "provider": {
+               "namespace": "",
+               "name": ""
+             },
+             "id": "",
+             "ipAddress": ""
+          }
+        },
+        {
+          "kind": "NetworkMap",
+          "apiVersion": "forklift.konveyor.io/v1beta1",
+          "metadata": {
+             "name": "example-networkmap",
+             "namespace": "konveyor-forklift"
+          },
+          "spec": {
+             "provider": {
+                "namespace": "",
+                "name": ""
+             },
+             "map": [
+                {
+                   "source": {
+                      "id": ""
+                   },
+                   "destination": {
+                      "type": "pod",
+                      "namespace": "",
+                      "name": ""
+                   }
+                }
+             ]
+          }
+        },
+        {
+          "kind": "StorageMap",
+          "apiVersion": "forklift.konveyor.io/v1beta1",
+          "metadata": {
+             "name": "example-storagemap",
+             "namespace": "konveyor-forklift"
+          },
+          "spec": {
+             "provider": {
+                "namespace": "",
+                "name": ""
+             },
+             "map": [
+                {
+                   "source": {
+                      "id": ""
+                   },
+                   "destination": {
+                      "storageClass": ""
+                   }
+                }
+             ]
+          }
+        },
+        {
+           "kind": "Hook",
+           "apiVersion": "forklift.konveyor.io/v1beta1",
+           "metadata": {
+              "name": "example-hook",
+              "namespace": "konveyor-forklift"
+           },
+           "spec": {
+              "image": "quay.io/konveyor/hook-runner",
+              "playbook": "<base64-encoded-playbook>"
+           }
+        },
+        {"kind":"Provisioner","apiVersion":"forklift.konveyor.io/v1beta1","metadata":{"name":"cinder","namespace":"konveyor-forklift"},"spec":{"name":"kubernetes.io/cinder","volumeModes":[{"name":"Block","priority":0,"accessModes":[{"name":"ReadWriteOnce","priority":0},{"name":"ReadWriteMany","priority":1}]},{"name":"Filesystem","priority":1,"accessModes":[{"name":"ReadWriteOnce","priority":0},{"name":"ReadWriteMany","priority":1}]}]}}
+      ]
+    certified: "false"
+    support: Red Hat
+    operatorframework.io/suggested-namespace: konveyor-forklift
+spec:
+  relatedImages:
+  - name: controller
+    image: quay.io/konveyor/forklift-controller:release-v2.0.0
+  - name: ui
+    image: quay.io/konveyor/forklift-ui:release-v2.0.0
+  - name: validation
+    image: quay.io/konveyor/forklift-validation:release-v2.0.0
+  displayName: Konveyor Forklift Operator
+  description: |+
+    The Konveyor Forklift Operator fully manages the deployment and life cycle of Forklift on OpenShift.
+
+    If you experience any issues or have feature requests, please [file an issue in our Github repository](https://github.com/konveyor/forklift-operator/issues)
+  keywords: ['migration']
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAANUAAADVCAIAAABPIiLUAAAABmJLR0QA/wD/AP+gvaeTAAATZElEQVR42u2diZ+N5fvHv/9TG6JQvkVRlsn2I5RlrDNjjMGMsY19NzTImsmeJFtCKolQZClZohCtqFCY33vm4u6e5zznzME5+s45n+f1eXnNuc/znDlnztv93Nd1X8t/Hnp4uCT9W/qP/gSS+JPEnySJP0n8SZL4k8SfJIk/SfxJkviTxJ8kiT9J/EmS+JPEnySJP0n8SZL4k8SfJIk/SfxJkviTxJ8kiT9J/EmS+JPEnyT+JEn8SeJPksSfJP4kSfxJ4k+SxJ8k/iRJ/EniT5LEnyT+JEn8SeJPksSfJP6kBKvRUwVtWgx6+BHxJz0oPdWgsEu7vOH9+y2Y0GPVzK6oXct88SclUU/UK2qfkT+kb/a8cZnGnK9BfbLFn5Ro5uoONeZKi0OY81Va3FP8SQlQvbpD2zTPz+2eUzK818qSbrGx81X/iaHiT7oX1a5d1LLZ4DvMdY2fOV8dXhoo/qR4VavWbeamFvVeca/M+SrolyX+pGqYy3hhEMxNH9YrfuZmj84syuo3d2w1S8C5YzLFnxRVfV/NXTEj3vUctBX2y+rYeuCTd1Z1jRoWVntVgycLxZ8UrmHZWdUCNLmwd6e2AxvUD7Ek2rXIr/byl9vkiT8pXJ3b5MWmZ9n0bo8+Nsy/pE6dImzhgT2zZ43sGY8tPDQ7S/xJ4WpYv5obKIS99MLg2rWH8W9uj5wZd+l/QbimxZ8UVaFbF4kVlIs/KVxDs7KSzV/ntnniTwrXy63zks3fsJws8SeFiy2yZPNHRIz4k6JqzpikLwHxFIo/qUJPN5owpGD1mjX7583/yEYK+iZ9CfhK+zzxJ1VozNj15ZXH+fO/2UiHjIHJ5m9Ebj/xJ1WoZauZ5XeOps2mWRjp3Xr17laLJnZ/+JFh4k+q0IWLl42/ESPfsZFqg0nvX888XSj+pApt3Pil8bdh40EbGdQ7O9n8deswQPxJFRo56h3j78cfr9yOJGiZn2z+igf0FX9ShZq9MN0tAVu0LGHk8ceLVpYkl78lk7vX9IxM8ZcwnTv3m/E3esy7NjJzVM9kT4FNGhWIP6lC76z7wvh7b8thG8nrlZNs/jI75oq/tFbz5jPqPTGmIuygaI3x9/PPv9ttkYoFyeZvzMA+4i/t9NTTEwbmr1z91r6zZ38FuEGDVzHY5Lkpbgn4UuvXLLA02V7Asik12wso/u5Fm987VO4d7LzZ+JkzP9vI+AkbbYRUy2RPgc8/UyD+0kujRq3z+cPysPG31uyzkW3bj9pIbmbSl4C9OuWKv/TS802nllc9Xmw+g/HBQ1bbw8uXrz7y6AhGMl7UElD8JUHfffeLz5/5XBr9d+KtW7dH2rWf/VBlzYP40zHvVvgXcfF0rMkVEcTfPWr16r0+f1u3HrHxEycv2siUqe/ZyLSiBC8BXx+bSbEiShbVrVsU+cZq1R5lk7H4S2Vh//r8uRvu8hV7bOSjj47ZmTndcxLC3LCcfq+2HxCafM6v/r8OcyZO3LRly+ErV65hlYu/VM+zfGr8zZu3fAQ7dJzL+IC8Ffbwjz+uP1ZrJCOtmt3jEnDhhB6jcvvCXLRsNzb9iovXwdylS1cD69GmTaeJvxTXkSPn/K+8pGRrgMtOnedV3BBrDSPnPP6ovhjM4dbGs4hzB/v60qU/y6McvIH+ucvFX4prwYKP/W99956TNv71sR9sZEbJ+zYypbB3tcz16DjguWeHxJjn1q8/cOHCpfLox/ff/4JLnIVBg4bjdf9NfWX2fMP/+q9f/7vO48WMl735qY3s2nXczszq2j/A3OJJPcbm9+nVJRfmQjcwnm082bZYXFhDbObYkpH9m16qXaf42rW/fRp69nqD8eycZfbw6tW/atcZVeEvbDyEjTjCpUbn9eneccCzjQpCmcN9Y8xBVWzmmAuZEdnxU/xfWmv37hM+GYsW7WTwyfpj3RLwlVcX2JkUeQ6N1SN3DuaWLt3NavLWrajMEdaKnQFzNcWwEH8PQqzwfEqOHj1n44ePnLWR0tLtkVcRL8O9e+HCj2MzRxyNMZfx0qxU/QOKv/tShw5zA4Yn8xnjTIQ2snfvKTuzbr3RjrmA48Y/fv31jw8//Hr6jPfx56Vetxnxl2Dh+IUYH6D8/JWM9+lT5owSmPvyy+9v3LgZjTl81zt2fIX3uE3b0nRgTvwlUtwifZiwHuwO+/ffN2PYEH/++RdrR+Y5Fojmpk5Pib/7VfHod32wzp67vff1xRdnAsxhLMPczFnbOneZ/+hjI/WnE38J0AsvTg9whrvYNuL++usG2rf/29lzPujabaH5YiTxl2BZFL47sFhtHEeMmBN/CRbLNQKcsDA6V27v+mHPdmy5k/8mib/7ErF03EzxmzClYcYCFuF9zpLdv/+0nTZo0Cqfv99++9NisSTxdxebabh52YrAJsWGxVBgmyuGo44DELnDhsZi4b3Tn1T8VaPJUzZTNwjnXMCHF//hwpzY+fDHgVhsib9qFCOELs5jxcrP7KXchocdn356QmyJv2rMiFu37hO/chJ+7dV69V4SGoslib9wPfPspPJEHObtY/kIc/54ZuZi4SX+oorN1oTw56pd7dlz0h8nOlp4ib/o0cuZixPCnyt1MHPmVn+cECzhJf6iytUquM/j99+vWQAB+W+BWKwaGhMv/h6EJkzcWJ6gg3gCi8UKGNR5A1eKMPEXrtdf/zBR/BFeYK9JFQR/fNWqvSJM/IUrUEDjfo4DB87Ya7pGNAHvjCT+gsJuSBR/LPUaNBz3UGUt1GAdgmbTBJn4C9Hnn58uT9wxYMCK27FY56rEYlEpUJCJvxCdOvVjAvnjbm4vSy1Uf3zt2s8FmfgLEVFSCeTPlZyiFjRp55bbQRSMArHEX4hIv4gdW3UPh1XdI+CZqEGBJf5iiUoXiYXvk0+OR6YUMfk1bjKlbbvZWCHpnOQm/oKiilkC4Ttx4qIFojq1bVu6fsNBP6yQ5DcsbisQI6U7f917LEoUfFTJ8GuycPMlKDDGzZ1Uc3PWSOnLX37V6rn3c5D84QXxj6LgRrWXfPvtTywABF/68kc1FqbAadO20EmG0lL3DN/Jkz/6FTPwtsR5IblLSkFX/tFtW5jpMNBPIc7DVThFr3ZdEAioPnjwO3bkSJ8rLHyLcuSBa2kZrD+++Psn/23lys/ulj+rOW6iblUg/jRQTKho2Nv+urAGVakXf4nxuVATg+LdkyZtIm8tdAXGHfmu+HNmLwWHrl+/4caJhQ6tZLV8+R7/8tZtXhN/qf8hqTH12WenAjYpD3HaUcAvcHJZ2a444QM4d1WgEGBulPLzLVvN9E8bPnyt+Evlj4cHePEbn8RgiBXb3Lk7/LkKB4rrYRT7oLaQuyo7e6n/VKuMmdHej//fYOqdHkniLzXlepLHPmha5F/Vt9+b8VwFu9Z5GnXtutB/ypV9DgjPn3/a2LHrxV/KfjYy0+JfyWGiuguZDk+f/imeq1ydDfbZ/HEm3dC3xA3XP613nyXiLzU/WP0G4wIRLvv2fdsjczF2LpnhpIvjHPGfvXDxMk+5yxct3hkPfwUF/1Dr37XZbYssAdO48eSLFy+7c2jQ9Xjd0eIvNT9YoEX05s2HAqFQBASwFRYNpiEFcWXHkUQSLaGJvDhKoxph/C4CVH/44VJkpV7xl5ofbIfnjaM9H9NhqEeGOszuNCIG3FPUwqoWPio8L1u22998O33m50gbmQZGgTY1NvlRgEH8pSx/7LG6L5siV9FO853Ghw+f9Q1Vwkh9YoCYks5MWgSWUqaN26t/v3ZhNYAVT75IVtZSwZfK/P300z+7ukuW7Ip2ml+69HTVdLU5c3fQ0pIcXoKp4i8mBJf+Ii/yANCa0pxS/N27jh+/4L7y7XdKZETKb6Dl0ijvU5Sj5L4cec9l2mMmpl65sEt9/jZt+tJ98dxJQxdblK7yu3S8/fb+BL4BXINs99F/iz03zJTCoWsUc5VG/OHPCzhfnK/YOWgOHfreP0drMvGXMLGNFuicS4SV9fKj8tq4cRsCzxLJp4A88ZdIEQQQZ4VTVmZ4pEWD+EuwZs/+IB7+Jk3eLBTEX1JEBHKkKeqbJv7OryT+Eq/nnp+Kny9QnO+XX/7AMmVPVhCIvwchNmHZnyBQj6gTAo9VGUP8SeJPfwVJ/EniT5LEnyT+/sfVoOH4B1PChy1jBQ2kKX8kihPpSYwnjhJC2/mZcBVcJ8eO/WAOvK+/Pm891oh34llX2iy/sodvq4xZ/EuHVRtkz5eHOf2XETr6Wul2J/LWGJ84cZOdRmQeD1/u9Doxf4Qs2PYdhQqGFq2pjHAu5lkTqWvkHAmglOWPumZ898xz1tqUGL6c/ssteRbXsZXW4yG5kiTbWstJSybftes4DykvREiBqzFAbJVVA//gg68CaW+EPfMDIJKrQZAzrwPKFsZMDseFO8Gk7NEFsidxaCuYL8X5GzHyHSYhSCJc6vz5iogVpjTyIxGTEA/pUp6RcbuoACc83WiC44/iQPxAWzZOBiPA4kWMP+psUC4Icb6ljpOgZPmaZW9+aq9ASXErWsqkCOhs4kEb45cvX6Wk0LrKzGJOFkOpzB81BhBfvFUspdJoZJJH335lbk7aveek9aGEP/bW4ObAwe+Iia8g7L1DXGL8ffPNBW6vrnUgLdD5LbSLIR2pcZPJN27cBFbyidwvsmYhhUPfsmmPF7T2NTEi+6VU4M/1ODWGgMk/hx6TDDI/2SrN0s/sHg1/nEAfch6uqCxs1S/rTccfKRrQ5l6NZaUrWsUijx+uXLnmF+Ww2Y6KaYEMy4yMWWIolfljxcacRJRK6zalfN/A1LXbQjsB44OHrNisky92SYuWJXBjcBh/lsbLfMarWXip8QeLmDX+FrAl51ozaSwbfiZY1Z6iq5H96nbtSi1kxsp6QLBK3ae+/UGsMj8cPXqObDTLuiVvnLxJqOIhpqvZH/DHVdk5y/z5j7w1lmsVC7Wy2zfKgP3hDGSrP2nhMNBpli9Vs7ZsOWy2CBE0Zn/wxjiHAqa2jhRDqcnf++8fJjkNDxz3QZoK8TPxzHhMXJt7DAIsDJ4lvIpnXTkByvvxEAeKPZw5axsPXaU9XmHnJ984uUJp7757gNNcx17ShZhZXXQ0pSlZDvJmOIc39lBlwTV+3rrtiKbA9PI/43zG59Knb1myXdC4Y7BzmVAVIyj+JPEnSenDH3tuGBwxxM0xcAn2LNYx67/5Cz4i8Ztie02eC98iGz5irdtJ84Wjp1372dE2A02B2ro4hvxXGDxktZlB7n06EydU/EZ3Jr0LbZDFa+zPjmjrVe05Jv6S4u+uxSZb7KS1pUv92lPFmKKRl2DGspnBVxV4cfzPMV6ZOkPNW5REc0Zu86p50NjNfwpLuU2l3cNuij8Y42Oyf+M7z20w4GgMPUaMWBtnaU3+LOIvifxh/+KdiV0ozTnz4uGPg9qVeBNj8/fEk2P9KjP8FpdELP7ShT+CX+Kslcs9N37+rByb2wKJ5I+tYb92EccYr5iz+Esp/tgowycckO19UVHK/1uzjUFReZ7Fgffxx8cCqb7Ok+LzR91clpLmavnqq/P+JV1emR+Nv1Wr9vpnsuL033xi+cPHHvnxmfX9hxs2HvQvIWDMPRW5UBZ/d8dftAJqIOhX2GD/l+nQPwHns/+tuHKlPn9+2TUKRIfWRQjwN216lTY17JEEsjkTy19kk5JIYW/5l9QUn2XN4G/nzm/++8wkXxacMntOlfIa1FgOvAg3UEJm3AkUpTRQovGXWZU/zN5I/ohd8Ht4cHlkIdTE8kd4hP/ZA//HxN+/sP6zYJbtlWFRbpcskgNEbw//Qm5bAf4I4iIoGuE6CdgxBKVG8hewbEK/6aSu/2ynW/z9+/wRH+BHI4e+zqzXqtyCzb0Xj/3BxBlqfwQOvwS5+Esv/ggpDe0G6CvQAsmSNqrlj4Ar3xEdgz8O8zmLv5Tlj4A8emn4stvouPEb/D86kVqBFyH+ym8vTYC+TWnV8octHM3/bFOjJaDYQdChBQ4miT+Ma/+zUxJd/P1P2L8sxv3aajDhdzTFRbeu6uTnvCQ+f1YX1S+Ez0FrzGj8EXZK1gipdFWchUfO+vH6sn/Tgj80b96HgX4veARxu5A157cAsbhR14Um0v4lOtpldtrhTzOh+x8BF6C/H+jzR2YJbzJStlki/mo2f0xye/eeiqdXL9luofsfzv9C00rfm8iN2y0oQ/nD3A7cxyl4H8lftIP/IeKvxvOH6tYbjQc4xjcNSYGGqNH8f0RB+xe69LZo8Qdk5fkLAGL9bSEo/tKIPxPdE9imCzQ5x1dMe+lIuzgaf8Tf+10zSTGx2Jlo/Fm4f+RCUPzVeP46d5nfrfsiE00T4ryKPjNUL6CTJVnlhEL5OZS+OnWeZ3u+qEPHKt8uv8s9hSwQC0e0G2lzJ7PEbbGwa+dfAsSkRLk3H002U1Lrw424nBU+hX9moHNJqJ5vOtW/pKZkpSj+WRJ/kviTJPEniT9JEn+S+JMk8SeJP0kSf5L4kyTxJ4k/SRJ/kviTJPEniT9JEn+S+JMk8SeJP0kSf5L4kyTxJ4k/SRJ/kviTxJ8kiT9J/EmS+JPEnySJP0n8SZL4k8SfJIk/SfxJkviTxJ8kiT9J/EmS+JPEnyTFp/8Hhe6NJEDFtHIAAAAASUVORK5CYII=
+    mediatype: "image/png"
+  install:
+    strategy: deployment
+    spec:
+      deployments:
+      - name: forklift-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: forklift
+              name: forklift-operator
+          template:
+            metadata:
+              labels:
+                app: forklift
+                name: forklift-operator
+            spec:
+              serviceAccountName: forklift-operator
+              containers:
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                - --leader-election-id=forklift-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: CONTROLLER_IMAGE
+                  value: quay.io/konveyor/forklift-controller:release-v2.0.0
+                - name: UI_IMAGE
+                  value: quay.io/konveyor/forklift-ui:release-v2.0.0
+                - name: VALIDATION_IMAGE
+                  value: quay.io/konveyor/forklift-validation:release-v2.0.0
+                image: quay.io/konveyor/forklift-operator:release-v2.0.0
+                imagePullPolicy: Always
+                name: forklift-operator
+                resources: {}
+      permissions:
+      - serviceAccountName: forklift-operator
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resourceNames:
+          - forklift-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - forklift.konveyor.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+      clusterPermissions:
+      - serviceAccountName: forklift-operator
+        rules:
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          - clusterversions
+          verbs:
+          - get
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - apiservers
+          verbs:
+          - '*'
+        - apiGroups:
+          - oauth.openshift.io
+          resources:
+          - oauthclients
+          verbs:
+          - '*'
+        - apiGroups:
+          - forklift.konveyor.io
+          resources:
+          - forkliftcontrollers
+          - forkliftcontrollers/status
+          - forkliftcontrollers/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+      - serviceAccountName: forklift-controller
+        rules:
+        - apiGroups:
+          - forklift.konveyor.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          - namespaces
+          - events
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - k8s.cni.cncf.io
+          resources:
+          - network-attachment-definitions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - v2v.kubevirt.io
+          resources:
+          - resourcemappings
+          - virtualmachineimports
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - cdi.kubevirt.io
+          resources:
+          - datavolumes
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - kubevirt.io
+          resources:
+          - virtualmachines
+          verbs:
+          - get
+          - list
+          - watch
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: false
+  maintainers:
+  - name: Red Hat
+    email: openshift-operators@redhat.com
+  maturity: beta
+  provider:
+    name: Red Hat
+  links:
+  - name: Konveyor Forklift Operator
+    url: https://github.com/konveyor/forklift-operator
+  version: 2.0.0
+  minKubeVersion: 1.20.0
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - name: forkliftcontrollers.forklift.konveyor.io
+      version: v1beta1
+      kind: ForkliftController
+      displayName: ForkliftController
+      description: VM migration controller
+    - name: migrations.forklift.konveyor.io
+      version: v1beta1
+      kind: Migration
+      displayName: Migration
+      description: VM migration
+    - name: plans.forklift.konveyor.io
+      version: v1beta1
+      kind: Plan
+      displayName: Plan
+      description: VM migration plan
+    - name: providers.forklift.konveyor.io
+      version: v1beta1
+      kind: Provider
+      displayName: Provider
+      description: VM provider
+    - name: hosts.forklift.konveyor.io
+      version: v1beta1
+      kind: Host
+      displayName: Host
+      description: VM host
+    - name: networkmaps.forklift.konveyor.io
+      version: v1beta1
+      kind: NetworkMap
+      displayName: NetworkMap
+      description: VM network map
+    - name: storagemaps.forklift.konveyor.io
+      version: v1beta1
+      kind: StorageMap
+      displayName: StorageMap
+      description: VM storage map
+    - name: provisioners.forklift.konveyor.io
+      version: v1beta1
+      kind: Provisioner
+      displayName: Provisioner
+      description: Storage Provisioner Capabilities
+    - name: hooks.forklift.konveyor.io
+      version: v1beta1
+      kind: Hook
+      displayName: Hook
+      description: Hook schema for the hooks API
