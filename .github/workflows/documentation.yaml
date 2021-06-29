@@ -1,11 +1,13 @@
 name: "Documentation"
 on:
-  push: 
-    branches:
-      - "support/pr-stat"
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
+    inputs:
+      number-of-prs:
+        description: 'Number of PRs'     
+        required: true
+        default: '5000'
 
 jobs:
   documentation:
@@ -13,15 +15,12 @@ jobs:
     container: quay.io/operator_testing/community-operators-mkdocs
     steps:
     - uses: actions/checkout@v2
-    - name: What OS is running
-      run: uname -a
-    - name: generate docs
+    - name: Generate docs
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        ci/operator-flow/doc.sh 5000
+        ci/operator-flow/doc.sh ${{ github.event.inputs.number-of-prs }}
         mkdocs build
-        ls -al
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
