@@ -1,0 +1,28 @@
+name: "Documentation"
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      number-of-prs:
+        description: 'Number of PRs'     
+        required: true
+        default: '5000'
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    container: quay.io/operator_testing/community-operators-mkdocs
+    steps:
+    - uses: actions/checkout@v2
+    - name: Generate docs
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        ci/operator-flow/doc.sh ${{ github.event.inputs.number-of-prs }}
+        mkdocs build
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./site

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import argparse
@@ -33,15 +33,15 @@ def process_pr_data(pr_data, maintainers):
         if maintainers & pr['commentors']:
             interaction = 'comment by maintainer'
         elif authorizer == 'maintainer':
-            interaction = 'maintainer set `authorized-changes`'
+            interaction = 'maintainer set authorized-changes'
         else:
             interaction = 'none'
 
         processed_pr_data.append({
             'number': number,
             'author': pr['author'],
-            'date created': pr['created_at'],
-            'time to merge': time_to_merge,
+            'date_created': pr['created_at'],
+            'time_to_merge': time_to_merge,
             'authorizer': authorizer,
             'interaction': interaction
         })
