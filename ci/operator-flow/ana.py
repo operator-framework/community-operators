@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import dateutil.parser as dt
 import json
 import ROOT
@@ -39,25 +39,28 @@ def export_images(name, canvas, exts=['pdf', 'png']):
 admins = 'mvalarh', 'J0zi', 'mvalahtv', 'robszumski', 'dmesser', 'SamiSousa', 'ssimk0', 'jozzi'
 interaction_id = 0
 
-ext = ".pdf"
-# ext=".png"
 ROOT.gROOT.SetBatch()
 
 ROOT.gStyle.SetTimeOffset(0)
-dateBegin = ROOT.TDatime(2020, 6, 1, 0, 0, 0)
-# dateBegin = ROOT.TDatime(2020,10,1,0,0,0);
-dateEnd = ROOT.TDatime(2021, 6, 20, 0, 0, 0)
-nHours = 5*24
+nWeeks = 52  # weeks in history
+resolution = nWeeks
+nHours = 5*24  # max hours in pr merging time
+tdFormat = "%Y-%m-%d"
+dateTitle = "Date [YYYY-MM-DD]"
+markerSize = 0.7
+
+dateEnd = ROOT.TDatime()
+dateBegin = ROOT.TDatime(dateEnd.Convert()-24*3600*7*nWeeks)
 # nHours = 12
 c = ROOT.TCanvas("c", "", 1280, 720)
 
 timeVsPrTimeVsInteraction = ROOT.TH3F("timeVsPrTime", "Time to merge vs. PR date created",
-                                      nHours, 0, nHours, 54, dateBegin.Convert(), dateEnd.Convert(), 3, 0, 3)
+                                      nHours, 0, nHours, resolution, dateBegin.Convert(), dateEnd.Convert(), 3, 0, 3)
 timeVsPrTimeVsInteraction.SetStats(0)
 timeVsPrTimeVsInteraction.GetXaxis().SetTitle("hours")
 timeVsPrTimeVsInteraction.GetYaxis().SetTimeDisplay(1)
-timeVsPrTimeVsInteraction.GetYaxis().SetTimeFormat("%Y-%m")
-timeVsPrTimeVsInteraction.GetYaxis().SetTitle("Date [month/year]")
+timeVsPrTimeVsInteraction.GetYaxis().SetTimeFormat(tdFormat)
+timeVsPrTimeVsInteraction.GetYaxis().SetTitle(dateTitle)
 timeVsPrTimeVsInteraction.GetZaxis().SetTitle("interaction")
 
 for d in data:
@@ -96,34 +99,34 @@ for i in [0, 1, 2]:
     ROOT.gStyle.SetPaintTextFormat("4.0f")
     nPrOverTime = timeVsPrTimeVsInteraction.ProjectionY(
         "proj_"+str(i), 0, -1, i+1, i+1)
-    nPrOverTime.GetYaxis().SetRangeUser(0, 50)
+    # nPrOverTime.GetYaxis().SetRangeUser(0, 50)
     nPrOverTime.SetStats(0)
     nPrOverTime.SetTitle(titles[i])
     # nPrOverTime.SetLineColor(i+2)
     nPrOverTime.SetFillColor(i+2)
-    nPrOverTime.SetMarkerSize(0.6)
+    nPrOverTime.SetMarkerSize(markerSize)
     nPrOverTime.GetXaxis().SetTimeDisplay(1)
-    nPrOverTime.GetXaxis().SetTimeFormat("%Y-%m")
+    nPrOverTime.GetXaxis().SetTimeFormat(tdFormat)
     nPrOverTime.GetYaxis().SetTitle("Count")
     cNPrOverTime_hs.Add(nPrOverTime)
     c.cd()
     nPrOverTime.Draw("HIST TEXT0")
-    export_images(name="nPrOverTime"+str(i),canvas=c)
+    export_images(name="nPrOverTime"+str(i), canvas=c)
 
     ROOT.gStyle.SetPaintTextFormat("4.0f")
     timeVsPrTimeVsInteraction.GetZaxis().SetRange(i+1, i+1)
     avgTimePrOverTime = timeVsPrTimeVsInteraction.Project3D("xy")
     avgTimePrOverTime_profile = avgTimePrOverTime.ProfileX().ProjectionX()
     avgTimePrOverTime_profile.SetTitle(titles[i])
-    avgTimePrOverTime_profile.SetMarkerSize(0.7)
+    avgTimePrOverTime_profile.SetMarkerSize(markerSize)
     avgTimePrOverTime_profile.SetStats(0)
     avgTimePrOverTime_profile.SetFillColor(i+2)
     avgTimePrOverTime_profile.GetXaxis().SetTimeDisplay(1)
-    avgTimePrOverTime_profile.GetXaxis().SetTimeFormat("%Y-%m")
+    avgTimePrOverTime_profile.GetXaxis().SetTimeFormat(tdFormat)
     avgTimePrOverTime_profile.GetYaxis().SetTitle("hours")
     c.cd()
     avgTimePrOverTime_profile.Draw("HIST TEXT0")
-    export_images(name="avgTimePrOverTime"+str(i),canvas=c)
+    export_images(name="avgTimePrOverTime"+str(i), canvas=c)
 
     cAvgTimePrOverTime_hs.Add(avgTimePrOverTime_profile)
     # cAvgTimePrOverTime.cd()
@@ -138,18 +141,18 @@ base = "Number of PR merged over time"
 cNPrOverTime_hs.SetTitle(base+" (sum)")
 cNPrOverTime_hs.Draw("HIST TEXT0")
 cNPrOverTime_hs.GetXaxis().SetTimeDisplay(1)
-cNPrOverTime_hs.GetXaxis().SetTimeFormat("%Y-%m")
+cNPrOverTime_hs.GetXaxis().SetTimeFormat(tdFormat)
 cNPrOverTime_hs.GetYaxis().SetTitle("Count")
 cNPrOverTime.BuildLegend(0.1, 0.7, 0.48, 0.9)
-export_images("nPrOverTime_stack",cNPrOverTime)
+export_images("nPrOverTime_stack", cNPrOverTime)
 cNPrOverTime_hs.SetTitle(base+" (beside)")
 cNPrOverTime_hs.Draw("HIST TEXT0 nostackb")
 cNPrOverTime.BuildLegend(0.1, 0.7, 0.48, 0.9)
-export_images("nPrOverTime_nostackb",cNPrOverTime)
+export_images("nPrOverTime_nostackb", cNPrOverTime)
 cNPrOverTime_hs.SetTitle(base+" (overlab)")
 cNPrOverTime_hs.Draw("HIST TEXT0 nostack")
 cNPrOverTime.BuildLegend(0.1, 0.7, 0.48, 0.9)
-export_images("nPrOverTime_nostack",cNPrOverTime)
+export_images("nPrOverTime_nostack", cNPrOverTime)
 
 
 cAvgTimePrOverTime.cd()
@@ -159,23 +162,23 @@ base = "Average PR merge time"
 cAvgTimePrOverTime_hs.SetTitle(base+" (sum)")
 cAvgTimePrOverTime_hs.Draw("HIST TEXT0")
 cAvgTimePrOverTime_hs.GetXaxis().SetTimeDisplay(1)
-cAvgTimePrOverTime_hs.GetXaxis().SetTimeFormat("%Y-%m")
+cAvgTimePrOverTime_hs.GetXaxis().SetTimeFormat(tdFormat)
 cAvgTimePrOverTime_hs.GetYaxis().SetTitle("hours")
 cAvgTimePrOverTime.BuildLegend(0.1, 0.7, 0.48, 0.9)
-export_images("avgTimePrOverTime_stack",cAvgTimePrOverTime)
+export_images("avgTimePrOverTime_stack", cAvgTimePrOverTime)
 cAvgTimePrOverTime_hs.SetTitle(base+" (beside)")
 cAvgTimePrOverTime_hs.Draw("HIST TEXT0 nostackb")
 cAvgTimePrOverTime.BuildLegend(0.1, 0.7, 0.48, 0.9)
-export_images("avgTimePrOverTime_nostackb",cAvgTimePrOverTime)
+export_images("avgTimePrOverTime_nostackb", cAvgTimePrOverTime)
 cAvgTimePrOverTime_hs.SetTitle(base+" (overlap)")
 cAvgTimePrOverTime_hs.Draw("HIST TEXT0 nostack")
 cAvgTimePrOverTime.BuildLegend(0.1, 0.7, 0.48, 0.9)
-export_images("avgTimePrOverTime_nostack",cAvgTimePrOverTime)
+export_images("avgTimePrOverTime_nostack", cAvgTimePrOverTime)
 
 c.cd()
 timeVsPrTimeVsInteraction.GetZaxis().SetRange(-1, -1)
 timeVsPrTimeVsInteraction.Draw("LEGO2")
-export_images("timeVsPrTimeVsInteraction",c)
+export_images("timeVsPrTimeVsInteraction", c)
 
 f = ROOT.TFile("/tmp/out.root", "RECREATE")
 timeVsPrTimeVsInteraction.Write()
