@@ -30,36 +30,12 @@ The CSV annotation will eventually prevent the user from upgrading their OCP clu
 
 This option is useful when you know that the current version of your project will not work well on some specific Openshift version.
 
-### Configure the Openshift distribution 
-
-Use the annotation `com.redhat.openshift.versions` in `bundle/metadata/annotations.yaml` to ensure that the index image will be generated with its OCP Label, to prevent the bundle from being distributed on to 4.9:
- 
-```
-com.redhat.openshift.versions: "v4.6-v4.8"
-```
-
-This option is also useful when you know that the current version of your project will not work well on some specific OpenShift version. By using it you defined the Openshift versions where the Operator should be distributed and the Operator will not appear in a catalog of an Openshift version which is outside of the range. You must use it if you are distributing a solution that contains deprecated API(s) and will no longer be available in later versions. For more information see [Managing OpenShift Versions][managing-openshift-versions].
-
 ### Validate criteria with SDK
 
 Also, you can check the bundle via [`operator-sdk bundle validate`][sdk-cli-bundle-validate] against the experimental optional Validator [Community Operators][optional-validators]. This validator checks the manifests which are shipped in the bundle. In this way, if any manifests using the [Deprecated/Removed API(s) in 1.22][k8s-deprecated-guide] be found it will verify if your bundle is configured accordingly as described above:
 
 ```sh
 operator-sdk bundle validate ./bundle --select-optional name=community
-```
-
-The labels which are added in `bundle/metadata/annotations.yaml` are going to be added to the bundle image that  the pipeline will generate and by which your Operator is added to the catalog. However, if you want to build your own bundle image via the `bundle.Dockerfile` you should add those labels via the `LABEL` directive.
-
-> If you used `operator-sdk` to develop your Operator and to [create or update a bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle/#creating-a-bundle) you are using the target `make bundle` then, you will see that the annotation, `com.redhat.openshift.versions`, going to end up in the index image (`bundle.Dockerfile`): 
-
-```
-LABEL com.redhat.openshift.versions=v4.6-v4.8
-```
-
-You can use your (`bundle.Dockerfile`) to check it:
-
-```
-$ operator-sdk bundle validate ./bundle --select-optional name=community --optional-values=index-path=bundle.Dockerfile
 ```
 
 **NOTE:** The validators only checks the manifests which are shipped in the bundle. They are unable to ensure that the project's code does not use the [Deprecated/Removed API(s) in 1.22][k8s-deprecated-guide] and/or that it does not have as dependency another operator that uses them. 
