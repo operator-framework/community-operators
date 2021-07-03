@@ -1,0 +1,118 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: sxapis.sxapi.startx.fr
+spec:
+  group: sxapi.startx.fr
+  names:
+    kind: SXApi
+    listKind: SXApiList
+    plural: sxapis
+    singular: sxapi
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.context.app
+      name: App
+      type: string
+    - jsonPath: .spec.context.version
+      name: Version
+      priority: 10
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: "SXApi is a definition of the content of the application and
+          how to deploy it under a kubernetes cluster.\n\nThis custom resource allow
+          you to deploy and update with a single resource the content of your application
+          \nas well as the way you deploy and scale it.\n"
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the desired state of SXApi
+            properties:
+              context:
+                description: The context of this application (used for labeling)
+                properties:
+                  app:
+                    description: The name of the application.
+                    type: string
+                  cluster:
+                    description: The name of the cluster.
+                    type: string
+                  component:
+                    description: The name of the compoment.
+                    type: string
+                  environment:
+                    description: The name of the environment.
+                    type: string
+                  scope:
+                    description: The name of the scope.
+                    type: string
+                  version:
+                    description: The version of the application.
+                    type: string
+                type: object
+              sxapi:
+                description: The content of this application (used for service configuration)
+                properties:
+                  data:
+                    description: Should contain an sxapi.yml entry structured as a
+                      yaml document into a string field. You must read the https://sxapi-core.readthedocs.io
+                      documentation for more informations.
+                    type: string
+                  debug:
+                    description: Enable the debuging mode with more tools and log
+                      informations
+                    type: boolean
+                  expose:
+                    description: Define if we expose the application trough the application
+                      router
+                    properties:
+                      enabled:
+                        description: Enable the creation of a route
+                        type: boolean
+                    type: object
+                  profile:
+                    description: The name of the NPM profile used to start the application
+                      You must read the https://sxapi-core.readthedocs.io documentation
+                      for full list of profiles availables and their uses-cases.
+                    type: string
+                  replicas:
+                    description: the number of pod replicas to which the deployment
+                      must scale application
+                    format: int32
+                    type: integer
+                type: object
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            description: Status defines the observed state of SXApi
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        required:
+        - metadata
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
