@@ -146,8 +146,8 @@ if [ -n "$OPP_REMOVED_FILES" ];then
     if [ ! -d ${OPP_OPERATORS_DIR}/${OPP_OPERATOR_NAME} ];then
       OPP_OP_DELETE=1
       DELETE_APPREG=1
-      echo "op_release_delete_appreg=${DELETE_APPREG}"
-      echo "::set-output name=op_release_delete_appreg::${DELETE_APPREG}"
+      echo "opp_release_delete_appreg=${DELETE_APPREG}"
+      echo "::set-output name=opp_release_delete_appreg::${DELETE_APPREG}"
       echo "opp_test_ready=${OPP_TEST_READY}"
       echo "opp_release_ready=${OP_RELEASE_READY}"
       echo "opp_op_delete=$OPP_OP_DELETE"
