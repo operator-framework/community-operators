@@ -22,8 +22,8 @@ OPP_OPERATORS_DIR=${OPP_OPERATORS_DIR-"operators"}
 
 OPP_INDEX_SAFETY="-e enable_production=true"
 OPP_POD_START_RETRIES_LONG_DEPLOYMENT_WAIT_RETRIES=300
-OPP_ANSIBLE_PULL_REPO=${OPP_ANSIBLE_PULL_REPO-"https://github.com/operator-framework/operator-test-playbooks"}
-OPP_ANSIBLE_PULL_BRANCH=${OPP_ANSIBLE_PULL_BRANCH-"master"}
+OPP_ANSIBLE_PULL_REPO=${OPP_ANSIBLE_PULL_REPO-"https://github.com/redhat-openshift-ecosystem/operator-test-playbooks"}
+OPP_ANSIBLE_PULL_BRANCH=${OPP_ANSIBLE_PULL_BRANCH-"upstream-community"}
 OPP_IMAGE=${OPP_IMAGE-"quay.io/operator_testing/operator-test-playbooks:latest"}
 OPP_CONTAINER_TOOL=${OPP_CONTAINER_TOOL-"docker"}
 OPP_CONTAINER_OPT=${OPP_CONTAINER_OPT-"-it"}
