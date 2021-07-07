@@ -90,7 +90,9 @@ jobs:
       opp_op_delete: "${{ steps.op-traffic-light.outputs.opp_op_delete }}"
       opp_release_delete_appreg: "${{ steps.op-traffic-light.outputs.opp_release_delete_appreg }}"
       opp_pr_title: "${{ steps.op-traffic-light.outputs.opp_pr_title }}"
-
+{% endraw %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
   release-k8s_latest:
     name: "Release / k8s latest"
     needs: pr-check
@@ -132,6 +134,9 @@ jobs:
           echo "OPP_LABELS=$OPP_LABELS"
           echo "orange operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} https://github.com/operator-framework/community-operators master"
           bash <(curl -sL $OPP_SCRIPT_URL) orange "operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} https://github.com/operator-framework/community-operators master"
+{% endraw %}
+{% else %}
+{% raw %}
   # release-openshift_latest:
   #   name: "Release / o7t latest"
   #   needs: pr-check
@@ -253,6 +258,10 @@ jobs:
           run: |
             echo "openshift: ${{ matrix.index-tag }}"
             bash <(curl -sL $OPP_ISS_SCRIPT_URL) openshift ${{ matrix.index-tag }}
+{% endraw %}
+{% endif %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
 
   ohio-image-k8s:
     name: "Release / k8s ohio image"
@@ -270,7 +279,9 @@ jobs:
           echo "ohio_image operators/sync https://github.com/operator-framework/community-operators master"
           scripts/ci/disk-cleanup-on-startup.sh
           bash <(curl -sL $OPP_SCRIPT_URL) ohio_image "operators/sync https://github.com/operator-framework/community-operators master"
-
+{% endraw %}
+{% else %}
+{% raw %}
   ohio-image-o7t:
     name: "Release / o7t ohio image and sign 'latest'"
     needs: [ pr-check, release-sha-openshift ]
@@ -327,7 +338,10 @@ jobs:
         run: |
           echo "push_to_quay operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} https://github.com/operator-framework/community-operators master"
           bash <(curl -sL $OPP_SCRIPT_URL) push_to_quay "operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} https://github.com/operator-framework/community-operators master"
-
+{% endraw %}
+{% endif %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
   ohio-page-k8s:
     name: "Release / operatorhub.io"
     needs: ohio-image-k8s
@@ -343,7 +357,9 @@ jobs:
         run: |
           echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
           scripts/ci/trigger-operatorhubio-ci.sh
-
+{% endraw %}
+{% else %}
+{% raw %}
   ohio-page-o7t:
     name: "Release / dev.operatorhub.io"
     needs: ohio-image-o7t
@@ -358,10 +374,23 @@ jobs:
         run: |
           echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
           scripts/ci/trigger-operatorhubio-ci.sh
-
+{% endraw %}
+{% endif %}
+{% raw %}
   slack-notification:
     name: "Slack notification"
-    needs: [ pr-check, release-k8s_latest, release-openshift, release-sha-openshift, ohio-image-k8s, ohio-image-o7t, push-to-quay-o7t, ohio-page-k8s, ohio-page-o7t ]
+
+{% endraw %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
+    needs: [ pr-check, release-k8s_latest, ohio-image-k8s, ohio-page-k8s ]
+{% endraw %}
+{% else %}
+{% raw %}
+    needs: [ pr-check, release-openshift, release-sha-openshift, ohio-image-o7t, push-to-quay-o7t, ohio-page-o7t ]
+{% endraw %}
+{% endif %}
+{% raw %}
     if: failure()
     runs-on: ubuntu-latest
     steps:
