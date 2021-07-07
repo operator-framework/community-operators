@@ -12,6 +12,7 @@ DELETE_APPREG=${DELETE_APPREG-0}
 OPRT=${OPRT-0}
 OPP_CURRENT_PROJECT_REPO=${OPP_CURRENT_PROJECT_REPO-"operator-framework/community-operators"}
 OPP_CURRENT_PROJECT_BRANCH=${OPP_CURRENT_PROJECT_BRANCH-"master"}
+OPP_CURRENT_PROJECT_DOC=${OPP_CURRENT_PROJECT_DOC-"https://operator-framework.github.io/community-operators"}
 
 OPP_PRODUCTION_TYPE=${OPP_PRODUCTION_TYPE-"ocp"}
 OPP_OPERATORS_DIR=${OPP_OPERATORS_DIR-"operators"}
@@ -19,7 +20,7 @@ OPP_OPERATORS_DIR=${OPP_OPERATORS_DIR-"operators"}
 OPP_CHANGES_GITHUB=0
 OPP_CHANGES_CI=0
 OPP_CHANGES_DOCS=0
-OPP_CHANGES_STREAM_COMMUNITY=0
+OPP_CHANGES_IN_OPERATORS_DIR=0
 OPP_CHANGES_STREAM_UPSTREAM=0
 OPP_CI_YAML_CHANGED=0
 OPP_CI_YAML_ONLY=0
@@ -104,11 +105,12 @@ if [ -n "$OPP_REMOVED_FILES" ];then
     [[ $sf == ci* ]] && OPP_CHANGES_CI=1 && continue
     [[ $sf == docs* ]] && OPP_CHANGES_DOCS=1 && continue
     [[ $sf == *Dockerfile* ]] && OPP_CHANGES_DOCKERFILE=1 && continue
-    # [[ $sf == community-operators* ]] && OPP_CHANGES_STREAM_COMMUNITY=1
+    [[ $sf == operators* ]] && OPP_CHANGES_IN_OPERATORS_DIR=1
+    # [[ $sf == community-operators* ]] && OPP_CHANGES_IN_OPERATORS_DIR=1
     # [[ $sf == upstream-community-operators* ]] && OPP_CHANGES_STREAM_UPSTREAM=1
     [[ $sf == *package.yaml ]] && continue
     [[ $sf == *ci.yaml ]] && { OPP_CI_YAML_CHANGED=1; continue; }
-    # [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_RELEASE_READY=0; }
+    # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_RELEASE_READY=0; }
     FILES="$FILES $(echo $sf | cut -d '/' -f 1-3)"
     # Check if outdside of "community-operators" and "upstream-community-operators"
   done
@@ -121,8 +123,8 @@ if [ -n "$OPP_REMOVED_FILES" ];then
     OP_RELEASE_READY=1
 
 
-    [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 1 ]] && OPP_OPERATORS_DIR="community-operators"
-    [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && OPP_OPERATORS_DIR="upstream-community-operators"
+    # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && OPP_OPERATORS_DIR="community-operators"
+    # [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && OPP_OPERATORS_DIR="upstream-community-operators"
 
     VERSIONS=$(echo -e "${FILES// /\\n}" | uniq | sort -r)
     LATEST="$(echo -e $VERSIONS | cut -d ' ' -f 1)"
@@ -131,7 +133,7 @@ if [ -n "$OPP_REMOVED_FILES" ];then
 
     OPP_TEST_READY=0
 
-    [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; echo "::set-output name=opp_error_code::2"; exit 1; }
+    # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; echo "::set-output name=opp_error_code::2"; exit 1; }
 
     echo "::set-output name=opp_test_ready::${OPP_TEST_READY}"
     echo "::set-output name=opp_release_ready::${OP_RELEASE_READY}"
@@ -187,14 +189,14 @@ for sf in ${OPP_ADDED_MODIFIED_FILES}; do
   [[ $sf == ci* ]] && OPP_CHANGES_CI=1 && continue
   [[ $sf == docs* ]] && OPP_CHANGES_DOCS=1 && continue
   [[ $sf == *Dockerfile* ]] && OPP_CHANGES_DOCKERFILE=1 && continue
-  # [[ $sf == community-operators* ]] && OPP_CHANGES_STREAM_COMMUNITY=1
+  # [[ $sf == community-operators* ]] && OPP_CHANGES_IN_OPERATORS_DIR=1
   # [[ $sf == upstream-community-operators* ]] && OPP_CHANGES_STREAM_UPSTREAM=1
 
   [[ $sf == *package.yaml ]] && continue
   [[ $sf == *ci.yaml ]] && OPP_CI_YAML_CHANGED=1 && continue
   [[ $sf == *mkdocs.yml ]] && continue
 
-  # [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' Skipping test ..."; OPP_TEST_READY=0; }
+  # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' Skipping test ..."; OPP_TEST_READY=0; }
 
   OPERATOR_PATH=$(echo $sf | cut -d '/' -f 1-3)
   [ -f $OPERATOR_PATH ] && { echo "Operator path '$OPERATOR_PATH' is file and it should be directory !!!"; exit 1; }
@@ -221,23 +223,21 @@ done
 echo "OPP_MODIFIED_CSVS=$OPP_MODIFIED_CSVS"
 echo "OPP_MODIFIED_OTHERS=$OPP_MODIFIED_OTHERS"
 
-# [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OPP_CI_YAML_CHANGED -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Skipping test ..."; OPP_TEST_READY=0; }
+# [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && [[ $OPP_CI_YAML_CHANGED -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Skipping test ..."; OPP_TEST_READY=0; }
 
-# [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; echo "::set-output name=opp_error_code::2"; exit 1; }
+# [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; echo "::set-output name=opp_error_code::2"; exit 1; }
 
 [[ $OPP_CHANGES_GITHUB -eq 1 ]] && [[ $OPP_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in '.github' dir, but 'allow/ci-changes' label is not set !!!"; echo "::set-output name=opp_error_code::3"; OPP_TEST_READY=0; exit 1; }
 [[ $OPP_CHANGES_CI -eq 1 ]] && [[ $OPP_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in ci, but 'allow/ci-changes' label is not set !!!"; echo "::set-output name=opp_error_code::3"; OPP_TEST_READY=0; exit 1; }
 [[ $OPP_CHANGES_DOCS -eq 1 ]] && [[ $OPP_ALLOW_CI_CHANGES -eq 0 ]] && { echo "Changes in docs, but 'allow/ci-changes' label is not set !!!"; echo "::set-output name=opp_error_code::3"; OPP_TEST_READY=0; exit 1; }
-# [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 1 || $OPP_CHANGES_STREAM_COMMUNITY -eq 1 ]] && [[ $OPP_TEST_READY -eq 0 ]] && { echo "Error: Operator changes detected with ci changes and 'allow/ci-changes' is not set !!! Exiting ..."; echo "::set-output name=opp_error_code::3";  exit 1; }
-# [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 0 && $OPP_CHANGES_STREAM_COMMUNITY -eq 0 ]] && [[ $OPP_TEST_READY -eq 0 ]] && { echo "Nothing to test"; exit 0; }
+# [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 || $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && [[ $OPP_TEST_READY -eq 0 ]] && { echo "Error: Operator changes detected with ci changes and 'allow/ci-changes' is not set !!! Exiting ..."; echo "::set-output name=opp_error_code::3";  exit 1; }
+# [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 0 && $OPP_CHANGES_IN_OPERATORS_DIR -eq 0 ]] && [[ $OPP_TEST_READY -eq 0 ]] && { echo "Nothing to test"; exit 0; }
 [[ $OPP_TEST_READY -eq 0 ]] && { echo "Nothing to test"; exit 0; }
 
-# [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 1 ]] && OPP_OPERATORS_DIR="community-operators"
+# [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && OPP_OPERATORS_DIR="community-operators"
 # [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && OPP_OPERATORS_DIR="upstream-community-operators"
 
-if [[ $OPP_CHANGES_STREAM_COMMUNITY -eq 1 ]] || [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]];then
-  [[ $OPP_CI_YAML_CHANGED -eq 1 ]] && [ ! -n "$FILES" ] && OPP_CI_YAML_ONLY=1 && FILES=${OPP_ADDED_MODIFIED_FILES}
-fi
+[[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && [[ $OPP_CI_YAML_CHANGED -eq 1 ]] && [ ! -n "$FILES" ] && OPP_CI_YAML_ONLY=1 && FILES=${OPP_ADDED_MODIFIED_FILES}
 
 echo "FILES: $FILES"
 
@@ -303,9 +303,9 @@ echo "Versions Count: CHANGED[$OPP_OPERATOR_VERSIONS] REMOVED[$OPP_OPERATOR_VERS
 
 [[ $OPP_VER_OVERWRITE -eq 1 ]] && [[ $OPP_RECREATE -eq 1 ]] && { echo "Labels 'allow/operator-version-overwrite' and 'allow/operator-recreate' is set. Only one label can be set !!! Exiting ..."; echo "::set-output name=opp_error_code::1"; exit 1; }
 
-# [[ $OPRT -eq 1 ]] && [[ $OPP_CI_YAML_MODIFIED -eq 1 ]] && [[ $OPP_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/."; echo "::set-output name=opp_error_code::7"; exit 1; }
+# [[ $OPRT -eq 1 ]] && [[ $OPP_CI_YAML_MODIFIED -eq 1 ]] && [[ $OPP_CI_YAML_ONLY -eq 0 ]] && { echo "We support only a single file modification in case of 'ci.yaml' file. If you want to update it, please make an extra PR with 'ci.yaml' file modification only !!! More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/."; echo "::set-output name=opp_error_code::7"; exit 1; }
 
-    echo "::set-output name=opp_production_type::${OPP_PRODUCTION_TYPE}"
+echo "::set-output name=opp_production_type::${OPP_PRODUCTION_TYPE}"
 echo "::set-output name=opp_name::${OPP_OPERATOR_NAME}"
 
 yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
@@ -338,13 +338,13 @@ fi
 if [[ $OPP_TEST_READY -eq 1 ]];then
   if [ -f $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml ];then 
     TEST_REVIEWERS=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.reviewers')
-    # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
+    # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
     
     if [ "$TEST_REVIEWERS" != "null" ];then
       TEST_REVIEWERS=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
-      [[ $TEST_REVIEWERS -eq 0 ]] && { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
+      [[ $TEST_REVIEWERS -eq 0 ]] && { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
     else
-      echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
+      echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/. !!!"
       OPP_ERROR_CODE=10
     fi
     TEST_UPDATE_GRAPH=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
@@ -352,7 +352,7 @@ if [[ $OPP_TEST_READY -eq 1 ]];then
     echo "OPP_UPDATEGRAPH=$OPP_UPDATEGRAPH"
 
   else
-    echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' is present !!! If one wants to add reviewers (truested-authors) More info : https://operator-framework.github.io/community-operators/operator-ci-yaml/. !!!"
+    echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' is present !!! If one wants to add reviewers (truested-authors) More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/. !!!"
     OPP_ERROR_CODE=10
   fi
 fi
@@ -373,7 +373,7 @@ echo "OPP_OPERATOR_VERSIONS_REMOVED : $OPP_OPERATOR_VERSIONS_REMOVED"
 echo "OPP_CHANGES_GITHUB=$OPP_CHANGES_GITHUB"
 echo "OPP_CHANGES_CI=$OPP_CHANGES_CI"
 echo "OPP_CHANGES_DOC=$OPP_CHANGES_DOCS"
-echo "OPP_CHANGES_STREAM_COMMUNITY=$OPP_CHANGES_STREAM_COMMUNITY"
+echo "OPP_CHANGES_IN_OPERATORS_DIR=$OPP_CHANGES_IN_OPERATORS_DIR"
 echo "OPP_CHANGES_STREAM_UPSTREAM=$OPP_CHANGES_STREAM_UPSTREAM"
 echo "OPP_CHANGES_DOCKERFILE=$OPP_CHANGES_DOCKERFILE"
 
