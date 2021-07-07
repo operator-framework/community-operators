@@ -146,6 +146,10 @@ jobs:
 {% endraw %}
 {% endif %}
 {% raw %}
+
+{% endraw %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
   test-orange-latest:
     name: "orange / Deploy k8s latest"
     needs: pr-check
@@ -160,7 +164,9 @@ jobs:
         run: |
           echo "orange operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }}"
           bash <(curl -sL $OPP_SCRIPT_URL) orange "operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }}"
-
+{% endraw %}
+{% else %}
+{% raw %}
   test-orange-openshift_4_6:
     name: "orange / Deploy o7t v4.6"
     needs: pr-check
@@ -220,10 +226,22 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commits: ${{ steps.get-pr-commits.outputs.commits }}
-
+{% endraw %}
+{% endif %}
+{% raw %}
   test-summary:
     name: "Summary"
-    needs: [ pr-check, test-dco, test-kiwi, test-lemon, test-lemon-openshift_4_6, test-lemon-openshift_4_7, test-orange-latest, test-orange-openshift_4_6, test-orange-openshift_4_7 ]
+{% endraw %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}    
+    needs: [ pr-check, test-dco, test-kiwi, test-lemon, test-orange-latest]
+{% endraw %}
+{% else %}
+{% raw %}
+    needs: [ pr-check, test-dco, test-kiwi, test-lemon-openshift_4_6, test-lemon-openshift_4_7, test-orange-openshift_4_6, test-orange-openshift_4_7 ]
+{% endraw %}
+{% endif %}
+{% raw %}
     if: always()
     runs-on: ubuntu-latest
     steps:
