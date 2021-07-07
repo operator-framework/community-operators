@@ -13,6 +13,7 @@ env:
   OPP_DEBUG: 1
   OPP_CONTAINER_OPT: "-t"
   OPP_SCRIPT_URL: "{{ default_config.pipeline.ci_scripts }}/opp.sh"
+  OPP_SCRIPT_ENV_URL: "{{ default_config.pipeline.ci_scripts }}/opp-env.sh"
   OPP_IMAGE: "{{ default_config.pipeline.image }}"
   OPP_PROD: 0
   OPP_DRY_RUN: 0
@@ -47,8 +48,9 @@ jobs:
           OPP_RENAMED_FILES: "${{ steps.files.outputs.renamed }}"
           OPP_REMOVED_FILES: "${{ steps.files.outputs.removed }}"
         run: |
+          echo "Using script '$OPP_SCRIPT_ENV_URL' ..."
           echo "global labels $OPP_LABELS"
-          scripts/ci/actions-env
+          bash <(curl -sL $OPP_SCRIPT_ENV_URL)
     outputs:
       op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
       op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
