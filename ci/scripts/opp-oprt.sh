@@ -4,7 +4,7 @@
 set +o pipefail
 OPP_OPRT_REPO=${OPP_OPRT_REPO-""}
 OPP_OPRT_SHA=${OPP_OPRT_SHA-""}
-OPP_OPRT_SRC_REPO=${OPP_OPRT_SRC_REPO-"https://github.com/operator-framework/community-operators"}
+OPP_OPRT_SRC_REPO=${OPP_OPRT_SRC_REPO-"operator-framework/community-operators"}
 OPP_OPRT_SRC_BRANCH=${OPP_OPRT_SRC_BRANCH-"master"}
 OPP_SCRIPT_ENV_URL=${OPP_SCRIPT_ENV_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/actions-env"}
 export OPRT=1
@@ -21,7 +21,7 @@ git log --oneline | head
 git config --global user.email "test@example.com"
 git config --global user.name "Test User"
 
-git remote add upstream $OPP_OPRT_SRC_REPO -f > /dev/null 2>&1
+git remote add upstream https://github.com/$OPP_OPRT_SRC_REPO -f > /dev/null 2>&1
 git pull --rebase -Xours upstream $OPP_OPRT_SRC_BRANCH 
 
 export OPP_ADDED_FILES=$(git diff --diff-filter=A upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
@@ -30,8 +30,8 @@ export OPP_REMOVED_FILES=$(git diff --diff-filter=D upstream/$OPP_OPRT_SRC_BRANC
 export OPP_RENAMED_FILES=$(git diff --diff-filter=R upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_ADDED_MODIFIED_FILES=$(git diff --diff-filter=AM upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_ADDED_MODIFIED_RENAMED_FILES=$(git diff --diff-filter=RAM upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
-export OPP_CURRENT_PROJECT_REPO=$OPP_OPRT_SRC_REPO
-export OPP_CURRENT_PROJECT_BRANCH=$OPP_OPRT_SRC_BRANCH
+export OPP_CURRENT_PROJECT_REPO="$OPP_OPRT_SRC_REPO"
+export OPP_CURRENT_PROJECT_BRANCH="$OPP_OPRT_SRC_BRANCH"
 
 BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
 echo "BRANCH_NAME=$BRANCH_NAME"
