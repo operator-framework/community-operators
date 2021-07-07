@@ -7,8 +7,10 @@ on:
 
 env:
 {% endraw %}
-  AUTOMERGE_ENABLED: 1
+  AUTOMERGE_ENABLED: "{{ default_config.pipeline.automerge.enabled }}"
   OPP_PRODUCTION_TYPE: "{{ default_config.production.type }}"
+  OPP_SCRIPT_ENV_OPRT_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-oprt.sh"
+  OPP_SCRIPT_ENV_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-env.sh"
 {% raw %}
   
 jobs:
@@ -105,26 +107,6 @@ jobs:
               repo: context.repo.repo,
               assignees: [ "J0zi", "mvalarh" ]
             });
-      # - name: Assign pull requests to Community Operator Submissions project
-      #   uses: srggrs/assign-one-project-github-action@1.2.1
-      #   if: github.event.action == 'opened' || github.event.action == 'reopened'
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   continue-on-error: true
-      #   with:
-      #     project: 'https://github.com/operator-framework/community-operators/projects/1'
-      # - name: "Request reviewer (test)"
-      #   uses: actions/github-script@v3
-      #   continue-on-error: true
-      #   with:
-      #     github-token: ${{secrets.GITHUB_TOKEN}}
-      #     script: |
-      #       github.pulls.requestReviewers({
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         pull_number: context.issue.number,
-      #         reviewers: [ "mvalahtv" ]
-      #       });
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -138,11 +120,12 @@ jobs:
         env:
           OPP_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
           OPP_PR_AUTHOR: "${{ github.event.pull_request.user.login }}"
-          OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}"
-          OPRT_SHA: "${{ github.event.pull_request.head.sha }}"
-          #OPRT_SRC_BRANCH: "support/action-01"
+          OPP_OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}"
+          OPP_OPRT_SHA: "${{ github.event.pull_request.head.sha }}"
+          OPP_OPRT_SRC_REPO: "${{ github.event.pull_request.base.repo.html_url }}"
+          OPP_OPRT_SRC_BRANCH: "${{ github.event.pull_request.base.ref }}"
         run: |
-          bash <(curl -sL https://raw.githubusercontent.com/redhat-openshift-ecosystem/operator-test-playbooks/upstream-community/upstream/test/oprt.sh)
+          bash <(curl -sL $OPP_SCRIPT_ENV_OPRT_URL)
 
       # - name: "Comment operator test error code [10]"
       #   if: steps.op-traffic-light.outputs.opp_error_code == '10'
