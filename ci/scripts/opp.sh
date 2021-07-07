@@ -290,8 +290,9 @@ fi
 OPP_CHECK_STEAM_OK=0
 [ "$OPP_STREAM" = "." ] && [ "$OPP_VERSION" = "sync" ] && OPP_STREAM=$OPP_OPERATOR && OPP_OPERATOR=$OPP_VERSION
 [ "$OPP_STREAM" = "." ] && [ "$OPP_VERSION" = "update" ] && OPP_STREAM=$OPP_OPERATOR && OPP_OPERATOR=$OPP_VERSION
-[ "$OPP_STREAM" = "community-operators" ] && OPP_CHECK_STEAM_OK=1
-[ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_CHECK_STEAM_OK=1
+[ "$OPP_STREAM" = "operators" ] && OPP_CHECK_STEAM_OK=1
+# [ "$OPP_STREAM" = "community-operators" ] && OPP_CHECK_STEAM_OK=1
+# [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_CHECK_STEAM_OK=1
 
 [[ $OPP_CHECK_STEAM_OK -eq 0 ]] && { echo "Error : Unknwn value for 'OPP_STREAM=$OPP_STREAM' !!!"; exit 1; }
 
