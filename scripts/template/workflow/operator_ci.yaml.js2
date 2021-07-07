@@ -11,6 +11,9 @@ env:
   OPP_PRODUCTION_TYPE: "{{ default_config.production.type }}"
   OPP_SCRIPT_ENV_OPRT_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-oprt.sh"
   OPP_SCRIPT_ENV_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-env.sh"
+  OPP_SCRIPT_COSMETICS_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-oprt-cosmetics.sh"
+  OPP_ANSIBLE_PULL_REPO: "https://github.com/redhat-openshift-ecosystem/operator-test-playbooks/"
+  OPP_ANSIBLE_PULL_BRANCH: "upstream-community"
 {% raw %}
   
 jobs:
@@ -223,7 +226,7 @@ jobs:
           message: |
             /hold
             
-            File `${{ steps.op-traffic-light.outputs.opp_stream }}/${{ steps.op-traffic-light.outputs.opp_name }}/ci.yaml` is missing or not valid. More details in failed test `Operator CI / operator-ci` logs. Documentation how to setup valid `ci.yaml` file can be found at https://operator-framework.github.io/community-operators/operator-ci-yaml."
+            File `${{ steps.op-traffic-light.outputs.opp_production_type }}/${{ steps.op-traffic-light.outputs.opp_name }}/ci.yaml` is missing or not valid. More details in failed test `Operator CI / operator-ci` logs. Documentation how to setup valid `ci.yaml` file can be found at https://operator-framework.github.io/community-operators/operator-ci-yaml."
 
             Note: Only single file modification on `ci.yaml` is allowed. Please make separate PR to apply `ci.yaml` file updates and get it merged before current PR.
 
@@ -350,15 +353,12 @@ jobs:
         env:
           OPP_MODIFIED_CSVS: "${{ steps.op-traffic-light.outputs.opp_modified_csvs }}"
           OPP_MODIFIED_REPO_BRANCH: "${{ steps.op-traffic-light.outputs.opp_repo_branch }}"
-          OPP_ANSIBLE_PULL_REPO: "https://github.com/operator-framework/operator-test-playbooks"
-          OPP_ANSIBLE_PULL_BRANCH: "master"
-          OPP_STREAM: "${{ steps.op-traffic-light.outputs.opp_stream }}"
         run: |
           echo "OPP_MODIFIED_CSVS=$OPP_MODIFIED_CSVS"
           echo "opp_check_cosmetic: ${{ steps.op-verify-modifications.outputs.opp_check_cosmetic }}"
           echo "opp_set_label_operator_version_overwrite: ${{ steps.op-traffic-light.outputs.opp_set_label_operator_version_overwrite }}"
           echo "opp_set_label_operator_recreate: ${{ steps.op-traffic-light.outputs.opp_set_label_operator_recreate }}"
-          bash <(curl -sL https://raw.githubusercontent.com/redhat-openshift-ecosystem/operator-test-playbooks/upstream-community/upstream/test/oprt_cosmetics.sh)
+          bash <(curl -sL $OPP_SCRIPT_COSMETICS_URL)
           echo "DONE"
 
       - name: "Comment for cosmetics change error"
@@ -441,7 +441,7 @@ jobs:
       #   uses: kentaro-m/auto-assign-action@v1.1.2
       #   continue-on-error: true
       #   with:
-      #     configuration-path: "${{steps.op-traffic-light.outputs.opp_stream }}/${{ steps.op-traffic-light.outputs.opp_name }}/ci.yaml"
+      #     configuration-path: "${{steps.op-traffic-light.outputs.opp_production_type }}/${{ steps.op-traffic-light.outputs.opp_name }}/ci.yaml"
 
       - name: "Setting authorized-changes label"
         uses: actions/github-script@v3
@@ -475,14 +475,14 @@ jobs:
         run: |
           echo "steps.op-traffic-light.outputs.opp_test_ready: ${{ steps.op-traffic-light.outputs.opp_test_ready }}"
           echo "steps.op-traffic-light.outputs.opp_release_ready: ${{ steps.op-traffic-light.outputs.opp_release_ready }}"
-          echo "steps.op-traffic-light.outputs.opp_stream: ${{ steps.op-traffic-light.outputs.opp_stream }}"
+          echo "steps.op-traffic-light.outputs.opp_production_type: ${{ steps.op-traffic-light.outputs.opp_production_type }}"
           echo "steps.op-traffic-light.outputs.opp_name: ${{ steps.op-traffic-light.outputs.opp_name }}"
           echo "steps.op-traffic-light.outputs.opp_version: ${{ steps.op-traffic-light.outputs.opp_version }}"
           echo "steps.op-traffic-light.outputs.opp_ci_yaml_only: ${{ steps.op-traffic-light.outputs.opp_ci_yaml_only }}"
     outputs:
       opp_test_ready: "${{ steps.op-traffic-light.outputs.opp_test_ready }}"
       opp_release_ready: "${{ steps.op-traffic-light.outputs.opp_release_ready }}"
-      opp_stream: "${{ steps.op-traffic-light.outputs.opp_stream }}"
+      opp_production_type: "${{ steps.op-traffic-light.outputs.opp_production_type }}"
       opp_name: "${{ steps.op-traffic-light.outputs.opp_name }}"
       opp_version: "${{ steps.op-traffic-light.outputs.opp_version }}"
       opp_ci_yaml_only: "${{ steps.op-traffic-light.outputs.opp_ci_yaml_only }}"
@@ -507,12 +507,12 @@ jobs:
             })
       - name: Info
         run: |
-          echo "needs.operator-ci.outputs.opp_stream: ${{ needs.operator-ci.outputs.opp_stream }}"
+          echo "needs.operator-ci.outputs.opp_production_type: ${{ needs.operator-ci.outputs.opp_production_type }}"
           echo "needs.operator-ci.outputs.opp_ci_yaml_only: ${{ needs.operator-ci.outputs.opp_ci_yaml_only }}"
 
       - name: "Setting ok-to-test label"
         uses: actions/github-script@v3
-        if: needs.operator-ci.outputs.opp_stream == 'community-operators' && needs.operator-ci.outputs.opp_ci_yaml_only != '1' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
+        if: needs.operator-ci.outputs.opp_production_type != 'k8s' && needs.operator-ci.outputs.opp_ci_yaml_only != '1' && (!contains(github.event.pull_request.labels.*.name, 'allow/ci-changes'))
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -525,7 +525,7 @@ jobs:
 
       - name: "Setting installation-validated label (opensift+ci_yaml_only)"
         uses: actions/github-script@v3
-        if: needs.operator-ci.outputs.opp_stream == 'community-operators' && needs.operator-ci.outputs.opp_ci_yaml_only == '1'
+        if: needs.operator-ci.outputs.opp_production_type != 'k8s' && needs.operator-ci.outputs.opp_ci_yaml_only == '1'
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
