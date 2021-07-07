@@ -80,7 +80,7 @@ export GODEBUG=${GODEBUG-x509ignoreCN=0}
 [[ $OPP_NOCOLOR -eq 1 ]] && ANSIBLE_NOCOLOR=1
 
 # Handle if cluster is k8s (pure kubernetes) or openshift
-[[ OPP_PRODUCTION_TYPE == "ocp" || OPP_PRODUCTION_TYPE == "okd" ]] && OPP_CLUSTER_TYPE="openshift"
+[[ $OPP_PRODUCTION_TYPE == "ocp" || $OPP_PRODUCTION_TYPE == "okd" ]] && OPP_CLUSTER_TYPE="openshift"
 
 function help() {
     echo ""
