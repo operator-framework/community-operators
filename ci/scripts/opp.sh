@@ -49,6 +49,15 @@ OPP_IIB_INSTALL=${OPP_IIB_INSTALL-0}
 OPP_LOG_DIR=${OPP_LOG_DIR-"/tmp/op-test"}
 OPP_NOCOLOR=${OPP_NOCOLOR-0}
 
+
+OPP_RELEASE_BUNDLE_REGISTRY=${OPP_RELEASE_BUNDLE_REGISTRY-"quay.io"}
+OPP_RELEASE_BUNDLE_ORGANIZATION=${OPP_RELEASE_BUNDLE_ORGANIZATION-"community-operators-pipeline"}
+OPP_RELEASE_INDEX_REGISTRY=${OPP_RELEASE_INDEX_REGISTRY-"quay.io"}
+OPP_RELEASE_INDEX_ORGANIZATION=${OPP_RELEASE_INDEX_ORGANIZATION-"community-operators-pipeline"}
+OPP_RELEASE_INDEX_NAME=${OPP_RELEASE_INDEX_NAME-"catalog"}
+OPP_PRODUCTION_REGISTRY_NAMESPACE="$OPP_RELEASE_INDEX_REGISTRY/$OPP_RELEASE_INDEX_ORGANIZATION"
+OPP_PRODUCTION_INDEX_IMAGE="$OPP_RELEASE_INDEX_REGISTRY/$OPP_RELEASE_INDEX_ORGANIZATION/$OPP_RELEASE_INDEX_NAME"
+
 OHIO_INPUT_CATALOG_IMAGE=${OHIO_INPUT_CATALOG_IMAGE-"quay.io/operatorhubio/catalog:latest"}
 OHIO_REGISTRY_IMAGE=${OHIO_REGISTRY_IMAGE-"quay.io/operator-framework/upstream-community-operators:latest"}
 
@@ -291,8 +300,6 @@ OPP_CHECK_STEAM_OK=0
 [ "$OPP_STREAM" = "." ] && [ "$OPP_VERSION" = "sync" ] && OPP_STREAM=$OPP_OPERATOR && OPP_OPERATOR=$OPP_VERSION
 [ "$OPP_STREAM" = "." ] && [ "$OPP_VERSION" = "update" ] && OPP_STREAM=$OPP_OPERATOR && OPP_OPERATOR=$OPP_VERSION
 [ "$OPP_STREAM" = "operators" ] && OPP_CHECK_STEAM_OK=1
-# [ "$OPP_STREAM" = "community-operators" ] && OPP_CHECK_STEAM_OK=1
-# [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_CHECK_STEAM_OK=1
 
 [[ $OPP_CHECK_STEAM_OK -eq 0 ]] && { echo "Error : Unknwn value for 'OPP_STREAM=$OPP_STREAM' !!!"; exit 1; }
 
@@ -328,63 +335,51 @@ function ExecParameters() {
     # Handle index_check
     OPP_PRODUCTION_INDEX_IMAGE_TAG="latest"
     [[ $1 == orange_* ]] && OPP_PRODUCTION_INDEX_IMAGE_TAG="${1/orange_/}"
+    [[ $1 == lemon_* ]] && OPP_PRODUCTION_INDEX_IMAGE_TAG="${1/lemon_/}"
+
     [[ $1 == orange* ]] && OPP_EXEC_USER_INDEX_CHECK="-e run_prepare_catalog_repo_upstream=true -e bundle_index_image=$OPP_PRODUCTION_INDEX_IMAGE:$OPP_PRODUCTION_INDEX_IMAGE_TAG -e operator_base_dir=$OPP_BASE_DIR/$OPP_OPERATORS_DIR"
     [[ $1 == orange_* ]] && [ "$OPP_CLUSTER_TYPE" = "k8s" ] && { echo "Error: orange_xxx is not supported for 'kubernetes' cluster !!! Exiting ..."; exit 1; }
     
-    
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog"
-    
+    # [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=$OPP_RELEASE_BUNDLE_REGISTRY -e bundle_image_namespace=$OPP_RELEASE_BUNDLE_ORGANIZATION -e bundle_index_image_namespace=$OPP_RELEASE_INDEX_ORGANIZATION -e bundle_index_image_name=OPP_RELEASE_INDEX_NAME"    
     # Using default "-e use_cluster_filter=false -e supported_cluster_versions=latest" for k8s
-    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog"
+    # [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog"
+    # [[ $1 == orange* ]] && [[ $OPP_PROD -ge 2 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog"
+    # [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP"
+    # [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATORHUBIO"
+    # [[ $1 == orange* ]] && [[ $OPP_PROD -ge 2 ]] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATOR_TESTING"
+
+    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=$OPP_RELEASE_BUNDLE_REGISTRY -e bundle_image_namespace=$OPP_RELEASE_BUNDLE_ORGANIZATION -e bundle_index_image_namespace=$OPP_RELEASE_INDEX_ORGANIZATION -e bundle_index_image_name=$OPP_RELEASE_INDEX_NAME"
+    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$REGISTRY_RELEASE_API_TOKEN"
     
-    [[ $1 == orange* ]] && [[ $OPP_PROD -ge 2 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=operator_testing -e bundle_index_image_namespace=operator_testing -e bundle_index_image_name=catalog"
 
-    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP"
-    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATORHUBIO"
-    [[ $1 == orange* ]] && [[ $OPP_PROD -ge 2 ]] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATOR_TESTING"
-
-    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_MIRROR_IMAGE_POSTFIX="s" 
     # If community and doing orange_<version>
-    [[ $1 == orange* ]] && [[ $1 != orange_* ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e stream_kind=openshift_upstream"
-    [[ $1 == orange_* ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e stream_kind=openshift_upstream -e supported_cluster_versions=${1/orange_/} -e bundle_index_image_version=${1/orange_/}"
-    [[ $1 == lemon_* ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e stream_kind=openshift_upstream -e supported_cluster_versions=${1/lemon_/} -e bundle_index_image_version=${1/lemon_/}"
+    # [[ $1 == orange* ]] && [[ $1 != orange_* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e stream_kind=openshift_upstream"
+    # [[ $1 == orange_* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e stream_kind=openshift_upstream -e supported_cluster_versions=${1/orange_/} -e bundle_index_image_version=${1/orange_/}"
+    # [[ $1 == lemon_* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e stream_kind=openshift_upstream -e supported_cluster_versions=${1/lemon_/} -e bundle_index_image_version=${1/lemon_/}"
 
-    if [[ $OPP_INDEX_MIRROR -eq 1 ]];then
-        [[ $1 == orange_* ]] && [ "$OPP_STREAM" = "community-operators" ] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e mirror_multiarch_image=registry.redhat.io/openshift4/ose-operator-registry:v4.5 -e mirror_apply=true"
-        [[ $1 == orange_* ]] && [ "$OPP_STREAM" = "community-operators" ] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_MIRROR_LATEST_TAG" != "${1/orange_/}" ]&& OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e mirror_index_images=\"quay.io/redhat/redhat----community-operator-index:${1/orange_/}|redhat+iib_community|$QUAY_RH_INDEX_PW|$OPP_MIRROR_IMAGE_POSTFIX\""
-        [[ $1 == orange_* ]] && [ "$OPP_STREAM" = "community-operators" ] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_MIRROR_LATEST_TAG" = "${1/orange_/}" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e mirror_index_images=\"quay.io/redhat/redhat----community-operator-index:${1/orange_/}|redhat+iib_community|$QUAY_RH_INDEX_PW|$OPP_MIRROR_IMAGE_POSTFIX|quay.io/redhat/redhat----community-operator-index:latest\""
-    else
-        [[ $1 == orange_* ]] && [ "$OPP_STREAM" = "community-operators" ] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e sis_index_add_skip=true"    
+    [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e stream_kind=openshift_upstream"
+    if [[ $1 == orange_* || $1 == lemon_* ]];then
+        [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e supported_cluster_versions=$OPP_PRODUCTION_INDEX_IMAGE_TAG -e bundle_index_image_version=$OPP_PRODUCTION_INDEX_IMAGE_TAG"
+    fi
+
+    if [ "$OPP_CLUSTER_TYPE" = "openshift" ] && [[ $1 == orange_* ]] && [[ $OPP_PROD -eq 1 ]];then
+        if [[ $OPP_MIRROR_INDEX_ENABLED -eq 1 ]];then
+            OPP_EXEC_USER="$OPP_EXEC_USER -e mirror_apply=true"
+            [[ $OPP_MIRROR_INDEX_MULTIARCH != "" ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e mirror_multiarch_image=$OPP_MIRROR_INDEX_MULTIARCH"
+            [ "$OPP_MIRROR_LATEST_TAG" != "${1/orange_/}" ]&& OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e mirror_index_images=\"$OPP_MIRROR_INDEX_REGISTRY/$OPP_MIRROR_INDEX_ORGANIZATION/$OPP_MIRROR_INDEX_NAME:${1/orange_/}|redhat+iib_community|$QUAY_RH_INDEX_PW|$OPP_MIRROR_IMAGE_POSTFIX\""
+            [ "$OPP_MIRROR_LATEST_TAG" = "${1/orange_/}" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e mirror_index_images=\"$OPP_MIRROR_INDEX_REGISTRY/$OPP_MIRROR_INDEX_ORGANIZATION/$OPP_MIRROR_INDEX_NAME:${1/orange_/}|redhat+iib_community|$QUAY_RH_INDEX_PW|$OPP_MIRROR_IMAGE_POSTFIX|quay.io/redhat/redhat----community-operator-index:latest\""
+        else
+            OPP_EXEC_USER="$OPP_EXEC_USER -e sis_index_add_skip=true"    
+        fi
     fi
 
     [[ OP_ALLOW_BIG_CHANGES_TO_EXISTING -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e allow_big_changes_to_existing=true"
 
     # Failing test when upstream and orgage_<version> (not supported yet)
-    [[ $1 == orange_* ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER="" && { echo "Warning: Index versions are not supported for 'upstream-community-operators' !!! Skipping ..."; OPP_SKIP=1; }
+    [[ $1 == orange_* ]] && [ "$OPP_CLUSTER_TYPE" = "k8s" ] && OPP_EXEC_USER="" && { echo "Warning: Index versions are not supported for 'upstream-community-operators' !!! Skipping ..."; OPP_SKIP=1; }
 
     # Building index from bundle shas in production
-    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_index_sha_posfix=s"
+    [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_index_sha_posfix=$OPP_MIRROR_INDEX_MULTIARCH_POSTFIX"
 
     # Don't reset kind when production (It should speedup deploy when kind and registry is not needed)
     [[ $1 == orange* ]] && [[ $OPP_PROD -ge 1 ]] && OPP_RESET=0
@@ -413,19 +408,26 @@ function ExecParameters() {
     [[ $OPP_PROD -ge 1 ]] && [[ $1 == lemon* ]] && { echo "Warning: No support for 'lemon' test when 'OPP_PROD=$OPP_PROD' !!! Skipping ..."; OPP_SKIP=1; }
     [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e enable_bundle_validate_community=false"
 
-    [[ $1 == push_to_quay* ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_RESET=1 && OPP_EXEC_USER="$OPP_EXEC_USER --tags deploy_bundles -e operator_dir=$OPP_BASE_DIR/$OPP_OPERATORS_DIR/$OPP_OPERATOR -e quay_appregistry_api_token=$QUAY_APPREG_TOKEN -e quay_appregistry_courier_token=$QUAY_COURIER_TOKEN -e production_registry_namespace=quay.io/openshift-community-operators -e index_force_update=true -e bundle_index_image_name=catalog -e op_test_operator_version=$OPP_VERSION"
-    [[ $1 == push_to_quay* ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_RESET=1 && [[ DELETE_APPREG -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e delete_appreg='true'"
-    [[ $1 == push_to_quay* ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_RESET=0 && OPP_EXEC_USER="" && { echo "Warning: Push to quay is not supported for 'upstream-community-operators' !!! Skipping ..."; OPP_SKIP=1; }
+    [[ $1 == push_to_quay* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_RESET=1 && OPP_EXEC_USER="$OPP_EXEC_USER --tags deploy_bundles -e operator_dir=$OPP_BASE_DIR/$OPP_OPERATORS_DIR/$OPP_OPERATOR -e production_registry_namespace=$OPP_PRODUCTION_REGISTRY_NAMESPACE -e index_force_update=true -e bundle_index_image_name=$OPP_RELEASE_INDEX_NAME -e op_test_operator_version=$OPP_VERSION"
+    [[ $1 == push_to_quay* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_RESET=1 && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_appregistry_api_token=$QUAY_APPREG_TOKEN -e quay_appregistry_courier_token=$QUAY_COURIER_TOKEN"
+    [[ $1 == push_to_quay* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_RESET=1 && [[ DELETE_APPREG -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER -e delete_appreg='true'"
+    [[ $1 == push_to_quay* ]] && [ "$OPP_CLUSTER_TYPE" = "k8s" ] && OPP_RESET=0 && OPP_EXEC_USER="" && { echo "Warning: Push to quay is not supported for 'k8s' !!! Skipping ..."; OPP_SKIP=1; }
 
     [[ $1 == ohio_image* ]] && OPP_RESET=0 && OPP_EXEC_USER="$OPP_EXEC_USER --tags app_registry -e bundle_index_image=$OHIO_INPUT_CATALOG_IMAGE -e index_export_parallel=true -e app_registry_image=$OHIO_REGISTRY_IMAGE -e quay_api_token=$OHIO_REGISTRY_TOKEN"
 
     [[ $1 == op_delete* ]] && OPP_RESET=0 && OPP_EXEC_USER="$OPP_EXEC_USER --tags remove_operator -e operator_dir=$OPP_BASE_DIR/$OPP_OPERATORS_DIR/$OPP_OPERATOR"
-    [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog"
-    [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog"
-    [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP"
-    [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATORHUBIO"
-    [[ $1 == op_delete* ]] && [[ $OPP_PROD -ge 2 ]] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATOR_TESTING"
-    [[ $1 == op_delete_* ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_index_image_version=${1/op_delete_/}"
+    # [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=openshift-community-operators -e bundle_index_image_namespace=openshift-community-operators -e bundle_index_image_name=catalog"
+    # [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=quay.io -e bundle_image_namespace=operatorhubio -e bundle_index_image_namespace=operatorhubio -e bundle_index_image_name=catalog"
+    # [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP"
+    # [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "upstream-community-operators" ] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATORHUBIO"
+    # [[ $1 == op_delete* ]] && [[ $OPP_PROD -ge 2 ]] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$QUAY_API_TOKEN_OPERATOR_TESTING"
+
+    [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] &&  OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=$OPP_RELEASE_BUNDLE_REGISTRY -e bundle_image_namespace=$OPP_RELEASE_BUNDLE_ORGANIZATION -e bundle_index_image_namespace=$OPP_RELEASE_INDEX_ORGANIZATION -e bundle_index_image_name=$OPP_RELEASE_INDEX_NAME"
+    [[ $1 == op_delete* ]] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER_SECRETS="$OPP_EXEC_USER_SECRETS -e quay_api_token=$REGISTRY_RELEASE_API_TOKEN"
+
+    [[ $1 == op_delete_* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_index_image_version=${1/op_delete_/}"
+    [[ $1 == op_delete_* ]] && [ "$OPP_CLUSTER_TYPE" = "k8s" ] && OPP_RESET=0 && OPP_EXEC_USER="" && { echo "Warning: Removing specific version (not latest) not supported for 'k8s' !!! Skipping ..."; OPP_SKIP=1; }
+
 
     # index safety - avoid accidental index destroy
     [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && OPP_EXEC_USER="$OPP_EXEC_USER $OPP_INDEX_SAFETY" && OPP_EXEC_USER_INDEX_CHECK="$OPP_EXEC_USER_INDEX_CHECK $OPP_INDEX_SAFETY"
