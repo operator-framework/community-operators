@@ -8,6 +8,10 @@ OPP_INPUT_REPO=${OPP_INPUT_REPO-"https://github.com/operator-framework/community
 OPP_INPUT_BRANCH=${OPP_INPUT_BRANCH-"master"}
 OPP_CONTAINER_TOOL=${OPP_CONTAINER_TOOL-docker}
 OPP_ANSIBLE_ARGS="-i localhost, -e ansible_connection=local upstream/local-pipeline-update.yml"
+OPP_ANSIBLE_EXTRA_ARGS=""
+
+[ $1 = "recreate" ] && OPP_ANSIBLE_EXTRA_ARGS="-e empty_index=quay.io/operator_testing/index_empty"
+
 OPP_TMP_DIR="/tmp/opp-update"
 [ -d $OPP_TMP_DIR ] && rm -rf $OPP_TMP_DIR
 mkdir -p $OPP_TMP_DIR
@@ -19,7 +23,7 @@ ANSIBLE_STDOUT_CALLBACK=yaml ansible-pull -U $OPP_ANSIBLE_PULL_REPO -C $OPP_ANSI
 -e workflow_output_path="$PWD/.github/workflows" \
 -e quay_api_token=$REGISTRY_RELEASE_API_TOKEN \
 -e container_tool=$OPP_CONTAINER_TOOL \
--e empty_index="quay.io/operator_testing/index_empty"
+$OPP_ANSIBLE_EXTRA_ARGS
 
 ######## Gen empty index ###############################
 #
