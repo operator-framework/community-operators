@@ -96,9 +96,11 @@ jobs:
               repo: context.repo.repo,
               labels: ['package-validated']
             })
-      - name: "Set installation-validated when kubernetes-operator label is set"
+{% endraw %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
+      - name: "Set installation-validated"
         uses: actions/github-script@v3
-        if: (contains(fromJson(steps.pr-labels.outputs.result).*.name, 'kubernetes-operator'))
         continue-on-error: true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -111,7 +113,6 @@ jobs:
             })
       - uses: actions/github-script@v3
         if: |
-          (contains(fromJson(steps.pr-labels.outputs.result).*.name, 'kubernetes-operator')) &&
           (!contains(fromJson(steps.pr-labels.outputs.result).*.name, 'do-not-merge/work-in-progress')) &&
           (!contains(fromJson(steps.pr-labels.outputs.result).*.name, 'do-not-merge/hold'))
         continue-on-error: true
@@ -124,7 +125,9 @@ jobs:
               repo: context.repo.repo,
               body: '/merge possible'
             })
-
+{% endraw %}
+{% endif %}
+{% raw %}
   on-failure:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'failure'
