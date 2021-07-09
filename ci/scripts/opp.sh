@@ -10,8 +10,8 @@ TESTS=${TESTS//,/ }
 OPP_INPUT_REPO=${OPP_INPUT_REPO-"operator-framework/community-operators"}
 OPP_INPUT_BRANCH=${OPP_INPUT_BRANCH-"master"}
 OPP_THIS_SCRIPT_URL="https://raw.githubusercontent.com/$OPP_INPUT_REPO/$OPP_INPUT_BRANCH/ci/scripts/opp.sh"
-OPP_THIS_REPO=${OPP_INPUT_REPO-"redhat-openshift-ecosystem/community-operators-pipeline"}
-OPP_THIS_BRANCH=${OPP_INPUT_BRANCH-"main"}
+OPP_THIS_REPO=${OPP_THIS_REPO-"redhat-openshift-ecosystem/community-operators-pipeline"}
+OPP_THIS_BRANCH=${OPP_THIS_REPO-"main"}
 
 OPP_BASE_DEP="ansible curl openssl git"
 KIND_KUBE_VERSION=${KIND_KUBE_VERSION-"v1.19.11"}
