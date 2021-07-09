@@ -16,8 +16,8 @@ OPP_EXEC_USER_SECRETS=${OPP_EXEC_USER_SECRETS-""}
 OPP_EXEC_BASE=${OPP_EXEC_BASE-"ansible-playbook -i localhost, -e ansible_connection=local upstream/local.yml -e run_upstream=true -e image_protocol='docker://'"}
 OPP_EXEC_EXTRA=${OPP_EXEC_EXTRA-"-e container_tool=podman --tags sync_index_sha"}
 OPP_INDEX_POSTFIX=${OPP_INDEX_POSTFIX-"s"}
-OPP_ANSIBLE_PULL_REPO=${OPP_ANSIBLE_PULL_REPO-"https://github.com/operator-framework/operator-test-playbooks"}
-OPP_ANSIBLE_PULL_BRANCH=${OPP_ANSIBLE_PULL_BRANCH-"master"}
+OPP_ANSIBLE_PULL_REPO=${OPP_ANSIBLE_PULL_REPO-"https://github.com/redhat-openshift-ecosystem/operator-test-playbooks"}
+OPP_ANSIBLE_PULL_BRANCH=${OPP_ANSIBLE_PULL_BRANCH-"upstream-community"}
 OPP_ANSIBLE_DEFAULT_ARGS=${OPP_ANSIBLE_DEFAULT_ARGS-"-i localhost, -e ansible_connection=local -e run_upstream=true -e run_remove_catalog_repo=false upstream/local.yml"}
 IIB_INPUT_REGISTRY_USER=${IIB_INPUT_REGISTRY_USER-"mavala"}
 IIB_OUTPUT_REGISTRY_USER=${IIB_OUTPUT_REGISTRY_USER-"redhat+iib_community"}
