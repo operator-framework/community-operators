@@ -6,7 +6,7 @@ set +o pipefail
 OPP_INDEX_IMAGE_TAG=${2-"latest"}
 
 OPP_THIS_REPO=${OPP_THIS_REPO-"redhat-openshift-ecosystem/community-operators-pipeline"}
-OPP_THIS_BRANCH=${OPP_THIS_REPO-"main"}
+OPP_THIS_BRANCH=${OPP_THIS_BRANCH-"main"}
 
 OPP_IMAGE=${OPP_IMAGE-"quay.io/operator_testing/operator-test-playbooks:latest"}
 OPP_CONTAINER_TOOL=${OPP_CONTAINER_TOOL-"docker"}
