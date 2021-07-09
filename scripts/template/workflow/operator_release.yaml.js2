@@ -252,6 +252,22 @@ jobs:
 {% endraw %}
 {% endif %}
 {% raw %}
+  push-to-quay-o7t:
+    name: "Release / o7t push to quay"
+    needs: pr-check
+    if: needs.pr-check.outputs.opp_release_ready == '1'
+    runs-on: ubuntu-latest
+    env:
+      DELETE_APPREG: "${{ needs.pr-check.outputs.opp_release_delete_appreg }}"
+      OPP_VERSION: "${{ needs.pr-check.outputs.opp_version }}"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Push to quay
+        run: |
+          echo "push_to_quay operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_SRC_REPO $OPP_SRC_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_URL) push_to_quay operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_SRC_REPO $OPP_SRC_BRANCH
+
   release-sha-openshift:
       name: "Release sha / o7t"
       needs: [ pr-check, release-openshift ]
@@ -273,6 +289,7 @@ jobs:
             bash <(curl -sL $OPP_SCRIPT_ISS_URL) openshift ${{ matrix.index-tag }}
 {% endraw %}
 {% endif %}
+{% if default_config.operatorhubio.enabled == 1 %}
 {% if default_config.production.type == 'k8s' %}
 {% raw %}
 
@@ -335,22 +352,6 @@ jobs:
           echo "ohio_image operators/sync $OPP_SRC_REPO $OPP_SRC_BRANCH"
           scripts/ci/disk-cleanup-on-startup.sh
           bash <(curl -sL $OPP_SCRIPT_URL) ohio_image operators/sync $OPP_SRC_REPO $OPP_SRC_BRANCH
-
-  push-to-quay-o7t:
-    name: "Release / o7t push to quay"
-    needs: pr-check
-    if: needs.pr-check.outputs.opp_release_ready == '1'
-    runs-on: ubuntu-latest
-    env:
-      DELETE_APPREG: "${{ needs.pr-check.outputs.opp_release_delete_appreg }}"
-      OPP_VERSION: "${{ needs.pr-check.outputs.opp_version }}"
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Push to quay
-        run: |
-          echo "push_to_quay operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_SRC_REPO $OPP_SRC_BRANCH"
-          bash <(curl -sL $OPP_SCRIPT_URL) push_to_quay operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_SRC_REPO $OPP_SRC_BRANCH
 {% endraw %}
 {% endif %}
 {% if default_config.production.type == 'k8s' %}
@@ -419,3 +420,4 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.ACTION_MONITORING_SLACK }}
         continue-on-error: true
 {% endraw %}
+{% endif %}
