@@ -5,6 +5,7 @@ set +o pipefail
 
 OPP_INDEX_IMAGE_TAG=${2-"latest"}
 
+OPP_THIS_REPO_BASE=${OPP_THIS_REPO_BASE-"https://github.com"}
 OPP_THIS_REPO=${OPP_THIS_REPO-"redhat-openshift-ecosystem/community-operators-pipeline"}
 OPP_THIS_BRANCH=${OPP_THIS_BRANCH-"main"}
 
@@ -64,7 +65,7 @@ function iib_install() {
     fi
     set +o pipefail
 }
-OPP_EXEC_USER="-e catalog_repo=https://github.com/$OPP_THIS_REPO -e catalog_repo_branch=$OPP_THIS_BRANCH"
+OPP_EXEC_USER="-e catalog_repo=$OPP_THIS_REPO_BASE/$OPP_THIS_REPO -e catalog_repo_branch=$OPP_THIS_BRANCH"
 OPP_EXEC_USER="$OPP_EXEC_USER -e sis_index_image_input=$OPP_PRODUCTION_INDEX_IMAGE:$2 -e sis_index_image_output=$OPP_PRODUCTION_INDEX_IMAGE:${2}${OPP_INDEX_POSTFIX} -e op_base_name=operators"
 OPP_EXEC_USER_SECRETS="-e quay_api_token=$REGISTRY_RELEASE_API_TOKEN"
 if [ "$1" = "openshift" ];then
