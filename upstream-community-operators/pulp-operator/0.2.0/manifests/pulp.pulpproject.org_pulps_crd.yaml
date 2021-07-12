@@ -1,0 +1,470 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pulps.pulp.pulpproject.org
+spec:
+  group: pulp.pulpproject.org
+  names:
+    kind: Pulp
+    listKind: PulpList
+    plural: pulps
+    singular: pulp
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+    subresources:
+      status: {}
+    schema:
+      openAPIV3Schema:
+        type: object
+        x-kubernetes-preserve-unknown-fields: true
+        description: Schema validation for the Pulp CRD
+        properties:
+          spec:
+            properties:
+              deployment_type:
+                description: Name of the deployment type
+                type: string
+              custom_resource_key:
+                description: custom_resource_key
+                type: string
+              registry:
+                description: The container image registry to use for pulling images.
+                type: string
+                default: quay.io
+              project:
+                description: The container image registry project for pulling images.
+                type: string
+                default: pulp
+              image:
+                description: The image name (repo name) for the pulp image.
+                type: string
+                default: pulp
+              image_web:
+                description: The image name (repo name) for the pulp webserver image.
+                type: string
+                default: pulp-web
+              redis_image:
+                description: The image name for the redis image.
+                type: string
+              redis_storage_class:
+                description: Storage class to use for the Redis PVC
+                type: string
+              tag:
+                description: The image tag for the pulp image.
+                type: string
+                default: stable
+              pulp_settings:
+                x-kubernetes-preserve-unknown-fields: true
+                description: The pulp settings.
+                properties:
+                  debug:
+                    type: string
+                  GALAXY_FEATURE_FLAGS:
+                    properties:
+                      execution_environments:
+                        type: string
+                    type: object
+                type: object
+              admin_password_secret:
+                  description: Secret where the administrator password can be found
+                  type: string
+              postgres_configuration_secret:
+                  description: Secret where the database configuration can be found
+                  type: string
+              postgres_initdb_args:
+                  description: The arguments to be passed to initialize the database
+                  type: string
+              postgres_host_auth_method:
+                  description: The method to be used for database host authentication
+                  type: string
+              postgres_image:
+                description: Registry path to the PostgreSQL container to use
+                type: string
+              postgres_resource_requirements:
+                description: Resource requirements for the PostgreSQL container
+                properties:
+                  requests:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    type: object
+                  limits:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    type: object
+                type: object
+              postgres_storage_class:
+                description: Storage class to use for the PostgreSQL PVC
+                type: string
+              postgres_data_path:
+                description: Path where the PostgreSQL data are located
+                type: string
+              postgres_migrant_configuration_secret:
+                description: Secret where the old database configuration can be found for data migration
+                type: string
+              postgres_label_selector:
+                description: Label selector used to identify postgres pod for executing migration
+                type: string
+              storage_type:
+                description: Configuration for the storage type to be utilized
+                type: string
+                enum:
+                  - file
+                  - File
+                  - s3
+                  - S3
+                  - azure
+                  - Azure
+              file_storage_access_mode:
+                description: The file storage access mode.
+                type: string
+                default: ReadWriteMany
+                enum:
+                  - ReadWriteMany
+                  - ReadWriteOnce
+              file_storage_size:
+                description: The size of the file storage; for example 100Gi.
+                default: 100Gi
+                type: string
+              file_storage_storage_class:
+                description: Storage class to use for the file persistentVolumeClaim
+                type: string
+              object_storage_s3_secret:
+                description: The secret for S3 compliant object storage configuration.
+                type: string
+              object_storage_azure_secret:
+                description: The secret for Azure blob storage configuration.
+                type: string
+              hostname:
+                description: The hostname of the instance
+                type: string
+              ingress_type:
+                description: The ingress type to use to reach the deployed instance
+                type: string
+                enum:
+                  - none
+                  - Ingress
+                  - ingress
+                  - Route
+                  - route
+                  - LoadBalancer
+                  - loadbalancer
+                  - NodePort
+                  - nodeport
+              ingress_annotations:
+                description: Annotations to add to the ingress
+                type: string
+              ingress_tls_secret:
+                description: Secret where the ingress TLS secret can be found
+                type: string
+              loadbalancer_annotations:
+                description: Annotations to add to the loadbalancer
+                type: string
+              loadbalancer_protocol:
+                description: Protocol to use for the loadbalancer
+                type: string
+                default: http
+                enum:
+                  - http
+                  - https
+              loadbalancer_port:
+                description: Port to use for the loadbalancer
+                type: integer
+                default: 80
+              route_host:
+                description: The DNS to use to points to the instance
+                type: string
+              route_tls_termination_mechanism:
+                description: The secure TLS termination mechanism to use
+                type: string
+                default: Edge
+                enum:
+                  - Edge
+                  - edge
+                  - Passthrough
+                  - passthrough
+              route_tls_secret:
+                description: Secret where the TLS related credentials are stored
+                type: string
+              nodeport_port:
+                description: Provide requested port value
+                type: string
+              container_token_secret:
+                description: Secret where the container token certificates are stored
+                type: string
+              image_pull_policy:
+                description: Image pull policy for container image
+                type: string
+                default: IfNotPresent
+                enum:
+                  - IfNotPresent
+                  - Always
+                  - Never
+              image_pull_secret:
+                description: The image pull secret
+                type: string
+              affinity:
+                description: Defines various deployment affinities
+                properties:
+                  node_affinity:
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: Defines the node affinity for the deployment
+                    type: object
+                type: object
+              redis_resource_requirements:
+                description: Resource requirements for the Redis container
+                properties:
+                  requests:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    type: object
+                  limits:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                      storage:
+                        type: string
+                    type: object
+                type: object
+              web:
+                description: The pulp web deployment.
+                properties:
+                  replicas:
+                    description: The number of replicas for the deployment.
+                    type: integer
+                    default: 1
+                    format: int32
+                  resource_requirements:
+                    description: Resource requirements for the pulp web container
+                    properties:
+                      requests:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                      limits:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              api:
+                description: The pulp api deployment.
+                properties:
+                  replicas:
+                    description: The number of replicas for the deployment.
+                    type: integer
+                    default: 1
+                    format: int32
+                  log_level:
+                    description: The log level for the deployment.
+                    type: string
+                    default: INFO
+                    enum:
+                      - DEBUG
+                      - INFO
+                      - WARNING
+                      - ERROR
+                      - CRITICAL
+                  resource_requirements:
+                    description: Resource requirements for the pulp api container
+                    properties:
+                      requests:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                      limits:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              content:
+                description: The pulp content deployment.
+                properties:
+                  replicas:
+                    description: The number of replicas for the deployment.
+                    type: integer
+                    default: 2
+                    format: int32
+                  log_level:
+                    description: The log level for the deployment.
+                    type: string
+                    default: INFO
+                    enum:
+                      - DEBUG
+                      - INFO
+                      - WARNING
+                      - ERROR
+                      - CRITICAL
+                  resource_requirements:
+                    description: Resource requirements for the pulp content container
+                    properties:
+                      requests:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                      limits:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              worker:
+                description: The pulp worker deployment.
+                properties:
+                  replicas:
+                    description: The number of replicas for the deployment.
+                    type: integer
+                    default: 2
+                    format: int32
+                  resource_requirements:
+                    description: Resource requirements for the pulp worker container
+                    properties:
+                      requests:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                      limits:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              resource_manager:
+                description: The pulp resource manager deployment.
+                properties:
+                  replicas:
+                    description: The number of replicas for the deployment.
+                    type: integer
+                    default: 1
+                    format: int32
+                  resource_requirements:
+                    description: Resource requirements for the pulp resource manager container
+                    properties:
+                      requests:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                      limits:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                          storage:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+            type: object
+          status:
+            properties:
+              webURL:
+                description: URL to access the deployed instance
+                type: string
+              adminPasswordSecret:
+                description: Admin password of the deployed instance
+                type: string
+              databaseConfigurationSecret:
+                description: Database configuration secret used by the deployed instance
+                type: string
+              storageType:
+                description: The type of storage being used by the deployed instance
+                type: string
+              storagePersistentVolumeClaim:
+                description: The name of the persistent volume claim used for storage
+                type: string
+              storageSecret:
+                description: The name of the secret used for object storage
+                type: string
+              deployedVersion:
+                description: Version of the deployed instance
+                type: string
+              deployedImage:
+                description: URL of the image used for the deployed instance
+                type: string
+              migrantDatabaseConfigurationSecret:
+                description: The configuration secret used for migrating an old deployment
+                type: string
+              containerTokenSecret:
+                description: The name of the secret used for container token authentication
+                type: string
+              conditions:
+                description: The resulting conditions when a Service Telemetry is instantiated
+                items:
+                  properties:
+                    status:
+                      type: string
+                    type:
+                      type: string
+                    reason:
+                      type: string
+                    lastTransitionTime:
+                      type: string
+                  type: object
+                type: array
+            type: object
