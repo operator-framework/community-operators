@@ -30,11 +30,11 @@ git pull --rebase -Xours upstream $OPP_OPRT_SRC_BRANCH
 echo "Repo rebased over branch OPP_OPRT_SRC_BRANCH - $OPP_OPRT_SRC_BRANCH"
 
 export OPP_ADDED_FILES=$(git diff --diff-filter=A upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
-export OPP_MODIFIED_FILES=$(git diff --diff-filter=M upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
+export OPP_MODIFIED_FILES=$(git diff --diff-filter=M HEAD upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_REMOVED_FILES=$(git diff --diff-filter=D upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_RENAMED_FILES=$(git diff --diff-filter=R upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_ADDED_MODIFIED_FILES=$(git diff --diff-filter=AM upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
-export OPP_ADDED_MODIFIED_RENAMED_FILES=$(git diff --diff-filter=RAM HEAD upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
+export OPP_ADDED_MODIFIED_RENAMED_FILES=$(git diff --diff-filter=RAM upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_CURRENT_PROJECT_REPO="$OPP_OPRT_SRC_REPO"
 export OPP_CURRENT_PROJECT_BRANCH="$OPP_OPRT_SRC_BRANCH"
 
