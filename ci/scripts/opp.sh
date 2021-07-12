@@ -275,7 +275,7 @@ OPP_BASE_DIR=${OPP_BASE_DIR-"/tmp/community-operators-for-catalog"}
 OPP_STREAM=${OPP_STREAM-"operators"}
 OPP_OPERATOR=${OPP_OPERATOR-"aqua"}
 OPP_VERSION=${OPP_VERSION-"1.0.2"}
-
+OPP_REPO_CLONE=0
 if [ -n "$2" ];then
     if [ -n "$3" ];then
         p=$2
@@ -284,6 +284,7 @@ if [ -n "$2" ];then
         OPP_STREAM=$(echo $p | rev | cut -d'/' -f 1 | rev);p=$(dirname $p)
         OPP_THIS_REPO="$3"
         OPP_THIS_BRANCH="master"
+        OPP_REPO_CLONE=1
         [ -n "$4" ] && OPP_THIS_BRANCH=$4
     elif [ -d $2 ];then
         p=$(readlink -f $2)
@@ -304,6 +305,8 @@ else
     OPP_STREAM=$(echo $p | rev | cut -d'/' -f 1 | rev);p=$(dirname $p)
     OPP_CONTAINER_RUN_EXTRA_ARGS="$OPP_CONTAINER_RUN_EXTRA_ARGS -v $p:$OPP_BASE_DIR"
 fi
+
+
 
 OPP_CHECK_STEAM_OK=0
 [ "$OPP_STREAM" = "." ] && [ "$OPP_VERSION" = "sync" ] && OPP_STREAM=$OPP_OPERATOR && OPP_OPERATOR=$OPP_VERSION
@@ -484,11 +487,12 @@ fi
 
 # [[ $OPP_IIB_INSTALL -eq 1 ]] && iib_install 
 
-if [ -n "$OPP_THIS_REPO" ];then
+if [ -n "$OPP_THIS_REPO" ] && [[ $OPP_REPO_CLONE -eq 1]] && ;then
     OPP_EXEC_EXTRA="$OPP_EXEC_EXTRA -e catalog_repo=$OPP_THIS_REPO_BASE/$OPP_THIS_REPO -e catalog_repo_branch=$OPP_THIS_BRANCH"
 else
     OPP_EXEC_EXTRA="$OPP_EXEC_EXTRA -e run_prepare_catalog_repo_upstream=false"
 fi
+
 # Start container
 echo -e " [ Preparing testing container '$OPP_NAME' from '$OPP_IMAGE' ] "
 $DRY_RUN_CMD $OPP_CONTAINER_TOOL pull $OPP_IMAGE > /dev/null 2>&1 || { echo "Error: Problem pulling image '$OPP_IMAGE' !!!"; exit 1; }
