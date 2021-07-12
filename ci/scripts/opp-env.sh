@@ -16,6 +16,7 @@ OPP_CURRENT_PROJECT_DOC=${OPP_CURRENT_PROJECT_DOC-"https://operator-framework.gi
 
 OPP_PRODUCTION_TYPE=${OPP_PRODUCTION_TYPE-"ocp"}
 OPP_OPERATORS_DIR=${OPP_OPERATORS_DIR-"operators"}
+OPP_REVIEWERS_ENABLED=${OPP_REVIEWERS_ENABLED-1}
 
 OPP_CHANGES_GITHUB=0
 OPP_CHANGES_CI=0
@@ -312,50 +313,52 @@ echo "::set-output name=opp_name::${OPP_OPERATOR_NAME}"
 
 yq --version || { echo "Command 'yq' could not be found !!!"; exit 1; } 
 
-# Hanlde remote ci.yaml for authorized changes
-CI_YAML_REMOTE="https://raw.githubusercontent.com/$OPP_CURRENT_PROJECT_REPO/$OPP_CURRENT_PROJECT_BRANCH/$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml"
-CI_YAML_REMOTE_LOCAL="/tmp/ci.yaml"
-echo "Downloading '$CI_YAML_REMOTE' to $CI_YAML_REMOTE_LOCAL ... "
-rm -f $CI_YAML_REMOTE_LOCAL
-curl -s -f -o $CI_YAML_REMOTE_LOCAL $CI_YAML_REMOTE || true
-if [ -f $CI_YAML_REMOTE_LOCAL ];then
-  echo "File '$CI_YAML_REMOTE' was found ..."
-  if [ -n "$OPP_PR_AUTHOR" ];then
-    TEST_REVIEWERS=$(cat  $CI_YAML_REMOTE_LOCAL | yq '.reviewers')
-    for row in $(echo "${TEST_REVIEWERS}" | yq -r '.[]'); do
-      echo "checking if reviewer '$row' is pr author '$OPP_PR_AUTHOR' ..."
-      if [ "${OPP_PR_AUTHOR,,}" == "${row,,}" ];then
-        echo "[AUTHORIZED_CHANGES=1] : Author '${OPP_PR_AUTHOR,,}' is in reviewer list" && OPP_AUTHORIZED_CHANGES=1
-      else
-        OPP_REVIEVERS="@$row,$OPP_REVIEVERS"
-      fi
-    done
-    OPP_REVIEVERS=$(echo $OPP_REVIEVERS | sed 's/\(.*\),/\1 /')
-    [[ $OPP_AUTHORIZED_CHANGES -eq 1 ]] && OPP_REVIEVERS=""
+if [[ OPP_REVIEWERS_ENABLED -eq 1 ]];then
+  # Hanlde remote ci.yaml for authorized changes
+  CI_YAML_REMOTE="https://raw.githubusercontent.com/$OPP_CURRENT_PROJECT_REPO/$OPP_CURRENT_PROJECT_BRANCH/$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml"
+  CI_YAML_REMOTE_LOCAL="/tmp/ci.yaml"
+  echo "Downloading '$CI_YAML_REMOTE' to $CI_YAML_REMOTE_LOCAL ... "
+  rm -f $CI_YAML_REMOTE_LOCAL
+  curl -s -f -o $CI_YAML_REMOTE_LOCAL $CI_YAML_REMOTE || true
+  if [ -f $CI_YAML_REMOTE_LOCAL ];then
+    echo "File '$CI_YAML_REMOTE' was found ..."
+    if [ -n "$OPP_PR_AUTHOR" ];then
+      TEST_REVIEWERS=$(cat  $CI_YAML_REMOTE_LOCAL | yq '.reviewers')
+      for row in $(echo "${TEST_REVIEWERS}" | yq -r '.[]'); do
+        echo "checking if reviewer '$row' is pr author '$OPP_PR_AUTHOR' ..."
+        if [ "${OPP_PR_AUTHOR,,}" == "${row,,}" ];then
+          echo "[AUTHORIZED_CHANGES=1] : Author '${OPP_PR_AUTHOR,,}' is in reviewer list" && OPP_AUTHORIZED_CHANGES=1
+        else
+          OPP_REVIEVERS="@$row,$OPP_REVIEVERS"
+        fi
+      done
+      OPP_REVIEVERS=$(echo $OPP_REVIEVERS | sed 's/\(.*\),/\1 /')
+      [[ $OPP_AUTHORIZED_CHANGES -eq 1 ]] && OPP_REVIEVERS=""
+    fi
+  else
+    echo "File '$CI_YAML_REMOTE' was not found ..."
   fi
-else
-  echo "File '$CI_YAML_REMOTE' was not found ..."
-fi
 
-if [[ $OPP_TEST_READY -eq 1 ]];then
-  if [ -f $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml ];then 
-    TEST_REVIEWERS=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.reviewers')
-    # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
-    
-    if [ "$TEST_REVIEWERS" != "null" ];then
-      TEST_REVIEWERS=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
-      [[ $TEST_REVIEWERS -eq 0 ]] && { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
+  if [[ $OPP_TEST_READY -eq 1 ]];then
+    if [ -f $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml ];then 
+      TEST_REVIEWERS=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.reviewers')
+      # [ "$TEST_REVIEWERS" == "null" ] &&  { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field with one reviewer set as minimum !!! More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
+      
+      if [ "$TEST_REVIEWERS" != "null" ];then
+        TEST_REVIEWERS=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.reviewers | length' || echo 0)
+        [[ $TEST_REVIEWERS -eq 0 ]] && { echo "We require that file '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' contains 'reviewers' array field and it has at least one reviewer set!!! More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/ !!!"; echo "::set-output name=opp_error_code::4"; exit 1; }
+      else
+        echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/. !!!"
+        OPP_ERROR_CODE=10
+      fi
+      TEST_UPDATE_GRAPH=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
+      [ $TEST_UPDATE_GRAPH == "null" ] && OPP_UPDATEGRAPH=0
+      echo "OPP_UPDATEGRAPH=$OPP_UPDATEGRAPH"
+
     else
-      echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' doesn't contain 'reviewers' array field !!! If one wants to add reviewers (truested-authors) More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/. !!!"
+      echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' is present !!! If one wants to add reviewers (truested-authors) More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/. !!!"
       OPP_ERROR_CODE=10
     fi
-    TEST_UPDATE_GRAPH=$(cat $OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml | yq '.updateGraph')
-    [ $TEST_UPDATE_GRAPH == "null" ] && OPP_UPDATEGRAPH=0
-    echo "OPP_UPDATEGRAPH=$OPP_UPDATEGRAPH"
-
-  else
-    echo "File '$OPP_OPERATORS_DIR/$OPP_OPERATOR_NAME/ci.yaml' is present !!! If one wants to add reviewers (truested-authors) More info : $OPP_CURRENT_PROJECT_DOC/operator-ci-yaml/. !!!"
-    OPP_ERROR_CODE=10
   fi
 fi
 
