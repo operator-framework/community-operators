@@ -8,6 +8,7 @@ OPP_OPRT_SRC_REPO=${OPP_OPRT_SRC_REPO-"operator-framework/community-operators"}
 OPP_OPRT_SRC_BRANCH=${OPP_OPRT_SRC_BRANCH-"master"}
 OPP_SCRIPT_ENV_URL=${OPP_SCRIPT_ENV_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/actions-env"}
 export OPRT=1
+echo "OPP_SCRIPT_ENV_URL=$OPP_SCRIPT_ENV_URL"
 
 [ -n "$OPP_OPRT_REPO" ] || { echo "Error: '\$OPP_OPRT_REPO' is empty !!!"; exit 1; }
 [ -n "$OPP_OPRT_SHA" ] || { echo "Error: '\$OPP_OPRT_SHA' is empty !!!"; exit 1; }
