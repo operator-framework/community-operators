@@ -27,6 +27,7 @@ git config --global user.name "Test User"
 git remote add upstream https://github.com/$OPP_OPRT_SRC_REPO -f > /dev/null 2>&1
 echo "added remote https://github.com/$OPP_OPRT_SRC_REPO"
 git pull --rebase -Xours upstream $OPP_OPRT_SRC_BRANCH 
+echo "Repo rebased over branch OPP_OPRT_SRC_BRANCH - $OPP_OPRT_SRC_BRANCH"
 
 export OPP_ADDED_FILES=$(git diff --diff-filter=A upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_MODIFIED_FILES=$(git diff --diff-filter=M upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
