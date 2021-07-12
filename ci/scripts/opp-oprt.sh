@@ -13,7 +13,7 @@ echo "OPP_SCRIPT_ENV_URL=$OPP_SCRIPT_ENV_URL"
 [ -n "$OPP_OPRT_REPO" ] || { echo "Error: '\$OPP_OPRT_REPO' is empty !!!"; exit 1; }
 [ -n "$OPP_OPRT_SHA" ] || { echo "Error: '\$OPP_OPRT_SHA' is empty !!!"; exit 1; }
 
-git clone https://github.com/$OPP_OPRT_REPO operators #> /dev/null 2>&1
+git clone https://github.com/$OPP_OPRT_REPO #operators > /dev/null 2>&1
 echo "cloned https://github.com/$OPP_OPRT_REPO"
 cd operators
 BRANCH_NAME=$(git branch -a --contains $OPP_OPRT_SHA | grep remotes/ | grep -v HEAD | cut -d '/' -f 2-)
