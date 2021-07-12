@@ -487,7 +487,7 @@ fi
 
 # [[ $OPP_IIB_INSTALL -eq 1 ]] && iib_install 
 
-if [ -n "$OPP_THIS_REPO" ] && [[ $OPP_REPO_CLONE -eq 1]] && ;then
+if [ -n "$OPP_THIS_REPO" ] && [[ $OPP_REPO_CLONE -eq 1 ]] && ;then
     OPP_EXEC_EXTRA="$OPP_EXEC_EXTRA -e catalog_repo=$OPP_THIS_REPO_BASE/$OPP_THIS_REPO -e catalog_repo_branch=$OPP_THIS_BRANCH"
 else
     OPP_EXEC_EXTRA="$OPP_EXEC_EXTRA -e run_prepare_catalog_repo_upstream=false"
