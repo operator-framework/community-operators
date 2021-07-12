@@ -1,5 +1,5 @@
 #!/bin/bash
-# OPerator Pipeline (OPP) env script (opp-env.sh)
+# Operator Pipeline (OPP) env script (opp-env.sh)
 
 set +o pipefail
 OPP_OPRT_REPO=${OPP_OPRT_REPO-""}
