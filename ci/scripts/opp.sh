@@ -10,8 +10,10 @@ TESTS=${TESTS//,/ }
 OPP_INPUT_REPO=${OPP_INPUT_REPO-"operator-framework/community-operators"}
 OPP_INPUT_BRANCH=${OPP_INPUT_BRANCH-"master"}
 OPP_THIS_SCRIPT_URL="https://raw.githubusercontent.com/$OPP_INPUT_REPO/$OPP_INPUT_BRANCH/ci/scripts/opp.sh"
+OPP_THIS_REPO_BASE=${OPP_THIS_REPO_BASE-"https://github.com"}
 OPP_THIS_REPO=${OPP_THIS_REPO-"redhat-openshift-ecosystem/community-operators-pipeline"}
 OPP_THIS_BRANCH=${OPP_THIS_BRANCH-"main"}
+
 
 OPP_BASE_DEP="ansible curl openssl git"
 KIND_KUBE_VERSION=${KIND_KUBE_VERSION-"v1.19.11"}
@@ -84,6 +86,9 @@ OPP_DEPLOY_LONGER=${OPP_DEPLOY_LONGER-0}
 
 export GODEBUG=${GODEBUG-x509ignoreCN=0}
 
+
+
+
 [[ $OPP_NOCOLOR -eq 1 ]] && ANSIBLE_NOCOLOR=1
 
 # Handle if cluster is k8s (pure kubernetes) or openshift
@@ -97,9 +102,9 @@ function help() {
     echo ""
     echo -e "Examples:\n"
     echo -e "\top-test all operators/aqua/1.0.2\n"
-    echo -e "\top-test all operators/aqua/1.0.2 https://github.com/$OPP_THIS_REPO $OPP_THIS_BRANCH\n"
-    echo -e "\top-test kiwi operators/aqua/1.0.2 https://github.com/$OPP_THIS_REPO $OPP_THIS_BRANCH\n"
-    echo -e "\top-test lemon,orange operators/aqua/1.0.2 https://github.com/$OPP_THIS_REPO $OPP_THIS_BRANCH\n"
+    echo -e "\top-test all operators/aqua/1.0.2 $OPP_THIS_REPO_BASE/$OPP_THIS_REPO $OPP_THIS_BRANCH\n"
+    echo -e "\top-test kiwi operators/aqua/1.0.2 $OPP_THIS_REPO_BASE/$OPP_THIS_REPO $OPP_THIS_BRANCH\n"
+    echo -e "\top-test lemon,orange operators/aqua/1.0.2 $OPP_THIS_REPO_BASE/$OPP_THIS_REPO $OPP_THIS_BRANCH\n"
     exit 1
 }
 
@@ -277,9 +282,9 @@ if [ -n "$2" ];then
         OPP_VERSION=$(echo $p | rev | cut -d'/' -f 1 | rev);p=$(dirname $p)
         OPP_OPERATOR=$(echo $p | rev | cut -d'/' -f 1 | rev);p=$(dirname $p)
         OPP_STREAM=$(echo $p | rev | cut -d'/' -f 1 | rev);p=$(dirname $p)
-        OPP_REPO="$3"
-        OPP_BRANCH="master"
-        [ -n "$4" ] && OPP_BRANCH=$4
+        OPP_THIS_REPO="$3"
+        OPP_THIS_BRANCH="master"
+        [ -n "$4" ] && OPP_THIS_BRANCH=$4
     elif [ -d $2 ];then
         p=$(readlink -f $2)
         OPP_VERSION=$(echo $p | rev | cut -d'/' -f 1 | rev);p=$(dirname $p)
@@ -479,8 +484,8 @@ fi
 
 # [[ $OPP_IIB_INSTALL -eq 1 ]] && iib_install 
 
-if [ -n "$OPP_REPO" ];then
-    OPP_EXEC_EXTRA="$OPP_EXEC_EXTRA -e catalog_repo=$OPP_REPO -e catalog_repo_branch=$OPP_BRANCH"
+if [ -n "$OPP_THIS_REPO" ];then
+    OPP_EXEC_EXTRA="$OPP_EXEC_EXTRA -e catalog_repo=$OPP_THIS_REPO_BASE/$OPP_THIS_REPO -e catalog_repo_branch=$OPP_THIS_BRANCH"
 else
     OPP_EXEC_EXTRA="$OPP_EXEC_EXTRA -e run_prepare_catalog_repo_upstream=false"
 fi
