@@ -37,7 +37,7 @@ function DetectFromGit() {
   export OP_NAME
   export OP_VER
   export COMMIT
-  export STREAM_NAME=community-operators
+  export STREAM_NAME=operators
   echo "STREAM_NAME=$STREAM_NAME"
   echo "OP_NAME=$OP_NAME"
   echo "OP_VER=$OP_VER"
