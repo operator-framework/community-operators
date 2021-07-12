@@ -5,7 +5,7 @@ set -e
 export INPUT_ENV_SCRIPT="/tmp/opp-env-vars"
 OPP_ALLOW_CI_CHANGES=${OPP_ALLOW_CI_CHANGES-0}
 OPP_TEST_READY=${OPP_TEST_READY-1}
-OP_RELEASE_READY=${OP_RELEASE_READY-0}
+OPP_RELEASE_READY=${OPP_RELEASE_READY-0}
 OPP_OP_DELETE=${OPP_OP_DELETE-0}
 OPP_PR_AUTHOR=${OPP_PR_AUTHOR-""}
 DELETE_APPREG=${DELETE_APPREG-0}
@@ -91,6 +91,8 @@ echo "::set-output name=opp_pr_title::${OPP_PR_TITLE}"
 echo "::set-output name=opp_update_graph::${OPP_UPDATEGRAPH}"
 echo "::set-output name=opp_authorized_changes::${OPP_AUTHORIZED_CHANGES}"
 
+[[ $OPP_ALLOW_CI_CHANGES -eq 1 ]] && [[ $OPP_PROD -eq 1 ]] && { echo "CI changes detected. Continue doing release ..."; exit 0; }
+
 # Handle removed files
 if [ -n "$OPP_REMOVED_FILES" ];then
 
@@ -110,7 +112,7 @@ if [ -n "$OPP_REMOVED_FILES" ];then
     # [[ $sf == upstream-community-operators* ]] && OPP_CHANGES_STREAM_UPSTREAM=1
     [[ $sf == *package.yaml ]] && continue
     [[ $sf == *ci.yaml ]] && { OPP_CI_YAML_CHANGED=1; continue; }
-    # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OP_RELEASE_READY=0; }
+    # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 0 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 0 ]] && { echo "No changes 'community-operators' or 'upstream-community-operators' !!! Exiting ..."; OPP_RELEASE_READY=0; }
     FILES="$FILES $(echo $sf | cut -d '/' -f 1-3)"
     # Check if outdside of "community-operators" and "upstream-community-operators"
   done
@@ -120,7 +122,7 @@ if [ -n "$OPP_REMOVED_FILES" ];then
   # Handle removed only files
   if [ ! -n "$OPP_ADDED_MODIFIED_FILES" ];then
     # check if only ci.yaml was removed
-    OP_RELEASE_READY=1
+    OPP_RELEASE_READY=1
 
 
     # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && OPP_OPERATORS_DIR="community-operators"
@@ -136,7 +138,7 @@ if [ -n "$OPP_REMOVED_FILES" ];then
     # [[ $OPP_CHANGES_IN_OPERATORS_DIR -eq 1 ]] && [[ $OPP_CHANGES_STREAM_UPSTREAM -eq 1 ]] && { echo "Changes in both 'community-operators' and 'upstream-community-operators' dirs !!! Exiting ..."; echo "::set-output name=opp_error_code::2"; exit 1; }
 
     echo "::set-output name=opp_test_ready::${OPP_TEST_READY}"
-    echo "::set-output name=opp_release_ready::${OP_RELEASE_READY}"
+    echo "::set-output name=opp_release_ready::${OPP_RELEASE_READY}"
     echo "::set-output name=opp_production_type::${OPP_PRODUCTION_TYPE}"
     echo "::set-output name=opp_name::${OPP_OPERATOR_NAME}"
     echo "::set-output name=opp_version::${OPP_OPERATOR_VERSION}"
@@ -151,7 +153,7 @@ if [ -n "$OPP_REMOVED_FILES" ];then
       echo "opp_release_delete_appreg=${DELETE_APPREG}"
       echo "::set-output name=opp_release_delete_appreg::${DELETE_APPREG}"
       echo "opp_test_ready=${OPP_TEST_READY}"
-      echo "opp_release_ready=${OP_RELEASE_READY}"
+      echo "opp_release_ready=${OPP_RELEASE_READY}"
       echo "opp_op_delete=$OPP_OP_DELETE"
       echo "opp_ver_overwrite=$OPP_VER_OVERWRITE"
       echo "::set-output name=opp_op_delete::${OPP_OP_DELETE}"
@@ -266,7 +268,7 @@ done
 # remove trailing space
 OPP_OPERATOR_VERSIONS_REMOVED=$(echo $OPP_OPERATOR_VERSIONS_REMOVED | sed 's/ *$//g')
 
-[[ $OPP_PROD -ge 1 ]] && OP_RELEASE_READY=1
+[[ $OPP_PROD -ge 1 ]] && OPP_RELEASE_READY=1
 
 if [[ $OPP_CI_YAML_ONLY -eq 1 ]];then
   if [[ $OPP_PROD -ge 1 ]];then
@@ -378,7 +380,7 @@ echo "OPP_CHANGES_STREAM_UPSTREAM=$OPP_CHANGES_STREAM_UPSTREAM"
 echo "OPP_CHANGES_DOCKERFILE=$OPP_CHANGES_DOCKERFILE"
 
 echo "opp_test_ready=${OPP_TEST_READY}"
-echo "opp_release_ready=${OP_RELEASE_READY}"
+echo "opp_release_ready=${OPP_RELEASE_READY}"
 echo "opp_production_type=${OPP_PRODUCTION_TYPE}"
 echo "opp_name=${OPP_OPERATOR_NAME}"
 echo "opp_version=${OPP_OPERATOR_VERSION}"
@@ -400,7 +402,7 @@ echo "opp_error_code=$OPP_ERROR_CODE"
 echo "opp_authorized_changes=$OPP_AUTHORIZED_CHANGES"
 
 echo "::set-output name=opp_test_ready::${OPP_TEST_READY}"
-echo "::set-output name=opp_release_ready::${OP_RELEASE_READY}"
+echo "::set-output name=opp_release_ready::${OPP_RELEASE_READY}"
 
 echo "::set-output name=opp_production_type::${OPP_PRODUCTION_TYPE}"
 echo "::set-output name=opp_name::${OPP_OPERATOR_NAME}"
