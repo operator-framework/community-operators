@@ -350,6 +350,7 @@ function ExecParameters() {
     [[ $1 == lemon_* ]] && OPP_PRODUCTION_INDEX_IMAGE_TAG="${1/lemon_/}"
 
     [[ $1 == orange* ]] && OPP_EXEC_USER_INDEX_CHECK="-e run_prepare_catalog_repo_upstream=true -e bundle_index_image=$OPP_PRODUCTION_INDEX_IMAGE:$OPP_PRODUCTION_INDEX_IMAGE_TAG -e operator_base_dir=$OPP_BASE_DIR/$OPP_OPERATORS_DIR"
+    [[ $1 == orange* ]] && [ "$OPP_CLUSTER_TYPE" = "openshift" ] && OPP_EXEC_USER_INDEX_CHECK="-e stream_kind=openshift_upstream"
     [[ $1 == orange_* ]] && [ "$OPP_CLUSTER_TYPE" = "k8s" ] && { echo "Error: orange_xxx is not supported for 'kubernetes' cluster !!! Exiting ..."; exit 1; }
     
     # [[ $1 == orange* ]] && [[ $OPP_PROD -eq 1 ]] && [ "$OPP_STREAM" = "community-operators" ] && OPP_EXEC_USER="$OPP_EXEC_USER -e bundle_registry=$OPP_RELEASE_BUNDLE_REGISTRY -e bundle_image_namespace=$OPP_RELEASE_BUNDLE_ORGANIZATION -e bundle_index_image_namespace=$OPP_RELEASE_INDEX_ORGANIZATION -e bundle_index_image_name=OPP_RELEASE_INDEX_NAME"    
