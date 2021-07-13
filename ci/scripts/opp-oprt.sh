@@ -13,17 +13,22 @@ echo "OPP_SCRIPT_ENV_URL=$OPP_SCRIPT_ENV_URL"
 [ -n "$OPP_OPRT_REPO" ] || { echo "Error: '\$OPP_OPRT_REPO' is empty !!!"; exit 1; }
 [ -n "$OPP_OPRT_SHA" ] || { echo "Error: '\$OPP_OPRT_SHA' is empty !!!"; exit 1; }
 
-git clone https://github.com/$OPP_OPRT_REPO community-operators > /dev/null 2>&1
-cd community-operators
+git clone https://github.com/$OPP_OPRT_REPO operators #> /dev/null 2>&1
+echo "cloned https://github.com/$OPP_OPRT_REPO"
+cd operators
 BRANCH_NAME=$(git branch -a --contains $OPP_OPRT_SHA | grep remotes/ | grep -v HEAD | cut -d '/' -f 2-)
-git checkout $BRANCH_NAME > /dev/null 2>&1
+echo "BRANCH_NAME=$BRANCH_NAME"
+git checkout $BRANCH_NAME #> /dev/null 2>&1
 git log --oneline | head
 
 git config --global user.email "test@example.com"
 git config --global user.name "Test User"
 
-git remote add upstream https://github.com/$OPP_OPRT_SRC_REPO -f > /dev/null 2>&1
+git remote add upstream https://github.com/$OPP_OPRT_SRC_REPO -f #> /dev/null 2>&1
+echo "added remote https://github.com/$OPP_OPRT_SRC_REPO"
+git rev-parse HEAD
 git pull --rebase -Xours upstream $OPP_OPRT_SRC_BRANCH 
+echo "Repo rebased over branch OPP_OPRT_SRC_BRANCH - $OPP_OPRT_SRC_BRANCH"
 
 export OPP_ADDED_FILES=$(git diff --diff-filter=A upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
 export OPP_MODIFIED_FILES=$(git diff --diff-filter=M upstream/$OPP_OPRT_SRC_BRANCH --name-only | tr '\r\n' ' ')
