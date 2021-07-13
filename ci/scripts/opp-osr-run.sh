@@ -19,7 +19,7 @@ function DetectFromGit() {
   ##community only
   echo "changed community files:"
 #  CHANGED_FILES=$(git --no-pager log -m -1 --name-only $COMMIT|grep -v 'upstream-community-operators/'|grep 'community-operators/') || { echo '******* No community operator (Openshift) modified, no reason to continue *******'; exit 0; }
-  CHANGED_FILES=$OP_TEST_ADDED_MODIFIED_RENAMED_FILES
+  CHANGED_FILES=$OPP_ADDED_MODIFIED_RENAMED_FILES
   echo
 
   COMMIT_TEMP="$COMMIT"
@@ -46,7 +46,7 @@ function DetectFromGit() {
 }
 
 rm -rf community-operators
-git clone "https://github.com/$REPO" || { echo "Problem cloning repo '$REPO' !!!"; exit 1; }
+git clone "$BASE/$REPO" community-operators || { echo "Problem cloning repo '$REPO' !!!"; exit 1; }
 cd community-operators
 git checkout $BRANCH || { echo "Problem checkout branch '$BRANCH' !!!"; exit 1; }
 DetectFromGit
@@ -67,7 +67,7 @@ $CONTAINER_TOOL exec -t \
 -e OP_STREAM="$STREAM_NAME" \
 -e OP_NAME="$OP_NAME" \
 -e OP_VERSION="$OP_VER" \
--e OP_REPO="https://github.com/$REPO" \
+-e OP_REPO="$BASE/$REPO" \
 -e OP_BRANCH="$BRANCH" \
 -e OP_OSR_HASH="quay.io/operator_testing|$OP_TOKEN|$COMMIT" \
 -e OP_DEBUG=$OP_DEBUG \
