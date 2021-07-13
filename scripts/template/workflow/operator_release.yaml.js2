@@ -229,27 +229,27 @@ jobs:
 {% raw %}
         - name: Prepare variables for the sign process
           id: openshift-vars
+          env:
+            # QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
+            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+            #QUAY_PW: ${{ secrets.QUAY_J }}
+            #QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
           run: |
-            docker login quay.io -u $QUAY_USER -p $QUAY_PW
-            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
-            OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
-            OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
+            docker login ${OPP_MIRROR_INDEX_REGISTRY} -u $OPP_REGISTRY_MIRROR_USER -p $REGISTRY_MIRROR_PW
+            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${OPP_MIRROR_INDEX_REGISTRY}/${OPP_MIRROR_INDEX_ORGANIZATION}/${OPP_MIRROR_INDEX_NAME}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
+            OPERATOR_INDEX_RESOLVED="quay.io/${OPP_MIRROR_INDEX_REGISTRY}/${OPP_MIRROR_INDEX_ORGANIZATION}/${OPP_MIRROR_INDEX_NAME}@${OPERATOR_INDEX_DIGEST}"
+            OPERATOR_INDEX="${OPP_MIRROR_INDEX_REGISTRY}/${OPP_MIRROR_INDEX_ORGANIZATION}/${OPP_MIRROR_INDEX_NAME}:${OPERATOR_INDEX_TAG}"
             echo $OPERATOR_INDEX_RESOLVED
             echo $OPERATOR_INDEX
             echo "::set-output name=operator_index_resolved::${OPERATOR_INDEX_RESOLVED}"
             echo "::set-output name=operator_index::${OPERATOR_INDEX}"
-          env:
-            QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
-            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
-            QUAY_PW: ${{ secrets.QUAY_J }}
-            QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
         - name: Initialize sign process
           uses: operator-framework/community-operators@webhook
           env:
             INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
             webhook_type: 'json-extended'
             webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
-            webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK_SECRET }}
+            webhook_secret: ${{ secrets.SIGNATURE_WEBHOOK_SECRET }}
             data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}"
 {% endraw %}
 {% endif %}
@@ -347,7 +347,7 @@ jobs:
           INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
           webhook_type: 'json-extended'
           webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
-          webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK_SECRET }}
+          webhook_secret: ${{ secrets.SIGNATURE_WEBHOOK_SECRET }}
           data: "{\"index_image\": \"${{ steps.openshift-vars-latest.outputs.operator_index_latest }}\", \"index_image_resolved\": \"${{ steps.openshift-vars-latest.outputs.operator_index_resolved_latest }}\"}"
       - name: Ohio image
         run: |
