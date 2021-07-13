@@ -6,7 +6,8 @@ OPP_OPRT_REPO=${OPP_OPRT_REPO-""}
 OPP_OPRT_SHA=${OPP_OPRT_SHA-""}
 OPP_OPRT_SRC_REPO=${OPP_OPRT_SRC_REPO-"operator-framework/community-operators"}
 OPP_OPRT_SRC_BRANCH=${OPP_OPRT_SRC_BRANCH-"master"}
-OPP_SCRIPT_ENV_URL=${OPP_SCRIPT_ENV_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/actions-env"}
+#OPP_SCRIPT_ENV_URL=${OPP_SCRIPT_ENV_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/actions-env"}
+OPP_SCRIPT_ENV_URL=${OPP_SCRIPT_ENV_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/support/ci_01/ci/scripts/opp-env.sh"}
 export OPRT=1
 echo "OPP_SCRIPT_ENV_URL=$OPP_SCRIPT_ENV_URL"
 
