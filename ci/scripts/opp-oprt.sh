@@ -45,4 +45,4 @@ BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
 echo "BRANCH_NAME=$BRANCH_NAME"
 # echo "::set-output name=op_test_repo_branch::$OPP_OPRT_REPO/${BRANCH_NAME}"
 
-bash <(curl -sL $OPP_SCRIPT_ENV_URL)
+bash <(curl -sL $OPP_OPRT_SCRIPT)
