@@ -4,6 +4,14 @@ metadata:
   name: percona-xtradb-cluster-operator.v1.4.0
   namespace: placeholder
   annotations:
+    # Setting olm.maxOpenShiftVersion automatically
+    # This property was added via an automatic process since it was possible to identify that this distribution uses API(s),
+    # which will be removed in the k8s version 1.22 and OpenShift version OCP 4.9. Then, it will prevent OCP users to
+    # upgrade their cluster to 4.9 before they have installed in their current clusters a version of your operator that
+    # is compatible with it. Please, ensure that your project is no longer using these API(s) and that you start to
+    # distribute solutions which is compatible with Openshift 4.9.
+    # For further information, check the README of this repository.
+    olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "4.8"}]'
     alm-examples: >-
       [{"apiVersion":"pxc.percona.com/v1-4-0","kind":"PerconaXtraDBCluster","metadata":{"name":"cluster1","finalizers":["delete-pxc-pods-in-order"]},"spec":{"secretsName":"my-cluster-secrets","vaultSecretName":"keyring-secret-vault","sslSecretName":"my-cluster-ssl","sslInternalSecretName":"my-cluster-ssl-internal","allowUnsafeConfigurations":false,"updateStrategy":"SmartUpdate","pxc":{"size":3,"image":"percona/percona-xtradb-cluster-operator:1.4.0-pxc8.0","resources":{"requests":{"memory":"1G","cpu":"600m"}},"affinity":{"antiAffinityTopologyKey":"kubernetes.io/hostname"},"podDisruptionBudget":{"maxUnavailable":1},"volumeSpec":{"persistentVolumeClaim":{"resources":{"requests":{"storage":"6Gi"}}}},"gracePeriod":600},"proxysql":{"enabled":true,"size":3,"image":"percona/percona-xtradb-cluster-operator:1.4.0-proxysql","resources":{"requests":{"memory":"1G","cpu":"600m"}},"affinity":{"antiAffinityTopologyKey":"kubernetes.io/hostname"},"volumeSpec":{"persistentVolumeClaim":{"resources":{"requests":{"storage":"2Gi"}}}},"podDisruptionBudget":{"maxUnavailable":1},"gracePeriod":30},"pmm":{"enabled":false,"image":"percona/percona-xtradb-cluster-operator:1.4.0-pmm","serverHost":"monitoring-service","serverUser":"pmm"},"backup":{"image":"percona/percona-xtradb-cluster-operator:1.4.0-pxc8.0-backup","serviceAccountName":"percona-xtradb-cluster-operator","storages":{"s3-us-west":{"type":"s3","s3":{"bucket":"S3-BACKUP-BUCKET-NAME-HERE","credentialsSecret":"my-cluster-name-backup-s3","region":"us-west-2"}},"fs-pvc":{"type":"filesystem","volume":{"persistentVolumeClaim":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"6Gi"}}}}}},"schedule":[{"name":"sat-night-backup","schedule":"0
       0 * *
