@@ -42,20 +42,21 @@ OPP_MIRROR_LATEST_TAG=${OPP_MIRROR_LATEST_TAG-"v4.6"}
 function iib_install() {
     echo "Installing iib ..."
     set -o pipefail
+    echo "Loging to registry.redhat.io ..."
+    if [ -n "$IIB_INPUT_REGISTRY_TOKEN" ];then
+      echo "$IIB_INPUT_REGISTRY_TOKEN" | $OPP_CONTAINER_TOOL login registry.redhat.io -u $IIB_INPUT_REGISTRY_USER --password-stdin || { echo "Problem to login to 'registry.redhat.io' !!!"; exit 1; }
+      if [ -n "$IIB_OUTPUT_REGISTRY_TOKEN" ];then
+        echo "$IIB_OUTPUT_REGISTRY_TOKEN" | $OPP_CONTAINER_TOOL login quay.io -u $IIB_OUTPUT_REGISTRY_USER --password-stdin || { echo "Problem to login to 'quay.io' !!!"; exit 1; }
+      fi
+    else
+        echo "Variable \$IIB_INPUT_REGISTRY_TOKEN is not set or is empty !!!"
+        exit 1
+    fi
+
     ansible-pull -U $OPP_ANSIBLE_PULL_REPO -C $OPP_ANSIBLE_PULL_BRANCH $OPP_ANSIBLE_DEFAULT_ARGS -e run_prepare_catalog_repo_upstream=false --tags iib
     # -e iib_push_image="$IIB_PUSH_IMAGE" -e iib_push_registry="$(echo $IIB_PUSH_IMAGE | cut -d '/' -f 1)"
     if [[ $? -eq 0 ]];then
-        echo "Loging to registry.redhat.io ..."
-        if [ -n "$IIB_INPUT_REGISTRY_TOKEN" ];then
-          echo "$IIB_INPUT_REGISTRY_TOKEN" | $OPP_CONTAINER_TOOL login registry.redhat.io -u $IIB_INPUT_REGISTRY_USER --password-stdin || { echo "Problem to login to 'registry.redhat.io' !!!"; exit 1; }
-          if [ -n "$IIB_OUTPUT_REGISTRY_TOKEN" ];then
-            echo "$IIB_OUTPUT_REGISTRY_TOKEN" | $OPP_CONTAINER_TOOL login quay.io -u $IIB_OUTPUT_REGISTRY_USER --password-stdin || { echo "Problem to login to 'quay.io' !!!"; exit 1; }
-          fi
-          $OPP_CONTAINER_TOOL cp $HOME/.docker/config.json iib_iib-worker_1:/root/.docker/config.json.template || exit 1
-        else
-            echo "Variable \$IIB_INPUT_REGISTRY_TOKEN is not set or is empty !!!"
-            exit 1
-        fi
+        $OPP_CONTAINER_TOOL cp $HOME/.docker/config.json iib_iib-worker_1:/root/.docker/config.json.template || exit 1
         echo -e "\n=================================================================================="
         echo -e "IIB was installed successfully !!!"
         echo -e "==================================================================================\n"
