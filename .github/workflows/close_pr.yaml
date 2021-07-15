@@ -1,0 +1,35 @@
+name: Close PR
+on:
+ pull_request_target:
+   types: [opened]
+  
+jobs:
+  close-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip yq
+
+      - name: Operator traffic light
+        id: op-traffic-light
+        env:
+          OP_TEST_LABELS: "${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          OP_TEST_PR_AUTHOR: "${{ github.event.pull_request.user.login }}"
+          OPRT_REPO: "${{ github.event.pull_request.head.repo.full_name }}"
+          OPRT_SHA: "${{ github.event.pull_request.head.sha }}"
+        run: |
+          bash <(curl -sL https://raw.githubusercontent.com/redhat-openshift-ecosystem/operator-test-playbooks/upstream-community/upstream/test/oprt.sh)
+      - name: Close PR (community-operators)
+        if: steps.op-traffic-light.outputs.op_test_stream == 'community-operators'
+        uses: superbrothers/close-pull-request@v3
+        with:
+          comment: "Openshift community operators were moved to https://github.com/redhat-openshift-ecosystem/community-operators-prod/tree/main/operators. Please make PR there. Thanks for understanding."
+      - name: Close PR (upstream-community-operators)
+        if: steps.op-traffic-light.outputs.op_test_stream == 'upstream-community-operators'
+        uses: superbrothers/close-pull-request@v3
+        with:
+          comment: "Kubernetes community operators were moved to https://github.com/k8s-operatorhub/community-operators/tree/main/operators. Please make PR there. Thanks for understanding."
