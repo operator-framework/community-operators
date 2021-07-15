@@ -1,7 +1,7 @@
 #!/bin/bash
 set +o pipefail
 
-OPP_FILES_TO_COPY="categories.json"
+OPP_FILES_TO_COPY="categories.json upstream.Dockerfile"
 OPP_CI_SCRIPTS_DIR="scripts/ci"
 OPP_FILES_TO_COPY_CI_SCRIPTS="openshift-deploy-core.sh openshift-deploy.sh Dockerfile.ci-operator"
 
