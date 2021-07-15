@@ -1,51 +1,72 @@
-{%- raw -%}
+{% raw %}
 name: Prepare Test Index
-env:
-  GODEBUG: x509ignoreCN=0
-{% endraw %}
-  PRODUCTION_TYPE: "{{ default_config.production.type }}"
-{%- raw %}
-  
+
 on:
   repository_dispatch:
     types:
       - manual-test-index
       - index-for-openshift-test
 
+env:
+{% endraw %}
+  OPP_PRODUCTION_TYPE: "{{ default_config.production.type }}"
+  OPP_IMAGE: "{{ default_config.pipeline.image }}"
+
+{% raw %}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+#    container: quay.io/operator_testing/operator-test-playbooks:latest
+
 
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip yq
+
       - name: "prepare"
         id: variables
         env:
           OP_PR: ${{ github.event.client_payload.source_pr }}
+{% endraw %}
         run: |
           tmpfile=$(mktemp /tmp/XXXXXX.json)
-          curl -s https://api.github.com/repos/operator-framework/community-operators/pulls/$OP_PR -o $tmpfile
+          curl -s https://api.github.com/repos/{{ default_config.pipeline.repo }}/pulls/$OP_PR -o $tmpfile
           REPO_FULL=$(cat $tmpfile | jq -r '.head.repo.clone_url')
           BRANCH=$(cat $tmpfile | jq -r '.head.ref')
           COMMIT=$(cat $tmpfile | jq -r '.head.sha')
-          REPO=$(echo "$REPO_FULL"| awk -F'https://github.com/' '{print $2}')
-          echo "::set-output name=op_test_repo::$REPO"
-          echo "::set-output name=op_test_branch::$BRANCH"
-          echo "::set-output name=op_test_commit::$COMMIT"
+          REPO=$(echo "$REPO_FULL"| awk -F'{{ default_config.pipeline.base }}/' '{print $2}')
+          echo "::set-output name=opp_repo::$REPO"
+          echo "::set-output name=opp_branch::$BRANCH"
+          echo "::set-output name=opp_commit::$COMMIT"
           echo "Pull request #$1 : $REPO $BRANCH $COMMIT"
           rm -f $tmpfile > /dev/null 2>&1
+{% raw %}
 
       - name: Build temp index and push
         env:
           # CONTAINER_TOOL: podman
           OP_DEBUG: 0
-          OP_TOKEN: ${{ secrets.QUAY_API_TOKEN_OPERATOR_TESTING }}
-          OPRT_SCRIPT: https://raw.githubusercontent.com/redhat-openshift-ecosystem/operator-test-playbooks/upstream-community/upstream/test/osr_run.sh
+          OP_TOKEN: ${{ secrets.PREPARE_INDEX_API_TOKEN }}
 #          OP_PR: ${{ github.event.client_payload.source_pr }}
-          REPO: ${{ steps.variables.outputs.op_test_repo }}
-          BRANCH: ${{ steps.variables.outputs.op_test_branch }}
-          COMMIT: ${{ steps.variables.outputs.op_test_commit }}
-          OPRT_REPO: ${{ steps.variables.outputs.op_test_repo }}
-          OPRT_SHA: ${{ steps.variables.outputs.op_test_commit }}
+          BASE: "https://github.com"
+          REPO: ${{ steps.variables.outputs.opp_repo }}
+          BRANCH: ${{ steps.variables.outputs.opp_branch }}
+          COMMIT: ${{ steps.variables.outputs.opp_commit }}
+          OPP_OPRT_REPO: ${{ steps.variables.outputs.opp_repo }}
+          OPP_OPRT_SHA: ${{ steps.variables.outputs.opp_commit }}
+{% endraw %}
+          OPP_SCRIPT_ENV_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-osr-run.sh"
+          OPP_OPRT_SRC_BASE:  "{{ default_config.pipeline.base }}"
+          OPP_OPRT_SRC_REPO:  "{{ default_config.pipeline.repo }}"
+          OPP_OPRT_SRC_BRANCH: "{{ default_config.pipeline.branch }}"
+#          REPO: "{{ default_config.pipeline.repo }}.git"
+#          BRANCH: "{{ default_config.pipeline.branch }}"
+{% raw %}
         run: |
           echo ${{ github.event.client_payload.source_pr }} >> file
           echo
@@ -54,5 +75,6 @@ jobs:
           cat file
           echo
           echo
-          bash <(curl -sL https://raw.githubusercontent.com/redhat-openshift-ecosystem/operator-test-playbooks/upstream-community/upstream/test/oprt.sh)
 {% endraw %}
+          bash <(curl -sL {{ default_config.pipeline.ci_scripts_dir }}/opp-oprt.sh)
+

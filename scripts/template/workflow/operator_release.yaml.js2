@@ -1,31 +1,56 @@
+{% raw %}
 name: Operator release
-
-env:
-  OPP_DEBUG: 1
-  OPP_CONTAINER_OPT: "-t"
-  OPP_SCRIPT_URL: "{{ default_config.testing.test_script_url }}"
-  ISS_SCRIPT_URL: "{{ default_config.testing.iss_script_url }}"
-  OPP_IMAGE: "{{ default_config.testing.image }}"
-  OPP_PROD: 1
-  OPP_INDEX_MIRROR: 0
-  OPP_MIRROR_LATEST_TAG: "{{ default_config.production.index.latest }}"
-  PRODUCTION_TYPE: "{{ default_config.production.type }}"
-  {% raw -%}
-  GODEBUG: x509ignoreCN=0
-  CI_OHIO_TRIGGER_TOKEN: ${{ secrets.CI_OHIO_TRIGGER_TOKEN }}
-  OHIO_REGISTRY_TOKEN: ${{ secrets.OHIO_REGISTRY_TOKEN }}
-  QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
-  QUAY_API_TOKEN_OPERATORHUBIO: ${{ secrets.QUAY_API_TOKEN_OPERATORHUBIO }}
-  QUAY_APPREG_TOKEN: ${{ secrets.QUAY_APPREG_TOKEN }}
-  QUAY_COURIER_TOKEN: ${{ secrets.QUAY_COURIER_TOKEN }}
-  QUAY_RH_INDEX_PW: ${{ secrets.QUAY_RH_INDEX_PW }}
-  REPO_GHA_PAT: ${{ secrets.REPO_GHA_PAT }}
 
 on:
  push:
    branches:
      - master
-     - feature/op_delete
+     - main
+
+env:
+{% endraw %}
+  OPP_DEBUG: 1
+  OPP_CONTAINER_OPT: "-t"
+  OPP_SCRIPT_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp.sh"
+  OPP_SCRIPT_ENV_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-env.sh"
+  OPP_SCRIPT_ISS_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-iss.sh"
+  OPP_SCRIPT_CLEANUP_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-disk-cleanup-on-startup.sh"
+  OPP_SCRIPT_TRIGGER_OHIO_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-trigger-operatorhubio-ci.sh"
+  OPP_IMAGE: "{{ default_config.pipeline.image }}"
+  OPP_PROD: 1
+  OPP_MIRROR_LATEST_TAG: "{{ default_config.production.index.latest }}"
+  OPP_PRODUCTION_TYPE: "{{ default_config.production.type }}"
+  OPP_RELEASE_BUNDLE_REGISTRY: "{{ default_config.production.bundle.registry }}"
+  OPP_RELEASE_BUNDLE_ORGANIZATION: "{{ default_config.production.bundle.organization }}"
+  OPP_RELEASE_INDEX_REGISTRY: "{{ default_config.production.index.registry }}"
+  OPP_RELEASE_INDEX_ORGANIZATION: "{{ default_config.production.index.organization }}"
+  OPP_RELEASE_INDEX_NAME: "{{ default_config.production.index.name }}"
+  OPP_MIRROR_INDEX_REGISTRY: "{{ default_config.production.mirror.registry }}"
+  OPP_MIRROR_INDEX_ORGANIZATION: "{{ default_config.production.mirror.organization }}"
+  OPP_MIRROR_INDEX_NAME: "{{ default_config.production.mirror.name }}"
+  # OPP_MIRROR_INDEX_ENABLED: "{{ default_config.production.mirror.enabled }}"
+  OPP_MIRROR_INDEX_MULTIARCH: "{{ default_config.production.mirror.multiarch.base }}"
+  OPP_MIRROR_INDEX_MULTIARCH_POSTFIX: "{{ default_config.production.mirror.multiarch.postfix }}"
+  IIB_INPUT_REGISTRY_USER: "{{ default_config.production.mirror.username.in }}"
+  OPP_REGISTRY_MIRROR_USER: "{{ default_config.production.mirror.username.out }}"
+  OPP_THIS_REPO_BASE: "{{ default_config.pipeline.base }}"
+  OPP_THIS_REPO: "{{ default_config.pipeline.repo }}"
+  OPP_THIS_BRANCH: "{{ default_config.pipeline.branch }}"
+  OPP_REVIEWERS_ENABLED: 0
+
+{% raw %}
+  REGISTRY_RELEASE_API_TOKEN: ${{ secrets.REGISTRY_RELEASE_API_TOKEN }}
+  REGISTRY_MIRROR_PW: ${{ secrets.REGISTRY_MIRROR_PW }}
+  
+  GODEBUG: x509ignoreCN=0
+  CI_OHIO_TRIGGER_TOKEN: ${{ secrets.CI_OHIO_TRIGGER_TOKEN }}
+  OHIO_REGISTRY_TOKEN: ${{ secrets.OHIO_REGISTRY_TOKEN }}
+
+  #QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
+  #QUAY_API_TOKEN_OPERATORHUBIO: ${{ secrets.QUAY_API_TOKEN_OPERATORHUBIO }}
+  QUAY_APPREG_TOKEN: ${{ secrets.QUAY_APPREG_TOKEN }}
+  QUAY_COURIER_TOKEN: ${{ secrets.QUAY_COURIER_TOKEN }}
+  REPO_GHA_PAT: ${{ secrets.REPO_GHA_PAT }}
 
 jobs:
   pr-check:
@@ -64,104 +89,110 @@ jobs:
           echo "PR : ${{ steps.prinfo.outputs.number }}"
           echo "labels : ${{ steps.prinfo.outputs.labels }}"
           echo "OPP_LABELS=$OPP_LABELS"
-          scripts/ci/actions-env
+          echo "Using script '$OPP_SCRIPT_ENV_URL' ..."
+          bash <(curl -sL $OPP_SCRIPT_ENV_URL)
     outputs:
-      op_test_labels: "${{ steps.prinfo.outputs.labels }}"
-      op_test_ready: "${{ steps.op-traffic-light.outputs.op_test_ready }}"
-      op_release_ready: "${{ steps.op-traffic-light.outputs.op_release_ready }}"
-      op_test_stream: "${{ steps.op-traffic-light.outputs.op_test_stream }}"
-      op_test_name: "${{ steps.op-traffic-light.outputs.op_test_name }}"
-      op_test_version: "${{ steps.op-traffic-light.outputs.op_test_version }}"
-      op_test_ci_yaml_only: "${{ steps.op-traffic-light.outputs.op_test_ci_yaml_only }}"
-      op_test_ver_overwrite: "${{ steps.op-traffic-light.outputs.op_test_ver_overwrite }}"
-      op_test_op_delete: "${{ steps.op-traffic-light.outputs.op_test_op_delete }}"
-      op_release_delete_appreg: "${{ steps.op-traffic-light.outputs.op_release_delete_appreg }}"
-      op_test_pr_title: "${{ steps.op-traffic-light.outputs.op_test_pr_title }}"
-
+      opp_labels: "${{ steps.prinfo.outputs.labels }}"
+      opp_test_ready: "${{ steps.op-traffic-light.outputs.opp_test_ready }}"
+      opp_release_ready: "${{ steps.op-traffic-light.outputs.opp_release_ready }}"
+      opp_stream: "${{ steps.op-traffic-light.outputs.opp_stream }}"
+      opp_name: "${{ steps.op-traffic-light.outputs.opp_name }}"
+      opp_version: "${{ steps.op-traffic-light.outputs.opp_version }}"
+      opp_ci_yaml_only: "${{ steps.op-traffic-light.outputs.opp_ci_yaml_only }}"
+      opp_ver_overwrite: "${{ steps.op-traffic-light.outputs.opp_ver_overwrite }}"
+      opp_op_delete: "${{ steps.op-traffic-light.outputs.opp_op_delete }}"
+      opp_release_delete_appreg: "${{ steps.op-traffic-light.outputs.opp_release_delete_appreg }}"
+      opp_pr_title: "${{ steps.op-traffic-light.outputs.opp_pr_title }}"
+{% endraw %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
   release-k8s_latest:
     name: "Release / k8s latest"
     needs: pr-check
-    if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    if: needs.pr-check.outputs.opp_release_ready == '1'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Remove operator from index
-        if: needs.pr-check.outputs.op_test_op_delete == '1'
+        if: needs.pr-check.outputs.opp_op_delete == '1'
         env:
-          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
         run: |
           echo "OPP_LABELS=$OPP_LABELS"
-          echo "op_delete ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
-          scripts/ci/op-test op_delete "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
+          echo "op_delete operators/${{ needs.pr-check.outputs.opp_name }}/dummy $OPP_THIS_REPO $OPP_THIS_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_URL) op_delete operators/${{ needs.pr-check.outputs.opp_name }}/dummy $OPP_THIS_REPO $OPP_THIS_BRANCH
       - name: Index recreate only (Only ci.yaml was changed)
-        if: needs.pr-check.outputs.op_test_ci_yaml_only == '1'
+        if: needs.pr-check.outputs.opp_ci_yaml_only == '1'
         env:
-          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
           OPP_CI_YAML_ONLY: 1
         run: |
           echo "OPP_LABELS=$OPP_LABELS"
-          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
-          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
+          echo "orange operators/${{ needs.pr-check.outputs.opp_name }}/sync $OPP_THIS_REPO $OPP_THIS_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_URL) orange operators/${{ needs.pr-check.outputs.opp_name }}/sync $OPP_THIS_REPO $OPP_THIS_BRANCH
       - name: Operator release (sync)
-        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
+        if: needs.pr-check.outputs.opp_ci_yaml_only == '0' && needs.pr-check.outputs.opp_ver_overwrite == '0'
         env:
-          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
         run: |
           echo "OPP_LABELS=$OPP_LABELS"
-          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+          echo "orange operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_URL) orange operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH
       - name: Operator release (operator version overwrite)
-        if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
+        if: needs.pr-check.outputs.opp_ci_yaml_only == '0' && needs.pr-check.outputs.opp_ver_overwrite == '1'
         env:
-          OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+          OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
         run: |
           echo "OPP_LABELS=$OPP_LABELS"
-          echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
-          scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+          echo "orange operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_THIS_REPO $OPP_THIS_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_URL) orange operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_THIS_REPO $OPP_THIS_BRANCH
+{% endraw %}
+{% else %}
+{% raw %}
   # release-openshift_latest:
   #   name: "Release / o7t latest"
   #   needs: pr-check
-  #   if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+  #   if: needs.pr-check.outputs.opp_release_ready == '1'
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout code
   #       uses: actions/checkout@v2
   #     - name: Operator release
   #       env:
-  #         OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+  #         OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
   #       run: |
   #         echo "OPP_LABELS=$OPP_LABELS"
-  #         echo "orange ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-  #         scripts/ci/op-test orange "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+  #         echo "orange operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH"
+  #         bash <(curl -sL $OPP_SCRIPT_URL) orange operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH
 
   release-openshift:
       name: "Release / o7t"
       needs: pr-check
-      if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+      if: needs.pr-check.outputs.opp_release_ready == '1'
       runs-on: ubuntu-latest
       strategy:
         matrix:
 {% endraw %}
-        index-tag: {{ default_config.production.index.tags }}
-{%- raw %}
+          index-tag: {{ default_config.production.index.tags }}
+{% raw %}
         fail-fast: false
       steps:
         - name: Checkout code
           uses: actions/checkout@v2
         - name: Remove operator from index
-          if: needs.pr-check.outputs.op_test_op_delete == '1'
+          if: needs.pr-check.outputs.opp_op_delete == '1'
           env:
-            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
             echo "OPP_LABELS=$OPP_LABELS"
-            echo "op_delete_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
-            scripts/ci/op-test op_delete_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/dummy https://github.com/operator-framework/community-operators master"
+            echo "op_delete_${OPERATOR_INDEX_TAG} operators/${{ needs.pr-check.outputs.opp_name }}/dummy $OPP_THIS_REPO $OPP_THIS_BRANCH"
+            bash <(curl -sL $OPP_SCRIPT_URL) op_delete_${OPERATOR_INDEX_TAG} operators/${{ needs.pr-check.outputs.opp_name }}/dummy $OPP_THIS_REPO $OPP_THIS_BRANCH
         - name: Index recreate only (Only ci.yaml was changed)
-          if: needs.pr-check.outputs.op_test_ci_yaml_only == '1'
+          if: needs.pr-check.outputs.opp_ci_yaml_only == '1'
           env:
-            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
             OPP_CI_YAML_ONLY: 1
             OPP_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
@@ -169,68 +200,88 @@ jobs:
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
             echo "OPP_LABELS=$OPP_LABELS"
-            echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
-            scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/sync https://github.com/operator-framework/community-operators master"
+            echo "orange_${OPERATOR_INDEX_TAG} operators/${{ needs.pr-check.outputs.opp_name }}/sync $OPP_THIS_REPO $OPP_THIS_BRANCH"
+            bash <(curl -sL $OPP_SCRIPT_URL) orange_${OPERATOR_INDEX_TAG} operators/${{ needs.pr-check.outputs.opp_name }}/sync $OPP_THIS_REPO $OPP_THIS_BRANCH
         - name: Operator release (sync)
-          if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '0'
+          if: needs.pr-check.outputs.opp_ci_yaml_only == '0' && needs.pr-check.outputs.opp_ver_overwrite == '0'
           env:
-            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
             OPP_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
             # OPP_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
             echo "OPP_LABELS=$OPP_LABELS"
-            echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-            scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
+            echo "orange_${OPERATOR_INDEX_TAG} operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH"
+            bash <(curl -sL $OPP_SCRIPT_URL) orange_${OPERATOR_INDEX_TAG} operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH
         - name: Operator release (operator version overwrite)
-          if: needs.pr-check.outputs.op_test_ci_yaml_only == '0' && needs.pr-check.outputs.op_test_ver_overwrite == '1'
+          if: needs.pr-check.outputs.opp_ci_yaml_only == '0' && needs.pr-check.outputs.opp_ver_overwrite == '1'
           env:
-            OPP_LABELS: "${{ needs.pr-check.outputs.op_test_labels }}"
+            OPP_LABELS: "${{ needs.pr-check.outputs.opp_labels }}"
             OPP_IIB_INSTALL: 0
             IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
             # OPP_MIRROR_IMAGE_POSTFIX: "s"
             OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
           run: |
             echo "OPP_LABELS=$OPP_LABELS"
-            echo "orange_${OPERATOR_INDEX_TAG} ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
-            scripts/ci/op-test orange_${OPERATOR_INDEX_TAG} "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
+            echo "orange_${OPERATOR_INDEX_TAG} operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_THIS_REPO $OPP_THIS_BRANCH"
+            bash <(curl -sL $OPP_SCRIPT_URL) orange_${OPERATOR_INDEX_TAG} operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_THIS_REPO $OPP_THIS_BRANCH
+{% endraw %}
+{% if default_config.production.index.signature == 1 %}
+{% raw %}
         - name: Prepare variables for the sign process
           id: openshift-vars
+          env:
+            # QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
+            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
+            #QUAY_PW: ${{ secrets.QUAY_J }}
+            #QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
           run: |
-            docker login quay.io -u $QUAY_USER -p $QUAY_PW
-            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
-            OPERATOR_INDEX_RESOLVED="quay.io/${QUAY_REGISTRY}@${OPERATOR_INDEX_DIGEST}"
-            OPERATOR_INDEX="quay.io/${QUAY_REGISTRY}:${OPERATOR_INDEX_TAG}"
+            docker login ${OPP_MIRROR_INDEX_REGISTRY} -u $OPP_REGISTRY_MIRROR_USER -p $REGISTRY_MIRROR_PW
+            OPERATOR_INDEX_DIGEST=$(skopeo inspect docker://${OPP_MIRROR_INDEX_REGISTRY}/${OPP_MIRROR_INDEX_ORGANIZATION}/${OPP_MIRROR_INDEX_NAME}:${OPERATOR_INDEX_TAG} | jq -r ".Digest")
+            OPERATOR_INDEX_RESOLVED="${OPP_MIRROR_INDEX_REGISTRY}/${OPP_MIRROR_INDEX_ORGANIZATION}/${OPP_MIRROR_INDEX_NAME}@${OPERATOR_INDEX_DIGEST}"
+            OPERATOR_INDEX="${OPP_MIRROR_INDEX_REGISTRY}/${OPP_MIRROR_INDEX_ORGANIZATION}/${OPP_MIRROR_INDEX_NAME}:${OPERATOR_INDEX_TAG}"
             echo $OPERATOR_INDEX_RESOLVED
             echo $OPERATOR_INDEX
             echo "::set-output name=operator_index_resolved::${OPERATOR_INDEX_RESOLVED}"
             echo "::set-output name=operator_index::${OPERATOR_INDEX}"
-          env:
-            QUAY_REGISTRY: 'redhat/redhat----community-operator-index'
-            OPERATOR_INDEX_TAG: ${{ matrix.index-tag }}
-            QUAY_PW: ${{ secrets.QUAY_J }}
-            QUAY_USER: ${{ secrets.QUAY_RH_RO_INDEX_USER }}
         - name: Initialize sign process
           uses: operator-framework/community-operators@webhook
           env:
             INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
             webhook_type: 'json-extended'
             webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
-            webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+            webhook_secret: ${{ secrets.SIGNATURE_WEBHOOK_SECRET }}
             data: "{\"index_image\": \"${{ steps.openshift-vars.outputs.operator_index }}\", \"index_image_resolved\": \"${{ steps.openshift-vars.outputs.operator_index_resolved }}\"}"
-
+{% endraw %}
+{% endif %}
+{% raw %}
+  push-to-quay-o7t:
+    name: "Release / o7t push to quay"
+    needs: pr-check
+    if: needs.pr-check.outputs.opp_release_ready == '1'
+    runs-on: ubuntu-latest
+    env:
+      DELETE_APPREG: "${{ needs.pr-check.outputs.opp_release_delete_appreg }}"
+      OPP_VERSION: "${{ needs.pr-check.outputs.opp_version }}"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Push to quay
+        run: |
+          echo "push_to_quay operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_THIS_REPO $OPP_THIS_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_URL) push_to_quay operators/${{ needs.pr-check.outputs.opp_name }}/${{ needs.pr-check.outputs.opp_version }} $OPP_THIS_REPO $OPP_THIS_BRANCH
 
   release-sha-openshift:
       name: "Release sha / o7t"
       needs: [ pr-check, release-openshift ]
-      if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
+      if: needs.pr-check.outputs.opp_release_ready == '1'
       runs-on: ubuntu-latest
       strategy:
         matrix:
 {% endraw %}
           index-tag: {{ default_config.production.index.tags }}
-{%- raw %}
+{% raw %}
         fail-fast: false
       steps:
         - name: Release sha
@@ -239,29 +290,38 @@ jobs:
             IIB_OUTPUT_REGISTRY_TOKEN: ${{ secrets.IIB_OUTPUT_REGISTRY_TOKEN }}
           run: |
             echo "openshift: ${{ matrix.index-tag }}"
-            bash <(curl -sL $ISS_SCRIPT_URL) openshift ${{ matrix.index-tag }}
+            bash <(curl -sL $OPP_SCRIPT_ISS_URL) openshift ${{ matrix.index-tag }}
+{% endraw %}
+{% endif %}
+{% if default_config.operatorhubio.enabled == 1 %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
 
   ohio-image-k8s:
     name: "Release / k8s ohio image"
     needs: [ pr-check, release-k8s_latest ]
-    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    # if: needs.pr-check.outputs.opp_release_ready == '1'
     runs-on: ubuntu-latest
     env:
-      OHIO_INPUT_CATALOG_IMAGE: "quay.io/operatorhubio/catalog:latest"
-      OHIO_REGISTRY_IMAGE: "quay.io/operator-framework/upstream-community-operators:latest"
+{% endraw %}
+      OHIO_INPUT_CATALOG_IMAGE: "{{ default_config.production.index.registry }}/{{ default_config.production.index.organization }}/{{ default_config.production.index.name }}:latest"
+      OHIO_REGISTRY_IMAGE: "{{ default_config.operatorhubio.registry }}/{{ default_config.operatorhubio.organization }}/{{ default_config.operatorhubio.name }}:{{ default_config.operatorhubio.tag }}"
+{% raw %}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Ohio image
         run: |
-          echo "ohio_image ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-          scripts/ci/disk-cleanup-on-startup.sh
-          scripts/ci/op-test ohio_image "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-
+          echo "ohio_image operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_CLEANUP_URL)
+          bash <(curl -sL $OPP_SCRIPT_URL) ohio_image operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH
+{% endraw %}
+{% else %}
+{% raw %}
   ohio-image-o7t:
     name: "Release / o7t ohio image and sign 'latest'"
     needs: [ pr-check, release-sha-openshift ]
-    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    # if: needs.pr-check.outputs.opp_release_ready == '1'
     runs-on: ubuntu-latest
     env:
       OHIO_INPUT_CATALOG_IMAGE: "quay.io/openshift-community-operators/catalog:v4.8"
@@ -291,34 +351,21 @@ jobs:
           INDEX_SHA: "${{ steps.openshift-vars.outputs.index_sha }}"
           webhook_type: 'json-extended'
           webhook_url: 'https://api.enterprise.redhat.com/hydra/umb-bridge/v1/publish'
-          webhook_secret: ${{ secrets.INDEX_SIGN_WEBHOOK }}
+          webhook_secret: ${{ secrets.SIGNATURE_WEBHOOK_SECRET }}
           data: "{\"index_image\": \"${{ steps.openshift-vars-latest.outputs.operator_index_latest }}\", \"index_image_resolved\": \"${{ steps.openshift-vars-latest.outputs.operator_index_resolved_latest }}\"}"
       - name: Ohio image
         run: |
-          echo "ohio_image ${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-          scripts/ci/disk-cleanup-on-startup.sh
-          scripts/ci/op-test ohio_image "${{ needs.pr-check.outputs.op_test_stream }}/sync https://github.com/operator-framework/community-operators master"
-
-  push-to-quay-o7t:
-    name: "Release / o7t push to quay"
-    needs: pr-check
-    if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'community-operators'
-    runs-on: ubuntu-latest
-    env:
-      DELETE_APPREG: "${{ needs.pr-check.outputs.op_release_delete_appreg }}"
-      OPP_VERSION: "${{ needs.pr-check.outputs.op_test_version }}"
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Push to quay
-        run: |
-          echo "push_to_quay ${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
-          scripts/ci/op-test push_to_quay "${{ needs.pr-check.outputs.op_test_stream }}/${{ needs.pr-check.outputs.op_test_name }}/${{ needs.pr-check.outputs.op_test_version }} https://github.com/operator-framework/community-operators master"
-
+          echo "ohio_image operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH"
+          bash <(curl -sL $OPP_SCRIPT_CLEANUP_URL)
+          bash <(curl -sL $OPP_SCRIPT_URL) ohio_image operators/sync $OPP_THIS_REPO $OPP_THIS_BRANCH
+{% endraw %}
+{% endif %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
   ohio-page-k8s:
     name: "Release / operatorhub.io"
     needs: ohio-image-k8s
-    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    # if: needs.pr-check.outputs.opp_release_ready == '1'
     runs-on: ubuntu-latest
     env:
       CI_OHIO_BRANCH: "latest"
@@ -328,13 +375,15 @@ jobs:
         uses: actions/checkout@v2
       - name: Ohio image
         run: |
-          echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
-          scripts/ci/trigger-operatorhubio-ci.sh
-
+          echo "$OPP_SCRIPT_TRIGGER_OHIO_URL ${CI_OHIO_BRANCH}"
+          bash <(curl -sL $OPP_SCRIPT_TRIGGER_OHIO_URL)
+{% endraw %}
+{% else %}
+{% raw %}
   ohio-page-o7t:
     name: "Release / dev.operatorhub.io"
     needs: ohio-image-o7t
-    # if: needs.pr-check.outputs.op_release_ready == '1' && needs.pr-check.outputs.op_test_stream == 'upstream-community-operators'
+    # if: needs.pr-check.outputs.opp_release_ready == '1'
     runs-on: ubuntu-latest
     env:
       CI_OHIO_BRANCH: "master"
@@ -343,19 +392,32 @@ jobs:
         uses: actions/checkout@v2
       - name: Ohio image
         run: |
-          echo "scripts/ci/trigger-operatorhubio-ci.sh ${CI_OHIO_BRANCH}"
-          scripts/ci/trigger-operatorhubio-ci.sh
-
+          echo "$OPP_SCRIPT_TRIGGER_OHIO_URL ${CI_OHIO_BRANCH}"
+          bash <(curl -sL $OPP_SCRIPT_TRIGGER_OHIO_URL)
+{% endraw %}
+{% endif %}
+{% raw %}
   slack-notification:
     name: "Slack notification"
-    needs: [ pr-check, release-k8s_latest, release-openshift, release-sha-openshift, ohio-image-k8s, ohio-image-o7t, push-to-quay-o7t, ohio-page-k8s, ohio-page-o7t ]
+
+{% endraw %}
+{% if default_config.production.type == 'k8s' %}
+{% raw %}
+    needs: [ pr-check, release-k8s_latest, ohio-image-k8s, ohio-page-k8s ]
+{% endraw %}
+{% else %}
+{% raw %}
+    needs: [ pr-check, release-openshift, release-sha-openshift, ohio-image-o7t, push-to-quay-o7t, ohio-page-o7t ]
+{% endraw %}
+{% endif %}
+{% raw %}
     if: failure()
     runs-on: ubuntu-latest
     steps:
       - name: Report Status
         uses: ravsamhq/notify-slack-action@master
         with:
-          notification_title: 'Release pipeline failed: ${{ needs.pr-check.outputs.op_test_pr_title }}'
+          notification_title: 'Release pipeline failed: ${{ needs.pr-check.outputs.opp_pr_title }}'
           footer: 'monitoring'
 #          status: ${{ needs.pr-check.result }}
           status: 'failure'
@@ -364,3 +426,4 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.ACTION_MONITORING_SLACK }}
         continue-on-error: true
 {% endraw %}
+{% endif %}
