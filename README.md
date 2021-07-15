@@ -2,6 +2,20 @@
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 [![Upstream Operator Catalog Status](https://quay.io/repository/operator-framework/upstream-community-operators/status "Upstream Operator Catalog Status")](https://quay.io/repository/operator-framework/upstream-community-operators)
 
+## [New] Repository was split
+> Dear OperatorHub.io and OpenShift Operator Community,
+>
+> As of July 15, 2021 we would like to announce that community-operators are migrated to 2 different repositories. We are doing this for better separation of concerns.
+>
+> The directory `upstream-community-operators` keeping Kubernetes operators is `https://github.com/k8s-operatorhub/community-operators` and `community-operators` directory keeping Openshift operators is `https://github.com/redhat-openshift-ecosystem/community-operators-prod`.
+>
+> Also there are no more `upstream-community-operators` nor `community-operators directories`, just simply `operators` according to the repository.
+
+|Old directory|New directory|New repo|
+|-------------|-------------|--------
+|upstream-community-operators|operators|https://github.com/k8s-operatorhub/community-operators|
+|community-operators|operators|https://github.com/redhat-openshift-ecosystem/community-operators-prod|
+
 ## About this repository
 
 This repo is the canonical source for Kubernetes Operators that appear on [OperatorHub.io](https://operatorhub.io), [OpenShift Container Platform](https://openshift.com) and [OKD](https://okd.io).
