@@ -1,6 +1,8 @@
 #!/bin/bash
 set +o pipefail
 
+OPP_FILES_TO_COPY="categories.json"
+
 OPP_ANSIBLE_PULL_REPO=${OPP_ANSIBLE_PULL_REPO-"https://github.com/redhat-openshift-ecosystem/operator-test-playbooks"}
 OPP_ANSIBLE_PULL_BRANCH=${OPP_ANSIBLE_PULL_BRANCH-"upstream-community"}
 
@@ -29,7 +31,6 @@ ANSIBLE_STDOUT_CALLBACK=yaml ansible-pull -U $OPP_ANSIBLE_PULL_REPO -C $OPP_ANSI
 -e pu_postfix=$OPP_INDEX_IMAGE_POSTFIX \
 $OPP_ANSIBLE_EXTRA_ARGS
 
-OPP_FILES_TO_COPY="categories.json"
 for f in $OPP_FILES_TO_COPY;do
     echo "Doing 'cp $OPP_TMP_DIR/opp-input/$f $PWD/$f'"
     cp $OPP_TMP_DIR/opp-input/$f $PWD/$f
