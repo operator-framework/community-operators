@@ -1,0 +1,150 @@
+#
+#  Copyright (c) 2019-2021 Red Hat, Inc.
+#    This program and the accompanying materials are made
+#    available under the terms of the Eclipse Public License 2.0
+#    which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+#  SPDX-License-Identifier: EPL-2.0
+#
+#  Contributors:
+#    Red Hat, Inc. - initial API and implementation
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: chebackupserverconfigurations.org.eclipse.che
+spec:
+  group: org.eclipse.che
+  names:
+    kind: CheBackupServerConfiguration
+    listKind: CheBackupServerConfigurationList
+    plural: chebackupserverconfigurations
+    singular: chebackupserverconfiguration
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: CheBackupServerConfiguration is the Schema for the chebackupserverconfigurations
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CheBackupServerConfigurationSpec defines the desired state
+              of CheBackupServerConfiguration Only one type of backup server is allowed
+              to be configured per CR.
+            properties:
+              awss3:
+                description: Amazon S3 or compatible alternatives.
+                properties:
+                  awsAccessKeySecretRef:
+                    description: Reference to secret that contains awsAccessKeyId
+                      and awsSecretAccessKey keys.
+                    type: string
+                  hostname:
+                    description: Server hostname, defaults to 's3.amazonaws.com'.
+                      Might be customized in case of alternative server.
+                    type: string
+                  port:
+                    description: Backup server port. Usually default value is used.
+                      Might be customized in case of alternative server.
+                    type: integer
+                  protocol:
+                    description: Protocol to use when connection to the server. Might
+                      be customized in case of alternative server.
+                    type: string
+                  repositoryPasswordSecretRef:
+                    description: Holds reference to a secret with restic repository
+                      password under 'repo-password' field to encrypt / decrypt its
+                      content.
+                    type: string
+                  repositoryPath:
+                    description: Bucket name and repository, e.g. bucket/repo
+                    type: string
+                required:
+                - awsAccessKeySecretRef
+                - repositoryPasswordSecretRef
+                - repositoryPath
+                type: object
+              rest:
+                description: Rest backup server configuration.
+                properties:
+                  credentialsSecretRef:
+                    description: Secret that contains username and password fields
+                      to login into restic server. Note, each repository is encrypted
+                      with own password. See ResticRepoPasswordSecretRef field.
+                    type: string
+                  hostname:
+                    description: Backup server host
+                    type: string
+                  port:
+                    description: Backup server port
+                    type: integer
+                  protocol:
+                    description: Protocol to use when connection to the server Defaults
+                      to https.
+                    type: string
+                  repositoryPasswordSecretRef:
+                    description: Holds reference to a secret with restic repository
+                      password under 'repo-password' field to encrypt / decrypt its
+                      content.
+                    type: string
+                  repositoryPath:
+                    description: Restic repository path
+                    type: string
+                required:
+                - hostname
+                - repositoryPasswordSecretRef
+                type: object
+              sftp:
+                description: Sftp backup server configuration.
+                properties:
+                  hostname:
+                    description: Backup server host
+                    type: string
+                  port:
+                    description: Backup server port
+                    type: integer
+                  repositoryPasswordSecretRef:
+                    description: Holds reference to a secret with restic repository
+                      password under 'repo-password' field to encrypt / decrypt its
+                      content.
+                    type: string
+                  repositoryPath:
+                    description: Restic repository path, relative or absolute, e.g.
+                      /srv/repo
+                    type: string
+                  sshKeySecretRef:
+                    description: Private ssh key under 'ssh-privatekey' field for
+                      passwordless login
+                    type: string
+                  username:
+                    description: User login on the remote server
+                    type: string
+                required:
+                - hostname
+                - repositoryPasswordSecretRef
+                - repositoryPath
+                - sshKeySecretRef
+                - username
+                type: object
+            type: object
+          status:
+            description: CheBackupServerConfigurationStatus defines the observed state
+              of CheBackupServerConfiguration
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
