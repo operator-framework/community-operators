@@ -3,13 +3,11 @@
 [![Upstream Operator Catalog Status](https://quay.io/repository/operator-framework/upstream-community-operators/status "Upstream Operator Catalog Status")](https://quay.io/repository/operator-framework/upstream-community-operators)
 
 ## [New] Repository was split
-> Dear OperatorHub.io and OpenShift Operator Community,
+> The repository community-operators are migrated to 2 different repositories. We are doing this for better separation of concerns.
 >
-> As of July 15, 2021 we would like to announce that community-operators are migrated to 2 different repositories. We are doing this for better separation of concerns.
+> The directory upstream-community-operators keeping Kubernetes operators is https://github.com/k8s-operatorhub/community-operators and community-operators directory keeping Openshift operators is https://github.com/redhat-openshift-ecosystem/community-operators-prod.
 >
-> The directory `upstream-community-operators` keeping Kubernetes operators is `https://github.com/k8s-operatorhub/community-operators` and `community-operators` directory keeping Openshift operators is `https://github.com/redhat-openshift-ecosystem/community-operators-prod`.
->
-> Also there are no more `upstream-community-operators` nor `community-operators directories`, just simply `operators` according to the repository.
+> Also there are no more upstream-community-operators nor community-operators directories, just simply `operators` directory according to the repository.
 
 |Old directory|New directory|New repo|
 |-------------|-------------|--------
