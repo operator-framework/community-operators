@@ -3,16 +3,12 @@
 [![Upstream Operator Catalog Status](https://quay.io/repository/operator-framework/upstream-community-operators/status "Upstream Operator Catalog Status")](https://quay.io/repository/operator-framework/upstream-community-operators)
 
 ## [New] Repository was split
-> The repository community-operators are migrated to 2 different repositories. We are doing this for better separation of concerns.
->
-> The directory upstream-community-operators keeping Kubernetes operators is https://github.com/k8s-operatorhub/community-operators and community-operators directory keeping Openshift operators is https://github.com/redhat-openshift-ecosystem/community-operators-prod.
->
-> Also there are no more upstream-community-operators nor community-operators directories, just simply `operators` directory according to the repository.
+ The repository `community-operators` are migrated to 2 different repositories. We are doing this for better separation of concerns.
 
-|Old directory|New directory|New repo|
-|-------------|-------------|--------
-|upstream-community-operators|operators|https://github.com/k8s-operatorhub/community-operators|
-|community-operators|operators|https://github.com/redhat-openshift-ecosystem/community-operators-prod|
+|Old location|New location|
+|-------------|-------------|
+|[operator-framework/community-operators/upstream-community-operators](https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators)|[k8s-operatorhub/community-operators/operators](https://github.com/k8s-operatorhub/community-operators/tree/main/operators)|
+|[operator-framework/community-operators/community-operators](https://github.com/operator-framework/community-operators/tree/master/community-operators)|[redhat-openshift-ecosystem/community-operators-prod/operators](https://github.com/redhat-openshift-ecosystem/community-operators-prod/tree/main/operators)|
 
 ## About this repository
 
