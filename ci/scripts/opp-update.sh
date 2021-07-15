@@ -2,6 +2,8 @@
 set +o pipefail
 
 OPP_FILES_TO_COPY="categories.json"
+OPP_CI_SCRIPTS_DIR="scripts/ci"
+OPP_FILES_TO_COPY_CI_SCRIPTS="openshift-deploy-core.sh openshift-deploy.sh Dockerfile.ci-operator"
 
 OPP_ANSIBLE_PULL_REPO=${OPP_ANSIBLE_PULL_REPO-"https://github.com/redhat-openshift-ecosystem/operator-test-playbooks"}
 OPP_ANSIBLE_PULL_BRANCH=${OPP_ANSIBLE_PULL_BRANCH-"upstream-community"}
@@ -35,6 +37,14 @@ for f in $OPP_FILES_TO_COPY;do
     echo "Doing 'cp $OPP_TMP_DIR/opp-input/$f $PWD/$f'"
     cp $OPP_TMP_DIR/opp-input/$f $PWD/$f
 done
+
+[ -d $PWD/$OPP_CI_SCRIPTS_DIR ] || mkdir -p $PWD/$OPP_CI_SCRIPTS_DIR
+
+for f in $OPP_FILES_TO_COPY_SCRIPTS_CI;do
+    echo "Doing 'cp $OPP_TMP_DIR/opp-input/$OPP_CI_SCRIPTS_DIR/$f $PWD/$OPP_CI_SCRIPTS_DIR/$f'"
+    cp $OPP_TMP_DIR/opp-input/$OPP_CI_SCRIPTS_DIR/$f $PWD/$OPP_CI_SCRIPTS_DIR/$f
+done
+
 ######## Gen empty index ###############################
 #
 #/tmp/operator-test/bin/opm index add --bundles quay.io/operator_testing/aqua:v0.0.1 --tag quay.io/operator_testing/index_empty:latest --mode semver -p none
