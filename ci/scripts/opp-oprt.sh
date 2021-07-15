@@ -7,7 +7,7 @@ OPP_OPRT_SHA=${OPP_OPRT_SHA-""}
 OPP_OPRT_SRC_REPO=${OPP_OPRT_SRC_REPO-"operator-framework/community-operators"}
 OPP_OPRT_SRC_BRANCH=${OPP_OPRT_SRC_BRANCH-"master"}
 #OPP_SCRIPT_ENV_URL=${OPP_SCRIPT_ENV_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/master/scripts/ci/actions-env"}
-OPP_SCRIPT_RUN_URL=${OPP_SCRIPT_RUN_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/support/ci_01/ci/scripts/opp-osr-run.sh"}
+OPP_SCRIPT_ENV_URL=${OPP_SCRIPT_ENV_URL-"https://raw.githubusercontent.com/operator-framework/community-operators/support/ci_01/ci/scripts/opp-env.sh"}
 export OPRT=1
 echo "OPP_SCRIPT_ENV_URL=$OPP_SCRIPT_ENV_URL"
 
@@ -45,4 +45,4 @@ BRANCH_NAME=$(echo $BRANCH_NAME | cut -d '/' -f 2-)
 echo "BRANCH_NAME=$BRANCH_NAME"
 # echo "::set-output name=op_test_repo_branch::$OPP_OPRT_REPO/${BRANCH_NAME}"
 
-bash <(curl -sL $OPP_SCRIPT_RUN_URL)
+bash <(curl -sL $OPP_SCRIPT_ENV_URL)
