@@ -1,3 +1,4 @@
+{% raw %}
 name: Operator index sha sync
 
 on: 
@@ -11,19 +12,28 @@ on:
         description: 'Sync index sha for openshift'     
         required: true
         default: '0'
+
 env:
+{% endraw %}
   OPP_CONTAINER_OPT: "-t"
-  SCRIPT_URL: "{{ default_config.testing.iss_script_url }}"
+  OPP_SCRIPT_ISS_URL: "{{ default_config.pipeline.ci_scripts_dir }}/opp-iss.sh"
   GODEBUG: x509ignoreCN=0
   OPP_INDEX_MIRROR: 1
   OPP_MIRROR_LATEST_TAG: "{{ default_config.production.index.latest }}"
-  PRODUCTION_TYPE: "{{ default_config.production.type }}"
-  {% raw -%}
-  QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
-  QUAY_API_TOKEN_OPERATORHUBIO: ${{ secrets.QUAY_API_TOKEN_OPERATORHUBIO }}
-  QUAY_RH_INDEX_PW: ${{ secrets.QUAY_RH_INDEX_PW }}
+  OPP_PRODUCTION_TYPE: "{{ default_config.production.type }}"
+  OPP_MIRROR_INDEX_MULTIARCH: "{{ default_config.production.mirror.multiarch.base }}"
+  OPP_MIRROR_INDEX_MULTIARCH_POSTFIX: "{{ default_config.production.mirror.multiarch.postfix }}"
+  OPP_MIRROR_INDEX_REGISTRY: "{{ default_config.production.mirror.registry }}"
+  OPP_MIRROR_INDEX_ORGANIZATION: "{{ default_config.production.mirror.organization }}"
+  OPP_MIRROR_INDEX_NAME: "{{ default_config.production.mirror.name }}"
+  IIB_INPUT_REGISTRY_USER: "{{ default_config.production.mirror.username.in }}"
+  OPP_REGISTRY_MIRROR_USER: "{{ default_config.production.mirror.username.out }}"
+{% raw %}
+  #QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP: ${{ secrets.QUAY_API_TOKEN_OPENSHIFT_COMMUNITY_OP }}
+  #QUAY_API_TOKEN_OPERATORHUBIO: ${{ secrets.QUAY_API_TOKEN_OPERATORHUBIO }}
+  #QUAY_RH_INDEX_PW: ${{ secrets.QUAY_RH_INDEX_PW }}
+  REGISTRY_MIRROR_PW: ${{ secrets.REGISTRY_MIRROR_PW }}
   IIB_INPUT_REGISTRY_TOKEN: ${{ secrets.IIB_INPUT_REGISTRY_TOKEN }}
-  IIB_OUTPUT_REGISTRY_TOKEN: ${{ secrets.IIB_OUTPUT_REGISTRY_TOKEN }}
 
 jobs:
   k8s-index-sha:
@@ -33,7 +43,7 @@ jobs:
     steps:
     - run: |
         echo "kubernetes: ${{ github.event.inputs.kubernetes }} latest"
-        bash <(curl -sL $SCRIPT_URL) kubernetes latest
+        bash <(curl -sL $OPP_SCRIPT_ISS_URL) kubernetes latest
 
   o7t-index-sha:
     if: github.event.inputs.openshift == '1'
@@ -43,10 +53,10 @@ jobs:
       matrix:
 {% endraw %}
         index-tag: [ {{ default_config.production.index.tags|join(', ') }} ]
-      {% raw -%}
+{% raw %}
       fail-fast: false
     steps:
     - run: |
         echo "openshift: ${{ github.event.inputs.openshift }} ${{ matrix.index-tag }}"
-        bash <(curl -sL $SCRIPT_URL) openshift ${{ matrix.index-tag }}
+        bash <(curl -sL $OPP_SCRIPT_ISS_URL) openshift ${{ matrix.index-tag }}
 {% endraw %}
