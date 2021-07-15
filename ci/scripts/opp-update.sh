@@ -40,7 +40,7 @@ done
 
 [ -d $PWD/$OPP_CI_SCRIPTS_DIR ] || mkdir -p $PWD/$OPP_CI_SCRIPTS_DIR
 
-for f in $OPP_FILES_TO_COPY_SCRIPTS_CI;do
+for f in $OPP_FILES_TO_COPY_CI_SCRIPTS;do
     echo "Doing 'cp $OPP_TMP_DIR/opp-input/$OPP_CI_SCRIPTS_DIR/$f $PWD/$OPP_CI_SCRIPTS_DIR/$f'"
     cp $OPP_TMP_DIR/opp-input/$OPP_CI_SCRIPTS_DIR/$f $PWD/$OPP_CI_SCRIPTS_DIR/$f
 done
