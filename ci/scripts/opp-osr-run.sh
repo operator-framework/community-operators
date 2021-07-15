@@ -4,7 +4,7 @@
 OP_DEBUG=${OP_DEBUG-0}
 OP_TOKEN=${OP_TOKEN-""}
 CONTAINER_TOOL=${CONTAINER_TOOL-"docker"}
-OP_RUN_IMAGE=${OP_RUN_IMAGE-"quay.io/operator_testing/operator-test-playbooks:latest"}
+OPP_IMAGE=${OPP_IMAGE-"quay.io/operator_testing/operator-test-playbooks:latest"}
 
 function DetectFromGit() {
 #  COMMIT=$(git --no-pager log -n1 --pretty=format:%h | tail -n 1)
@@ -53,9 +53,9 @@ DetectFromGit
 
 df -h
 
-$CONTAINER_TOOL pull $OP_RUN_IMAGE
+$CONTAINER_TOOL pull $OPP_IMAGE
 $CONTAINER_TOOL rm -f test
-$CONTAINER_TOOL run -d --net=host --privileged -e STORAGE_DRIVER=vfs --rm -t --name test $OP_RUN_IMAGE
+$CONTAINER_TOOL run -d --net=host --privileged -e STORAGE_DRIVER=vfs --rm -t --name test $OPP_IMAGE
 
 [ -z "$OP_NAME" ] && { echo "Error: Missing '\$OP_NAME'"; exit 1; }
 [ -z "$OP_NAME" ] && { echo "Error: Missing '\$OP_NAME'"; exit 1; }
