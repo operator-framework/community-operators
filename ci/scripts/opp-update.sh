@@ -32,14 +32,14 @@ ANSIBLE_STDOUT_CALLBACK=yaml ansible-pull -U $OPP_ANSIBLE_PULL_REPO -C $OPP_ANSI
 -e container_tool=$OPP_CONTAINER_TOOL \
 -e pu_postfix=$OPP_INDEX_IMAGE_POSTFIX \
 $OPP_ANSIBLE_EXTRA_ARGS
-echo "AAA"
+
 for f in $OPP_FILES_TO_COPY;do
     echo "Doing 'cp $OPP_TMP_DIR/opp-input/$f $PWD/$f'"
     cp $OPP_TMP_DIR/opp-input/$f $PWD/$f
 done
-echo "AAA"
+
 [ -d $PWD/$OPP_CI_SCRIPTS_DIR ] || mkdir -p $PWD/$OPP_CI_SCRIPTS_DIR
-echo "AAA"
+
 for f in $OPP_FILES_TO_COPY_CI_SCRIPTS;do
     echo "Doing 'cp $OPP_TMP_DIR/opp-input/$OPP_CI_SCRIPTS_DIR/$f $PWD/$OPP_CI_SCRIPTS_DIR/$f'"
     cp $OPP_TMP_DIR/opp-input/$OPP_CI_SCRIPTS_DIR/$f $PWD/$OPP_CI_SCRIPTS_DIR/$f
