@@ -29,6 +29,11 @@ ANSIBLE_STDOUT_CALLBACK=yaml ansible-pull -U $OPP_ANSIBLE_PULL_REPO -C $OPP_ANSI
 -e pu_postfix=$OPP_INDEX_IMAGE_POSTFIX \
 $OPP_ANSIBLE_EXTRA_ARGS
 
+OPP_FILES_TO_COPY="categories.json"
+for f in $OPP_FILES_TO_COPY;do
+    echo "Doing 'cp $OPP_TMP_DIR/opp-input/$f $PWD/$f'"
+    cp $OPP_TMP_DIR/opp-input/$f $PWD/$f
+done
 ######## Gen empty index ###############################
 #
 #/tmp/operator-test/bin/opm index add --bundles quay.io/operator_testing/aqua:v0.0.1 --tag quay.io/operator_testing/index_empty:latest --mode semver -p none
