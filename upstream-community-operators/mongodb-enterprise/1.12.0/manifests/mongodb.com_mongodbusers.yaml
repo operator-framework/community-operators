@@ -1,0 +1,168 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: mongodbusers.mongodb.com
+spec:
+  group: mongodb.com
+  names:
+    kind: MongoDBUser
+    listKind: MongoDBUserList
+    plural: mongodbusers
+    shortNames:
+    - mdbu
+    singular: mongodbuser
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: The current state of the MongoDB User.
+      jsonPath: .status.phase
+      name: Phase
+      type: string
+    - description: The time since the MongoDB User resource was created.
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              db:
+                type: string
+              mongodbResourceRef:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - name
+                type: object
+              passwordSecretKeyRef:
+                description: 'SecretKeyRef is a reference to a value in a given secret
+                  in the same namespace. Based on: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#secretkeyselector-v1-core'
+                properties:
+                  key:
+                    type: string
+                  name:
+                    type: string
+                required:
+                - name
+                type: object
+              project:
+                description: 'Deprecated: This has been replaced by the MongoDBResourceRef
+                  which should be used instead'
+                type: string
+              roles:
+                items:
+                  properties:
+                    db:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - db
+                  - name
+                  type: object
+                type: array
+              username:
+                type: string
+            required:
+            - db
+            - username
+            type: object
+          status:
+            properties:
+              db:
+                type: string
+              lastTransition:
+                type: string
+              message:
+                type: string
+              observedGeneration:
+                format: int64
+                type: integer
+              phase:
+                type: string
+              project:
+                type: string
+              resourcesNotReady:
+                items:
+                  description: ResourceNotReady describes the dependent resource which
+                    is not ready yet
+                  properties:
+                    errors:
+                      items:
+                        properties:
+                          message:
+                            type: string
+                          reason:
+                            type: string
+                        type: object
+                      type: array
+                    kind:
+                      description: ResourceKind specifies a kind of a Kubernetes resource.
+                        Used in status of a Custom Resource
+                      type: string
+                    message:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - kind
+                  - name
+                  type: object
+                type: array
+              roles:
+                items:
+                  properties:
+                    db:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - db
+                  - name
+                  type: object
+                type: array
+              username:
+                type: string
+              warnings:
+                items:
+                  type: string
+                type: array
+            required:
+            - db
+            - phase
+            - project
+            - username
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
