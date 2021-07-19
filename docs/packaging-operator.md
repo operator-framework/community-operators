@@ -12,7 +12,9 @@ In general a released version of your Operator is described in a `ClusterService
 
 To add your operator to any of the supported platforms, you will need to submit metadata for your Operator to be used by the [Operator Lifecycle Manager](https://github.com/operator-framework/operator-lifecycle-manager/) (OLM). This is YAML file called `ClusterServiceVersion` which contains references to all of the CRDs, RBAC rules, `Deployment` and container image needed to install and securely run your Operator. It also contains user-visible info like a description of its features and supported Kubernetes versions. Note that your Operator's CRDs are shipped in separate manifests alongside the CSV so OLM can register them during installation (your Operator is not supposed to self-register its CRDs).
 
-Follow [this guide](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/building-your-csv.md) to create an OLM-compatible CSV for your operator. You can also see an example [here](https://github.com/operator-framework/community-operators/blob/master/docs/packaging-required-fields.md#example-csv).
+Follow [this guide](https://olm.operatorframework.io/docs/tasks/creating-operator-manifests/) to create an OLM-compatible CSV for your operator. You can also leverage existing examples in this repository.
+
+For more information about the advanced features of Operator metadata format used here, be sure to check the [Operator Lifecycle Manager documentation](https://olm.operatorframework.io/docs/advanced-tasks/) about how to package web hooks, upgrade readiness probes or an Operator supported on multiple computer architectures (multi-arch).
 
 ##### Categories #####
 
@@ -26,7 +28,9 @@ The `bundle` format has a top-level directory named after your Operator name in 
 
 All metadata is defined within the individual release of the Operator. That is, inside each bundle. This includes the channel definitions. The default channel is also defined within the bundle and overwritten by every new bundle you add (this is a known limitation and is being worked on).
 
-Within each version you have your `CustomResourceDefinitions`, `ClusterServiceVersion` file (containing the same name and version of your Operator as defined inside the YAML structure) and some metadata about the bundle. You can [learn more about the bundle format here](https://github.com/operator-framework/operator-registry/blob/master/docs/design/operator-bundle.md) and also see some [examples](https://github.com/operator-framework/operator-registry/tree/master/bundles).
+Within each version you have your `CustomResourceDefinitions`, `ClusterServiceVersion` file (containing the same name and version of your Operator as defined inside the YAML structure) and some metadata about the bundle. You can [learn more about the bundle format here](https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/) and also see an [example](https://github.com/operator-framework/bundle-example). 
+
+Note that this community project only requires you to submit your bundle in the form of metadata. The integrated release pipeline of this repository will take care about publishing your bundle as a container image and maintain it in a public catalog.
 
 Your directory structure might look like this when using the `bundle` format. Notice that the `Dockerfile` is optionally and actually ignored. The processing pipeline of this site builds a container image for each of your bundle regardless.
 
