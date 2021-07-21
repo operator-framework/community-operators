@@ -10,7 +10,7 @@ Each operator might have `ci.yaml` configuration file to be present in operator 
 If you want to accelerate publishing your changes, consider adding yourself and others you trust to the reviewers list. If the author of PR will be in that list, chnages she/he made will be taken as authorized changes (label `authorized-changes` will be set). This will be the indicator for our pipeline that the PR is ready to merged automatically. 
 
 !!! note
-    If author of PR is not in `reviewers` list, PR will not be merged automatically. For automatic merging PR needs to have `authorized-changes` label set.
+    If author of PR is not in `reviewers` list, PR will not be merged automatically. For automatic merging PR needs to have `authorized-changes` label set. Manually or by pipeline finding reviewer in `ci.yaml` on `main` branch. For security reasons we are not checking reviewers from a fork.
 
 !!! note
     If auhor of PR is not in `reviewers` list and `reviewers` are present in `ci.yaml` file. All `reviewers` will be mentioned in PR comment to check for upcomming changes
