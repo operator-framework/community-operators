@@ -1,0 +1,226 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: migmigrations.migration.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: Ready
+    type: string
+  - JSONPath: .spec.migPlanRef.name
+    name: Plan
+    type: string
+  - JSONPath: .spec.stage
+    name: Stage
+    type: string
+  - JSONPath: .spec.rollback
+    name: Rollback
+    type: string
+  - JSONPath: .status.itinerary
+    name: Itinerary
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: migration.openshift.io
+  names:
+    kind: MigMigration
+    listKind: MigMigrationList
+    plural: migmigrations
+    singular: migmigration
+  scope: Namespaced
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: MigMigration is the Schema for the migmigrations API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MigMigrationSpec defines the desired state of MigMigration
+          properties:
+            canceled:
+              type: boolean
+            keepAnnotations:
+              type: boolean
+            migPlanRef:
+              description: ObjectReference contains enough information to let you
+                inspect or modify the referred object.
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            quiescePods:
+              type: boolean
+            rollback:
+              type: boolean
+            stage:
+              type: boolean
+            verify:
+              type: boolean
+          required:
+          - stage
+          type: object
+        status:
+          description: MigMigrationStatus defines the observed state of MigMigration
+          properties:
+            conditions:
+              items:
+                description: Condition Type - The condition type. Status - The condition
+                  status. Reason - The reason for the condition. Message - The human
+                  readable description of the condition. Durable - The condition is
+                  not un-staged. Items - A list of `items` associated with the condition
+                  used to replace [] in `Message`. staging - A condition has been
+                  explicitly set/updated.
+                properties:
+                  category:
+                    type: string
+                  durable:
+                    type: boolean
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - category
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+            errors:
+              items:
+                type: string
+              type: array
+            itinerary:
+              type: string
+            namespaces:
+              items:
+                description: UnhealthyNamespace is a store for unhealthy resources
+                  in a namespace
+                properties:
+                  name:
+                    type: string
+                  workloads:
+                    items:
+                      description: Workload is a store for unhealthy resource and
+                        it's dependents
+                      properties:
+                        name:
+                          type: string
+                        resources:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - name
+                      type: object
+                    type: array
+                required:
+                - name
+                - workloads
+                type: object
+              type: array
+            observedDigest:
+              type: string
+            phase:
+              type: string
+            pipeline:
+              items:
+                description: Step defines a task in a step of migration
+                properties:
+                  completed:
+                    description: Completed timestamp.
+                    format: date-time
+                    type: string
+                  failed:
+                    type: boolean
+                  message:
+                    type: string
+                  name:
+                    type: string
+                  phase:
+                    type: string
+                  progress:
+                    items:
+                      type: string
+                    type: array
+                  skipped:
+                    type: boolean
+                  started:
+                    description: Started timestamp.
+                    format: date-time
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
+            startTimestamp:
+              format: date-time
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

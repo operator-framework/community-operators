@@ -1,0 +1,379 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: miganalytics.migration.openshift.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type=='Ready')].status
+    name: Ready
+    type: string
+  - JSONPath: .spec.migPlanRef.name
+    name: Plan
+    type: string
+  - JSONPath: .status.analytics.percentComplete
+    name: Progress
+    type: string
+  - JSONPath: .status.analytics.k8sResourceTotal
+    name: Resources
+    type: string
+  - JSONPath: .status.analytics.imageCount
+    name: Images
+    type: string
+  - JSONPath: .status.analytics.imageSizeTotal
+    name: ImageSize
+    type: string
+  - JSONPath: .status.analytics.pvCount
+    name: PVs
+    type: string
+  - JSONPath: .status.analytics.pvCapacity
+    name: PVCapacity
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: migration.openshift.io
+  names:
+    kind: MigAnalytic
+    listKind: MigAnalyticList
+    plural: miganalytics
+    singular: miganalytic
+  scope: Namespaced
+  subresources: {}
+  validation:
+    openAPIV3Schema:
+      description: MigAnalytic is the Schema for the miganalytics API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MigAnalyticSpec defines the desired state of MigAnalytic
+          properties:
+            analyzeExtendedPVCapacity:
+              description: Enables advanced analysis of volumes required for PV resizing
+              type: boolean
+            analyzeImageCount:
+              description: Enables analysis of image count, if set true. This is a
+                required field.
+              type: boolean
+            analyzeK8SResources:
+              description: Enables analysis of k8s resources, if set true. This is
+                a required field.
+              type: boolean
+            analyzePVCapacity:
+              description: Enables analysis of persistent volume capacity, if set
+                true. This is a required field.
+              type: boolean
+            listImages:
+              description: Enable used in analysis of image count, if set true.
+              type: boolean
+            listImagesLimit:
+              description: Represents limit on image counts
+              type: integer
+            migPlanRef:
+              description: ObjectReference contains enough information to let you
+                inspect or modify the referred object.
+              properties:
+                apiVersion:
+                  description: API version of the referent.
+                  type: string
+                fieldPath:
+                  description: 'If referring to a piece of an object instead of an
+                    entire object, this string should contain a valid JSON/Go field
+                    access statement, such as desiredState.manifest.containers[2].
+                    For example, if the object reference is to a container within
+                    a pod, this would take on a value like: "spec.containers{name}"
+                    (where "name" refers to the name of the container that triggered
+                    the event) or if no container name is specified "spec.containers[2]"
+                    (container with index 2 in this pod). This syntax is chosen only
+                    to have some well-defined way of referencing a part of an object.
+                    TODO: this design is not final and this field is subject to change
+                    in the future.'
+                  type: string
+                kind:
+                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+                resourceVersion:
+                  description: 'Specific resourceVersion to which this reference is
+                    made, if any. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                  type: string
+                uid:
+                  description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                  type: string
+              type: object
+            refresh:
+              description: Enables refreshing existing MigAnalytic
+              type: boolean
+          required:
+          - analyzeImageCount
+          - analyzeK8SResources
+          - analyzePVCapacity
+          - migPlanRef
+          type: object
+        status:
+          description: MigAnalyticStatus defines the observed state of MigAnalytic
+          properties:
+            analytics:
+              description: MigAnalyticPlan defines the observed state of MigAnalyticPlan
+              properties:
+                excludedk8sResourceTotal:
+                  type: integer
+                imageCount:
+                  type: integer
+                imageSizeTotal:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                incompatiblek8sResourceTotal:
+                  type: integer
+                k8sResourceTotal:
+                  type: integer
+                namespaces:
+                  items:
+                    description: MigAnalyticNamespace defines the observed state of
+                      MigAnalyticNamespace
+                    properties:
+                      excludedK8SResourceTotal:
+                        type: integer
+                      excludedK8SResources:
+                        items:
+                          description: MigAnalyticNamespaceResource defines the observed
+                            state of MigAnalyticNamespaceResource
+                          properties:
+                            count:
+                              type: integer
+                            group:
+                              type: string
+                            kind:
+                              type: string
+                            version:
+                              type: string
+                          required:
+                          - count
+                          - group
+                          - kind
+                          - version
+                          type: object
+                        type: array
+                      imageCount:
+                        type: integer
+                      imageSizeTotal:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      images:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            reference:
+                              type: string
+                            size:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                          required:
+                          - name
+                          - reference
+                          - size
+                          type: object
+                        type: array
+                      incompatibleK8SResourceTotal:
+                        type: integer
+                      incompatibleK8SResources:
+                        items:
+                          description: MigAnalyticNamespaceResource defines the observed
+                            state of MigAnalyticNamespaceResource
+                          properties:
+                            count:
+                              type: integer
+                            group:
+                              type: string
+                            kind:
+                              type: string
+                            version:
+                              type: string
+                          required:
+                          - count
+                          - group
+                          - kind
+                          - version
+                          type: object
+                        type: array
+                      k8sResourceTotal:
+                        type: integer
+                      k8sResources:
+                        items:
+                          description: MigAnalyticNamespaceResource defines the observed
+                            state of MigAnalyticNamespaceResource
+                          properties:
+                            count:
+                              type: integer
+                            group:
+                              type: string
+                            kind:
+                              type: string
+                            version:
+                              type: string
+                          required:
+                          - count
+                          - group
+                          - kind
+                          - version
+                          type: object
+                        type: array
+                      namespace:
+                        type: string
+                      persistentVolumes:
+                        items:
+                          description: MigAnalyticPersistentVolumeClaim represents
+                            a Kubernetes Persistent volume claim with discovered analytic
+                            properties
+                          properties:
+                            actualCapacity:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: Actual provisioned capacity of the volume
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            comment:
+                              description: Human readable reason for proposed adjustment
+                              type: string
+                            name:
+                              description: Name of the persistent volume claim
+                              type: string
+                            proposedCapacity:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: Adjusted capacity of the volume
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            requestedCapacity:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: Requested capacity of the claim
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            usagePercentage:
+                              description: Usage of volume in percentage
+                              type: integer
+                          required:
+                          - name
+                          type: object
+                        type: array
+                      pvCapacity:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      pvCount:
+                        type: integer
+                    required:
+                    - excludedK8SResourceTotal
+                    - imageCount
+                    - imageSizeTotal
+                    - incompatibleK8SResourceTotal
+                    - k8sResourceTotal
+                    - namespace
+                    - pvCapacity
+                    - pvCount
+                    type: object
+                  type: array
+                percentComplete:
+                  type: integer
+                plan:
+                  type: string
+                pvCapacity:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                pvCount:
+                  type: integer
+              required:
+              - excludedk8sResourceTotal
+              - imageCount
+              - imageSizeTotal
+              - incompatiblek8sResourceTotal
+              - k8sResourceTotal
+              - percentComplete
+              - plan
+              - pvCapacity
+              - pvCount
+              type: object
+            conditions:
+              items:
+                description: Condition Type - The condition type. Status - The condition
+                  status. Reason - The reason for the condition. Message - The human
+                  readable description of the condition. Durable - The condition is
+                  not un-staged. Items - A list of `items` associated with the condition
+                  used to replace [] in `Message`. staging - A condition has been
+                  explicitly set/updated.
+                properties:
+                  category:
+                    type: string
+                  durable:
+                    type: boolean
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - category
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+            observedGeneration:
+              format: int64
+              type: integer
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
