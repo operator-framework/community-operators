@@ -1,0 +1,197 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.5.0
+  name: topolvmclusters.topolvm.cybozu.com
+spec:
+  group: topolvm.cybozu.com
+  names:
+    kind: TopolvmCluster
+    listKind: TopolvmClusterList
+    plural: topolvmclusters
+    singular: topolvmcluster
+  scope: Namespaced
+  versions:
+    - name: v1
+      # Each version can be enabled/disabled by Served flag.
+      served: true
+      # One and only one version must be marked as the storage version.
+      storage: false
+      # Each version can define it's own schema when there is no top-level
+      # schema is defined.
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                topolvmVersion:
+                  type: string
+                deviceClasses:
+                  type: array
+                  nullable: false
+                  items:
+                    type: object
+                    properties:
+                      nodeName:
+                        type: string
+                      classes:
+                        type: array
+                        nullable: false
+                        items:
+                          type: object
+                          properties:
+                            className:
+                              type: string
+                            volumeGroup:
+                              type: string
+                            default:
+                              type: boolean
+                            devices:
+                              type: array
+                              nullable: false
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                            spareGb:
+                              type: integer
+                              format: uint64
+                            stripe:
+                              type: integer
+                              format: uint
+                            stripeSize:
+                              type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          required:
+                            - className
+                            - volumeGroup
+                            - devices
+                    required:
+                      - nodeName
+                      - classes
+              required:
+                - topolvmVersion
+                - deviceClasses
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+    - name: v2
+      schema:
+        openAPIV3Schema:
+          description: TopolvmCluster is the Schema for the topolvmclusters API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: TopolvmClusterSpec defines the desired state of TopolvmCluster
+              properties:
+                storage:
+                  properties:
+                    className:
+                      type: string
+                    deviceClasses:
+                      items:
+                        properties:
+                          classes:
+                            items:
+                              properties:
+                                className:
+                                  type: string
+                                default:
+                                  type: boolean
+                                devices:
+                                  items:
+                                    properties:
+                                      auto:
+                                        type: boolean
+                                      name:
+                                        type: string
+                                      path:
+                                        type: string
+                                      size:
+                                        format: int64
+                                        type: integer
+                                      type:
+                                        type: string
+                                    required:
+                                      - name
+                                      - type
+                                    type: object
+                                  type: array
+                                spareGb:
+                                  format: int64
+                                  type: integer
+                                stripe:
+                                  type: integer
+                                stripeSize:
+                                  type: string
+                                volumeGroup:
+                                  type: string
+                              required:
+                                - className
+                                - devices
+                                - volumeGroup
+                              type: object
+                            type: array
+                          nodeName:
+                            type: string
+                        required:
+                          - classes
+                          - nodeName
+                        type: object
+                      type: array
+                    devices:
+                      items:
+                        properties:
+                          auto:
+                            type: boolean
+                          name:
+                            type: string
+                          path:
+                            type: string
+                          size:
+                            format: int64
+                            type: integer
+                          type:
+                            type: string
+                        required:
+                          - name
+                          - type
+                        type: object
+                      type: array
+                    useAllDevices:
+                      type: boolean
+                    useAllNodes:
+                      type: boolean
+                    useLoop:
+                      type: boolean
+                    volumeGroupName:
+                      type: string
+                  required:
+                    - useLoop
+                  type: object
+                topolvmVersion:
+                  description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
+                  type: string
+              required:
+                - storage
+                - topolvmVersion
+              type: object
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: { }
