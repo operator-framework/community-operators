@@ -8,7 +8,8 @@ metadata:
           "apiVersion": "remediation.medik8s.io/v1alpha1",
           "kind": "NodeHealthCheck",
           "metadata": {
-            "name": "nodehealthcheck-sample"
+            "name": "nodehealthcheck-sample",
+            "namespace": "system"
           },
           "spec": {
             "maxUnhealthy": "49%",
@@ -16,7 +17,7 @@ metadata:
               "apiVersion": "poison-pill.medik8s.io/v1alpha1",
               "kind": "PoisonPillRemediationTemplate",
               "name": "group-x",
-              "namespace": "default"
+              "namespace": "system"
             },
             "selector": {
               "matchExpressions": [
@@ -47,10 +48,10 @@ metadata:
     createdAt: "2021-04-20 12:00:00"
     description: An operator to monitor node healthcheck and remdiate via 3rd party
       providers like poison-pill.
-    operators.operatorframework.io/builder: operator-sdk-v1.7.1+git
+    operators.operatorframework.io/builder: operator-sdk-v1.9.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/medik8s/node-healthcheck-operator
-  name: node-healthcheck-operator.v0.0.2
+  name: node-healthcheck-operator.v0.0.2-latest
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -161,7 +162,7 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
-        serviceAccountName: default
+        serviceAccountName: node-healthcheck-operator-controller-manager
       deployments:
       - name: node-healthcheck-operator-controller-manager
         spec:
@@ -181,7 +182,7 @@ spec:
                 - --upstream=http://127.0.0.1:8080/
                 - --logtostderr=true
                 - --v=10
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
                 name: kube-rbac-proxy
                 ports:
                 - containerPort: 8443
@@ -198,7 +199,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: quay.io/medik8s/node-healthcheck-operator:0.0.2
+                image: quay.io/medik8s/node-healthcheck-operator:0.0.2-latest
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -223,6 +224,7 @@ spec:
                   allowPrivilegeEscalation: false
               nodeSelector:
                 node-role.kubernetes.io/master: ""
+              serviceAccountName: node-healthcheck-operator-controller-manager
               terminationGracePeriodSeconds: 10
               tolerations:
               - effect: NoSchedule
@@ -232,9 +234,19 @@ spec:
       - rules:
         - apiGroups:
           - ""
-          - coordination.k8s.io
           resources:
           - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
           - leases
           verbs:
           - get
@@ -251,7 +263,7 @@ spec:
           verbs:
           - create
           - patch
-        serviceAccountName: default
+        serviceAccountName: node-healthcheck-operator-controller-manager
     strategy: deployment
   installModes:
   - supported: false
@@ -271,12 +283,10 @@ spec:
   - name: Node Healthcheck Operator
     url: https://node-healthcheck-operator.domain
   maintainers:
-  - email: rgolan@redhat.com
-    name: Roy Golan
-  - email: nyehia@redhat.com
-    name: Nir Yehia
+  - email: medik8s@googlegroups.com
+    name: medik8s team
   maturity: alpha
   provider:
-    name: medik8s.io
+    name: medik8s
     url: https://github.com/medik8s
-  version: 0.0.2
+  version: 0.0.2-latest
