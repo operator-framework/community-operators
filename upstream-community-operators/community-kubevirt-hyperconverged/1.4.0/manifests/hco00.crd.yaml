@@ -43,34 +43,92 @@ spec:
                 type: string
             type: object
           spec:
+            default:
+              certConfig:
+                ca:
+                  duration: 48h0m0s
+                  renewBefore: 24h0m0s
+                server:
+                  duration: 24h0m0s
+                  renewBefore: 12h0m0s
+              featureGates:
+                sriovLiveMigration: false
+                withHostPassthroughCPU: false
+              liveMigrationConfig:
+                bandwidthPerMigration: 64Mi
+                completionTimeoutPerGiB: 800
+                parallelMigrationsPerCluster: 5
+                parallelOutboundMigrationsPerNode: 2
+                progressTimeout: 150
             description: HyperConvergedSpec defines the desired state of HyperConverged
             properties:
+              certConfig:
+                default:
+                  ca:
+                    duration: 48h0m0s
+                    renewBefore: 24h0m0s
+                  server:
+                    duration: 24h0m0s
+                    renewBefore: 12h0m0s
+                description: certConfig holds the rotation policy for internal, self-signed
+                  certificates
+                properties:
+                  ca:
+                    default:
+                      duration: 48h0m0s
+                      renewBefore: 24h0m0s
+                    description: CA configuration - CA certs are kept in the CA bundle
+                      as long as they are valid
+                    properties:
+                      duration:
+                        default: 48h0m0s
+                        description: The requested 'duration' (i.e. lifetime) of the
+                          Certificate. This should comply with golang's ParseDuration
+                          format (https://golang.org/pkg/time/#ParseDuration)
+                        type: string
+                      renewBefore:
+                        default: 24h0m0s
+                        description: The amount of time before the currently issued
+                          certificate's `notAfter` time that we will begin to attempt
+                          to renew the certificate. This should comply with golang's
+                          ParseDuration format (https://golang.org/pkg/time/#ParseDuration)
+                        type: string
+                    type: object
+                  server:
+                    default:
+                      duration: 24h0m0s
+                      renewBefore: 12h0m0s
+                    description: Server configuration - Certs are rotated and discarded
+                    properties:
+                      duration:
+                        default: 24h0m0s
+                        description: The requested 'duration' (i.e. lifetime) of the
+                          Certificate. This should comply with golang's ParseDuration
+                          format (https://golang.org/pkg/time/#ParseDuration)
+                        type: string
+                      renewBefore:
+                        default: 12h0m0s
+                        description: The amount of time before the currently issued
+                          certificate's `notAfter` time that we will begin to attempt
+                          to renew the certificate. This should comply with golang's
+                          ParseDuration format (https://golang.org/pkg/time/#ParseDuration)
+                        type: string
+                    type: object
+                type: object
               featureGates:
                 default:
-                  hypervStrictCheck: true
-                  withHostModelCPU: true
+                  sriovLiveMigration: false
                   withHostPassthroughCPU: false
                 description: featureGates is a map of feature gate flags. Setting
                   a flag to `true` will enable the feature. Setting `false` or removing
                   the feature gate, disables the feature.
                 properties:
-                  hotplugVolumes:
-                    description: Allow attaching a data volume to a running VMI
-                    type: boolean
-                  hypervStrictCheck:
-                    default: true
-                    description: Enable HyperV strict host checking for HyperV enlightenments
-                      Defaults to true, even when HyperConvergedFeatureGates is empty
-                    type: boolean
                   sriovLiveMigration:
+                    default: false
                     description: Allow migrating a virtual machine with SRIOV interfaces.
                       When enabled virt-launcher pods of virtual machines with SRIOV
                       interfaces run with CAP_SYS_RESOURCE capability. This may degrade
                       virt-launcher security.
-                    type: boolean
-                  withHostModelCPU:
-                    default: true
-                    description: Support migration for VMs with host-model CPU mode
                     type: boolean
                   withHostPassthroughCPU:
                     default: false
@@ -789,8 +847,193 @@ spec:
                         type: array
                     type: object
                 type: object
+              liveMigrationConfig:
+                default:
+                  bandwidthPerMigration: 64Mi
+                  completionTimeoutPerGiB: 800
+                  parallelMigrationsPerCluster: 5
+                  parallelOutboundMigrationsPerNode: 2
+                  progressTimeout: 150
+                description: Live migration limits and timeouts are applied so that
+                  migration processes do not overwhelm the cluster.
+                properties:
+                  bandwidthPerMigration:
+                    default: 64Mi
+                    description: Bandwidth limit of each migration, in MiB/s.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    type: string
+                  completionTimeoutPerGiB:
+                    default: 800
+                    description: The migration will be canceled if it has not completed
+                      in this time, in seconds per GiB of memory. For example, a virtual
+                      machine instance with 6GiB memory will timeout if it has not
+                      completed migration in 4800 seconds. If the Migration Method
+                      is BlockMigration, the size of the migrating disks is included
+                      in the calculation.
+                    format: int64
+                    type: integer
+                  parallelMigrationsPerCluster:
+                    default: 5
+                    description: Number of migrations running in parallel in the cluster.
+                    format: int32
+                    type: integer
+                  parallelOutboundMigrationsPerNode:
+                    default: 2
+                    description: Maximum number of outbound migrations per node.
+                    format: int32
+                    type: integer
+                  progressTimeout:
+                    default: 150
+                    description: The migration will be canceled if memory copy fails
+                      to make progress in this time, in seconds.
+                    format: int64
+                    type: integer
+                type: object
               localStorageClassName:
                 description: LocalStorageClassName the name of the local storage class.
+                type: string
+              obsoleteCPUs:
+                description: ObsoleteCPUs allows avoiding scheduling of VMs for obsolete
+                  CPU models
+                properties:
+                  cpuModels:
+                    description: CPUModels is a list of obsolete CPU models. When
+                      the node-labeller obtains the list of obsolete CPU models, it
+                      eliminates those CPU models and creates labels for valid CPU
+                      models. The default values for this field is nil, however, HCO
+                      uses opinionated values, and adding values to this list will
+                      add them to the opinionated values.
+                    items:
+                      type: string
+                    type: array
+                  minCPUModel:
+                    description: MinCPUModel is the Minimum CPU model that is used
+                      for basic CPU features; e.g. Penryn or Haswell. The default
+                      value for this field is nil, but in KubeVirt, the default value
+                      is "Penryn", if nothing else is set. Use this field to override
+                      KubeVirt default value.
+                    type: string
+                type: object
+              permittedHostDevices:
+                description: PermittedHostDevices holds information about devices
+                  allowed for passthrough
+                properties:
+                  mediatedDevices:
+                    items:
+                      description: MediatedHostDevice represents a host mediated device
+                        allowed for passthrough
+                      properties:
+                        disabled:
+                          description: HCO enforces the existence of several MediatedHostDevice
+                            objects. Set disabled field to true instead of remove
+                            these objects.
+                          type: boolean
+                        externalResourceProvider:
+                          description: indicates that this resource is being provided
+                            by an external device plugin
+                          type: boolean
+                        mdevNameSelector:
+                          description: name of a mediated device type required to
+                            identify a mediated device on a host
+                          type: string
+                        resourceName:
+                          description: name by which a device is advertised and being
+                            requested
+                          type: string
+                      required:
+                      - mdevNameSelector
+                      - resourceName
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - mdevNameSelector
+                    x-kubernetes-list-type: map
+                  pciHostDevices:
+                    items:
+                      description: PciHostDevice represents a host PCI device allowed
+                        for passthrough
+                      properties:
+                        disabled:
+                          description: HCO enforces the existence of several PciHostDevice
+                            objects. Set disabled field to true instead of remove
+                            these objects.
+                          type: boolean
+                        externalResourceProvider:
+                          description: indicates that this resource is being provided
+                            by an external device plugin
+                          type: boolean
+                        pciDeviceSelector:
+                          description: a combination of a vendor_id:product_id required
+                            to identify a PCI device on a host.
+                          type: string
+                        resourceName:
+                          description: name by which a device is advertised and being
+                            requested
+                          type: string
+                      required:
+                      - pciDeviceSelector
+                      - resourceName
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - pciDeviceSelector
+                    x-kubernetes-list-type: map
+                type: object
+              resourceRequirements:
+                description: ResourceRequirements describes the resource requirements
+                  for the operand workloads.
+                properties:
+                  storageWorkloads:
+                    description: StorageWorkloads defines the resources requirements
+                      for storage workloads. It will propagate to the CDI custom resource
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                type: object
+              scratchSpaceStorageClass:
+                description: 'Override the storage class used for scratch space during
+                  transfer operations. The scratch space storage class is determined
+                  in the following order: value of scratchSpaceStorageClass, if that
+                  doesn''t exist, use the default storage class, if there is no default
+                  storage class, use the storage class of the DataVolume, if no storage
+                  class specified, use no storage class for scratch space'
+                type: string
+              storageImport:
+                description: StorageImport contains configuration for importing containerized
+                  data
+                properties:
+                  insecureRegistries:
+                    description: InsecureRegistries is a list of image registries
+                      URLs that are not secured. Setting an insecure registry URL
+                      in this list allows pulling images from this registry.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              vddkInitImage:
+                description: VDDK Init Image eventually used to import VMs from external
+                  providers
                 type: string
               version:
                 description: operator version
