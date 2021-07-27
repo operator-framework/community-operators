@@ -1,0 +1,646 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    operatorframework.io/suggested-namespace: tf
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "tf.tungsten.io/v1alpha1",
+          "kind": "Manager",
+          "metadata": {
+            "name": "cluster1",
+            "namespace": "tf"
+          },
+          "spec": {
+            "commonConfiguration": {
+              "authParameters": {
+                "authMode": "noauth"
+              },
+              "hostNetwork": true,
+              "replicas": 1,
+              "useKubeadmConfig": true
+            },
+            "services": {
+              "analyticsAlarm": {
+                "metadata": {
+                  "labels": {
+                    "tf_cluster": "cluster1"
+                  },
+                  "name": "analyticsalarm1"
+                },
+                "spec": {
+                  "commonConfiguration": {
+                    "nodeSelector": {
+                      "node-role.kubernetes.io/master": ""
+                    }
+                  },
+                  "serviceConfiguration": {
+                    "cassandraInstance": "configdb1",
+                    "configInstance": "config1",
+                    "containers": [
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-nodemgr:R2011-latest",
+                        "name": "nodemanager"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-provisioner:R2011-latest",
+                        "name": "provisioner"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-analytics-alarm-gen:R2011-latest",
+                        "name": "analytics-alarm-gen"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-external-kafka:R2011-latest",
+                        "name": "kafka"
+                      }
+                    ],
+                    "logLevel": "SYS_DEBUG",
+                    "rabbitmqInstance": "rabbitmq1",
+                    "zookeeperInstance": "zookeeper1"
+                  }
+                }
+              },
+              "analyticsSnmp": {
+                "metadata": {
+                  "labels": {
+                    "tf_cluster": "cluster1"
+                  },
+                  "name": "analyticssnmp1"
+                },
+                "spec": {
+                  "commonConfiguration": {
+                    "nodeSelector": {
+                      "node-role.kubernetes.io/master": ""
+                    }
+                  },
+                  "serviceConfiguration": {
+                    "cassandraInstance": "configdb1",
+                    "configInstance": "config1",
+                    "containers": [
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-nodemgr:R2011-latest",
+                        "name": "nodemanager"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-provisioner:R2011-latest",
+                        "name": "provisioner"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-analytics-snmp-collector:R2011-latest",
+                        "name": "analytics-snmp-collector"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-analytics-snmp-topology:R2011-latest",
+                        "name": "analytics-snmp-topology"
+                      }
+                    ],
+                    "logLevel": "SYS_DEBUG",
+                    "rabbitmqInstance": "rabbitmq1",
+                    "zookeeperInstance": "zookeeper1"
+                  }
+                }
+              },
+              "cassandras": [
+                {
+                  "metadata": {
+                    "labels": {
+                      "tf_cluster": "cluster1"
+                    },
+                    "name": "configdb1"
+                  },
+                  "spec": {
+                    "commonConfiguration": {
+                      "nodeSelector": {
+                        "node-role.kubernetes.io/master": ""
+                      }
+                    },
+                    "serviceConfiguration": {
+                      "configInstance": "config1",
+                      "containers": [
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-external-cassandra:R2011-latest",
+                          "name": "cassandra"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-nodemgr:R2011-latest",
+                          "name": "nodemanager"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-provisioner:R2011-latest",
+                          "name": "provisioner"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "config": {
+                "metadata": {
+                  "labels": {
+                    "tf_cluster": "cluster1"
+                  },
+                  "name": "config1"
+                },
+                "spec": {
+                  "commonConfiguration": {
+                    "nodeSelector": {
+                      "node-role.kubernetes.io/master": ""
+                    }
+                  },
+                  "serviceConfiguration": {
+                    "cassandraInstance": "configdb1",
+                    "containers": [
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-external-redis:R2011-latest",
+                        "name": "redis"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-external-stunnel:R2011-latest",
+                        "name": "stunnel"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-controller-config-api:R2011-latest",
+                        "name": "api"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-controller-config-devicemgr:R2011-latest",
+                        "name": "devicemanager"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-controller-config-dnsmasq:R2011-latest",
+                        "name": "dnsmasq"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-controller-config-schema:R2011-latest",
+                        "name": "schematransformer"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-controller-config-svcmonitor:R2011-latest",
+                        "name": "servicemonitor"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-nodemgr:R2011-latest",
+                        "name": "nodemanagerconfig"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-provisioner:R2011-latest",
+                        "name": "provisionerconfig"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-analytics-api:R2011-latest",
+                        "name": "analyticsapi"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-analytics-collector:R2011-latest",
+                        "name": "collector"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-analytics-query-engine:R2011-latest",
+                        "name": "queryengine"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-nodemgr:R2011-latest",
+                        "name": "nodemanageranalytics"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-provisioner:R2011-latest",
+                        "name": "provisioneranalytics"
+                      }
+                    ],
+                    "logLevel": "SYS_DEBUG",
+                    "rabbitmqInstance": "rabbitmq1",
+                    "zookeeperInstance": "zookeeper1"
+                  }
+                }
+              },
+              "controls": [
+                {
+                  "metadata": {
+                    "labels": {
+                      "control_role": "master",
+                      "tf_cluster": "cluster1"
+                    },
+                    "name": "control1"
+                  },
+                  "spec": {
+                    "commonConfiguration": {
+                      "nodeSelector": {
+                        "node-role.kubernetes.io/master": ""
+                      }
+                    },
+                    "serviceConfiguration": {
+                      "cassandraInstance": "configdb1",
+                      "configInstance": "config1",
+                      "containers": [
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-controller-control-control:R2011-latest",
+                          "name": "control"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-controller-control-dns:R2011-latest",
+                          "name": "dns"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-controller-control-named:R2011-latest",
+                          "name": "named"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-nodemgr:R2011-latest",
+                          "name": "nodemanager"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-provisioner:R2011-latest",
+                          "name": "provisioner"
+                        }
+                      ],
+                      "logLevel": "SYS_DEBUG",
+                      "rabbitmqInstance": "rabbitmq1"
+                    }
+                  }
+                }
+              ],
+              "kubemanagers": [
+                {
+                  "metadata": {
+                    "labels": {
+                      "tf_cluster": "cluster1"
+                    },
+                    "name": "kubemanager1"
+                  },
+                  "spec": {
+                    "commonConfiguration": {
+                      "nodeSelector": {
+                        "node-role.kubernetes.io/master": ""
+                      }
+                    },
+                    "serviceConfiguration": {
+                      "cassandraInstance": "configdb1",
+                      "configInstance": "config1",
+                      "containers": [
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-kubernetes-kube-manager:R2011-latest",
+                          "name": "kubemanager"
+                        }
+                      ],
+                      "hostNetworkService": true,
+                      "ipFabricForwarding": false,
+                      "ipFabricSnat": true,
+                      "kubernetesTokenFile": "/var/run/secrets/kubernetes.io/serviceaccount/token",
+                      "logLevel": "SYS_DEBUG",
+                      "rabbitmqInstance": "rabbitmq1",
+                      "zookeeperInstance": "zookeeper1"
+                    }
+                  }
+                }
+              ],
+              "rabbitmq": {
+                "metadata": {
+                  "labels": {
+                    "tf_cluster": "cluster1"
+                  },
+                  "name": "rabbitmq1"
+                },
+                "spec": {
+                  "commonConfiguration": {
+                    "nodeSelector": {
+                      "node-role.kubernetes.io/master": ""
+                    }
+                  },
+                  "serviceConfiguration": {
+                    "containers": [
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-external-rabbitmq:R2011-latest",
+                        "name": "rabbitmq"
+                      }
+                    ],
+                    "logLevel": "SYS_DEBUG"
+                  }
+                }
+              },
+              "vrouters": [
+                {
+                  "metadata": {
+                    "labels": {
+                      "tf_cluster": "cluster1"
+                    },
+                    "name": "vrouter1"
+                  },
+                  "spec": {
+                    "serviceConfiguration": {
+                      "containers": [
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-node-init:R2011-latest",
+                          "name": "nodeinit"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-vrouter-kernel-init:R2011-latest",
+                          "name": "vrouterkernelinit"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-vrouter-kernel-build-init:R2011-latest",
+                          "name": "vrouterkernelbuildinit"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-provisioner:R2011-latest",
+                          "name": "provisioner"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-nodemgr:R2011-latest",
+                          "name": "nodemanager"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-vrouter-agent:R2011-latest",
+                          "name": "vrouteragent"
+                        },
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-kubernetes-cni-init:R2011-latest",
+                          "name": "vroutercni"
+                        }
+                      ],
+                      "controlInstance": "control1",
+                      "logLevel": "SYS_DEBUG"
+                    }
+                  }
+                }
+              ],
+              "webui": {
+                "metadata": {
+                  "labels": {
+                    "tf_cluster": "cluster1"
+                  },
+                  "name": "webui1"
+                },
+                "spec": {
+                  "commonConfiguration": {
+                    "nodeSelector": {
+                      "node-role.kubernetes.io/master": ""
+                    }
+                  },
+                  "serviceConfiguration": {
+                    "cassandraInstance": "configdb1",
+                    "configInstance": "config1",
+                    "containers": [
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-external-redis:R2011-latest",
+                        "name": "redis"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-controller-webui-job:R2011-latest",
+                        "name": "webuijob"
+                      },
+                      {
+                        "image": "docker.io/tungstenfabric/contrail-controller-webui-web:R2011-latest",
+                        "name": "webuiweb"
+                      }
+                    ],
+                    "controlInstance": "control1",
+                    "logLevel": "SYS_DEBUG"
+                  }
+                }
+              },
+              "zookeepers": [
+                {
+                  "metadata": {
+                    "labels": {
+                      "tf_cluster": "cluster1"
+                    },
+                    "name": "zookeeper1"
+                  },
+                  "spec": {
+                    "commonConfiguration": {
+                      "nodeSelector": {
+                        "node-role.kubernetes.io/master": ""
+                      }
+                    },
+                    "serviceConfiguration": {
+                      "containers": [
+                        {
+                          "image": "docker.io/tungstenfabric/contrail-external-zookeeper:R2011-latest",
+                          "name": "zookeeper"
+                        }
+                      ],
+                      "logLevel": "SYS_DEBUG"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    capabilities: Seamless Upgrades
+    categories: Networking
+    containerImage: 'docker.io/tungstenfabric/tf-operator:R2011-latest'
+    certified: 'false'
+    createdAt: 2021-07-26 10:00:00
+    description: Manages Tungsten Fabric, secure software defined networking project designed for the cloud native, multicloud environment.
+    repository: https://github.com/tungstenfabric/tf-operator
+  name: tf-operator.v0.0.1-2011
+  namespace: placeholder
+spec:
+  description: |
+      ### Tungsten fabric SDN operator.
+      Tungsten Fabric (formerly known as OpenContrail) is a secure software defined networking project designed for the cloud native, multicloud environment. Placing it on top of any IP network allows you to have a single portal for defining, monitoring, and analyzing your entire multicloud network, its security, and its performance.
+
+      Using Tungsten Fabric, you can write and deploy network and security policies that are portable to any cloud environment. All of your clouds can have a consistent and easily maintainable configuration. Standardized policies will make your security team happy, too.
+
+      This operator installs as well as configures the following Tungsten Fabric components:
+      - TF Analytics
+      - TF Config
+      - TF Controls
+      - All databases required (Cassandra, Zookeeper, RabbitMQ, Redis)
+      - TF Kubemanager
+      - TF Vrouters + CNI Plugins
+
+      ### How to install
+      After start operator apply a Manager manifest to start Tungsten Fabric. See an example of the Manager manifest below at Manager CRD.
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - displayName: AnalyticsAlarm
+      description: AnalyticsAlarm manages Analytics Alarm service. This CR creates and manages automatically.
+      kind: AnalyticsAlarm
+      name: analyticsalarm.tf.tungsten.io
+      version: v1alpha1
+    - displayName: AnalyticsSnmp
+      description: AnalyticsSnmp manages Analytics SNMP service. This CR creates and manages automatically.
+      kind: AnalyticsSnmp
+      name: analyticssnmp.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Cassandra
+      description: Cassandra manages analycics and config cassandras.  This CR creates and manages automatically.
+      kind: Cassandra
+      name: cassandras.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Config
+      description: Config manages Config API service.  This CR creates and manages automatically.
+      kind: Config
+      name: configs.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Control
+      description: Control manages Control service.  This CR creates and manages automatically.
+      kind: Control
+      name: controls.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Kubemanager
+      description: Kubemanager manages Kubemanager service. This CR creates and manages automatically.
+      kind: Kubemanager
+      name: kubemanagers.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Manager
+      description: Manager is the main operator controller that operate all the others. Use it for provade any params to TF.
+      kind: Manager
+      name: managers.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Rabbitmq
+      description: Rabbitmq manager Rabbitmq database. This CR creates and manages automatically.
+      kind: Rabbitmq
+      name: rabbitmqs.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Vrouter
+      description: Vrouter is main network provider for nodes. This CR creates and manages automatically.
+      kind: Vrouter
+      name: vrouters.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Webui
+      description: Provide WebUI for manage Tungsten Fabric. This CR creates and manages automatically.
+      kind: Webui
+      name: webuis.tf.tungsten.io
+      version: v1alpha1
+    - displayName: Zookeeper
+      description: Zookeeper database. This CR creates and manages automatically.
+      kind: Zookeeper
+      name: zookeepers.tf.tungsten.io
+      version: v1alpha1
+  displayName: Tf Operator
+  icon:
+  - base64data: "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAABKVBMVEX////8/Pz6+vv19fbu7/Hd3uP4z8v1tZ+4uMWsrLvugm7qcD2KjJ+Kip/raSXraCXqZyXqZSXqZCbqYybqYSbpYCbpYCXpXibpXSboXSbpXCboWifoWSfoWCfoVifnVSbnVCbnUSbnUCfnTijmTSjmTCjmSijmSSjmSChvcIjlRifgSCjlRSflRCjcSCnlQijkQSlrbIbkQCm5VS3lPynlPinlPSnjPinjOynjOijiOijjOSnjNinfOCnjNSnRMiuuQDDKMi1XWXZUVnNSVXKRPTKJQDJLTWxGSGlFR2hER2d5MzRwJjZxJDY3OVw1N1peJDhIJTpAJjs5IztEHDshJEszHTwaHUYmGD0aHEUjGD0jFzwbFz4bFj0VF0EWFT4VFD8UFD8SFD/raCQVAAABYUlEQVR42u3W1XLDMBCFYZWZmZmZuSmlzIxpq/d/iI6PKY426a560wt/d4qz/0hje8ZK/5GKA3EgDvwWuK2GyG/5yjHHC9TAQvqfA6xALYTrYyUM1EGwHCPncwQO68FfPtHzOQINcGeeXzHvQiP4qyJ39sqYoAJNBHc+xXsOmk0VxOazBt5bTO78Hi/Q1mrKugEq0E4QBTpMJaJA0tEJSY87/yB5G7sg+hRJXuebbvBWKXmgB868VSHmCySBXmCcIFugD+wDO/3grS7lgQF4jGygTBIYBM4J6MD3ENgHJoYd096qSh4Ygc/IBo4kgVFgnYAMvI6DfWASypWJGZgCZR+YAWI+jxe4ngUi8MILzEMx7wRUYBGUVeBZa70EK7ybmBFYDvk/nUoCq6Hz6AYqWYG10LrmniAtsBHa0haB3c3ARXi5VLCDr21XQhvfZSfc78SP+7eMywf7jvhjOw78/8APvQc9Er8dzFEAAAAASUVORK5CYII="
+    mediatype: "image/png"
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: tf-operator
+      deployments:
+      - name: tf-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: tf-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: tf-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: tf-operator
+                image: docker.io/tungstenfabric/tf-operator:R2011-latest
+                name: tf-operator
+                resources: {}
+              dnsPolicy: ClusterFirstWithHostNet
+              hostNetwork: true
+              nodeSelector:
+                node-role.kubernetes.io/master: ""
+              restartPolicy: Always
+              serviceAccountName: tf-operator
+              tolerations:
+              - effect: NoExecute
+                operator: Exists
+              - effect: NoSchedule
+                operator: Exists
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - tf-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - tf.tungsten.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - storage
+          resources:
+          - storageclasses
+          verbs:
+          - '*'
+        serviceAccountName: tf-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - "tf"
+  - "tungsten"
+  - "tungstenfabric"
+  maintainers:
+  - name: Tungsten Fabric
+  links:
+  - name: Tungsten Fabric Source
+    url: https://github.com/3scale/3scale-operator
+  - name: Tungsten Fabric Website
+    url: https://github.com/tungstenfabric/
+  maturity: stable
+  provider:
+    name: Tungsten Fabric
+  version: 0.0.1-2011
