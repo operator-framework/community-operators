@@ -1,0 +1,113 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2020-2021 Intel Corporation
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: n5010clusters.fpga.intel.com
+spec:
+  group: fpga.intel.com
+  names:
+    kind: N5010Cluster
+    listKind: N5010ClusterList
+    plural: n5010clusters
+    singular: n5010cluster
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: N5010Cluster is the Schema for the n5010clusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: N5010ClusterSpec defines the desired state of N5010Cluster
+            properties:
+              drainSkip:
+                type: boolean
+              dryrun:
+                type: boolean
+              nodes:
+                description: List of the nodes with their devices to be updated
+                items:
+                  properties:
+                    fpga:
+                      items:
+                        properties:
+                          PCIAddr:
+                            pattern: ^[a-fA-F0-9]{4}:[a-fA-F0-9]{2}:[01][a-fA-F0-9]\.[0-7]$
+                            type: string
+                          checksum:
+                            description: MD5 checksum verified against calculated one from downloaded user image. Optional.
+                            pattern: ^[a-fA-F0-9]{32}$
+                            type: string
+                          userImageURL:
+                            pattern: '[a-zA-Z0-9\.\-\/]+'
+                            type: string
+                        required:
+                        - PCIAddr
+                        - userImageURL
+                        type: object
+                      type: array
+                    hssi:
+                      properties:
+                        MACs:
+                          items:
+                            properties:
+                              MAC:
+                                pattern: ^[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}$
+                                type: string
+                            required:
+                            - MAC
+                            type: object
+                          type: array
+                        checksum:
+                          description: MD5 checksum verified against calculated one from downloaded nvmupdate package. Optional.
+                          pattern: ^[a-fA-F0-9]{32}$
+                          type: string
+                        firmwareURL:
+                          pattern: '[a-zA-Z0-9\.\-\/]+'
+                          type: string
+                      required:
+                      - MACs
+                      - firmwareURL
+                      type: object
+                    nodeName:
+                      pattern: '[a-z0-9\.\-]+'
+                      type: string
+                  required:
+                  - nodeName
+                  type: object
+                type: array
+            required:
+            - nodes
+            type: object
+          status:
+            description: N5010ClusterStatus defines the observed state of N5010Cluster
+            properties:
+              lastSyncError:
+                type: string
+              syncStatus:
+                description: Indicates the synchronization status of the CR
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
